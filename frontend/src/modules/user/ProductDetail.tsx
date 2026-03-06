@@ -16,6 +16,7 @@ import { getProductById } from '../../services/api/customerProductService';
 import WishlistButton from '../../components/WishlistButton';
 import StarRating from "../../components/ui/StarRating";
 import { calculateProductPrice } from '../../utils/priceUtils';
+import { getCategoryType, getDeliveryInfo } from '../../config/pincodeService';
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
@@ -546,7 +547,7 @@ export default function ProductDetail() {
               />
             </svg>
             <span className="text-sm text-neutral-700 font-medium">
-              17 MINS
+              {getDeliveryInfo(getCategoryType(product.category?.name)).detailText}
             </span>
           </div>
 

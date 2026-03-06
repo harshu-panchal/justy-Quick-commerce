@@ -11,6 +11,9 @@ import { getHeaderCategoriesPublic } from "../../services/api/headerCategoryServ
 import { useLocation } from "../../hooks/useLocation";
 import { useLoading } from "../../context/LoadingContext";
 import PageLoader from "../../components/PageLoader";
+import ComingSoon from "../../components/ComingSoon";
+import { isCategoryAvailable } from "../../config/pincodeService";
+import { getStoredPincode } from "../../components/PincodeSelector";
 
 import { useThemeContext } from "../../context/ThemeContext";
 
@@ -254,194 +257,253 @@ export default function Home() {
     );
   }
 
+  // Pincode availability check
+  const selectedPincode = getStoredPincode();
+  const isCategoryUnavailable = activeTab !== "all" && selectedPincode && !isCategoryAvailable(activeTab, selectedPincode);
+
   return (
     <div className="bg-white min-h-screen pb-20 md:pb-0" ref={contentRef}>
       {/* Hero Header with Gradient and Tabs */}
       <HomeHero activeTab={activeTab} onTabChange={setActiveTab} />
 
-      {/* Promo Strip */}
-      <PromoStrip activeTab={activeTab} />
+      {/* Coming Soon - if category not available in pincode */}
+      {isCategoryUnavailable ? (
+        <ComingSoon />
+      ) : (
+        <>
+          {/* Promo Strip */}
+          <PromoStrip activeTab={activeTab} />
 
-      {/* LOWEST PRICES EVER Section */}
-      <LowestPricesEver activeTab={activeTab} products={homeData.lowestPrices} />
+          {/* LOWEST PRICES EVER Section */}
+          <LowestPricesEver activeTab={activeTab} products={homeData.lowestPrices} />
 
-      {/* Main content */}
-      <div
-        className="bg-neutral-50 -mt-2 pt-1 space-y-5 md:space-y-8 md:pt-4">
-        {/* Bestsellers Section */}
-        {activeTab === "all" && (
-          <div className="mt-2 md:mt-4">
-            <CategoryTileSection
-              title="Bestsellers"
-              tiles={
-                homeData.bestsellers && homeData.bestsellers.length > 0
-                  ? homeData.bestsellers
-                    .slice(0, 6)
-                    .map((card: any) => {
-                      // Bestseller cards have categoryId and productImages array from backend
-                      return {
-                        id: card.id,
-                        categoryId: card.categoryId,
-                        name: card.name || "Category",
-                        productImages: card.productImages || [],
-                        productCount: card.productCount || 0,
-                      };
-                    })
-                  : []
-              }
-              columns={3}
-              showProductCount={true}
-            />
-          </div>
-        )}
-
-        {/* Dynamic Home Sections - Render sections created by admin */}
-        {homeData.homeSections && homeData.homeSections.length > 0 && (
-          <>
-            {homeData.homeSections.map((section: any) => {
-              const columnCount = Number(section.columns) || 4;
-
-              if (section.displayType === "products" && section.data && section.data.length > 0) {
-                // Strict column mapping as requested - applies to ALL screen sizes including mobile
-                const gridClass = {
-                  2: "grid-cols-2",
-                  3: "grid-cols-3",
-                  4: "grid-cols-4",
-                  6: "grid-cols-6",
-                  8: "grid-cols-8"
-                }[columnCount] || "grid-cols-4";
-
-                // Use compact mode for 4 or more columns to fit content on mobile
-                const isCompact = columnCount >= 4;
-                const gapClass = columnCount >= 4 ? "gap-2" : "gap-3 md:gap-4";
-
-                return (
-                  <div key={section.id} className="mt-6 mb-6 md:mt-8 md:mb-8">
-                    {section.title && (
-                      <h2 className="text-lg md:text-2xl font-semibold text-neutral-900 mb-3 md:mb-6 px-4 md:px-6 lg:px-8 tracking-tight capitalize">
-                        {section.title}
-                      </h2>
-                    )}
-                    <div className="px-4 md:px-6 lg:px-8">
-                      <div className={`grid ${gridClass} ${gapClass}`}>
-                        {section.data.map((product: any) => (
-                          <ProductCard
-                            key={product.id || product._id}
-                            product={product}
-                            categoryStyle={true}
-                            showBadge={true}
-                            showPackBadge={false}
-                            showStockInfo={false}
-                            compact={isCompact}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                );
-              }
-
-              return (
+          {/* Main content */}
+          <div
+            className="bg-neutral-50 -mt-2 pt-1 space-y-5 md:space-y-8 md:pt-4">
+            {/* Bestsellers Section */}
+            {activeTab === "all" && (
+              <div className="mt-2 md:mt-4">
                 <CategoryTileSection
-                  key={section.id}
-                  title={section.title}
-                  tiles={section.data || []}
-                  columns={columnCount as 2 | 3 | 4 | 6 | 8}
-                  showProductCount={false}
+                  title="Bestsellers"
+                  tiles={
+                    homeData.bestsellers && homeData.bestsellers.length > 0
+                      ? homeData.bestsellers
+                        .filter((card: any) => {
+                          const name = (card.name || "").toLowerCase();
+                          const title = (card.title || "").toLowerCase();
+                          const catName = (card.categoryName || "").toLowerCase();
+                          const forbidden = ['non veg', 'meat', 'fish', 'chicken', 'egg', 'pharma', 'pet', 'baby', 'cleaning', 'office', 'personal care', 'health', 'wellness'];
+                          const isForbidden = forbidden.some(word =>
+                            name.includes(word) || title.includes(word) || catName.includes(word)
+                          );
+                          return !isForbidden;
+                        })
+                        .slice(0, 6)
+                        .map((card: any) => {
+                          // Bestseller cards have categoryId and productImages array from backend
+                          return {
+                            id: card.id,
+                            categoryId: card.categoryId,
+                            name: card.name || "Category",
+                            productImages: card.productImages || [],
+                            productCount: card.productCount || 0,
+                          };
+                        })
+                      : []
+                  }
+                  columns={3}
+                  showProductCount={true}
                 />
-              );
-            })}
-          </>
-        )}
-
-        {/* Filtered Products Section */}
-        {/* Filtered Products Section */}
-        {activeTab !== "all" && filteredProducts.length > 0 && (
-          <div data-products-section className="mt-6 mb-6 md:mt-8 md:mb-8">
-            <h2 className="text-lg md:text-2xl font-semibold text-neutral-900 mb-3 md:mb-6 px-4 md:px-6 lg:px-8 tracking-tight capitalize">
-              {activeTab === "grocery" ? "Grocery Items" : activeTab}
-            </h2>
-            <div className="px-4 md:px-6 lg:px-8">
-              <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4">
-                {filteredProducts.map((product) => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                    categoryStyle={true}
-                    showBadge={true}
-                    showPackBadge={false}
-                    showStockInfo={true}
-                  />
-                ))}
               </div>
-            </div>
-          </div>
-        )}
+            )}
 
-        {activeTab === "all" && (
-          <>
+            {/* Dynamic Home Sections - Render sections created by admin */}
+            {homeData.homeSections && homeData.homeSections.length > 0 && (
+              <>
+                {homeData.homeSections
+                  .filter((section: any) => {
+                    const sectionTitle = section.title?.toLowerCase() || '';
+                    const sectionSlug = section.categorySlug?.toLowerCase() || '';
 
-            {/* Featured this week Section */}
-            <FeaturedThisWeek />
+                    // Step 1: Explicitly remove forbidden sections
+                    const forbiddenKeywords = ['non veg', 'meat', 'fish', 'chicken', 'egg', 'pet care', 'pharma', 'wellness', 'cleaning', 'office', 'baby care', 'personal care', 'wash', 'sanitary'];
+                    if (forbiddenKeywords.some(word => sectionTitle.includes(word) || sectionSlug.includes(word))) {
+                      return false;
+                    }
 
-            {/* Shop by Store Section */}
-            <div className="mb-6 mt-6 md:mb-8 md:mt-8">
-              <h2 className="text-lg md:text-2xl font-semibold text-neutral-900 mb-3 md:mb-6 px-4 md:px-6 lg:px-8 tracking-tight">
-                Shop by Store
-              </h2>
-              <div className="px-4 md:px-6 lg:px-8">
-                <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2 md:gap-4">
-                  {(homeData.shops || []).map((tile: any) => {
-                    const hasImages =
-                      tile.image ||
-                      (tile.productImages &&
-                        tile.productImages.filter(Boolean).length > 0);
+                    // Step 2: Strictly allow only sections matching the 8 categories when in "All" tab
+                    if (activeTab === 'all') {
+                      const allowedKeywords = [
+                        'fashion', 'grocery', 'kitchen', 'beauty', 'cosmetic', 'makeup', 'electronics', 'mobile', 'cpu',
+                        'pan', 'corner', 'bakery', 'cake', 'vegetable', 'fruit', 'munchies', 'snack', 'sweet', 'chocolate'
+                      ];
+                      return allowedKeywords.some(word => sectionTitle.includes(word) || sectionSlug.includes(word));
+                    }
+
+                    return true;
+                  })
+                  .map((section: any) => {
+                    // Filter the tiles (data) inside the section as well
+                    const filteredData = (section.data || []).filter((tile: any) => {
+                      const tileName = (tile.name || '').toLowerCase();
+                      const forbiddenKeywords = ['non veg', 'meat', 'fish', 'chicken', 'egg', 'pharma', 'pet care', 'baby care', 'cleaning', 'office', 'wellness', 'personal care', 'wash', 'sanitary'];
+                      return !forbiddenKeywords.some(word => tileName.includes(word));
+                    });
+
+                    // Skip the section if no data remains after filtering tiles
+                    if (filteredData.length === 0) return null;
+
+                    const columnCount = Number(section.columns) || 4;
+
+                    if (section.displayType === "products" && filteredData.length > 0) {
+                      const gridClass = {
+                        2: "grid-cols-2", 3: "grid-cols-3", 4: "grid-cols-4",
+                        6: "grid-cols-6", 8: "grid-cols-8"
+                      }[columnCount] || "grid-cols-4";
+
+                      const isCompact = columnCount >= 4;
+                      const gapClass = columnCount >= 4 ? "gap-2" : "gap-3 md:gap-4";
+
+                      return (
+                        <div key={section.id} className="mt-6 mb-6 md:mt-8 md:mb-8">
+                          {section.title && (
+                            <h2 className="text-lg md:text-2xl font-semibold text-neutral-900 mb-3 md:mb-6 px-4 md:px-6 lg:px-8 tracking-tight capitalize">
+                              {section.title}
+                            </h2>
+                          )}
+                          <div className="px-4 md:px-6 lg:px-8">
+                            <div className={`grid ${gridClass} ${gapClass}`}>
+                              {filteredData.map((product: any) => (
+                                <ProductCard
+                                  key={product.id || product._id}
+                                  product={product}
+                                  categoryStyle={true}
+                                  showBadge={true}
+                                  showPackBadge={false}
+                                  showStockInfo={false}
+                                  compact={isCompact}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
 
                     return (
-                      <div key={tile.id} className="flex flex-col">
-                        <div
-                          onClick={() => {
-                            const storeSlug =
-                              tile.slug || tile.id.replace("-store", "");
-                            saveScrollPosition();
-                            navigate(`/store/${storeSlug}`);
-                          }}
-                          className="block bg-white rounded-xl shadow-sm border border-neutral-200 hover:shadow-md transition-shadow cursor-pointer overflow-hidden">
-                          {hasImages ? (
-                            <img
-                              src={
-                                tile.image ||
-                                (tile.productImages
-                                  ? tile.productImages[0]
-                                  : "")
-                              }
-                              alt={tile.name}
-                              className="w-full h-16 object-cover"
-                            />
-                          ) : (
-                            <div
-                              className={`w-full h-16 flex items-center justify-center text-3xl text-neutral-300 ${tile.bgColor || "bg-neutral-50"
-                                }`}>
-                              {tile.name.charAt(0)}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Tile name - outside card */}
-                        <div className="mt-1.5 text-center">
-                          <span className="text-xs font-semibold text-neutral-900 line-clamp-2 leading-tight">
-                            {tile.name}
-                          </span>
-                        </div>
-                      </div>
+                      <CategoryTileSection
+                        key={section.id}
+                        title={section.title}
+                        tiles={filteredData}
+                        columns={columnCount as 2 | 3 | 4 | 6 | 8}
+                        showProductCount={false}
+                      />
                     );
                   })}
+              </>
+            )}
+
+            {/* Filtered Products Section */}
+            {activeTab !== "all" && filteredProducts.length > 0 && (
+              <div data-products-section className="mt-6 mb-6 md:mt-8 md:mb-8">
+                <h2 className="text-lg md:text-2xl font-semibold text-neutral-900 mb-3 md:mb-6 px-4 md:px-6 lg:px-8 tracking-tight capitalize">
+                  {activeTab === "grocery" ? "Grocery Items" : activeTab}
+                </h2>
+                <div className="px-4 md:px-6 lg:px-8">
+                  <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4">
+                    {filteredProducts
+                      .filter(product => {
+                        const name = (product.name || '').toLowerCase();
+                        const forbidden = ['non veg', 'meat', 'fish', 'chicken', 'egg'];
+                        return !forbidden.some(word => name.includes(word));
+                      })
+                      .map((product) => (
+                        <ProductCard
+                          key={product.id}
+                          product={product}
+                          categoryStyle={true}
+                          showBadge={true}
+                          showPackBadge={false}
+                          showStockInfo={true}
+                        />
+                      ))}
+                  </div>
                 </div>
               </div>
-            </div>
-          </>
-        )}
-      </div>
+            )}
+
+            {activeTab === "all" && (
+              <>
+
+                {/* Featured this week Section */}
+                <FeaturedThisWeek />
+
+                {/* Shop by Store Section */}
+                <div className="mb-6 mt-6 md:mb-8 md:mt-8">
+                  <h2 className="text-lg md:text-2xl font-semibold text-neutral-900 mb-3 md:mb-6 px-4 md:px-6 lg:px-8 tracking-tight">
+                    Shop by Store
+                  </h2>
+                  <div className="px-4 md:px-6 lg:px-8">
+                    <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2 md:gap-4">
+                      {(homeData.shops || [])
+                        .filter((tile: any) => {
+                          const name = (tile.name || '').toLowerCase();
+                          const forbidden = ['pharma', 'pet', 'gift', 'spiritual', 'sport', 'book', 'toy', 'meat', 'chicken', 'fish', 'egg', 'non veg', 'baby', 'wellness', 'fitness'];
+                          return !forbidden.some(word => name.includes(word));
+                        })
+                        .map((tile: any) => {
+                          const hasImages =
+                            tile.image ||
+                            (tile.productImages &&
+                              tile.productImages.filter(Boolean).length > 0);
+
+                          return (
+                            <div key={tile.id} className="flex flex-col">
+                              <div
+                                onClick={() => {
+                                  const storeSlug =
+                                    tile.slug || tile.id.replace("-store", "");
+                                  saveScrollPosition();
+                                  navigate(`/store/${storeSlug}`);
+                                }}
+                                className="block bg-white rounded-xl shadow-sm border border-neutral-200 hover:shadow-md transition-shadow cursor-pointer overflow-hidden">
+                                {hasImages ? (
+                                  <img
+                                    src={
+                                      tile.image ||
+                                      (tile.productImages
+                                        ? tile.productImages[0]
+                                        : "")
+                                    }
+                                    alt={tile.name}
+                                    className="w-full h-16 object-cover"
+                                  />
+                                ) : (
+                                  <div
+                                    className={`w-full h-16 flex items-center justify-center text-3xl text-neutral-300 ${tile.bgColor || "bg-neutral-50"
+                                      }`}>
+                                    {tile.name.charAt(0)}
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Tile name - outside card */}
+                              <div className="mt-1.5 text-center">
+                                <span className="text-xs font-semibold text-neutral-900 line-clamp-2 leading-tight">
+                                  {tile.name}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }

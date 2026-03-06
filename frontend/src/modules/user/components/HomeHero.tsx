@@ -9,6 +9,7 @@ import { getCategories } from '../../../services/api/customerProductService';
 import { Category } from '../../../types/domain';
 import { getHeaderCategoriesPublic } from '../../../services/api/headerCategoryService';
 import { getIconByName } from '../../../utils/iconLibrary';
+import PincodeSelector from '../../../components/PincodeSelector';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -301,6 +302,9 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
                   </svg>
                 </div>
               )}
+              <div className="mt-1">
+                <PincodeSelector />
+              </div>
             </div>
           </div>
         </div>

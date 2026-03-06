@@ -1,13 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { register, sendOTP, verifyOTP } from '../../../services/api/auth/sellerAuthService';
 import OTPInput from '../../../components/OTPInput';
 import GoogleMapsAutocomplete from '../../../components/GoogleMapsAutocomplete';
 import { useAuth } from '../../../context/AuthContext';
-import { getHeaderCategoriesPublic, HeaderCategory } from '../../../services/api/headerCategoryService';
 import LocationPickerMap from '../../../components/LocationPickerMap';
 import ServiceAreaMap from '../../../components/ServiceAreaMap';
-import { useEffect } from 'react';
 
 export default function SellerSignUp() {
   const navigate = useNavigate();
@@ -18,7 +16,6 @@ export default function SellerSignUp() {
     email: '',
     storeName: '',
     category: '',
-    categories: [] as string[],
     address: '',
     city: '',
     panCard: '',
@@ -39,21 +36,7 @@ export default function SellerSignUp() {
   const [showOTP, setShowOTP] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [categories, setCategories] = useState<HeaderCategory[]>([]);
 
-  useEffect(() => {
-    const fetchCats = async () => {
-      try {
-        const res = await getHeaderCategoriesPublic();
-        if (Array.isArray(res)) {
-          setCategories(res.filter(cat => cat.status === 'Published'));
-        }
-      } catch (err) {
-        console.error('Error fetching categories:', err);
-      }
-    };
-    fetchCats();
-  }, []);
 
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -79,19 +62,7 @@ export default function SellerSignUp() {
     }
   };
 
-  const toggleCategory = (cat: string) => {
-    setFormData(prev => {
-      const exists = prev.categories.includes(cat);
-      const nextCategories = exists
-        ? prev.categories.filter(c => c !== cat)
-        : [...prev.categories, cat];
-      return {
-        ...prev,
-        categories: nextCategories,
-        category: nextCategories[0] || '',
-      };
-    });
-  };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -113,8 +84,8 @@ export default function SellerSignUp() {
       setError('Please enter your store name');
       return;
     }
-    if (formData.categories.length === 0) {
-      setError('Please select at least one category');
+    if (!formData.category) {
+      setError('Please enter your store category');
       return;
     }
     if (!formData.address && !formData.searchLocation) {
@@ -157,8 +128,8 @@ export default function SellerSignUp() {
         mobile: formData.mobile,
         email: formData.email,
         storeName: formData.storeName,
-        category: formData.categories[0], // primary
-        categories: formData.categories,
+        category: formData.category,
+        categories: [formData.category],
         address: formData.address || formData.searchLocation,
         city: formData.city,
         searchLocation: formData.searchLocation,
@@ -327,34 +298,18 @@ export default function SellerSignUp() {
 
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Categories <span className="text-red-500">*</span>
+                    Store Category <span className="text-red-500">*</span>
                   </label>
-                  {categories.length === 0 ? (
-                    <div className="text-sm text-neutral-500 py-2">
-                      Loading categories...
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto p-2 border border-neutral-200 rounded-lg">
-                      {categories.map((cat) => {
-                        const checked = formData.categories.includes(cat.name);
-                        return (
-                          <label key={cat._id} className="flex items-center gap-2 text-sm text-neutral-700">
-                            <input
-                              type="checkbox"
-                              checked={checked}
-                              onChange={() => toggleCategory(cat.name)}
-                              disabled={loading}
-                              className="h-4 w-4 text-teal-600 border-neutral-300 rounded focus:ring-teal-500"
-                            />
-                            <span>{cat.name}</span>
-                          </label>
-                        );
-                      })}
-                    </div>
-                  )}
-                  {formData.categories.length === 0 && categories.length > 0 && (
-                    <p className="text-xs text-red-600 mt-1">Select at least one category</p>
-                  )}
+                  <input
+                    type="text"
+                    name="category"
+                    value={formData.category}
+                    onChange={handleInputChange}
+                    placeholder="e.g. Grocery, Bakery, Fashion"
+                    required
+                    className="w-full px-3 py-2.5 text-sm border border-neutral-300 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
+                    disabled={loading}
+                  />
                 </div>
 
                 <div>
@@ -630,6 +585,8 @@ export default function SellerSignUp() {
                   {error}
                 </div>
               )}
+
+
 
               <button
                 type="submit"

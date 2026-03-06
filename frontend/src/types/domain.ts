@@ -46,5 +46,7 @@ export interface Product {
   maxReturnDays?: number;
   sellerId?: string;
   isAvailable?: boolean;
+  type?: "organic" | "inorganic";
+  approvalStatus?: "pending" | "approved" | "rejected";
 }
 

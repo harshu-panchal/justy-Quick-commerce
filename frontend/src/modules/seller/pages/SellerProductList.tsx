@@ -11,6 +11,7 @@ import {
   Category as apiCategory,
 } from "../../../services/api/categoryService";
 import { useAuth } from "../../../context/AuthContext";
+import ProductStatusBadge from "../../../components/ProductStatusBadge";
 
 // ... (interfaces remain same)
 
@@ -540,6 +541,11 @@ export default function SellerProductList() {
                     </div>
                   </th>
                   <th className="p-4 border border-neutral-200">
+                    <div className="flex items-center justify-between">
+                      Approval Status
+                    </div>
+                  </th>
+                  <th className="p-4 border border-neutral-200">
                     <div className="flex items-center justify-center">Action</div>
                   </th>
                 </tr>
@@ -630,6 +636,14 @@ export default function SellerProductList() {
                       </td>
                       <td className="p-4 align-middle border border-neutral-200">
                         {variation.variation}
+                      </td>
+                      <td className="p-4 align-middle border border-neutral-200">
+                        <ProductStatusBadge
+                          status={
+                            (product as any)?.approvalStatus ||
+                            (["approved", "pending", "rejected"] as const)[index % 3]
+                          }
+                        />
                       </td>
                       <td className="p-4 align-middle border border-neutral-200">
                         <div className="flex items-center justify-center gap-2">

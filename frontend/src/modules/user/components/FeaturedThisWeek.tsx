@@ -50,9 +50,15 @@ export default function FeaturedThisWeek() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await getProducts({ limit: 6 });
+        const res = await getProducts({ limit: 12 });
         if (res.success && res.data) {
-          setNewlyLaunchedProducts(res.data);
+          const forbidden = ['non veg', 'meat', 'fish', 'chicken', 'egg', 'pharma', 'pet', 'baby', 'cleaning', 'office'];
+          const filtered = res.data.filter((product: any) => {
+            const name = (product.name || '').toLowerCase();
+            const desc = (product.description || '').toLowerCase();
+            return !forbidden.some(word => name.includes(word) || desc.includes(word));
+          });
+          setNewlyLaunchedProducts(filtered.slice(0, 6));
         }
       } catch (e) {
         console.error(e);

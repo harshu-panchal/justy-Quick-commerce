@@ -75,6 +75,9 @@ const DeliverySignUp = lazy(() => import("./modules/delivery/pages/DeliverySignU
 // Lazy load seller routes
 const SellerLayout = lazy(() => import("./modules/seller/components/SellerLayout"));
 const SellerDashboard = lazy(() => import("./modules/seller/pages/SellerDashboard"));
+const SellerVerificationPending = lazy(() => import("./modules/seller/pages/SellerVerificationPending"));
+const SellerDepositPayment = lazy(() => import("./modules/seller/pages/SellerDepositPayment"));
+const SellerAccessGuard = lazy(() => import("./modules/seller/components/SellerAccessGuard"));
 const SellerOrders = lazy(() => import("./modules/seller/pages/SellerOrders"));
 const SellerOrderDetail = lazy(() => import("./modules/seller/pages/SellerOrderDetail"));
 const SellerCategory = lazy(() => import("./modules/seller/pages/SellerCategory"));

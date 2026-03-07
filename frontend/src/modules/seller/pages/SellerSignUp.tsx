@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { register, sendOTP, verifyOTP } from '../../../services/api/auth/sellerAuthService';
-import OTPInput from '../../../components/OTPInput';
+import { register } from '../../../services/api/auth/sellerAuthService';
 import GoogleMapsAutocomplete from '../../../components/GoogleMapsAutocomplete';
 import { useAuth } from '../../../context/AuthContext';
 import LocationPickerMap from '../../../components/LocationPickerMap';
 import ServiceAreaMap from '../../../components/ServiceAreaMap';
+import { useEffect } from 'react';
 
 export default function SellerSignUp() {
   const navigate = useNavigate();
@@ -16,9 +16,12 @@ export default function SellerSignUp() {
     email: '',
     storeName: '',
     category: '',
+    categories: [] as string[],
     address: '',
     city: '',
     panCard: '',
+    fssaiLicNo: '',
+    storeDescription: '',
     taxName: '',
     taxNumber: '',
     searchLocation: '',
@@ -32,9 +35,11 @@ export default function SellerSignUp() {
     branch: '',
     accountNumber: '',
     ifsc: '',
+    storeBanner: '',
+    logo: '',
   });
-  const [showOTP, setShowOTP] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState('');
 
 
@@ -84,8 +89,8 @@ export default function SellerSignUp() {
       setError('Please enter your store name');
       return;
     }
-    if (!formData.category) {
-      setError('Please enter your store category');
+    if (formData.categories.length === 0) {
+      setError('Please select at least one category');
       return;
     }
     if (!formData.address && !formData.searchLocation) {
@@ -96,7 +101,6 @@ export default function SellerSignUp() {
       setError('Please enter your city');
       return;
     }
-
     if (formData.mobile.length !== 10) {
       setError('Please enter a valid 10-digit mobile number');
       return;
@@ -107,19 +111,9 @@ export default function SellerSignUp() {
 
     try {
       // Validate location is selected
-      if (!formData.searchLocation || !formData.latitude || !formData.longitude) {
-        setError('Please select your store location using the location search');
-        return;
-      }
-
-      // Validate service area
-      if (formData.serviceAreaType === 'polygon' && formData.serviceAreaCoordinates.length === 0) {
-        setError('Please draw your service area on the map');
-        return;
-      }
-
-      if (formData.serviceAreaType === 'radius' && !formData.serviceRadiusKm) {
-        setError('Please select a service radius');
+      if (!formData.latitude || !formData.longitude) {
+        setError('Please select your store location');
+        setLoading(false);
         return;
       }
 
@@ -132,6 +126,7 @@ export default function SellerSignUp() {
         categories: [formData.category],
         address: formData.address || formData.searchLocation,
         city: formData.city,
+        pincode: formData.pincode,
         searchLocation: formData.searchLocation,
         latitude: formData.latitude,
         longitude: formData.longitude,
@@ -140,51 +135,28 @@ export default function SellerSignUp() {
           type: 'Polygon',
           coordinates: [formData.serviceAreaCoordinates]
         } : null,
+        fssaiLicNo: formData.fssaiLicNo,
+        storeDescription: formData.storeDescription,
+        storeBanner: formData.storeBanner,
+        logo: formData.logo,
       });
 
       if (response.success) {
-        // Clear token from registration (we'll get it after OTP verification)
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('userData');
-        // Registration successful, now send OTP for verification
-        try {
-          await sendOTP(formData.mobile);
-          setShowOTP(true);
-        } catch (otpErr: any) {
-          setError(otpErr.response?.data?.message || 'Registration successful but failed to send OTP.');
+        setIsSuccess(true);
+        // Auto-login the seller
+        if (response.data.token && response.data.user) {
+          // Explicitly set userType to 'Seller' for routing logic
+          const userData = { ...response.data.user, userType: 'Seller' as const };
+          login(response.data.token, userData);
         }
+
+        // Redirect after a short delay
+        setTimeout(() => {
+          navigate('/seller/verification-pending');
+        }, 2000);
       }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Registration failed. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleOTPComplete = async (otp: string) => {
-    setLoading(true);
-    setError('');
-
-    try {
-      const response = await verifyOTP(formData.mobile, otp);
-      if (response.success && response.data) {
-        // Update auth context with seller data
-        login(response.data.token, {
-          id: response.data.user.id,
-          name: response.data.user.sellerName,
-          email: response.data.user.email,
-          phone: response.data.user.mobile,
-          userType: 'Seller',
-          storeName: response.data.user.storeName,
-          status: response.data.user.status,
-          address: response.data.user.address,
-          city: response.data.user.city,
-        });
-        // Navigate to seller dashboard
-        navigate('/seller', { replace: true });
-      }
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Invalid OTP. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -204,7 +176,7 @@ export default function SellerSignUp() {
       </button>
 
       {/* Sign Up Card */}
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden mt-8">
         {/* Header Section */}
         <div className="px-6 py-6 text-center bg-gradient-to-br from-teal-700 to-teal-900">
           <div className="flex justify-center mb-4">
@@ -218,13 +190,34 @@ export default function SellerSignUp() {
           <p className="text-teal-100 text-sm">Create your seller account</p>
         </div>
 
-        {/* Sign Up Form */}
-        <div className="p-6 space-y-4">
-          {!showOTP ? (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Required Fields Section */}
+        {/* Form Body */}
+        <div className="p-6">
+          <StepIndicator currentStep={isSuccess ? 2 : 1} />
+
+          {isSuccess ? (
+            <div className="py-12 text-center animate-fadeIn">
+              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 6L9 17L4 12" />
+                </svg>
+              </div>
+              <h2 className="text-xl font-bold text-neutral-800 mb-2">Registration Submitted!</h2>
+              <p className="text-neutral-600 px-6">
+                Registration submitted successfully. Your account is under admin review.
+              </p>
+              <div className="mt-8 flex justify-center items-center">
+                <div className="w-6 h-6 border-b-2 border-teal-600 rounded-full animate-spin"></div>
+                <span className="ml-3 text-sm text-neutral-500 font-medium">Redirecting to login...</span>
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Step 1: Basic Details */}
               <div className="space-y-4">
-                <h3 className="text-sm font-semibold text-neutral-700 border-b pb-2">Required Information</h3>
+                <h3 className="text-sm font-bold text-teal-800 uppercase tracking-wider flex items-center">
+                  <span className="w-6 h-6 bg-teal-100 text-teal-700 rounded-full flex items-center justify-center mr-2 text-[10px]">1</span>
+                  Basic Details
+                </h3>
 
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-2">
@@ -237,7 +230,7 @@ export default function SellerSignUp() {
                     onChange={handleInputChange}
                     placeholder="Enter your name"
                     required
-                    className="w-full px-3 py-2.5 text-sm border border-neutral-300 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
+                    className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 transition-all"
                     disabled={loading}
                   />
                 </div>
@@ -246,8 +239,8 @@ export default function SellerSignUp() {
                   <label className="block text-sm font-medium text-neutral-700 mb-2">
                     Mobile Number <span className="text-red-500">*</span>
                   </label>
-                  <div className="flex items-center bg-white border border-neutral-300 rounded-lg overflow-hidden focus-within:border-teal-500 focus-within:ring-2 focus-within:ring-teal-200">
-                    <div className="px-3 py-2.5 text-sm font-medium text-neutral-600 border-r border-neutral-300 bg-neutral-50">
+                  <div className="flex items-center bg-white border border-neutral-300 rounded-xl overflow-hidden focus-within:border-teal-500 transition-all">
+                    <div className="px-3 py-3 text-sm font-medium text-neutral-600 border-r border-neutral-300 bg-neutral-50">
                       +91
                     </div>
                     <input
@@ -258,7 +251,7 @@ export default function SellerSignUp() {
                       placeholder="Enter mobile number"
                       required
                       maxLength={10}
-                      className="flex-1 px-3 py-2.5 text-sm placeholder:text-neutral-400 focus:outline-none"
+                      className="flex-1 px-3 py-3 text-sm placeholder:text-neutral-400 focus:outline-none"
                       disabled={loading}
                     />
                   </div>
@@ -275,7 +268,7 @@ export default function SellerSignUp() {
                     onChange={handleInputChange}
                     placeholder="Enter email address"
                     required
-                    className="w-full px-3 py-2.5 text-sm border border-neutral-300 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
+                    className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 transition-all"
                     disabled={loading}
                   />
                 </div>
@@ -291,25 +284,41 @@ export default function SellerSignUp() {
                     onChange={handleInputChange}
                     placeholder="Enter store name"
                     required
-                    className="w-full px-3 py-2.5 text-sm border border-neutral-300 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
+                    className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 transition-all"
                     disabled={loading}
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Store Category <span className="text-red-500">*</span>
+                    Categories <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="text"
-                    name="category"
-                    value={formData.category}
-                    onChange={handleInputChange}
-                    placeholder="e.g. Grocery, Bakery, Fashion"
-                    required
-                    className="w-full px-3 py-2.5 text-sm border border-neutral-300 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
-                    disabled={loading}
-                  />
+                  {categories.length === 0 ? (
+                    <div className="text-sm text-neutral-500 py-2">
+                      Loading categories...
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto p-2 border border-neutral-200 rounded-lg">
+                      {categories.map((cat) => {
+                        const checked = formData.categories.includes(cat.name);
+                        return (
+                          <label key={cat._id} className="flex items-center gap-2 text-sm text-neutral-700">
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() => toggleCategory(cat.name)}
+                              disabled={loading}
+                              className="h-4 w-4 text-teal-600 border-neutral-300 rounded focus:ring-teal-500"
+                            />
+                            <span>{cat.name}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {formData.categories.length === 0 && categories.length > 0 && (
+                    <p className="text-xs text-red-600 mt-1">Select at least one category</p>
+                  )}
                 </div>
 
                 <div>
@@ -332,54 +341,12 @@ export default function SellerSignUp() {
                         }}
                         placeholder="Search your store location..."
                         disabled={loading}
-                        required
                       />
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (navigator.geolocation) {
-                          setLoading(true);
-                          navigator.geolocation.getCurrentPosition(
-                            (position) => {
-                              const lat = position.coords.latitude;
-                              const lng = position.coords.longitude;
-                              const locationStr = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-                              setFormData(prev => ({
-                                ...prev,
-                                latitude: lat.toString(),
-                                longitude: lng.toString(),
-                                searchLocation: locationStr,
-                                address: prev.address || locationStr // Ensure address is not empty
-                              }));
-                              setLoading(false);
-                            },
-                            (error) => {
-                              console.error(error);
-                              setError('Unable to retrieve your location');
-                              setLoading(false);
-                            }
-                          );
-                        } else {
-                          setError('Geolocation is not supported by your browser');
-                        }
-                      }}
-                      className="p-2.5 bg-teal-50 text-teal-600 rounded-lg border border-teal-200 hover:bg-teal-100 transition-colors"
-                      title="Use Current Location"
-                    >
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M12 2a10 10 0 1 0 10 10 10 10 0 0 0-10-10zm0 16a6 6 0 1 1 6-6 6 6 0 0 1-6 6z" />
-                        <path d="M12 8v8" />
-                        <path d="M8 12h8" />
-                      </svg>
-                    </button>
                   </div>
 
-                  {formData.latitude && formData.longitude && formData.serviceAreaType === 'radius' ? (
+                  {formData.latitude && formData.longitude ? (
                     <div className="mt-4 animate-fadeIn">
-                      <p className="text-sm font-medium text-neutral-700 mb-2">
-                        Exact Location <span className="text-teal-600 text-xs font-normal">(Move the map to place the pin on your store's entrance)</span>
-                      </p>
                       <LocationPickerMap
                         initialLat={parseFloat(formData.latitude)}
                         initialLng={parseFloat(formData.longitude)}
@@ -391,139 +358,51 @@ export default function SellerSignUp() {
                           }));
                         }}
                       />
-                      <p className="mt-1 text-xs text-neutral-500 text-center">
-                        Selected Coordinates: {formData.latitude}, {formData.longitude}
-                      </p>
                     </div>
-                  ) : (
-                    <div className="mt-2 text-xs text-neutral-500 bg-neutral-50 p-2 rounded border border-neutral-100 text-center">
-                      Search for a location or use the location button to view the map and set exact coordinates.
-                    </div>
-                  )}
+                  ) : null}
                 </div>
 
-                <div className="my-8 border-t border-gray-200 pt-6 animate-fadeIn">
-                  <h3 className="text-lg font-semibold text-neutral-800 mb-2">2. Delivery Service Area</h3>
-
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Service Area Type <span className="text-red-500">*</span>
-                  </label>
-                  <div className="flex gap-4 mb-4">
-                    <label className="flex items-center gap-2 cursor-pointer bg-white px-3 py-2 rounded border border-gray-200 hover:bg-gray-50 transition-colors">
-                      <input
-                        type="radio"
-                        name="service_type_toggle"
-                        checked={formData.serviceAreaType === 'radius'}
-                        onChange={() => setFormData(prev => ({ ...prev, serviceAreaType: 'radius' }))}
-                        className="text-teal-600 focus:ring-teal-500"
-                        disabled={loading}
-                      />
-                      <span className="text-sm font-medium text-neutral-700">Radius (Default)</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      City <span className="text-red-500">*</span>
                     </label>
-                    <label className="flex items-center gap-2 cursor-pointer bg-white px-3 py-2 rounded border border-gray-200 hover:bg-gray-50 transition-colors">
-                      <input
-                        type="radio"
-                        name="service_type_toggle"
-                        checked={formData.serviceAreaType === 'polygon'}
-                        onChange={() => setFormData(prev => ({ ...prev, serviceAreaType: 'polygon' }))}
-                        className="text-teal-600 focus:ring-teal-500"
-                        disabled={loading}
-                      />
-                      <span className="text-sm font-medium text-neutral-700">Custom Area (Draw on Map)</span>
-                    </label>
+                    <input
+                      type="text"
+                      name="city"
+                      value={formData.city}
+                      onChange={handleInputChange}
+                      placeholder="Enter city"
+                      required
+                      className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 transition-all"
+                      disabled={loading}
+                    />
                   </div>
-
-                  {formData.serviceAreaType === 'radius' ? (
-                    <div className="animate-fadeIn space-y-2">
-                      <label className="block text-sm font-medium text-gray-700">
-                        Service Radius (KM) <span className="text-red-500">*</span>
-                      </label>
-                      <select
-                        name="serviceRadiusKm"
-                        value={formData.serviceRadiusKm}
-                        onChange={handleInputChange}
-                        disabled={loading}
-                        className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 outline-none bg-white transition-all appearance-none"
-                      >
-                        <option value="1">1 km</option>
-                        <option value="2">2 km</option>
-                        <option value="5">5 km</option>
-                        <option value="10">10 km</option>
-                        <option value="20">20 km</option>
-                        <option value="50">50 km</option>
-                        <option value="100">100 km</option>
-                      </select>
-                      <p className="text-xs text-gray-500">
-                        Products will be shown to users within this radius from your store location.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="animate-fadeIn space-y-2">
-                      <label className="block text-sm font-medium text-neutral-700">
-                        Draw Service Area <span className="text-red-500">*</span>
-                        <span className="text-xs font-normal text-teal-600 block sm:inline sm:ml-1">
-                          (Use the polygon tool <span className="inline-block w-4 h-4 border border-gray-400 bg-gray-100 align-middle mx-1"></span> on the map below to draw the exact area you deliver to)
-                        </span>
-                      </label>
-
-                      <div className="h-[400px] w-full rounded-lg overflow-hidden border border-neutral-300 shadow-sm relative">
-                        {formData.latitude && formData.longitude ? (
-                          <ServiceAreaMap
-                            key={`service-map-${formData.latitude}-${formData.longitude}`} // Force re-render when location changes
-                            mode="area"
-                            initialLat={parseFloat(formData.latitude)}
-                            initialLng={parseFloat(formData.longitude)}
-                            initialPolygon={formData.serviceAreaCoordinates}
-                            onPolygonChange={(coords) => {
-                              setFormData(prev => ({
-                                ...prev,
-                                serviceAreaCoordinates: coords
-                              }));
-                            }}
-                          />
-                        ) : (
-                          <div className="flex items-center justify-center h-full bg-gray-50 text-gray-500">
-                            <p className="text-center px-4">
-                              Please set your <strong>Exact Location</strong> above first.<br />
-                              The service area map will appear here.
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                      <p className="mt-2 text-xs text-neutral-500">
-                        <strong>How to draw:</strong> Click the "Shape" icon at the top of the map. Click points on the map to outline your area. Click the first point again to close the shape.
-                      </p>
-                    </div>
-                  )}
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      Pincode <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="pincode"
+                      value={formData.pincode}
+                      onChange={handleInputChange}
+                      placeholder="6-digit pincode"
+                      required
+                      maxLength={6}
+                      className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 transition-all"
+                      disabled={loading}
+                    />
+                  </div>
                 </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    City <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="city"
-                    value={formData.city}
-                    onChange={handleInputChange}
-                    placeholder="Enter city"
-                    required
-                    className="w-full px-3 py-2.5 text-sm border border-neutral-300 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
-                    disabled={loading}
-                  />
-                </div>
-
-                {/* Hidden fields for coordinates */}
-                <input type="hidden" name="latitude" value={formData.latitude} />
-                <input type="hidden" name="longitude" value={formData.longitude} />
-
-
-
               </div>
 
-              {/* Optional Fields Section */}
-              <div className="space-y-4 pt-4 border-t">
-                <h3 className="text-sm font-semibold text-neutral-700 border-b pb-2">Optional Information</h3>
+              {/* Step 4: Optional Details */}
+              <div className="space-y-4 pt-4 border-t border-neutral-100">
+                <h3 className="text-sm font-bold text-teal-800 uppercase tracking-wider flex items-center">
+                  <span className="w-6 h-6 bg-teal-100 text-teal-700 rounded-full flex items-center justify-center mr-2 text-[10px]">4</span>
+                  Optional Details
+                </h3>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
@@ -534,46 +413,45 @@ export default function SellerSignUp() {
                       value={formData.panCard}
                       onChange={handleInputChange}
                       placeholder="PAN Card Number"
-                      className="w-full px-3 py-2.5 text-sm border border-neutral-300 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
+                      className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 transition-all"
+                      disabled={loading}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">FSSAI License</label>
+                    <input
+                      type="text"
+                      name="fssaiLicNo"
+                      value={formData.fssaiLicNo}
+                      onChange={handleInputChange}
+                      placeholder="FSSAI License Number"
+                      className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 transition-all"
                       disabled={loading}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">Tax Name</label>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">Store Banner URL</label>
                     <input
                       type="text"
-                      name="taxName"
-                      value={formData.taxName}
+                      name="storeBanner"
+                      value={formData.storeBanner}
                       onChange={handleInputChange}
-                      placeholder="Tax Name"
-                      className="w-full px-3 py-2.5 text-sm border border-neutral-300 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
+                      placeholder="Banner image URL"
+                      className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 transition-all"
                       disabled={loading}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">Tax Number</label>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">Store Logo URL</label>
                     <input
                       type="text"
-                      name="taxNumber"
-                      value={formData.taxNumber}
+                      name="logo"
+                      value={formData.logo}
                       onChange={handleInputChange}
-                      placeholder="Tax Number"
-                      className="w-full px-3 py-2.5 text-sm border border-neutral-300 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
-                      disabled={loading}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">IFSC Code</label>
-                    <input
-                      type="text"
-                      name="ifsc"
-                      value={formData.ifsc}
-                      onChange={handleInputChange}
-                      placeholder="IFSC Code"
-                      className="w-full px-3 py-2.5 text-sm border border-neutral-300 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
+                      placeholder="Logo image URL"
+                      className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 transition-all"
                       disabled={loading}
                     />
                   </div>
@@ -581,7 +459,7 @@ export default function SellerSignUp() {
               </div>
 
               {error && (
-                <div className="text-sm text-red-600 bg-red-50 p-2 rounded text-center">
+                <div className="text-sm text-red-600 bg-red-50 p-3 rounded-xl text-center border border-red-100">
                   {error}
                 </div>
               )}
@@ -591,81 +469,39 @@ export default function SellerSignUp() {
               <button
                 type="submit"
                 disabled={loading}
-                className={`w-full py-3 rounded-lg font-bold text-sm transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5 ${!loading
-                  ? 'bg-gradient-to-r from-teal-700 to-teal-900 text-white hover:from-teal-800 hover:to-teal-950'
+                className={`w-full py-4 rounded-xl font-bold text-base transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center justify-center ${!loading
+                  ? 'bg-gradient-to-r from-teal-700 to-teal-900 text-white'
                   : 'bg-neutral-300 text-neutral-500 cursor-not-allowed'
                   }`}
               >
-                {loading ? 'Creating Account...' : 'Sign Up'}
+                {loading ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-3" />
+                    Processing...
+                  </>
+                ) : (
+                  'Create Seller Account'
+                )}
               </button>
 
               {/* Login Link */}
-              <div className="text-center pt-2 border-t border-neutral-200">
-                <p className="text-sm text-neutral-600">
+              <div className="text-center pt-4 border-t border-neutral-100">
+                <p className="text-sm text-neutral-500">
                   Already have a seller account?{' '}
                   <button
                     type="button"
                     onClick={() => navigate('/seller/login')}
-                    className="text-teal-800 hover:text-teal-950 font-bold ml-1 transition-colors"
+                    className="text-teal-700 hover:text-teal-900 font-bold ml-1 transition-colors"
                   >
-                    Login
+                    Login here
                   </button>
                 </p>
               </div>
             </form>
-          ) : (
-            /* OTP Verification Form */
-            <div className="space-y-4">
-              <div className="text-center">
-                <p className="text-sm text-neutral-600 mb-2">
-                  Enter the 4-digit OTP sent to
-                </p>
-                <p className="text-sm font-semibold text-neutral-800">+91 {formData.mobile}</p>
-              </div>
-
-              <OTPInput onComplete={handleOTPComplete} disabled={loading} />
-
-              {error && (
-                <div className="text-sm text-red-600 bg-red-50 p-2 rounded text-center">
-                  {error}
-                </div>
-              )}
-
-              <div className="flex gap-2">
-                <button
-                  onClick={() => {
-                    setShowOTP(false);
-                    setError('');
-                  }}
-                  disabled={loading}
-                  className="flex-1 py-2.5 rounded-lg font-semibold text-sm bg-neutral-100 text-neutral-700 hover:bg-neutral-200 transition-colors border border-neutral-300"
-                >
-                  Back
-                </button>
-                <button
-                  onClick={async () => {
-                    setLoading(true);
-                    setError('');
-                    try {
-                      await sendOTP(formData.mobile);
-                    } catch (err: any) {
-                      setError(err.response?.data?.message || 'Failed to resend OTP.');
-                    } finally {
-                      setLoading(false);
-                    }
-                  }}
-                  disabled={loading}
-                  className="flex-1 py-2.5 rounded-lg font-semibold text-sm bg-teal-600 text-white hover:bg-teal-700 transition-colors"
-                >
-                  {loading ? 'Sending...' : 'Resend OTP'}
-                </button>
-              </div>
-            </div>
           )}
         </div>
       </div>
 
-      {/* Footer Text */}
       <p className="mt-6 text-xs text-neutral-500 text-center max-w-md">
         By continuing, you agree to Zeto Mart's Terms of Service and Privacy Policy
       </p>

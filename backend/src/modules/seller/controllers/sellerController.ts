@@ -74,11 +74,39 @@ export const updateSellerStatus = asyncHandler(
       });
     }
 
-    const seller = await Seller.findByIdAndUpdate(
-      id,
-      { status },
-      { new: true, runValidators: true }
-    ).select("-password");
+    const seller = await Seller.findById(id);
+    if (!seller) {
+      return res.status(404).json({
+        success: false,
+        message: "Seller not found",
+      });
+    }
+
+    if (status === "Approved" && seller.securityDepositStatus !== "Paid") {
+      return res.status(400).json({
+        success: false,
+        message: "Seller cannot be approved until security deposit is paid",
+      });
+    }
+
+    seller.status = status;
+    await seller.save();
+
+    // Emit real-time notification via Socket.io
+    const io = req.app.get("io");
+    if (io) {
+      io.to(`seller-${id}`).emit("seller-notification", {
+        type: "STATUS_UPDATE",
+        status: status,
+        user: seller,
+        timestamp: new Date()
+      });
+      console.log(`🔔 Emitted status update (${status}) to seller: ${id}`);
+    }
+
+    // Convert to object to remove password if necessary
+    const sellerObj = seller.toObject();
+    delete (sellerObj as any).password;
 
     if (!seller) {
       return res.status(404).json({
@@ -90,7 +118,7 @@ export const updateSellerStatus = asyncHandler(
     return res.status(200).json({
       success: true,
       message: `Seller status updated to ${status}`,
-      data: seller,
+      data: sellerObj,
     });
   }
 );

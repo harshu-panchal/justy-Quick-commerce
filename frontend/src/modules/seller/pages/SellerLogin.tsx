@@ -45,15 +45,10 @@ export default function SellerLogin() {
       if (response.success && response.data) {
         // Update auth context with seller data
         login(response.data.token, {
-          id: response.data.user.id,
+          ...response.data.user,
           name: response.data.user.sellerName,
-          email: response.data.user.email,
           phone: response.data.user.mobile,
           userType: 'Seller',
-          storeName: response.data.user.storeName,
-          status: response.data.user.status,
-          address: response.data.user.address,
-          city: response.data.user.city,
         });
         // Navigate to seller dashboard only on success
         navigate('/seller', { replace: true });

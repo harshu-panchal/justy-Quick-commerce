@@ -94,6 +94,11 @@ export const verifyOTP = asyncHandler(async (req: Request, res: Response) => {
         logo: seller.logo,
         address: seller.address,
         city: seller.city,
+        depositPaid: seller.depositPaid,
+        securityDepositStatus: seller.securityDepositStatus,
+        depositAmount: seller.depositAmount,
+        depositPaidAt: seller.depositPaidAt,
+        securityDepositPaidAt: seller.securityDepositPaidAt,
       },
     },
   });
@@ -111,15 +116,16 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
     category,
     address,
     city,
+    pincode,
     serviceableArea,
   } = req.body;
 
   // Validation (password removed - sellers don't need password during signup)
-  if (!sellerName || !mobile || !email || !storeName || !category) {
+  if (!sellerName || !mobile || !email || !storeName || !category || !pincode) {
     return res.status(400).json({
       success: false,
       message:
-        "Required fields (Name, Mobile, Email, Store Name, Category) must be provided",
+        "Required fields (Name, Mobile, Email, Store Name, Category, Pincode) must be provided",
     });
   }
 
@@ -204,15 +210,18 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
     category,
     address,
     city,
+    pincode,
     ...(serviceableArea && { serviceableArea }),
     searchLocation: req.body.searchLocation,
     latitude: req.body.latitude,
     longitude: req.body.longitude,
     location, // GeoJSON location for geospatial queries
     serviceRadiusKm, // Service radius in kilometers
-    serviceAreaGeo: req.body.serviceAreaGeo, // Custom polygon area
+    serviceAreaGeo: (req.body.serviceAreaGeo && req.body.serviceAreaGeo.coordinates && Array.isArray(req.body.serviceAreaGeo.coordinates) && req.body.serviceAreaGeo.coordinates.length > 0)
+      ? req.body.serviceAreaGeo
+      : undefined, // Custom polygon area
     status: "Pending",
-    requireProductApproval: false,
+    requireProductApproval: true,
     viewCustomerDetails: false,
     commission: 0,
     balance: 0,
@@ -236,6 +245,11 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
         status: seller.status,
         address: seller.address,
         city: seller.city,
+        depositPaid: seller.depositPaid,
+        securityDepositStatus: seller.securityDepositStatus,
+        depositAmount: seller.depositAmount,
+        depositPaidAt: seller.depositPaidAt,
+        securityDepositPaidAt: seller.securityDepositPaidAt,
       },
     },
   });
@@ -325,8 +339,15 @@ export const updateProfile = asyncHandler(
 
     // Handle serviceAreaGeo update
     if (updates.serviceAreaGeo) {
-      // It is an object, ensure it has type 'Polygon'
-      if (!updates.serviceAreaGeo.type) updates.serviceAreaGeo.type = 'Polygon';
+      // Validate coordinates before saving
+      const coords = updates.serviceAreaGeo.coordinates;
+      if (!coords || !Array.isArray(coords) || coords.length === 0 || !Array.isArray(coords[0]) || coords[0].length === 0) {
+        // If invalid, remove it from updates or unset it
+        updates.$unset = { ...updates.$unset, serviceAreaGeo: 1 };
+        delete updates.serviceAreaGeo;
+      } else {
+        if (!updates.serviceAreaGeo.type) updates.serviceAreaGeo.type = 'Polygon';
+      }
     } else if (updates.serviceAreaGeo === null) {
       // If explicitly null, user wants to remove the Polygon (switch to Radius)
       // We use $unset for this field

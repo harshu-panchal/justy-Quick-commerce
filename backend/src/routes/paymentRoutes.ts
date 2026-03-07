@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { authenticate, requireUserType } from '../middleware/auth';
 import { Request, Response } from 'express';
-import { createRazorpayOrder, capturePayment, handleWebhook } from '../services/paymentService';
+import { createRazorpayOrder, capturePayment, handleWebhook, createSellerDepositOrder, captureSellerDepositPayment } from '../services/paymentService';
 import Order from '../models/Order';
 
 const router = Router();
@@ -99,6 +99,62 @@ router.post('/verify', authenticate, requireUserType('Customer'), async (req: Re
         return res.status(500).json({
             success: false,
             message: error.message || 'Failed to verify payment',
+        });
+    }
+});
+
+/**
+ * Create Razorpay order for seller security deposit
+ */
+router.post('/seller/deposit/create-order', authenticate, requireUserType('Seller'), async (req: Request, res: Response) => {
+    try {
+        const result = await createSellerDepositOrder(req.user!.userId, 1000);
+
+        if (!result.success) {
+            return res.status(400).json(result);
+        }
+
+        return res.status(200).json(result);
+    } catch (error: any) {
+        console.error('Error creating seller deposit order:', error);
+        return res.status(500).json({
+            success: false,
+            message: error.message || 'Failed to create deposit order',
+        });
+    }
+});
+
+/**
+ * Verify seller deposit payment
+ */
+router.post('/seller/deposit/verify', authenticate, requireUserType('Seller'), async (req: Request, res: Response) => {
+    try {
+        const { razorpayOrderId, razorpayPaymentId, razorpaySignature } = req.body;
+
+        if (!razorpayOrderId || !razorpayPaymentId || !razorpaySignature) {
+            return res.status(400).json({
+                success: false,
+                message: 'Missing required payment verification parameters',
+            });
+        }
+
+        const result = await captureSellerDepositPayment(
+            req.user!.userId,
+            razorpayOrderId,
+            razorpayPaymentId,
+            razorpaySignature
+        );
+
+        if (!result.success) {
+            return res.status(400).json(result);
+        }
+
+        return res.status(200).json(result);
+    } catch (error: any) {
+        console.error('Error verifying seller deposit payment:', error);
+        return res.status(500).json({
+            success: false,
+            message: error.message || 'Failed to verify deposit payment',
         });
     }
 });

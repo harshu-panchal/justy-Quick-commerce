@@ -50,13 +50,22 @@ export default function SellerStockManagement() {
     // Helper to resolve image URL
     const resolveImageUrl = (url: string | undefined) => {
         if (!url) return '/assets/product-placeholder.jpg';
-        if (url.startsWith('http') || url.startsWith('data:') || url.startsWith('blob:')) return url;
+        if (url.startsWith('http') || url.startsWith('data:') || url.startsWith('blob:')) {
+            // If it's a localhost:5000 URL, replace it with dynamic origin
+            if (url.includes('localhost:5000')) {
+                const apiBase = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api/v1";
+                try {
+                    const origin = new URL(apiBase).origin;
+                    return url.replace('http://localhost:5000', origin);
+                } catch (e) { return url; }
+            }
+            return url;
+        }
 
         // Handle relative paths
         const apiBase = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api/v1";
         try {
-            const urlObj = new URL(apiBase);
-            const origin = urlObj.origin;
+            const origin = new URL(apiBase).origin;
             const cleanUrl = url.replace(/\\/g, '/'); // Fix windows backslashes
             return `${origin}/${cleanUrl.startsWith('/') ? cleanUrl.slice(1) : cleanUrl}`;
         } catch (e) {

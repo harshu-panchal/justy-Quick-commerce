@@ -33,6 +33,7 @@ export interface RegisterData {
   categories: string[]; // multiple categories
   address: string;
   city: string;
+  pincode: string;
   serviceableArea?: string;
   searchLocation?: string;
   latitude?: string;
@@ -42,6 +43,10 @@ export interface RegisterData {
     type: string;
     coordinates: number[][][];
   } | null;
+  fssaiLicNo?: string;
+  storeDescription?: string;
+  storeBanner?: string;
+  logo?: string;
 }
 
 export interface RegisterResponse {

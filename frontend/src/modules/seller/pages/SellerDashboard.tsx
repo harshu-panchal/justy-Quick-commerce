@@ -5,12 +5,10 @@ import OrderChart from '../components/OrderChart';
 import AlertCard from '../components/AlertCard';
 import { getSellerDashboardStats, DashboardStats, NewOrder } from '../../../services/api/dashboardService';
 import { getSellerProfile, toggleShopStatus } from '../../../services/api/auth/sellerAuthService';
-import SellerWalletCard from '../../../components/SellerWalletCard';
-import ProductLimitIndicator from '../../../components/ProductLimitIndicator';
-import { seedSellerProducts } from '../../../utils/seedSellerProducts';
 
 export default function SellerDashboard() {
   const navigate = useNavigate();
+  const { user, updateUser } = useAuth();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [newOrders, setNewOrders] = useState<NewOrder[]>([]);
   const [loading, setLoading] = useState(true);
@@ -46,6 +44,28 @@ export default function SellerDashboard() {
           const shopStatus = profileResponse.data.isShopOpen ?? true;
           console.log('Initial shop status from profile:', shopStatus, 'Raw value:', profileResponse.data.isShopOpen);
           setIsShopOpen(shopStatus);
+
+          // Sync deposit fields from profile into auth context so SellerAccessGuard stays accurate
+          if (user) {
+            const profileData = profileResponse.data;
+            const needsSync =
+              user.depositPaid !== profileData.depositPaid ||
+              user.securityDepositStatus !== profileData.securityDepositStatus;
+
+            if (needsSync) {
+              updateUser({
+                ...user,
+                depositPaid: profileData.depositPaid,
+                securityDepositStatus: profileData.securityDepositStatus,
+                depositAmount: profileData.depositAmount,
+                depositPaidAt: profileData.depositPaidAt,
+                securityDepositPaidAt: profileData.securityDepositPaidAt,
+                securityDeposit: profileData.securityDeposit,
+                status: profileData.status,
+                userType: 'Seller',
+              });
+            }
+          }
         }
       } catch (err: any) {
         setError(err.response?.data?.message || 'Error loading dashboard data');
@@ -259,6 +279,33 @@ export default function SellerDashboard() {
 
   return (
     <div className="space-y-4 sm:space-y-6">
+      {/* Security Deposit Warning Banner */}
+      {(user?.securityDepositStatus !== 'Paid' && !user?.depositPaid) && (
+        <div className="bg-gradient-to-r from-orange-500 to-red-600 rounded-lg shadow-md overflow-hidden animate-pulse-slow">
+          <div className="px-4 py-3 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="bg-white/20 p-2 rounded-full">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                  <line x1="12" y1="9" x2="12" y2="13" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+              </div>
+              <div className="text-white">
+                <h3 className="text-sm sm:text-base font-bold">Action Required: Security Deposit Pending</h3>
+                <p className="text-xs text-orange-50 opacity-90">Please pay the ₹1000 security deposit to start adding products and receiving orders.</p>
+              </div>
+            </div>
+            <button
+              onClick={() => navigate('/seller/deposit-payment')}
+              className="w-full sm:w-auto px-6 py-2 bg-white text-orange-600 font-bold text-sm rounded-lg hover:bg-orange-50 transition-colors shadow-sm"
+            >
+              Pay Now
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Header with Shop Status Toggle */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 rounded-lg shadow-sm border border-neutral-200 gap-4 sm:gap-0">
         <div>
@@ -310,12 +357,6 @@ export default function SellerDashboard() {
         <DashboardCard icon={completedOrdersIcon} title="Completed Orders" value={stats.completedOrders} accentColor="#16a34a" />
         <DashboardCard icon={pendingOrdersIcon} title="Pending Orders" value={stats.pendingOrders} accentColor="#a855f7" />
         <DashboardCard icon={cancelledOrdersIcon} title="Cancelled Orders" value={stats.cancelledOrders} accentColor="#ef4444" />
-      </div>
-
-      {/* Wallet Overview & Product Limit */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <SellerWalletCard walletBalance={1000} totalPenalties={0} />
-        <ProductLimitIndicator currentCount={stats.totalProduct || 45} />
       </div>
 
       {/* Charts Row */}

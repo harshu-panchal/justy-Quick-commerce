@@ -39,6 +39,9 @@ interface Seller {
     addressProof?: string;
     requireProductApproval?: boolean;
     viewCustomerDetails?: boolean;
+    securityDepositStatus?: 'Pending' | 'Paid' | 'Refunded';
+    isPincodeActive: boolean;
+    pincode?: string;
 }
 
 // Helper function to convert backend seller to frontend format
@@ -79,6 +82,9 @@ const mapSellerToFrontend = (seller: SellerType): Seller => {
         addressProof: seller.addressProof,
         requireProductApproval: seller.requireProductApproval,
         viewCustomerDetails: seller.viewCustomerDetails,
+        securityDepositStatus: seller.securityDepositStatus || 'Pending',
+        isPincodeActive: seller.isPincodeActive ?? true,
+        pincode: seller.pincode,
     };
 };
 
@@ -516,6 +522,9 @@ export default function AdminManageSellerList() {
                                             Need Approval?
                                         </th>
                                         <th className="p-4">
+                                            Deposit
+                                        </th>
+                                        <th className="p-4">
                                             Action
                                         </th>
                                     </tr>
@@ -573,9 +582,19 @@ export default function AdminManageSellerList() {
                                             <td className="p-4 align-middle">
                                                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${seller.needApproval
                                                     ? 'bg-pink-100 text-pink-800'
-                                                    : 'bg-pink-100 text-pink-800'
+                                                    : 'bg-green-100 text-green-800'
                                                     }`}>
                                                     {seller.needApproval ? 'Yes' : 'No'}
+                                                </span>
+                                            </td>
+                                            <td className="p-4 align-middle">
+                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${seller.securityDepositStatus === 'Paid'
+                                                    ? 'bg-green-100 text-green-800'
+                                                    : seller.securityDepositStatus === 'Pending'
+                                                        ? 'bg-yellow-100 text-yellow-800'
+                                                        : 'bg-red-100 text-red-800'
+                                                    }`}>
+                                                    {seller.securityDepositStatus || 'Pending'}
                                                 </span>
                                             </td>
                                             <td className="p-4 align-middle">
@@ -792,8 +811,8 @@ export default function AdminManageSellerList() {
                                             Status: {editingSeller.status}
                                         </span>
                                     </div>
-                                    {editingSeller.status === 'Pending' && (
-                                        <div className="flex gap-2">
+                                    <div className="flex gap-2">
+                                        {editingSeller.status !== 'Approved' && (
                                             <button
                                                 onClick={() => handleApprove(editingSeller._id)}
                                                 className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded text-sm font-medium transition-colors flex items-center gap-2"
@@ -803,6 +822,8 @@ export default function AdminManageSellerList() {
                                                 </svg>
                                                 Approve
                                             </button>
+                                        )}
+                                        {editingSeller.status !== 'Rejected' && (
                                             <button
                                                 onClick={() => handleReject(editingSeller._id)}
                                                 className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded text-sm font-medium transition-colors flex items-center gap-2"
@@ -813,8 +834,8 @@ export default function AdminManageSellerList() {
                                                 </svg>
                                                 Reject
                                             </button>
-                                        </div>
-                                    )}
+                                        )}
+                                    </div>
                                 </div>
 
                                 {/* Basic Information */}
@@ -1022,6 +1043,35 @@ export default function AdminManageSellerList() {
                                         <div>
                                             <label className="text-xs text-neutral-500">Categories Count</label>
                                             <p className="text-sm font-medium text-neutral-900">{editingSeller.categories.length} categories</p>
+                                        </div>
+                                        <div className="md:col-span-2 mt-2 pt-2 border-t border-neutral-100 flex items-center justify-between">
+                                            <div>
+                                                <h5 className="text-sm font-semibold text-neutral-800">Pincode Status</h5>
+                                                <p className="text-xs text-neutral-500">Enable/Disable seller for quick delivery in this pincode ({editingSeller.pincode})</p>
+                                            </div>
+                                            <button
+                                                onClick={async () => {
+                                                    try {
+                                                        const newVal = !editingSeller.isPincodeActive;
+                                                        const response = await updateSeller(editingSeller._id, { isPincodeActive: newVal });
+                                                        if (response.success) {
+                                                            setEditingSeller({ ...editingSeller, isPincodeActive: newVal });
+                                                            setSellers(sellers.map(s => s._id === editingSeller._id ? { ...s, isPincodeActive: newVal } : s));
+                                                            setSuccessMessage(`Pincode status ${newVal ? 'enabled' : 'disabled'} successfully`);
+                                                            setTimeout(() => setSuccessMessage(''), 3000);
+                                                        }
+                                                    } catch (error) {
+                                                        setError('Failed to update pincode status');
+                                                        setTimeout(() => setError(''), 3000);
+                                                    }
+                                                }}
+                                                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${editingSeller.isPincodeActive
+                                                    ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                                                    : 'bg-red-100 text-red-700 hover:bg-red-200'
+                                                    }`}
+                                            >
+                                                {editingSeller.isPincodeActive ? 'ACTIVE' : 'INACTIVE'}
+                                            </button>
                                         </div>
                                     </div>
                                 </div>

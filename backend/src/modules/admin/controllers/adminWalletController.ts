@@ -324,6 +324,62 @@ export const getWalletTransactions = asyncHandler(
 );
 
 /**
+ * Get Specific Seller Wallet Transactions
+ */
+export const getSellerTransactions = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { page = 1, limit = 50 } = req.query;
+
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: "Seller ID is required",
+      });
+    }
+
+    const skip = (Number(page) - 1) * Number(limit);
+
+    const transactions = await WalletTransaction.find({
+      userId: id,
+      userType: "SELLER",
+    })
+      .populate("relatedOrder", "orderNumber")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(Number(limit));
+
+    const total = await WalletTransaction.countDocuments({
+      userId: id,
+      userType: "SELLER",
+    });
+
+    // Format for AdminSellerTransaction.tsx expectations
+    const formattedTransactions = transactions.map((t: any) => ({
+      id: t._id,
+      amount: t.amount,
+      transactionType: t.type.toLowerCase(), // 'credit' or 'debit'
+      date: t.createdAt,
+      type: t.description,
+      status: t.status,
+      description: t.description,
+      orderId: t.relatedOrder?.orderNumber,
+    }));
+
+    return res.status(200).json({
+      success: true,
+      data: formattedTransactions,
+      pagination: {
+        page: Number(page),
+        limit: Number(limit),
+        total,
+        pages: Math.ceil(total / Number(limit)),
+      },
+    });
+  },
+);
+
+/**
  * Process Withdrawal Wrapper (to match frontend service expectation)
  */
 export const processWithdrawalWrapper = asyncHandler(

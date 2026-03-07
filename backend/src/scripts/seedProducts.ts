@@ -102,9 +102,7 @@ const productsData = [
     { id: 'tata-moong', name: 'Tata Sampann Yellow Moong Dal', pack: '500 g', price: 85, mrp: 95, imageUrl: '/assets/product-tata-moong.jpg', categoryId: 'atta-rice', tags: ['under-99'] },
     { id: 'fortune-poha', name: 'Fortune Indori Thick Poha', pack: '500 g', price: 45, mrp: 50, imageUrl: '/assets/product-fortune-poha.jpg', categoryId: 'atta-rice', tags: ['under-99'] },
     { id: 'rajdhani-besan', name: 'Rajdhani Besan', pack: '1 kg', price: 95, mrp: 105, imageUrl: '/assets/product-rajdhani-besan.jpg', categoryId: 'atta-rice', tags: ['under-99'] },
-    { id: 'tata-besan', name: 'Tata Sampann Besan', pack: '500 g', price: 65, mrp: 70, imageUrl: '/assets/product-tata-besan.jpg', categoryId: 'atta-rice', tags: ['under-99'] },
-    { id: 'toor-dal', name: 'Toor Dal', pack: '1 kg', price: 145, mrp: 160, imageUrl: '/assets/product-tata-moong.jpg', categoryId: 'atta-rice', tags: ['bestseller'] },
-    { id: 'chana-dal', name: 'Chana Dal', pack: '1 kg', price: 125, mrp: 140, imageUrl: '/assets/product-tata-moong.jpg', categoryId: 'atta-rice', tags: ['bestseller'] },
+
 
     // Cold Drinks & Juices
     { id: 'coke', name: 'Coca-Cola', pack: '750 ml', price: 45, mrp: 50, imageUrl: '/assets/product-lays-cream-onion.jpg', categoryId: 'cold-drinks', tags: ['bestseller'] },
@@ -117,10 +115,7 @@ const productsData = [
     // Masala & Oil
     { id: 'fortune-oil', name: 'Fortune Soya Oil', pack: '1 L', price: 145, mrp: 160, imageUrl: '/assets/product-rajdhani-besan.jpg', categoryId: 'masala-oil', tags: ['bestseller'] },
     { id: 'sunflower-oil', name: 'Sunflower Oil', pack: '1 L', price: 135, mrp: 150, imageUrl: '/assets/product-rajdhani-besan.jpg', categoryId: 'masala-oil', tags: ['bestseller'] },
-    { id: 'mustard-oil', name: 'Mustard Oil', pack: '1 L', price: 155, mrp: 170, imageUrl: '/assets/product-rajdhani-besan.jpg', categoryId: 'masala-oil', tags: ['bestseller'] },
-    { id: 'mdh-garam-masala', name: 'MDH Garam Masala', pack: '100 g', price: 45, mrp: 50, imageUrl: '/assets/product-rajdhani-besan.jpg', categoryId: 'masala-oil', tags: ['under-99'] },
-    { id: 'everest-chicken-masala', name: 'Everest Chicken Masala', pack: '100 g', price: 55, mrp: 60, imageUrl: '/assets/product-rajdhani-besan.jpg', categoryId: 'masala-oil', tags: ['under-99'] },
-    { id: 'tata-salt', name: 'Tata Salt', pack: '1 kg', price: 25, mrp: 28, imageUrl: '/assets/product-rajdhani-besan.jpg', categoryId: 'masala-oil', tags: ['under-99'] },
+
 
     // Household Essentials (Cleaning)
     { id: 'surf-excel', name: 'Surf Excel Detergent', pack: '1 kg', price: 185, mrp: 200, imageUrl: '/assets/product-haldiram-sev.jpg', categoryId: 'cleaning', tags: ['bestseller'] },

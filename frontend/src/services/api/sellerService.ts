@@ -38,6 +38,9 @@ export interface Seller {
   addressProof?: string;
   requireProductApproval?: boolean;
   viewCustomerDetails?: boolean;
+  securityDepositStatus?: "Pending" | "Paid" | "Refunded";
+  isPincodeActive?: boolean;
+  pincode?: string;
   createdAt?: string;
   updatedAt?: string;
 }

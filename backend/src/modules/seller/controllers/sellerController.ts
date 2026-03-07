@@ -82,13 +82,6 @@ export const updateSellerStatus = asyncHandler(
       });
     }
 
-    if (status === "Approved" && seller.securityDepositStatus !== "Paid") {
-      return res.status(400).json({
-        success: false,
-        message: "Seller cannot be approved until security deposit is paid",
-      });
-    }
-
     seller.status = status;
     await seller.save();
 

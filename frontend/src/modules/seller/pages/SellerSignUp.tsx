@@ -5,7 +5,50 @@ import GoogleMapsAutocomplete from '../../../components/GoogleMapsAutocomplete';
 import { useAuth } from '../../../context/AuthContext';
 import LocationPickerMap from '../../../components/LocationPickerMap';
 import ServiceAreaMap from '../../../components/ServiceAreaMap';
-import { useEffect } from 'react';
+import { getCategories, Category } from '../../../services/api/categoryService';
+import { HOME_CATEGORIES } from '../../../services/api/headerCategoryService';
+
+const StepIndicator = ({ currentStep }: { currentStep: number }) => {
+  const steps = [
+    { id: 1, label: 'Register Store' },
+    { id: 2, label: 'Admin Approval' },
+    { id: 3, label: 'Pay Deposit' },
+    { id: 4, label: 'Start Selling' }
+  ];
+
+  return (
+    <div className="mb-8 px-4">
+      <div className="flex items-center justify-between max-w-sm mx-auto relative">
+        <div className="absolute top-1/2 left-0 w-full h-0.5 bg-neutral-200 -translate-y-1/2 z-0" />
+        {steps.map((step, idx) => {
+          const isActive = step.id === currentStep;
+          const isCompleted = step.id < currentStep;
+          return (
+            <div key={step.id} className="flex flex-col items-center relative z-10 w-1/4">
+              <div
+                className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold border-2 transition-all duration-300 ${isActive
+                  ? 'bg-teal-600 border-teal-600 text-white scale-110'
+                  : isCompleted
+                    ? 'bg-teal-500 border-teal-500 text-white'
+                    : 'bg-white border-neutral-300 text-neutral-400'
+                  }`}
+              >
+                {isCompleted ? (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                    <path d="M20 6L9 17L4 12" />
+                  </svg>
+                ) : step.id}
+              </div>
+              <span className={`text-[9px] mt-1.5 font-semibold text-center leading-tight whitespace-nowrap transition-colors duration-300 ${isActive ? 'text-teal-700' : 'text-neutral-400'}`}>
+                {step.label}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
 
 export default function SellerSignUp() {
   const navigate = useNavigate();
@@ -17,6 +60,7 @@ export default function SellerSignUp() {
     storeName: '',
     category: '',
     categories: [] as string[],
+    pincode: '',
     address: '',
     city: '',
     panCard: '',
@@ -41,6 +85,42 @@ export default function SellerSignUp() {
   const [loading, setLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState('');
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  useEffect(() => {
+    // Sync with Home Page categories instead of fetching all from DB
+    const syncCategories = () => {
+      const mappedCategories = HOME_CATEGORIES.map(cat => ({
+        _id: cat._id,
+        name: cat.name,
+        isBestseller: false,
+        hasWarning: false
+      })) as Category[];
+      setCategories(mappedCategories);
+    };
+    syncCategories();
+  }, []);
+
+  const toggleCategory = (name: string) => {
+    setFormData(prev => {
+      const isSelected = prev.categories.includes(name);
+      if (isSelected) {
+        return {
+          ...prev,
+          categories: prev.categories.filter(c => c !== name),
+          // Also clear the main category if it was this one
+          category: prev.category === name ? (prev.categories.length > 1 ? prev.categories.filter(c => c !== name)[0] : '') : prev.category
+        };
+      } else {
+        return {
+          ...prev,
+          categories: [...prev.categories, name],
+          // If no main category is selected, use this one
+          category: prev.category ? prev.category : name
+        };
+      }
+    });
+  };
 
 
 

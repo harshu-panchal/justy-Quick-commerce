@@ -7,6 +7,7 @@ export interface IDeliveryAssignment extends Document {
   // Assignment Info
   assignedAt: Date;
   assignedBy: mongoose.Types.ObjectId;
+  assignedByModel: "Admin" | "Delivery";
 
   // Status
   status:
@@ -53,8 +54,14 @@ const DeliveryAssignmentSchema = new Schema<IDeliveryAssignment>(
     },
     assignedBy: {
       type: Schema.Types.ObjectId,
-      ref: "Admin",
+      refPath: "assignedByModel",
       required: [true, "Assigned by is required"],
+    },
+    assignedByModel: {
+      type: String,
+      required: true,
+      enum: ["Admin", "Delivery"],
+      default: "Admin",
     },
 
     // Status

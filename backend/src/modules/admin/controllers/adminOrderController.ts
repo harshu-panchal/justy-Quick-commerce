@@ -248,7 +248,8 @@ export const assignDeliveryBoy = asyncHandler(
         order: id,
         deliveryBoy: deliveryBoyId,
         assignedAt: new Date(),
-        assignedBy: req.user?.userId,
+        assignedBy: req.user?.userId as any,
+        assignedByModel: "Admin",
         status: "Assigned",
       },
       { upsert: true, new: true }

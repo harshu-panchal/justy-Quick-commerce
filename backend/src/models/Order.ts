@@ -100,6 +100,10 @@ export interface IOrder extends Document {
   cancelledAt?: Date;
   cancelledBy?: mongoose.Types.ObjectId;
 
+  // Quick Commerce
+  deliveryType: "instant" | "scheduled";
+  sellerPincode?: string;
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -366,6 +370,17 @@ const OrderSchema = new Schema<IOrder>(
     cancelledBy: {
       type: Schema.Types.ObjectId,
       ref: "Admin",
+    },
+
+    // Quick Commerce
+    deliveryType: {
+      type: String,
+      enum: ["instant", "scheduled"],
+      default: "scheduled",
+    },
+    sellerPincode: {
+      type: String,
+      trim: true,
     },
   },
   {

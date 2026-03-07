@@ -24,6 +24,7 @@ import customerCategoryRoutes from "./customerCategoryRoutes";
 import customerCouponRoutes from "./customerCouponRoutes";
 import customerAddressRoutes from "./customerAddressRoutes";
 import customerHomeRoutes from "./customerHomeRoutes";
+import customerQuickDeliveryRoutes from "./customerQuickDeliveryRoutes";
 import customerCartRoutes from "./customerCartRoutes";
 import wishlistRoutes from "./wishlistRoutes";
 import productReviewRoutes from "./productReviewRoutes";
@@ -106,6 +107,7 @@ router.patch("/customer/orders/:id/notes", authenticate, requireUserType("Custom
 router.use("/customer/coupons", customerCouponRoutes);
 router.use("/customer/addresses", customerAddressRoutes);
 router.use("/customer/home", customerHomeRoutes);
+router.use("/customer/quick-delivery", customerQuickDeliveryRoutes);
 router.use("/customer/cart", customerCartRoutes);
 router.use("/customer/wishlist", wishlistRoutes);
 router.use("/customer/reviews", productReviewRoutes);

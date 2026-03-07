@@ -5,6 +5,8 @@ import OrderChart from '../components/OrderChart';
 import AlertCard from '../components/AlertCard';
 import { getSellerDashboardStats, DashboardStats, NewOrder } from '../../../services/api/dashboardService';
 import { getSellerProfile, toggleShopStatus } from '../../../services/api/auth/sellerAuthService';
+import { useAuth } from '../../../context/AuthContext';
+import { seedSellerProducts } from '../../../utils/seedSellerProducts';
 
 export default function SellerDashboard() {
   const navigate = useNavigate();
@@ -346,6 +348,50 @@ export default function SellerDashboard() {
           </div>
         </div>
       )}
+
+      {/* Deposit Info Section */}
+      <div className="grid grid-cols-1 md:grid-cols-1 gap-4 mb-6">
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-neutral-200">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-teal-600">
+                <rect x="2" y="5" width="20" height="14" rx="2" ry="2" />
+                <line x1="2" y1="10" x2="22" y2="10" />
+              </svg>
+              Deposit Info
+            </h2>
+            <span className={`px-3 py-1 rounded-full text-xs font-bold ${user?.depositPaid ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
+              {user?.depositPaid ? 'Paid' : 'Pending'}
+            </span>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div>
+              <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Amount Paid</p>
+              <p className="text-lg font-bold text-gray-900">₹{user?.depositAmount || user?.securityDeposit || 0}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Payment Date</p>
+              <p className="text-sm font-medium text-gray-900">
+                {(user?.depositPaidAt || user?.securityDepositPaidAt)
+                  ? new Date((user?.depositPaidAt || user?.securityDepositPaidAt)!).toLocaleDateString('en-IN', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric'
+                  })
+                  : 'N/A'}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Status</p>
+              <p className="text-sm font-medium text-gray-900">{user?.securityDepositStatus || 'Pending'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Type</p>
+              <p className="text-sm font-medium text-gray-900">Refundable Security Deposit</p>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">

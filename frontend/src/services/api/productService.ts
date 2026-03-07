@@ -225,6 +225,24 @@ export const bulkUpdateStock = async (
  * Delete product
  */
 export const deleteProduct = async (id: string): Promise<ApiResponse<void>> => {
+  // Check if it's a mock product in localStorage
+  const mockProducts = JSON.parse(localStorage.getItem("products") || "[]");
+  const mockIndex = mockProducts.findIndex((p: any) => (p._id || p.id) === id);
+
+  if (mockIndex !== -1) {
+    // Remove from localStorage
+    mockProducts.splice(mockIndex, 1);
+    localStorage.setItem("products", JSON.stringify(mockProducts));
+
+    // Return mock success response
+    return {
+      success: true,
+      message: "Product deleted successfully",
+      data: undefined as any
+    };
+  }
+
+  // Otherwise, call the backend API
   const response = await api.delete<ApiResponse<void>>(`/products/${id}`);
   return response.data;
 };

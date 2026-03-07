@@ -6,6 +6,7 @@ import PromoStrip from "./components/PromoStrip";
 import CategoryTileSection from "./components/CategoryTileSection";
 import FeaturedThisWeek from "./components/FeaturedThisWeek";
 import ProductCard from "./components/ProductCard";
+import QuickDeliverySection from "./components/QuickDeliverySection";
 import { getHomeContent } from "../../services/api/customerHomeService";
 import { getHeaderCategoriesPublic } from "../../services/api/headerCategoryService";
 import { useLocation } from "../../hooks/useLocation";
@@ -208,6 +209,9 @@ export default function Home() {
       <div className="w-full relative z-10 mt-2">
         <HomeHeroCarousel />
       </div>
+
+      {/* Quick Delivery Section — hidden for universal categories (electronics, beauty, fashion) */}
+      <QuickDeliverySection activeTab={activeTab} />
 
       {isCategoryUnavailable ? (
         <ComingSoon />

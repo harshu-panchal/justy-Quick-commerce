@@ -428,8 +428,10 @@ SellerSchema.methods.comparePassword = async function (
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-// Create geospatial index on location field for efficient queries
+// Create geospatial index on location// Indexes for faster queries
 SellerSchema.index({ location: '2dsphere' });
+SellerSchema.index({ pincode: 1, status: 1, isShopOpen: 1, isPincodeActive: 1 });
+SellerSchema.index({ mobile: 1 }, { unique: true });
 SellerSchema.index({ pincode: 1, status: 1 });
 SellerSchema.index({ status: 1 }); // Compound index for status + location queries
 

@@ -427,8 +427,79 @@ export const getDeliveryBoyCashCollections = asyncHandler(
         page: parseInt(page as string),
         limit: parseInt(limit as string),
         total,
-        pages: Math.ceil(total / parseInt(limit as string)),
       },
     });
   }
 );
+
+/**
+ * Manually assign a delivery partner to a scheduled order
+ */
+export const assignOrderManually = asyncHandler(async (req: Request, res: Response) => {
+  const { orderId, deliveryId } = req.body;
+
+  if (!orderId || !deliveryId) {
+    return res.status(400).json({ success: false, message: "Order ID and Delivery ID are required" });
+  }
+
+  const { default: Order } = await import("../../../models/Order");
+
+  const order = await Order.findById(orderId);
+  if (!order) {
+    return res.status(404).json({ success: false, message: "Order not found" });
+  }
+
+  // Check if already assigned
+  if (order.deliveryBoy) {
+    return res.status(400).json({ success: false, message: "Order already assigned to a partner" });
+  }
+
+  const partner = await Delivery.findById(deliveryId);
+  if (!partner) {
+    return res.status(404).json({ success: false, message: "Delivery partner not found" });
+  }
+
+  // Create assignment
+  const assignment = await DeliveryAssignment.create({
+    order: orderId,
+    deliveryBoy: deliveryId,
+    status: "Assigned",
+    assignedAt: new Date(),
+    assignedBy: req.user?.userId, // Admin ID
+    assignedByModel: "Admin"
+  });
+
+  // Update order
+  order.deliveryBoy = deliveryId;
+  order.deliveryBoyStatus = "Assigned";
+  order.assignedAt = new Date();
+  order.status = "Accepted"; // Move to Accepted once assigned
+  await order.save();
+
+  // Notify via socket
+  const io = req.app.get("io");
+  if (io) {
+    // Notify partner
+    io.to(`delivery-${deliveryId}`).emit("new_delivery_request", {
+      orderId: order._id,
+      orderNumber: order.orderNumber,
+      deliveryType: order.deliveryType
+    });
+
+    // Notify customer
+    io.to(`order-${order._id}`).emit("delivery_partner_assigned", {
+      orderId: order._id,
+      partner: {
+        name: partner.name,
+        phone: partner.mobile,
+        vehicleNumber: partner.vehicleNumber
+      }
+    });
+  }
+
+  return res.status(200).json({
+    success: true,
+    message: "Order assigned successfully",
+    data: assignment
+  });
+});

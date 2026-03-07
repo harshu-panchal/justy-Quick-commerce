@@ -31,7 +31,7 @@ export const errorHandler = (
 
   // Mongoose bad ObjectId
   if (err.name === 'CastError') {
-    statusCode = 400;
+    statusCode = 404;
     message = 'Resource not found';
   }
 

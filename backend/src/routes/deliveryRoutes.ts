@@ -6,6 +6,7 @@ import { getProfile } from "../modules/delivery/controllers/deliveryAuthControll
 
 import * as deliveryProfileController from "../modules/delivery/controllers/deliveryProfileController";
 import * as deliveryNotificationController from "../modules/delivery/controllers/deliveryNotificationController";
+import * as deliveryQuickCommerceController from "../modules/delivery/controllers/deliveryQuickCommerceController";
 
 const router = Router();
 
@@ -40,6 +41,12 @@ router.post("/orders/:id/verify-delivery-otp", deliveryOrderController.verifyDel
 router.post("/orders/:id/check-seller-proximity", deliveryOrderController.checkSellerProximity);
 router.post("/orders/:id/confirm-seller-pickup", deliveryOrderController.confirmSellerPickup);
 router.post("/orders/:id/check-customer-proximity", deliveryOrderController.checkCustomerProximity);
+
+// Quick Commerce (Instant Delivery)
+router.get("/available-requests", deliveryQuickCommerceController.getAvailableRequests);
+router.post("/requests/:orderId/accept", deliveryQuickCommerceController.acceptRequest);
+router.get("/active-assignments", deliveryQuickCommerceController.getActiveAssignments);
+router.patch("/assignments/:assignmentId/status", deliveryQuickCommerceController.updateAssignmentStatus);
 
 // Earnings
 router.get("/earnings", deliveryEarningController.getEarningsHistory);

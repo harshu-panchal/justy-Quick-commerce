@@ -152,6 +152,7 @@ router.get("/orders/status/:status", orderController.getOrdersByStatus);
 router.get("/orders/:id", orderController.getOrderById);
 router.patch("/orders/:id/status", orderController.updateOrderStatus);
 router.patch("/orders/:id/assign-delivery", orderController.assignDeliveryBoy);
+router.post("/orders/:id/assign", deliveryController.assignOrderManually);
 router.get("/orders/export/csv", orderController.exportOrders);
 
 // ==================== Return Request Routes ====================
@@ -242,6 +243,7 @@ router.patch(
 router.get("/financial/dashboard", walletController.getFinancialDashboard);
 router.get("/wallet/earnings", walletController.getAdminEarnings);
 router.get("/wallet/transactions", walletController.getWalletTransactions);
+router.get("/wallet/seller/:id", walletController.getSellerTransactions);
 router.get("/wallet/withdrawals", withdrawalController.getAllWithdrawals);
 router.post("/wallet/withdrawal/process", walletController.processWithdrawalWrapper);
 

@@ -1,8 +1,10 @@
 import mongoose, { Document, Schema } from "mongoose";
 
 export interface IPayment extends Document {
-  order: mongoose.Types.ObjectId;
-  customer: mongoose.Types.ObjectId;
+  order?: mongoose.Types.ObjectId;
+  customer?: mongoose.Types.ObjectId;
+  seller?: mongoose.Types.ObjectId;
+  paymentType: 'Order' | 'SecurityDeposit' | 'WalletTopup';
 
   // Payment Info
   paymentMethod: string;
@@ -56,12 +58,23 @@ const PaymentSchema = new Schema<IPayment>(
     order: {
       type: Schema.Types.ObjectId,
       ref: "Order",
-      required: [true, "Order is required"],
+      required: false,
     },
     customer: {
       type: Schema.Types.ObjectId,
       ref: "Customer",
-      required: [true, "Customer is required"],
+      required: false,
+    },
+    seller: {
+      type: Schema.Types.ObjectId,
+      ref: "Seller",
+      required: false,
+    },
+    paymentType: {
+      type: String,
+      enum: ['Order', 'SecurityDeposit', 'WalletTopup'],
+      default: 'Order',
+      required: true,
     },
 
     // Payment Info

@@ -75,6 +75,9 @@ const DeliverySignUp = lazy(() => import("./modules/delivery/pages/DeliverySignU
 // Lazy load seller routes
 const SellerLayout = lazy(() => import("./modules/seller/components/SellerLayout"));
 const SellerDashboard = lazy(() => import("./modules/seller/pages/SellerDashboard"));
+const SellerVerificationPending = lazy(() => import("./modules/seller/pages/SellerVerificationPending"));
+const SellerDepositPayment = lazy(() => import("./modules/seller/pages/SellerDepositPayment"));
+const SellerAccessGuard = lazy(() => import("./modules/seller/components/SellerAccessGuard"));
 const SellerOrders = lazy(() => import("./modules/seller/pages/SellerOrders"));
 const SellerOrderDetail = lazy(() => import("./modules/seller/pages/SellerOrderDetail"));
 const SellerCategory = lazy(() => import("./modules/seller/pages/SellerCategory"));
@@ -187,7 +190,7 @@ function App() {
                           <Route
                             path="/seller/login"
                             element={
-                              <PublicRoute>
+                              <PublicRoute userType="Seller">
                                 <Suspense fallback={<IconLoader forceShow />}>
                                   <SellerLogin />
                                 </Suspense>
@@ -197,7 +200,7 @@ function App() {
                           <Route
                             path="/seller/signup"
                             element={
-                              <PublicRoute>
+                              <PublicRoute userType="Seller">
                                 <Suspense fallback={<IconLoader forceShow />}>
                                   <SellerSignUp />
                                 </Suspense>
@@ -271,25 +274,29 @@ function App() {
                             element={
                               <ProtectedRoute requiredUserType="Seller" redirectTo="/seller/login">
                                 <Suspense fallback={<IconLoader forceShow />}>
-                                  <SellerLayout>
-                                    <Routes>
-                                      <Route path="" element={<SellerDashboard />} />
-                                      <Route path="orders" element={<SellerOrders />} />
-                                      <Route path="orders/:id" element={<SellerOrderDetail />} />
-                                      <Route path="category" element={<SellerCategory />} />
-                                      <Route path="subcategory" element={<SellerSubCategory />} />
-                                      <Route path="product/add" element={<SellerAddProduct />} />
-                                      <Route path="product/edit/:id" element={<SellerAddProduct />} />
-                                      <Route path="product/taxes" element={<SellerTaxes />} />
-                                      <Route path="product/list" element={<SellerProductList />} />
-                                      <Route path="product/stock" element={<SellerStockManagement />} />
-                                      <Route path="return" element={<SellerReturnRequest />} />
-                                      <Route path="return-order" element={<SellerReturnRequest />} />
-                                      <Route path="wallet" element={<SellerWallet />} />
-                                      <Route path="reports/sales" element={<SellerSalesReport />} />
-                                      <Route path="account-settings" element={<SellerAccountSettings />} />
-                                    </Routes>
-                                  </SellerLayout>
+                                  <SellerAccessGuard>
+                                    <SellerLayout>
+                                      <Routes>
+                                        <Route path="" element={<SellerDashboard />} />
+                                        <Route path="verification-pending" element={<SellerVerificationPending />} />
+                                        <Route path="deposit-payment" element={<SellerDepositPayment />} />
+                                        <Route path="orders" element={<SellerOrders />} />
+                                        <Route path="orders/:id" element={<SellerOrderDetail />} />
+                                        <Route path="category" element={<SellerCategory />} />
+                                        <Route path="subcategory" element={<SellerSubCategory />} />
+                                        <Route path="product/add" element={<SellerAddProduct />} />
+                                        <Route path="product/edit/:id" element={<SellerAddProduct />} />
+                                        <Route path="product/taxes" element={<SellerTaxes />} />
+                                        <Route path="product/list" element={<SellerProductList />} />
+                                        <Route path="product/stock" element={<SellerStockManagement />} />
+                                        <Route path="return" element={<SellerReturnRequest />} />
+                                        <Route path="return-order" element={<SellerReturnRequest />} />
+                                        <Route path="wallet" element={<SellerWallet />} />
+                                        <Route path="reports/sales" element={<SellerSalesReport />} />
+                                        <Route path="account-settings" element={<SellerAccountSettings />} />
+                                      </Routes>
+                                    </SellerLayout>
+                                  </SellerAccessGuard>
                                 </Suspense>
                               </ProtectedRoute>
                             }

@@ -228,7 +228,7 @@ const ProductSchema = new Schema<IProduct>(
     status: {
       type: String,
       enum: ["Active", "Inactive", "Pending", "Rejected"],
-      default: "Active",
+      default: "Pending",
     },
 
     // Product Details
@@ -302,7 +302,7 @@ const ProductSchema = new Schema<IProduct>(
     // Approval (removed - all products are auto-published)
     requiresApproval: {
       type: Boolean,
-      default: false,
+      default: true,
     },
     approvedBy: {
       type: Schema.Types.ObjectId,

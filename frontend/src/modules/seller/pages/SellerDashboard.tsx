@@ -5,9 +5,11 @@ import OrderChart from '../components/OrderChart';
 import AlertCard from '../components/AlertCard';
 import { getSellerDashboardStats, DashboardStats, NewOrder } from '../../../services/api/dashboardService';
 import { getSellerProfile, toggleShopStatus } from '../../../services/api/auth/sellerAuthService';
+import { useAuth } from '../../../context/AuthContext';
 
 export default function SellerDashboard() {
   const navigate = useNavigate();
+  const { user, updateUser } = useAuth();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [newOrders, setNewOrders] = useState<NewOrder[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,6 +40,28 @@ export default function SellerDashboard() {
           const shopStatus = profileResponse.data.isShopOpen ?? true;
           console.log('Initial shop status from profile:', shopStatus, 'Raw value:', profileResponse.data.isShopOpen);
           setIsShopOpen(shopStatus);
+
+          // Sync deposit fields from profile into auth context so SellerAccessGuard stays accurate
+          if (user) {
+            const profileData = profileResponse.data;
+            const needsSync =
+              user.depositPaid !== profileData.depositPaid ||
+              user.securityDepositStatus !== profileData.securityDepositStatus;
+
+            if (needsSync) {
+              updateUser({
+                ...user,
+                depositPaid: profileData.depositPaid,
+                securityDepositStatus: profileData.securityDepositStatus,
+                depositAmount: profileData.depositAmount,
+                depositPaidAt: profileData.depositPaidAt,
+                securityDepositPaidAt: profileData.securityDepositPaidAt,
+                securityDeposit: profileData.securityDeposit,
+                status: profileData.status,
+                userType: 'Seller',
+              });
+            }
+          }
         }
       } catch (err: any) {
         setError(err.response?.data?.message || 'Error loading dashboard data');
@@ -251,6 +275,33 @@ export default function SellerDashboard() {
 
   return (
     <div className="space-y-4 sm:space-y-6">
+      {/* Security Deposit Warning Banner */}
+      {(user?.securityDepositStatus !== 'Paid' && !user?.depositPaid) && (
+        <div className="bg-gradient-to-r from-orange-500 to-red-600 rounded-lg shadow-md overflow-hidden animate-pulse-slow">
+          <div className="px-4 py-3 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="bg-white/20 p-2 rounded-full">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                  <line x1="12" y1="9" x2="12" y2="13" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+              </div>
+              <div className="text-white">
+                <h3 className="text-sm sm:text-base font-bold">Action Required: Security Deposit Pending</h3>
+                <p className="text-xs text-orange-50 opacity-90">Please pay the ₹1000 security deposit to start adding products and receiving orders.</p>
+              </div>
+            </div>
+            <button
+              onClick={() => navigate('/seller/deposit-payment')}
+              className="w-full sm:w-auto px-6 py-2 bg-white text-orange-600 font-bold text-sm rounded-lg hover:bg-orange-50 transition-colors shadow-sm"
+            >
+              Pay Now
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Header with Shop Status Toggle */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 rounded-lg shadow-sm border border-neutral-200 gap-4 sm:gap-0">
         <div>
@@ -263,15 +314,14 @@ export default function SellerDashboard() {
           </span>
           <button
             onClick={handleToggleShop}
-            disabled={statusLoading}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 ${
-              isShopOpen ? 'bg-teal-600' : 'bg-gray-200'
-            } ${statusLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+            disabled={statusLoading || (user?.securityDepositStatus !== 'Paid' && !user?.depositPaid)}
+            title={(user?.securityDepositStatus !== 'Paid' && !user?.depositPaid) ? 'Please pay security deposit to open shop' : ''}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 ${isShopOpen ? 'bg-teal-600' : 'bg-gray-200'
+              } ${(statusLoading || (user?.securityDepositStatus !== 'Paid' && !user?.depositPaid)) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
           >
             <span
-              className={`${
-                isShopOpen ? 'translate-x-6' : 'translate-x-1'
-              } inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ease-in-out`}
+              className={`${isShopOpen ? 'translate-x-6' : 'translate-x-1'
+                } inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ease-in-out`}
             />
           </button>
         </div>
@@ -286,6 +336,50 @@ export default function SellerDashboard() {
         <DashboardCard icon={completedOrdersIcon} title="Completed Orders" value={stats.completedOrders} accentColor="#16a34a" />
         <DashboardCard icon={pendingOrdersIcon} title="Pending Orders" value={stats.pendingOrders} accentColor="#a855f7" />
         <DashboardCard icon={cancelledOrdersIcon} title="Cancelled Orders" value={stats.cancelledOrders} accentColor="#ef4444" />
+      </div>
+
+      {/* Deposit Info Section */}
+      <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-neutral-200">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-teal-600">
+                <rect x="2" y="5" width="20" height="14" rx="2" ry="2" />
+                <line x1="2" y1="10" x2="22" y2="10" />
+              </svg>
+              Deposit Info
+            </h2>
+            <span className={`px-3 py-1 rounded-full text-xs font-bold ${user?.depositPaid ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
+              {user?.depositPaid ? 'Paid' : 'Pending'}
+            </span>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div>
+              <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Amount Paid</p>
+              <p className="text-lg font-bold text-gray-900">₹{user?.depositAmount || user?.securityDeposit || 0}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Payment Date</p>
+              <p className="text-sm font-medium text-gray-900">
+                {(user?.depositPaidAt || user?.securityDepositPaidAt)
+                  ? new Date((user?.depositPaidAt || user?.securityDepositPaidAt)!).toLocaleDateString('en-IN', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric'
+                  })
+                  : 'N/A'}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Status</p>
+              <p className="text-sm font-medium text-gray-900">{user?.securityDepositStatus || 'Pending'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Type</p>
+              <p className="text-sm font-medium text-gray-900">Refundable Security Deposit</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Charts Row */}

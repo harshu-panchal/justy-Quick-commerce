@@ -73,6 +73,21 @@ export interface ISeller extends Document {
   logo?: string;
   isShopOpen: boolean;
 
+  // Quick Commerce Fields
+  pincode: string;
+  isPincodeActive: boolean;
+  securityDeposit: number;
+  securityDepositStatus: 'Pending' | 'Paid' | 'Refunded';
+  securityDepositPaidAt?: Date;
+  depositPaid: boolean;
+  depositAmount?: number;
+  depositPaidAt?: Date;
+  isActive: boolean;
+  deliveryTimeMin: number;
+  deliveryTimeMax: number;
+  averageRating: number;
+  totalOrders: number;
+
   createdAt: Date;
   updatedAt: Date;
   // FCM Push Notification Tokens
@@ -210,7 +225,6 @@ const SellerSchema = new Schema<ISeller>(
       type: {
         type: String,
         enum: ['Polygon'],
-        default: 'Polygon',
       },
       coordinates: {
         type: [[[Number]]], // Array of linear rings of coordinates [lng, lat]
@@ -263,7 +277,8 @@ const SellerSchema = new Schema<ISeller>(
     // Settings
     requireProductApproval: {
       type: Boolean,
-      default: false,
+      default: true,
+      required: true,
     },
     viewCustomerDetails: {
       type: Boolean,
@@ -313,22 +328,92 @@ const SellerSchema = new Schema<ISeller>(
       type: [String],
       default: []
     },
+
+    // Quick Commerce Fields
+    pincode: {
+      type: String,
+      required: [true, 'Pincode is required'],
+      trim: true,
+    },
+    isPincodeActive: {
+      type: Boolean,
+      default: true,
+    },
+    securityDeposit: {
+      type: Number,
+      default: 1000,
+    },
+    securityDepositStatus: {
+      type: String,
+      enum: ['Pending', 'Paid', 'Refunded'],
+      default: 'Pending',
+    },
+    securityDepositPaidAt: {
+      type: Date,
+    },
+    depositPaid: {
+      type: Boolean,
+      default: false,
+    },
+    depositAmount: {
+      type: Number,
+    },
+    depositPaidAt: {
+      type: Date,
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+    deliveryTimeMin: {
+      type: Number,
+      default: 15,
+    },
+    deliveryTimeMax: {
+      type: Number,
+      default: 20,
+    },
+    averageRating: {
+      type: Number,
+      default: 0,
+    },
+    totalOrders: {
+      type: Number,
+      default: 0,
+    },
   },
   {
     timestamps: true,
   }
 );
 
-// Hash password before saving (only if password is provided)
+// Pre-save middleware for password hashing and GeoJSON sanitization
 SellerSchema.pre('save', async function (this: ISeller, next) {
-  // Skip password hashing if password is not provided or not modified
-  if (!this.isModified('password') || !this.password) {
-    return next();
-  }
-
   try {
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
+    // 1. Hash password if modified
+    if (this.isModified('password') && this.password) {
+      const salt = await bcrypt.genSalt(10);
+      this.password = await bcrypt.hash(this.password, salt);
+    }
+
+    // 2. Sanitize GeoJSON location (Point)
+    if (this.location && this.location.type === 'Point') {
+      if (!this.location.coordinates || !Array.isArray(this.location.coordinates) || this.location.coordinates.length !== 2) {
+        this.location = undefined;
+      }
+    }
+
+    // 3. Sanitize GeoJSON serviceAreaGeo (Polygon)
+    if (this.serviceAreaGeo) {
+      const coords = this.serviceAreaGeo.coordinates;
+      if (!coords || !Array.isArray(coords) || coords.length === 0 || !Array.isArray(coords[0]) || coords[0].length === 0) {
+        // Use undefined instead of null to match MongoDB optional fields
+        this.serviceAreaGeo = undefined;
+      } else if (!this.serviceAreaGeo.type) {
+        this.serviceAreaGeo.type = 'Polygon';
+      }
+    }
+
     next();
   } catch (error: any) {
     next(error);
@@ -345,6 +430,7 @@ SellerSchema.methods.comparePassword = async function (
 
 // Create geospatial index on location field for efficient queries
 SellerSchema.index({ location: '2dsphere' });
+SellerSchema.index({ pincode: 1, status: 1 });
 SellerSchema.index({ status: 1 }); // Compound index for status + location queries
 
 const Seller = (mongoose.models.Seller as mongoose.Model<ISeller>) || mongoose.model<ISeller>('Seller', SellerSchema);

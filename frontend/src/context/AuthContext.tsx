@@ -14,6 +14,12 @@ import {
 interface User {
   id: string;
   userType?: "Admin" | "Seller" | "Customer" | "Delivery";
+  depositPaid?: boolean;
+  securityDepositStatus?: "Pending" | "Paid" | "Refunded";
+  depositAmount?: number;
+  depositPaidAt?: string | Date;
+  securityDepositPaidAt?: string | Date;
+  securityDeposit?: number;
   [key: string]: any;
 }
 

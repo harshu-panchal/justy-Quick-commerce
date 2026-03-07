@@ -8,6 +8,7 @@ import {
   type Category,
 } from "../../../services/api/admin/adminProductService";
 import { useAuth } from "../../../context/AuthContext";
+import { getHeaderCategoriesAdmin, type HeaderCategory } from "../../../services/api/headerCategoryService";
 
 interface ProductVariation {
   id: string;
@@ -21,6 +22,7 @@ interface ProductVariation {
   status: "Published" | "Unpublished";
   category: string;
   categoryId: string;
+  headerCategoryId: string;
 }
 
 const STATUS_OPTIONS = ["All Products", "Published", "Unpublished"];
@@ -39,10 +41,11 @@ export default function AdminStockManagement() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [filterCategory, setFilterCategory] = useState("All Category");
+  const [filterHeaderCategory, setFilterHeaderCategory] = useState("All Header Category");
   const [filterSeller, setFilterSeller] = useState("All Sellers");
   const [filterStatus, setFilterStatus] = useState("All Products");
   const [filterStock, setFilterStock] = useState("All Products");
+  const [headerCategories, setHeaderCategories] = useState<HeaderCategory[]>([]);
 
   // Fetch products and categories
   const fetchData = async () => {
@@ -50,23 +53,23 @@ export default function AdminStockManagement() {
       setLoading(true);
       setError(null);
 
-      // Fetch categories for filter dropdown
+      // Fetch categories for mapping
       const categoriesResponse = await getCategories();
       if (categoriesResponse.success) {
         setCategories(categoriesResponse.data);
       }
 
+      // Fetch header categories for filter dropdown
+      const headerCategoriesData = await getHeaderCategoriesAdmin();
+      setHeaderCategories(headerCategoriesData);
+
       // Fetch products
       const params: any = {
-        limit: 1000, // Fetch all products (increase if you have more than 1000)
+        limit: 1000, // Fetch all products
       };
 
       if (searchTerm) {
         params.search = searchTerm;
-      }
-
-      if (filterCategory !== "All Category") {
-        params.category = filterCategory;
       }
 
       if (filterStatus !== "All Products") {
@@ -105,7 +108,7 @@ export default function AdminStockManagement() {
     isAuthenticated,
     token,
     searchTerm,
-    filterCategory,
+    filterHeaderCategory,
     filterStatus,
   ]);
 
@@ -134,18 +137,27 @@ export default function AdminStockManagement() {
   const productVariations = useMemo(() => {
     const variations: ProductVariation[] = [];
 
-    products.forEach((product) => {
+    products.forEach((product: any) => {
       // Handle null/undefined category
       let categoryName = "Unknown";
       let categoryId = "";
+      let headerCategoryId = "";
 
       if (product.category) {
-        if (typeof product.category === "object" && product.category !== null) {
-          categoryName = product.category.name || "Unknown";
-          categoryId = product.category._id || "";
-        } else if (typeof product.category === "string") {
-          categoryId = product.category;
-          categoryName = categories.find((c) => c._id === product.category)?.name || "Unknown";
+        const productCategory = product.category as any;
+        if (typeof productCategory === "object" && productCategory !== null) {
+          categoryName = productCategory.name || "Unknown";
+          categoryId = productCategory._id || "";
+          headerCategoryId = typeof productCategory.headerCategoryId === 'string'
+            ? productCategory.headerCategoryId
+            : productCategory.headerCategoryId?._id || "";
+        } else if (typeof productCategory === "string") {
+          categoryId = productCategory;
+          const foundCat = categories.find((c: any) => c._id === productCategory);
+          categoryName = foundCat?.name || "Unknown";
+          headerCategoryId = typeof foundCat?.headerCategoryId === 'string'
+            ? foundCat.headerCategoryId
+            : (foundCat as any)?.headerCategoryId?._id || "";
         }
       }
 
@@ -157,7 +169,7 @@ export default function AdminStockManagement() {
 
       // If product has variations, create a row for each variation
       if (product.variations && product.variations.length > 0) {
-        product.variations.forEach((variation, index) => {
+        product.variations.forEach((variation: any, index: number) => {
           variations.push({
             id: `${product._id}-${index}`,
             productId: product._id,
@@ -173,6 +185,7 @@ export default function AdminStockManagement() {
             status: product.publish ? "Published" : "Unpublished",
             category: categoryName,
             categoryId: categoryId,
+            headerCategoryId: headerCategoryId,
           });
         });
       } else {
@@ -189,6 +202,7 @@ export default function AdminStockManagement() {
           status: product.publish ? "Published" : "Unpublished",
           category: categoryName,
           categoryId: categoryId,
+          headerCategoryId: headerCategoryId,
         });
       }
     });
@@ -225,9 +239,9 @@ export default function AdminStockManagement() {
   // Filter products
   const filteredProducts = useMemo(() => {
     return productVariations.filter((product) => {
-      const matchesCategory =
-        filterCategory === "All Category" ||
-        product.categoryId === filterCategory;
+      const matchesHeaderCategory =
+        filterHeaderCategory === "All Header Category" ||
+        product.headerCategoryId === filterHeaderCategory;
       const matchesSeller =
         filterSeller === "All Sellers" || product.seller === filterSeller;
       const matchesStatus =
@@ -248,7 +262,7 @@ export default function AdminStockManagement() {
         product.seller.toLowerCase().includes(searchTerm.toLowerCase());
 
       return (
-        matchesCategory &&
+        matchesHeaderCategory &&
         matchesSeller &&
         matchesStatus &&
         matchesStock &&
@@ -257,7 +271,7 @@ export default function AdminStockManagement() {
     });
   }, [
     productVariations,
-    filterCategory,
+    filterHeaderCategory,
     filterSeller,
     filterStatus,
     filterStock,
@@ -365,19 +379,19 @@ export default function AdminStockManagement() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
               <div>
                 <label className="block text-xs font-medium text-neutral-700 mb-1">
-                  Filter By Category
+                  Filter By Header Category
                 </label>
                 <select
-                  value={filterCategory}
+                  value={filterHeaderCategory}
                   onChange={(e) => {
-                    setFilterCategory(e.target.value);
+                    setFilterHeaderCategory(e.target.value);
                     setCurrentPage(1);
                   }}
                   className="w-full px-3 py-2 border border-neutral-300 rounded text-sm focus:ring-1 focus:ring-teal-500 focus:outline-none cursor-pointer">
-                  <option value="All Category">All Category</option>
-                  {categories.map((cat) => (
-                    <option key={cat._id} value={cat._id}>
-                      {cat.name}
+                  <option value="All Header Category">All Header Category</option>
+                  {headerCategories.map((hc) => (
+                    <option key={hc._id} value={hc._id}>
+                      {hc.name}
                     </option>
                   ))}
                 </select>

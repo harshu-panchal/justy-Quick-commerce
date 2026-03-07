@@ -11,6 +11,8 @@ import Button from '../../../components/ui/button';
 import Badge from '../../../components/ui/badge';
 import StarRating from '../../../components/ui/StarRating';
 import { calculateProductPrice } from '../../../utils/priceUtils';
+import ProductTypeBadge from '../../../components/ProductTypeBadge';
+import { getCategoryType } from '../../../config/pincodeService';
 
 interface ProductCardProps {
   product: Product;
@@ -420,6 +422,7 @@ export default function ProductCard({
                     </span>
                   )}
                 </div>
+                <ProductTypeBadge type={getCategoryType(product.category?.name)} compact showDeliveryText={false} />
               </div>
             </>
           ) : (
@@ -471,6 +474,7 @@ export default function ProductCard({
                     </span>
                   )}
                 </div>
+                <ProductTypeBadge type={getCategoryType(product.category?.name)} showDeliveryText={true} />
               </div>
             </>
           )}

@@ -476,6 +476,90 @@ export const ICON_LIBRARY: IconDef[] = [
                 <path d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M19.07 4.93L4.93 19.07" />
             </svg>
         )
+    },
+    // --- NEWLY ADDED FOR HEADER ---
+    {
+        name: 'grid',
+        label: 'Grid',
+        tags: ['grid', 'all', 'layout'],
+        svg: (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" />
+                <rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" />
+            </svg>
+        )
+    },
+    {
+        name: 'shirt',
+        label: 'Shirt',
+        tags: ['fashion', 'shirt', 'clothes'],
+        svg: (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20.38 3.46L16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z" />
+            </svg>
+        )
+    },
+    {
+        name: 'shopping-basket',
+        label: 'Shopping Basket',
+        tags: ['grocery', 'shopping', 'basket'],
+        svg: (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" /><path d="M3 6h18" /><path d="M16 10a4 4 0 0 1-8 0" />
+            </svg>
+        )
+    },
+    {
+        name: 'sparkles',
+        label: 'Sparkles',
+        tags: ['beauty', 'sparkles', 'magic'],
+        svg: (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+                <path d="M5 3v4" /><path d="M19 17v4" /><path d="M3 5h4" /><path d="M17 19h4" />
+            </svg>
+        )
+    },
+    {
+        name: 'cpu',
+        label: 'CPU',
+        tags: ['electronics', 'cpu', 'chip'],
+        svg: (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="4" y="4" width="16" height="16" rx="2" />
+                <path d="M9 9h6v6H9z" /><path d="M15 2v2" /><path d="M15 20v2" /><path d="M2 15h2" /><path d="M2 9h2" /><path d="M20 15h2" /><path d="M20 9h2" /><path d="M9 2v2" /><path d="M9 20v2" />
+            </svg>
+        )
+    },
+    {
+        name: 'store',
+        label: 'Store',
+        tags: ['store', 'shop', 'pan corner'],
+        svg: (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 9 12 3l9 6v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" /><path d="M9 22V12h6v10" />
+            </svg>
+        )
+    },
+    {
+        name: 'cake',
+        label: 'Cake',
+        tags: ['bakery', 'cake', 'food'],
+        svg: (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8" /><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1" /><path d="M2 21h20" /><path d="M7 8v3" /><path d="M12 8V5" /><path d="M17 8v3" /><path d="M7 4h.01" /><path d="M17 4h.01" /><path d="M12 2h.01" />
+            </svg>
+        )
+    },
+    {
+        name: 'carrot',
+        label: 'Carrot',
+        tags: ['vegetables', 'carrot', 'food'],
+        svg: (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M2.27 21.7s9.87-3.5 12.73-6.36a4.5 4.5 0 0 0-6.36-6.37C5.77 11.84 2.27 21.7 2.27 21.7Z" /><path d="M8.64 14l-2.05-2.04" /><path d="M11.5 16.86l-2.05-2.04" /><path d="M18 5.74c-.5.5-5.6 1.3-5.6 1.3" /><path d="M18.26 5.74s.8-5.1 1.3-5.6" /><path d="M18.26 5.74s5.1.8 5.6 1.3" />
+            </svg>
+        )
     }
 ];
 

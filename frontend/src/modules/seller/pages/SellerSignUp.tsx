@@ -1,53 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { register } from '../../../services/api/auth/sellerAuthService';
 import GoogleMapsAutocomplete from '../../../components/GoogleMapsAutocomplete';
 import { useAuth } from '../../../context/AuthContext';
-import { getHeaderCategoriesPublic, HeaderCategory } from '../../../services/api/headerCategoryService';
 import LocationPickerMap from '../../../components/LocationPickerMap';
+import ServiceAreaMap from '../../../components/ServiceAreaMap';
 import { useEffect } from 'react';
-
-const StepIndicator = ({ currentStep }: { currentStep: number }) => {
-  const steps = [
-    { id: 1, label: 'Register Store' },
-    { id: 2, label: 'Admin Approval' },
-    { id: 3, label: 'Pay Deposit' },
-    { id: 4, label: 'Start Selling' }
-  ];
-
-  return (
-    <div className="mb-8 px-4">
-      <div className="flex items-center justify-between max-w-sm mx-auto relative">
-        <div className="absolute top-1/2 left-0 w-full h-0.5 bg-neutral-200 -translate-y-1/2 z-0" />
-        {steps.map((step, idx) => {
-          const isActive = step.id === currentStep;
-          const isCompleted = step.id < currentStep;
-          return (
-            <div key={step.id} className="flex flex-col items-center relative z-10 w-1/4">
-              <div
-                className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold border-2 transition-all duration-300 ${isActive
-                  ? 'bg-teal-600 border-teal-600 text-white scale-110'
-                  : isCompleted
-                    ? 'bg-teal-500 border-teal-500 text-white'
-                    : 'bg-white border-neutral-300 text-neutral-400'
-                  }`}
-              >
-                {isCompleted ? (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                    <path d="M20 6L9 17L4 12" />
-                  </svg>
-                ) : step.id}
-              </div>
-              <span className={`text-[9px] mt-1.5 font-semibold text-center leading-tight whitespace-nowrap transition-colors duration-300 ${isActive ? 'text-teal-700' : 'text-neutral-400'}`}>
-                {step.label}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
 
 export default function SellerSignUp() {
   const navigate = useNavigate();
@@ -59,7 +17,6 @@ export default function SellerSignUp() {
     storeName: '',
     category: '',
     categories: [] as string[],
-    pincode: '',
     address: '',
     city: '',
     panCard: '',
@@ -84,21 +41,7 @@ export default function SellerSignUp() {
   const [loading, setLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState('');
-  const [categories, setCategories] = useState<HeaderCategory[]>([]);
 
-  useEffect(() => {
-    const fetchCats = async () => {
-      try {
-        const res = await getHeaderCategoriesPublic();
-        if (Array.isArray(res)) {
-          setCategories(res.filter(cat => cat.status === 'Published'));
-        }
-      } catch (err) {
-        console.error('Error fetching categories:', err);
-      }
-    };
-    fetchCats();
-  }, []);
 
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -124,27 +67,38 @@ export default function SellerSignUp() {
     }
   };
 
-  const toggleCategory = (cat: string) => {
-    setFormData(prev => {
-      const exists = prev.categories.includes(cat);
-      const nextCategories = exists
-        ? prev.categories.filter(c => c !== cat)
-        : [...prev.categories, cat];
-      return {
-        ...prev,
-        categories: nextCategories,
-        category: nextCategories[0] || '',
-      };
-    });
-  };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Basic Validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      setError('Please enter a valid email address');
+    // Validate required fields (password removed - not needed during signup)
+    if (!formData.sellerName) {
+      setError('Please enter your name');
+      return;
+    }
+    if (!formData.mobile) {
+      setError('Please enter your mobile number');
+      return;
+    }
+    if (!formData.email) {
+      setError('Please enter your email address');
+      return;
+    }
+    if (!formData.storeName) {
+      setError('Please enter your store name');
+      return;
+    }
+    if (formData.categories.length === 0) {
+      setError('Please select at least one category');
+      return;
+    }
+    if (!formData.address && !formData.searchLocation) {
+      setError('Please select your store location');
+      return;
+    }
+    if (!formData.city) {
+      setError('Please enter your city');
       return;
     }
     if (formData.mobile.length !== 10) {
@@ -168,8 +122,8 @@ export default function SellerSignUp() {
         mobile: formData.mobile,
         email: formData.email,
         storeName: formData.storeName,
-        category: formData.categories[0], // primary
-        categories: formData.categories,
+        category: formData.category,
+        categories: [formData.category],
         address: formData.address || formData.searchLocation,
         city: formData.city,
         pincode: formData.pincode,
@@ -337,60 +291,35 @@ export default function SellerSignUp() {
 
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Store Description
+                    Categories <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="text"
-                    name="storeDescription"
-                    value={formData.storeDescription}
-                    onChange={handleInputChange}
-                    placeholder="Enter short store description"
-                    className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 transition-all"
-                    disabled={loading}
-                  />
+                  {categories.length === 0 ? (
+                    <div className="text-sm text-neutral-500 py-2">
+                      Loading categories...
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto p-2 border border-neutral-200 rounded-lg">
+                      {categories.map((cat) => {
+                        const checked = formData.categories.includes(cat.name);
+                        return (
+                          <label key={cat._id} className="flex items-center gap-2 text-sm text-neutral-700">
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() => toggleCategory(cat.name)}
+                              disabled={loading}
+                              className="h-4 w-4 text-teal-600 border-neutral-300 rounded focus:ring-teal-500"
+                            />
+                            <span>{cat.name}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {formData.categories.length === 0 && categories.length > 0 && (
+                    <p className="text-xs text-red-600 mt-1">Select at least one category</p>
+                  )}
                 </div>
-              </div>
-
-              {/* Step 2: Store Category */}
-              <div className="space-y-4 pt-4 border-t border-neutral-100">
-                <h3 className="text-sm font-bold text-teal-800 uppercase tracking-wider flex items-center">
-                  <span className="w-6 h-6 bg-teal-100 text-teal-700 rounded-full flex items-center justify-center mr-2 text-[10px]">2</span>
-                  Store Category
-                </h3>
-                {categories.length === 0 ? (
-                  <div className="text-sm text-neutral-500 py-2">
-                    Loading categories...
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto p-2 border border-neutral-200 rounded-xl">
-                    {categories.map((cat) => {
-                      const checked = formData.categories.includes(cat.name);
-                      return (
-                        <label key={cat._id} className="flex items-center gap-2 text-sm text-neutral-700 p-2 hover:bg-teal-50 rounded-lg cursor-pointer transition-colors">
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={() => toggleCategory(cat.name)}
-                            disabled={loading}
-                            className="h-4 w-4 text-teal-600 border-neutral-300 rounded focus:ring-teal-500"
-                          />
-                          <span>{cat.name}</span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                )}
-                {formData.categories.length === 0 && categories.length > 0 && (
-                  <p className="text-xs text-red-600 mt-1">Select at least one category</p>
-                )}
-              </div>
-
-              {/* Step 3: Location Details */}
-              <div className="space-y-4 pt-4 border-t border-neutral-100">
-                <h3 className="text-sm font-bold text-teal-800 uppercase tracking-wider flex items-center">
-                  <span className="w-6 h-6 bg-teal-100 text-teal-700 rounded-full flex items-center justify-center mr-2 text-[10px]">3</span>
-                  Location Details
-                </h3>
 
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-2">
@@ -534,6 +463,8 @@ export default function SellerSignUp() {
                   {error}
                 </div>
               )}
+
+
 
               <button
                 type="submit"

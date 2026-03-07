@@ -5,7 +5,6 @@ import OrderChart from '../components/OrderChart';
 import AlertCard from '../components/AlertCard';
 import { getSellerDashboardStats, DashboardStats, NewOrder } from '../../../services/api/dashboardService';
 import { getSellerProfile, toggleShopStatus } from '../../../services/api/auth/sellerAuthService';
-import { useAuth } from '../../../context/AuthContext';
 
 export default function SellerDashboard() {
   const navigate = useNavigate();
@@ -18,6 +17,11 @@ export default function SellerDashboard() {
   const [currentPage, setCurrentPage] = useState(1);
   const [isShopOpen, setIsShopOpen] = useState(true);
   const [statusLoading, setStatusLoading] = useState(false);
+
+  useEffect(() => {
+    // Seed products for testing/mock purposes
+    seedSellerProducts();
+  }, []);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -314,10 +318,9 @@ export default function SellerDashboard() {
           </span>
           <button
             onClick={handleToggleShop}
-            disabled={statusLoading || (user?.securityDepositStatus !== 'Paid' && !user?.depositPaid)}
-            title={(user?.securityDepositStatus !== 'Paid' && !user?.depositPaid) ? 'Please pay security deposit to open shop' : ''}
+            disabled={statusLoading}
             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 ${isShopOpen ? 'bg-teal-600' : 'bg-gray-200'
-              } ${(statusLoading || (user?.securityDepositStatus !== 'Paid' && !user?.depositPaid)) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+              } ${statusLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
           >
             <span
               className={`${isShopOpen ? 'translate-x-6' : 'translate-x-1'
@@ -326,6 +329,24 @@ export default function SellerDashboard() {
           </button>
         </div>
       </div>
+      {/* Product Limit Warning */}
+      {stats && stats.totalProduct > 200 && (
+        <div className="bg-orange-50 border-l-4 border-orange-500 p-4 rounded shadow-sm">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-orange-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-orange-700 font-medium">
+                You have exceeded the free product limit.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         <DashboardCard icon={userIcon} title="Total User" value={stats.totalUser} accentColor="#3b82f6" />
@@ -336,50 +357,6 @@ export default function SellerDashboard() {
         <DashboardCard icon={completedOrdersIcon} title="Completed Orders" value={stats.completedOrders} accentColor="#16a34a" />
         <DashboardCard icon={pendingOrdersIcon} title="Pending Orders" value={stats.pendingOrders} accentColor="#a855f7" />
         <DashboardCard icon={cancelledOrdersIcon} title="Cancelled Orders" value={stats.cancelledOrders} accentColor="#ef4444" />
-      </div>
-
-      {/* Deposit Info Section */}
-      <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-neutral-200">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-teal-600">
-                <rect x="2" y="5" width="20" height="14" rx="2" ry="2" />
-                <line x1="2" y1="10" x2="22" y2="10" />
-              </svg>
-              Deposit Info
-            </h2>
-            <span className={`px-3 py-1 rounded-full text-xs font-bold ${user?.depositPaid ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
-              {user?.depositPaid ? 'Paid' : 'Pending'}
-            </span>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <div>
-              <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Amount Paid</p>
-              <p className="text-lg font-bold text-gray-900">₹{user?.depositAmount || user?.securityDeposit || 0}</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Payment Date</p>
-              <p className="text-sm font-medium text-gray-900">
-                {(user?.depositPaidAt || user?.securityDepositPaidAt)
-                  ? new Date((user?.depositPaidAt || user?.securityDepositPaidAt)!).toLocaleDateString('en-IN', {
-                    day: '2-digit',
-                    month: 'short',
-                    year: 'numeric'
-                  })
-                  : 'N/A'}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Status</p>
-              <p className="text-sm font-medium text-gray-900">{user?.securityDepositStatus || 'Pending'}</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Type</p>
-              <p className="text-sm font-medium text-gray-900">Refundable Security Deposit</p>
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Charts Row */}

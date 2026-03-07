@@ -74,59 +74,84 @@ export default function Categories() {
         {/* Render all admin-created home sections */}
         {homeData.homeSections && homeData.homeSections.length > 0 ? (
           <>
-            {homeData.homeSections.map((section: any) => {
-              const columnCount = Number(section.columns) || 4;
+            {homeData.homeSections
+              .filter((section: any) => {
+                const sectionTitle = section.title?.toLowerCase() || '';
+                const sectionSlug = section.categorySlug?.toLowerCase() || '';
 
-              if (section.displayType === "products" && section.data && section.data.length > 0) {
-                // Products display - same as home page
-                const gridClass = {
-                  2: "grid-cols-2",
-                  3: "grid-cols-3",
-                  4: "grid-cols-4",
-                  6: "grid-cols-6",
-                  8: "grid-cols-8"
-                }[columnCount] || "grid-cols-4";
+                // Step 1: Explicitly remove forbidden sections
+                const forbiddenKeywords = ['non veg', 'meat', 'fish', 'chicken', 'egg', 'pet care', 'pharma', 'wellness', 'cleaning', 'office', 'baby care', 'personal care', 'wash', 'sanitary'];
+                if (forbiddenKeywords.some(word => sectionTitle.includes(word) || sectionSlug.includes(word))) {
+                  return false;
+                }
 
-                const isCompact = columnCount >= 4;
-                const gapClass = columnCount >= 4 ? "gap-2" : "gap-3 md:gap-4";
+                // Step 2: Strictly allow only sections matching the 8 categories
+                const allowedKeywords = [
+                  'fashion', 'grocery', 'kitchen', 'beauty', 'cosmetic', 'makeup', 'electronics', 'mobile', 'cpu',
+                  'pan', 'corner', 'bakery', 'cake', 'vegetable', 'fruit', 'munchies', 'snack', 'sweet', 'chocolate'
+                ];
+                return allowedKeywords.some(word => sectionTitle.includes(word) || sectionSlug.includes(word));
+              })
+              .map((section: any) => {
+                // Filter the tiles (data) inside the section as well
+                const filteredData = (section.data || []).filter((tile: any) => {
+                  const tileName = (tile.name || '').toLowerCase();
+                  const forbiddenKeywords = ['non veg', 'meat', 'fish', 'chicken', 'egg', 'pharma', 'pet care', 'baby care', 'cleaning', 'office', 'wellness', 'personal care', 'wash', 'sanitary'];
+                  return !forbiddenKeywords.some(word => tileName.includes(word));
+                });
 
-                return (
-                  <div key={section.id} className="mt-6 mb-6 md:mt-8 md:mb-8">
-                    {section.title && (
-                      <h2 className="text-lg md:text-2xl font-semibold text-neutral-900 mb-3 md:mb-6 px-4 md:px-6 lg:px-8 tracking-tight capitalize">
-                        {section.title}
-                      </h2>
-                    )}
-                    <div className="px-4 md:px-6 lg:px-8">
-                      <div className={`grid ${gridClass} ${gapClass}`}>
-                        {section.data.map((product: any) => (
-                          <ProductCard
-                            key={product.id || product._id}
-                            product={product}
-                            categoryStyle={true}
-                            showBadge={true}
-                            showPackBadge={false}
-                            showStockInfo={false}
-                            compact={isCompact}
-                          />
-                        ))}
+                // Skip the section if no data remains after filtering tiles
+                if (filteredData.length === 0) return null;
+
+                const columnCount = Number(section.columns) || 4;
+
+                if (section.displayType === "products" && filteredData.length > 0) {
+                  // Products display - same as home page
+                  const gridClass = {
+                    2: "grid-cols-2", 3: "grid-cols-3", 4: "grid-cols-4",
+                    6: "grid-cols-6", 8: "grid-cols-8"
+                  }[columnCount] || "grid-cols-4";
+
+                  const isCompact = columnCount >= 4;
+                  const gapClass = columnCount >= 4 ? "gap-2" : "gap-3 md:gap-4";
+
+                  return (
+                    <div key={section.id} className="mt-6 mb-6 md:mt-8 md:mb-8">
+                      {section.title && (
+                        <h2 className="text-lg md:text-2xl font-semibold text-neutral-900 mb-3 md:mb-6 px-4 md:px-6 lg:px-8 tracking-tight capitalize">
+                          {section.title}
+                        </h2>
+                      )}
+                      <div className="px-4 md:px-6 lg:px-8">
+                        <div className={`grid ${gridClass} ${gapClass}`}>
+                          {filteredData.map((product: any) => (
+                            <ProductCard
+                              key={product.id || product._id}
+                              product={product}
+                              categoryStyle={true}
+                              showBadge={true}
+                              showPackBadge={false}
+                              showStockInfo={false}
+                              compact={isCompact}
+                            />
+                          ))}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              }
+                  );
+                }
 
-              // Categories/Subcategories display - same as home page
-              return (
-                <CategoryTileSection
-                  key={section.id}
-                  title={section.title}
-                  tiles={section.data || []}
-                  columns={columnCount as 2 | 3 | 4 | 6 | 8}
-                  showProductCount={false}
-                />
-              );
-            })}
+                // Categories/Subcategories display - same as home page
+                return (
+                  <CategoryTileSection
+                    key={section.id}
+                    title={section.title}
+                    tiles={filteredData}
+                    columns={columnCount as 2 | 3 | 4 | 6 | 8}
+                    showProductCount={false}
+                  />
+                );
+              })}
           </>
         ) : (
           <div className="text-center py-12 md:py-16 text-neutral-500 px-4">

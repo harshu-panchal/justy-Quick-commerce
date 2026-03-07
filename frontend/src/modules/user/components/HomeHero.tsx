@@ -10,6 +10,9 @@ import { Category } from '../../../types/domain';
 import { getHeaderCategoriesPublic } from '../../../services/api/headerCategoryService';
 import { getIconByName } from '../../../utils/iconLibrary';
 import PincodeSelector from '../../../components/PincodeSelector';
+import DeliveryToggle from '../../../components/header/DeliveryToggle';
+import { useDeliveryMode } from '../../../hooks/useDeliveryMode';
+import { useCart } from '../../../context/CartContext'; // Assuming CartContext exists
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -38,16 +41,27 @@ const ALL_TAB: Tab = {
 export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroProps) {
   const [tabs, setTabs] = useState<Tab[]>([ALL_TAB]);
 
+  const { deliveryMode } = useDeliveryMode();
+
   useEffect(() => {
     const fetchHeaderCategories = async () => {
       try {
         const cats = await getHeaderCategoriesPublic();
         if (cats && cats.length > 0) {
-          const mapped = cats.map(c => ({
-            id: c.slug,
-            label: c.name,
-            icon: getIconByName(c.iconName)
-          }));
+          const mapped = cats
+            .filter(c => {
+              const slug = c.slug.toLowerCase();
+              if (deliveryMode === 'quick') {
+                return ['grocery', 'vegetables', 'bakery', 'pan-corner', 'munchies', 'snacks', 'sweets', 'chocolate'].some(word => slug.includes(word));
+              } else {
+                return ['fashion', 'electronics', 'beauty', 'wedding', 'sports'].some(word => slug.includes(word));
+              }
+            })
+            .map(c => ({
+              id: c.slug,
+              label: c.name,
+              icon: getIconByName(c.iconName)
+            }));
           setTabs([ALL_TAB, ...mapped]);
         }
       } catch (error) {
@@ -55,9 +69,12 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
       }
     };
     fetchHeaderCategories();
-  }, []);
+  }, [deliveryMode]);
+
   const navigate = useNavigate();
   const { location: userLocation } = useLocation();
+  const { cart } = useCart();
+  const cartCount = cart?.itemCount || 0;
   const heroRef = useRef<HTMLDivElement>(null);
   const topSectionRef = useRef<HTMLDivElement>(null);
   const stickyRef = useRef<HTMLDivElement>(null);
@@ -163,32 +180,20 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
     return () => clearInterval(interval);
   }, [searchSuggestions.length, activeTab]);
 
-  // Handle scroll to detect when "LOWEST PRICES EVER" section is out of view
+  // Handle scroll to detect when header is sticky
   useEffect(() => {
     const handleScroll = () => {
-      if (topSectionRef.current && stickyRef.current) {
-        // Find the "LOWEST PRICES EVER" section
-        const lowestPricesSection = document.querySelector('[data-section="lowest-prices"]');
-
-        if (lowestPricesSection) {
-          const sectionBottom = lowestPricesSection.getBoundingClientRect().bottom;
-          // When the section has scrolled up past the viewport, transition to white
-          const progress = Math.min(Math.max(1 - (sectionBottom / 200), 0), 1);
-          setScrollProgress(progress);
-          setIsSticky(sectionBottom <= 100);
-        } else {
-          // Fallback to original logic if section not found
-          const topSectionBottom = topSectionRef.current.getBoundingClientRect().bottom;
-          const topSectionHeight = topSectionRef.current.offsetHeight;
-          const progress = Math.min(Math.max(1 - (topSectionBottom / topSectionHeight), 0), 1);
-          setScrollProgress(progress);
-          setIsSticky(topSectionBottom <= 0);
-        }
+      if (topSectionRef.current) {
+        const topSectionBottom = topSectionRef.current.getBoundingClientRect().bottom;
+        const topSectionHeight = topSectionRef.current.offsetHeight;
+        const progress = Math.min(Math.max(1 - (topSectionBottom / topSectionHeight), 0), 1);
+        setScrollProgress(progress);
+        setIsSticky(topSectionBottom <= 0);
       }
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll(); // Check initial state
+    handleScroll();
 
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -267,80 +272,32 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
   };
 
   const theme = getTheme(activeTab || 'all');
-  const heroGradient = `linear-gradient(to bottom right, ${theme.primary[0]}, ${theme.primary[1]}, ${theme.primary[2]})`;
-
-  // Helper to convert RGB to RGBA
-  const rgbToRgba = (rgb: string, alpha: number) => {
-    return rgb.replace('rgb', 'rgba').replace(')', `, ${alpha})`);
-  };
 
   return (
-    <div
-      ref={heroRef}
-      style={{
-        background: heroGradient,
-        paddingBottom: 0,
-        marginBottom: 0,
-      }}
-    >
-      {/* Top section with delivery info and buttons - NOT sticky */}
-      <div>
-        <div ref={topSectionRef} className="px-4 md:px-6 lg:px-8 pt-2 md:pt-3 pb-0">
-          <div className="flex items-start justify-between mb-2 md:mb-2">
-            {/* Left: Text content */}
-            <div className="flex-1 pr-2">
-              {/* Service name - small, dark */}
-              <div className="text-neutral-800 font-medium text-[10px] md:text-xs mb-0 leading-tight">Zeto Mart Quick Commerce</div>
-              {/* Delivery time - large, bold, dark grey/black */}
-              <div className="text-neutral-900 font-extrabold text-2xl md:text-xl mb-0 md:mb-0.5 leading-tight">{appConfig.estimatedDeliveryTime}</div>
-              {/* Location with dropdown indicator - only show if location is provided */}
-              {locationDisplayText && (
-                <div className="text-neutral-700 text-[10px] md:text-xs flex items-center gap-0.5 leading-tight">
-                  <span className="line-clamp-1" title={locationDisplayText}>{locationDisplayText}</span>
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0">
-                    <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </div>
-              )}
-              <div className="mt-1">
-                <PincodeSelector />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Sticky section: Search Bar and Category Tabs - Always sticky */}
+    <div ref={heroRef} className="pb-0 mb-0">
+      {/* Top Header Section */}
       <div
-        ref={stickyRef}
-        className="sticky top-0 z-50"
-        style={{
-          ...(scrollProgress >= 0.1 && {
-            background: `linear-gradient(to bottom right,
-              ${rgbToRgba(theme.primary[0], 1 - scrollProgress)},
-              ${rgbToRgba(theme.primary[1], 1 - scrollProgress)},
-              ${rgbToRgba(theme.primary[2], 1 - scrollProgress)}),
-              rgba(255, 255, 255, ${scrollProgress})`,
-            boxShadow: `0 4px 6px -1px rgba(0, 0, 0, ${scrollProgress * 0.1})`,
-            transition: 'background 0.1s ease-out, box-shadow 0.1s ease-out',
-          }),
-        }}
+        className="px-4 md:px-6 lg:px-8 pt-3 pb-3 transition-colors duration-500"
+        style={{ backgroundColor: theme.headerBg || '#007fb1' }}
       >
-        <div className="px-4 md:px-6 lg:px-8 pt-2 md:pt-2 pb-2 md:pb-2">
-          {/* Search Bar */}
+        {/* 1. Full-width Mode Toggle */}
+        <div className="mb-4 max-w-2xl mx-auto">
+          <DeliveryToggle />
+        </div>
+
+        {/* 2. Row: Search + Cart + Profile */}
+        <div className="flex items-center gap-3 mb-4 max-w-2xl mx-auto">
+          {/* Search Bar - Pill shape */}
           <div
             onClick={() => navigate('/search')}
-            className="w-full md:w-auto md:max-w-xl md:mx-auto rounded-xl shadow-lg px-3 py-2 md:px-3 md:py-1.5 flex items-center gap-2 cursor-pointer hover:shadow-xl transition-all duration-300 mb-2 md:mb-1.5 bg-white"
-            style={{
-              backgroundColor: scrollProgress > 0.1 ? `rgba(249, 250, 251, ${scrollProgress})` : 'white',
-              border: scrollProgress > 0.1 ? `1px solid rgba(229, 231, 235, ${scrollProgress})` : 'none',
-            }}
+            className="flex-1 rounded-full h-12 flex items-center px-4 gap-3 cursor-pointer border border-white/10 transition-colors duration-500"
+            style={{ backgroundColor: theme.searchBarBg || '#004e6e' }}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0 md:w-4 md:h-4">
-              <circle cx="11" cy="11" r="8" stroke={scrollProgress > 0.5 ? "#9ca3af" : "#6b7280"} strokeWidth="2" />
-              <path d="m21 21-4.35-4.35" stroke={scrollProgress > 0.5 ? "#9ca3af" : "#6b7280"} strokeWidth="2" strokeLinecap="round" />
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-white/70">
+              <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2.5" />
+              <path d="m21 21-4.35-4.35" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
             </svg>
-            <div className="flex-1 relative h-4 md:h-4 overflow-hidden">
+            <div className="flex-1 relative h-5 overflow-hidden">
               {searchSuggestions.map((suggestion, index) => {
                 const isActive = index === currentSearchIndex;
                 const prevIndex = (currentSearchIndex - 1 + searchSuggestions.length) % searchSuggestions.length;
@@ -356,30 +313,60 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
                         : 'translate-y-full opacity-0'
                       }`}
                   >
-                    <span className={`text-xs md:text-xs`} style={{ color: scrollProgress > 0.5 ? '#9ca3af' : '#6b7280' }}>
-                      Search &apos;{suggestion}&apos;
+                    <span className="text-white/90 text-sm font-medium">
+                      Search in {deliveryMode === 'quick' ? 'Quick' : 'Scheduled'}
                     </span>
                   </div>
                 );
               })}
             </div>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0 md:w-4 md:h-4">
-              <path d="M12 1C13.1 1 14 1.9 14 3C14 4.1 13.1 5 12 5C10.9 5 10 4.1 10 3C10 1.9 10.9 1 12 1Z" fill={scrollProgress > 0.5 ? "#9ca3af" : "#6b7280"} />
-              <path d="M19 10V17C19 18.1 18.1 19 17 19H7C5.9 19 5 18.1 5 17V10" stroke={scrollProgress > 0.5 ? "#9ca3af" : "#6b7280"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M12 11V17" stroke={scrollProgress > 0.5 ? "#9ca3af" : "#6b7280"} strokeWidth="2" strokeLinecap="round" />
-              <path d="M8 11V17" stroke={scrollProgress > 0.5 ? "#9ca3af" : "#6b7280"} strokeWidth="2" strokeLinecap="round" />
-              <path d="M16 11V17" stroke={scrollProgress > 0.5 ? "#9ca3af" : "#6b7280"} strokeWidth="2" strokeLinecap="round" />
+          </div>
+
+          {/* Cart Icon */}
+          <div className="relative cursor-pointer" onClick={() => navigate('/cart')}>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-white">
+              <path d="M6 2L3 6V20C3 20.5304 3.21071 21.0391 3.58579 21.4142C3.96086 21.7893 4.46957 22 5 22H19C19.5304 22 20.0391 21.7893 20.4142 21.4142C20.7893 21.0391 21 20.5304 21 20V6L18 2H6Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M3 6H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M16 10C16 11.0609 15.5786 12.0783 14.8284 12.8284C14.0783 13.5786 13.0609 14 12 14C10.9391 14 9.92172 13.5786 9.17157 12.8284C8.42143 12.0783 8 11.0609 8 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
+            <span
+              className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center border-2"
+              style={{ borderColor: theme.headerBg || '#007fb1' }}
+            >
+              {cartCount}
+            </span>
+          </div>
+
+          {/* Profile Circle */}
+          <div
+            className="w-10 h-10 bg-[#99d79a] text-[#006002] rounded-full flex items-center justify-center font-bold text-lg cursor-pointer border-2 border-white/20"
+            onClick={() => navigate('/account')}
+          >
+            S
           </div>
         </div>
 
-        {/* Category Tabs */}
-        <div className="border-b border-neutral-400/40 w-full" style={{ paddingBottom: 0 }}>
+        {/* 3. Location Strip */}
+        <div className="max-w-2xl mx-auto flex items-center justify-between text-white/90 text-xs px-1">
+          <div className="flex items-center gap-1.5 flex-1 min-w-0">
+            <span className="font-bold whitespace-nowrap opacity-80 uppercase tracking-wider text-[10px]">Delivery To:</span>
+            <span className="truncate font-semibold">{locationDisplayText || 'Select Location'}</span>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-white/60 ml-2">
+            <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </div>
+      </div>
+
+      {/* 4. Sticky Category Header (Untouched as requested) */}
+      <div
+        ref={stickyRef}
+        className="sticky top-0 z-50 bg-white shadow-md border-b border-gray-100"
+      >
+        <div className="w-full">
           <div
             ref={tabsContainerRef}
-            className="relative flex gap-2 md:gap-3 overflow-x-auto scrollbar-hide -mx-4 md:mx-0 px-4 md:px-6 lg:px-8 md:justify-center scroll-smooth"
-            style={{ paddingBottom: '12px' }}
-            data-padding-bottom="md:8px"
+            className={`relative flex ${deliveryMode === 'scheduled' ? 'gap-4 md:gap-6' : 'gap-2 md:gap-3'} overflow-x-auto scrollbar-hide px-4 md:px-6 lg:px-8 md:justify-center scroll-smooth py-1.5 md:py-3`}
           >
             {/* Sliding Indicator */}
             {indicatorStyle.width > 0 && (
@@ -396,11 +383,7 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
 
             {tabs.map((tab) => {
               const isActive = activeTab === tab.id;
-              const tabColor = isActive
-                ? 'text-neutral-900'
-                : scrollProgress > 0.5
-                  ? 'text-neutral-600'
-                  : 'text-neutral-800';
+              const tabColor = isActive ? 'text-neutral-900' : 'text-neutral-500';
 
               return (
                 <button
@@ -413,28 +396,17 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
                     }
                   }}
                   onClick={() => handleTabClick(tab.id)}
-                  className={`flex-shrink-0 flex flex-col md:flex-row items-center justify-center min-w-[50px] md:min-w-fit md:px-3 py-1 md:py-1.5 relative ${tabColor} z-10`}
-                  style={{
-                    transition: 'color 0.3s ease-out',
-                  }}
+                  className={`flex-shrink-0 flex flex-col md:flex-row items-center justify-center min-w-[60px] md:min-w-fit md:px-4 py-0.5 md:py-1 relative ${tabColor} z-10 transition-colors duration-300`}
                   type="button"
                 >
-                  <div className={`mb-0.5 md:hidden w-5 h-5 flex items-center justify-center ${tabColor}`} style={{
-                    transition: 'color 0.3s ease-out, transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                    transform: isActive ? 'scale(1.1)' : 'scale(1)',
-                  }}>
+                  <div className={`mb-0 md:mb-1 md:mr-2 w-5 h-5 md:w-6 md:h-6 flex items-center justify-center ${isActive ? 'scale-110' : 'scale-100'} transition-transform duration-300`}>
                     {tab.icon}
                   </div>
-                  <span
-                    className={`text-[10px] md:text-xs md:whitespace-nowrap ${isActive ? 'font-semibold' : 'font-medium'}`}
-                    style={{
-                      transition: 'font-weight 0.3s ease-out',
-                    }}
-                  >
+                  <span className={`text-[10px] md:text-xs md:whitespace-nowrap ${isActive ? 'font-bold' : 'font-medium'}`}>
                     {tab.label}
                   </span>
                 </button>
-              )
+              );
             })}
           </div>
         </div>

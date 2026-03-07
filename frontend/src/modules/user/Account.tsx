@@ -1,11 +1,14 @@
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { getProfile, CustomerProfile } from '../../services/api/customerService';
+import { useThemeContext } from '../../context/ThemeContext';
 
 export default function Account() {
   const navigate = useNavigate();
   const { user, logout: authLogout } = useAuth();
+  const { currentTheme } = useThemeContext();
   const [profile, setProfile] = useState<CustomerProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -124,125 +127,187 @@ export default function Account() {
   const displayDateOfBirth = profile?.dateOfBirth;
 
   return (
-    <div className="pb-24 md:pb-8 bg-white min-h-screen">
-      <div className="bg-gradient-to-b from-green-200 via-green-100 to-white pb-6 md:pb-8 pt-12 md:pt-16">
-        <div className="px-4 md:px-6 lg:px-8">
-          <button onClick={() => navigate(-1)} className="mb-4 text-neutral-900" aria-label="Back">
+    <div className="pb-24 md:pb-8 bg-neutral-50 min-h-screen">
+      <div
+        className="pb-12 md:pb-16 pt-12 md:pt-16 relative overflow-hidden"
+        style={{
+          background: `linear-gradient(180deg, ${currentTheme.headerBg || '#16a34a'}22 0%, #f9fafb 100%)`
+        }}
+      >
+        {/* Animated background elements */}
+        <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none opacity-20">
+          <motion.div
+            animate={{
+              scale: [1, 1.2, 1],
+              rotate: [0, 90, 0],
+            }}
+            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+            className="absolute -top-24 -left-24 w-64 h-64 rounded-full blur-3xl"
+            style={{ backgroundColor: currentTheme.headerBg || '#16a34a' }}
+          />
+        </div>
+
+        <div className="px-4 md:px-6 lg:px-8 relative z-10">
+          <motion.button
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            onClick={() => navigate(-1)}
+            className="mb-4 w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-neutral-900 hover:bg-neutral-50 transition-colors"
+            aria-label="Back"
+          >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-          </button>
-          <div className="flex flex-col items-center mb-4 md:mb-6">
-            <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-neutral-200 flex items-center justify-center mb-3 md:mb-4 border-2 border-white shadow-sm">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" className="text-neutral-500 md:w-12 md:h-12">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                <circle cx="12" cy="7" r="4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
+          </motion.button>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex flex-col items-center mb-4 md:mb-6"
+          >
+            <div className="relative mb-4">
+              <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-white p-1 shadow-xl relative z-10">
+                <div className="w-full h-full rounded-full bg-neutral-100 flex items-center justify-center overflow-hidden border border-neutral-100">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" className="text-neutral-400 md:w-16 md:h-16">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    <circle cx="12" cy="7" r="4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+              </div>
+              {/* Decorative themed ring */}
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+                className="absolute inset-[-4px] rounded-full opacity-30 blur-[2px]"
+                style={{
+                  border: `2px dashed ${currentTheme.headerBg || '#16a34a'}`,
+                }}
+              />
             </div>
-            <h1 className="text-xl md:text-2xl font-bold text-neutral-900 mb-2">{displayName}</h1>
-            <div className="flex flex-col items-center gap-1.5 md:gap-2 text-xs md:text-sm text-neutral-600">
+
+            <h1 className="text-2xl md:text-3xl font-extrabold text-neutral-900 mb-1 tracking-tight">{displayName}</h1>
+            <div className="flex flex-wrap items-center justify-center gap-3 text-sm text-neutral-500 font-medium">
               {displayPhone && (
-                <div className="flex items-center gap-1.5">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                <div className="flex items-center gap-1.5 bg-white px-3 py-1 rounded-full shadow-sm border border-neutral-100">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="text-teal-600"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
                   <span>{displayPhone}</span>
                 </div>
               )}
               {displayDateOfBirth && (
-                <div className="flex items-center gap-1.5">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke="currentColor" strokeWidth="2" /><line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+                <div className="flex items-center gap-1.5 bg-white px-3 py-1 rounded-full shadow-sm border border-neutral-100">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="text-teal-600"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke="currentColor" strokeWidth="2" /><line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
                   <span>{formatDate(displayDateOfBirth)}</span>
                 </div>
               )}
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
 
-      {/* Wallet Balance Card */}
-      <div className="px-4 md:px-6 lg:px-8 -mt-4 md:-mt-6 mb-4">
+      {/* Wallet Balance Card - Glassmorphism */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.1 }}
+        className="px-4 md:px-6 lg:px-8 -mt-8 relative z-20 mb-6"
+      >
         <div className="max-w-2xl md:mx-auto">
-          <div className="bg-gradient-to-r from-teal-600 to-green-600 rounded-xl p-4 md:p-5 shadow-lg">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-white md:w-7 md:h-7">
+          <div
+            className="rounded-3xl p-6 shadow-2xl relative overflow-hidden group border border-white/20"
+            style={{
+              background: `linear-gradient(135deg, ${currentTheme.headerBg || '#0d9488'} 0%, ${currentTheme.searchBarBg || '#0f766e'} 100%)`
+            }}
+          >
+            {/* Glossy overlay effect */}
+            <div className="absolute inset-0 bg-gradient-to-tr from-white/10 via-transparent to-white/5 pointer-events-none" />
+            <div className="absolute -right-12 -top-12 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:scale-110 transition-transform duration-700" />
+
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-inner">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" className="text-white md:w-9 md:h-9">
                     <path d="M21 4H3a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     <path d="M1 10h22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    <circle cx="18" cy="15" r="1.5" fill="white" />
                   </svg>
                 </div>
                 <div>
-                  <p className="text-xs md:text-sm text-white/80 font-medium mb-0.5">Wallet Balance</p>
-                  <p className="text-2xl md:text-3xl font-bold text-white">
-                    ₹{(profile?.walletAmount || user?.walletAmount || 0).toLocaleString('en-IN')}
-                  </p>
+                  <p className="text-xs md:text-sm text-white/70 font-bold uppercase tracking-widest mb-1">Your Balance</p>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-xl font-bold text-white/80">₹</span>
+                    <span className="text-3xl md:text-4xl font-black text-white">
+                      {(profile?.walletAmount || user?.walletAmount || 0).toLocaleString('en-IN')}
+                    </span>
+                  </div>
                 </div>
               </div>
-              <div className="text-right">
-                <button
+              <div className="flex flex-col items-end gap-2">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                   onClick={() => navigate('/checkout')}
-                  className="px-3 py-1.5 md:px-4 md:py-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg text-white text-xs md:text-sm font-semibold transition-colors border border-white/30"
+                  className="w-full md:w-auto px-6 py-3 bg-white text-neutral-900 rounded-2xl text-sm font-bold shadow-xl hover:bg-neutral-50 transition-all flex items-center justify-center gap-2"
                 >
-                  Use Wallet
-                </button>
-                <p className="text-[10px] md:text-xs text-white/60 mt-1">Use at checkout</p>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14m-7-7h14" /></svg>
+                  Add Money
+                </motion.button>
+                <p className="text-[10px] md:text-xs text-white/50 font-medium">Safe & Secure Transactions</p>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
 
-      <div className="px-4 md:px-6 lg:px-8 mb-4 md:mb-6">
-        <div className="grid grid-cols-2 md:grid-cols-2 gap-2.5 md:gap-6 max-w-2xl md:mx-auto">
-          <button onClick={() => navigate('/orders')} className="bg-white rounded-lg border border-neutral-200 p-3 md:p-4 hover:shadow-md transition-shadow text-center outline-none">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="mx-auto mb-1.5 md:mb-2 text-neutral-700 md:w-6 md:h-6"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><line x1="3" y1="6" x2="21" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M16 10a4 4 0 0 1-8 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-            <div className="text-[10px] md:text-xs font-semibold text-neutral-900">Your orders</div>
-          </button>
-          <button
-            onClick={() => navigate('/faq')}
-            className="bg-white rounded-lg border border-neutral-200 p-3 md:p-4 hover:shadow-md transition-shadow text-center outline-none"
+      <div className="px-4 md:px-6 lg:px-8 mb-8">
+        <div className="grid grid-cols-2 gap-3 md:gap-6 max-w-2xl md:mx-auto">
+          <motion.button
+            whileHover={{ y: -4, shadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)" }}
+            onClick={() => navigate('/orders')}
+            className="bg-white rounded-2xl border border-neutral-100 p-4 md:p-6 shadow-sm flex flex-col items-center hover:border-teal-100 transition-all outline-none"
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="mx-auto mb-1.5 md:mb-2 text-neutral-700 md:w-6 md:h-6"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-            <div className="text-[10px] md:text-xs font-semibold text-neutral-900">Need help?</div>
-          </button>
+            <div className="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center mb-3 text-orange-600">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><line x1="3" y1="6" x2="21" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M16 10a4 4 0 0 1-8 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            </div>
+            <div className="text-xs md:text-sm font-bold text-neutral-900">Your Orders</div>
+            <div className="text-[10px] text-neutral-400 mt-1">Track & Reorder</div>
+          </motion.button>
+          <motion.button
+            whileHover={{ y: -4, shadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)" }}
+            onClick={() => navigate('/faq')}
+            className="bg-white rounded-2xl border border-neutral-100 p-4 md:p-6 shadow-sm flex flex-col items-center hover:border-teal-100 transition-all outline-none"
+          >
+            <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center mb-3 text-blue-600">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            </div>
+            <div className="text-xs md:text-sm font-bold text-neutral-900">Need Help?</div>
+            <div className="text-[10px] text-neutral-400 mt-1">Chat & Support</div>
+          </motion.button>
         </div>
       </div>
 
-      <div className="px-4 py-2.5">
-        <h2 className="text-xs font-bold text-neutral-900 mb-2 uppercase tracking-wide">Your information</h2>
-        <div className="bg-white rounded-lg border border-neutral-200 overflow-hidden divide-y divide-neutral-100">
-          <button onClick={() => navigate('/address-book')} className="w-full flex items-center justify-between px-3 py-3 hover:bg-neutral-50 transition-colors">
-            <div className="flex items-center gap-3">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="text-neutral-500"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-              <span className="text-[13px] font-medium text-neutral-900">Address Book</span>
-            </div>
-            <span className="text-neutral-400">›</span>
-          </button>
-          <button onClick={() => navigate('/wishlist')} className="w-full flex items-center justify-between px-3 py-3 hover:bg-neutral-50 transition-colors">
-            <div className="flex items-center gap-3">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="text-neutral-500"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-              <span className="text-[13px] font-medium text-neutral-900">Your Wishlist</span>
-            </div>
-            <span className="text-neutral-400">›</span>
-          </button>
-          <button onClick={() => setShowGstModal(true)} className="w-full flex items-center justify-between px-3 py-3 hover:bg-neutral-50 transition-colors">
-            <div className="flex items-center gap-3">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="text-neutral-500"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><polyline points="14 2 14 8 20 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-              <span className="text-[13px] font-medium text-neutral-900">GST Details</span>
-            </div>
-            <span className="text-neutral-400">›</span>
-          </button>
-          <button onClick={() => window.location.href = 'https://about.dhakadsnazzy.com'} className="w-full flex items-center justify-between px-3 py-3 hover:bg-neutral-50 transition-colors">
-            <div className="flex items-center gap-3">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="text-neutral-500"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" /><line x1="12" y1="16" x2="12" y2="12" stroke="currentColor" strokeWidth="2" /><line x1="12" y1="8" x2="12.01" y2="8" stroke="currentColor" strokeWidth="2" /></svg>
-              <span className="text-[13px] font-medium text-neutral-900">About Us</span>
-            </div>
-            <span className="text-neutral-400">›</span>
-          </button>
-          <button onClick={handleLogout} className="w-full flex items-center justify-between px-3 py-3 hover:bg-neutral-50 transition-colors">
-            <div className="flex items-center gap-3">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="text-red-500"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><polyline points="16 17 21 12 16 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><line x1="21" y1="12" x2="9" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
-              <span className="text-[13px] font-medium text-red-500">Log Out</span>
-            </div>
-            <span className="text-neutral-400">›</span>
-          </button>
+      <div className="px-4 py-2 max-w-2xl md:mx-auto">
+        <h2 className="text-xs font-black text-neutral-400 mb-4 uppercase tracking-[0.2em] px-1">Settings & Info</h2>
+        <div className="bg-white rounded-3xl border border-neutral-100 shadow-sm overflow-hidden mb-8">
+          {[
+            { id: 'address', label: 'Address Book', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>, action: () => navigate('/address-book'), color: 'text-indigo-500' },
+            { id: 'wishlist', label: 'Your Wishlist', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>, action: () => navigate('/wishlist'), color: 'text-rose-500' },
+            { id: 'gst', label: 'GST Details', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><polyline points="14 2 14 8 20 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>, action: () => setShowGstModal(true), color: 'text-amber-500' },
+            { id: 'about', label: 'About Us', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" /><line x1="12" y1="16" x2="12" y2="12" stroke="currentColor" strokeWidth="2" /><line x1="12" y1="8" x2="12.01" y2="8" stroke="currentColor" strokeWidth="2" /></svg>, action: () => window.location.href = 'https://about.dhakadsnazzy.com', color: 'text-sky-500' },
+            { id: 'logout', label: 'Log Out', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><polyline points="16 17 21 12 16 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><line x1="21" y1="12" x2="9" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>, action: handleLogout, color: 'text-red-500', isCritical: true },
+          ].map((item, idx) => (
+            <motion.button
+              key={item.id}
+              whileHover={{ backgroundColor: "rgba(0,0,0,0.02)" }}
+              onClick={item.action}
+              className={`w-full flex items-center justify-between px-5 py-4 transition-colors group ${idx !== 0 ? 'border-t border-neutral-50' : ''}`}
+            >
+              <div className="flex items-center gap-4">
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${item.isCritical ? 'bg-red-50 text-red-500' : 'bg-neutral-50 ' + item.color} group-hover:scale-110 transition-transform duration-300`}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">{item.icon}</svg>
+                </div>
+                <span className={`text-sm font-bold ${item.isCritical ? 'text-red-600' : 'text-neutral-800'}`}>{item.label}</span>
+              </div>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="text-neutral-300 group-hover:text-neutral-500 transition-colors"><path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            </motion.button>
+          ))}
         </div>
       </div>
 

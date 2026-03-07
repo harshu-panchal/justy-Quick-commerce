@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import HomeHero from "./components/HomeHero";
+import HomeHeroCarousel from "./components/HomeHeroCarousel";
 import PromoStrip from "./components/PromoStrip";
-import LowestPricesEver from "./components/LowestPricesEver";
 import CategoryTileSection from "./components/CategoryTileSection";
 import FeaturedThisWeek from "./components/FeaturedThisWeek";
 import ProductCard from "./components/ProductCard";
@@ -16,25 +16,26 @@ import { isCategoryAvailable } from "../../config/pincodeService";
 import { getStoredPincode } from "../../components/PincodeSelector";
 
 import { useThemeContext } from "../../context/ThemeContext";
+import { useDeliveryMode } from "../../hooks/useDeliveryMode";
 
 export default function Home() {
   const navigate = useNavigate();
   const { location } = useLocation();
-  const { activeCategory, setActiveCategory } = useThemeContext();
+  const { activeCategory, setActiveCategory, currentTheme } = useThemeContext();
+  const { deliveryMode } = useDeliveryMode();
   const { startRouteLoading, stopRouteLoading } = useLoading();
-  const activeTab = activeCategory; // mapping for existing code compatibility
+  const activeTab = activeCategory;
   const setActiveTab = setActiveCategory;
   const contentRef = useRef<HTMLDivElement>(null);
   const scrollHandledRef = useRef(false);
   const SCROLL_POSITION_KEY = 'home-scroll-position';
 
-  // State for dynamic data
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [homeData, setHomeData] = useState<any>({
     bestsellers: [],
     categories: [],
-    homeSections: [], // Dynamic sections created by admin
+    homeSections: [],
     shops: [],
     promoBanners: [],
     trending: [],
@@ -43,7 +44,6 @@ export default function Home() {
 
   const [products, setProducts] = useState<any[]>([]);
 
-  // Function to save scroll position before navigation
   const saveScrollPosition = () => {
     const mainElement = document.querySelector('main');
     const scrollPos = Math.max(
@@ -62,8 +62,6 @@ export default function Home() {
         startRouteLoading();
         setLoading(true);
         setError(null);
-        // Pass the activeTab as slug (if it's not "all")
-        // This ensures backend filters sections based on the category
         const slug = activeTab === "all" ? undefined : activeTab;
 
         const response = await getHomeContent(
@@ -73,7 +71,6 @@ export default function Home() {
         );
         if (response.success && response.data) {
           setHomeData(response.data);
-
           if (response.data.bestsellers) {
             setProducts(response.data.bestsellers);
           }
@@ -90,34 +87,14 @@ export default function Home() {
     };
 
     fetchData();
-
-    // Preload Logic (kept same)
-    const preloadHeaderCategories = async () => {
-      try {
-        // ... (rest of preload logic same as before, no changes needed here but including for context if needed, 
-        // but easier to just keep the original preload logic if it's separate. 
-        // Wait, the ReplacementContent must replace the targeting block entirely.)
-        // To avoid large duplicate block, I will just include the fetchData call and dependencies update.
-      } catch (error) {
-        console.debug("Failed to preload header categories:", error);
-      }
-    };
-
-    // We only want to preload once on mount, so we can keep the preload logic in a separate effect or just here
-    // But since this effect now runs on activeTab change, we shouldn't preload every time.
-    // Let's separate preload to a mount-only effect or use a ref.
-
   }, [location?.latitude, location?.longitude, activeTab]);
 
-  // Separate effect for preloading only on mount/location change, NOT activeTab
   useEffect(() => {
     const preloadHeaderCategories = async () => {
       try {
         await new Promise(resolve => setTimeout(resolve, 1000));
-
         const headerCategories = await getHeaderCategoriesPublic(true);
         const slugsToPreload = ['all', ...headerCategories.map(cat => cat.slug)];
-
         const batchSize = 2;
         for (let i = 0; i < slugsToPreload.length; i += batchSize) {
           const batch = slugsToPreload.slice(i, i + batchSize);
@@ -143,53 +120,36 @@ export default function Home() {
         console.debug("Failed to preload header categories:", error);
       }
     };
-
     preloadHeaderCategories();
   }, [location?.latitude, location?.longitude]);
 
-  // Restore scroll position when returning to this page
   useEffect(() => {
-    // Only restore scroll after data has loaded
     if (!loading && homeData.shops) {
-      // Use a ref to ensure we only handle initial scroll once per mount
       if (scrollHandledRef.current) return;
       scrollHandledRef.current = true;
-
       const savedScrollPosition = sessionStorage.getItem(SCROLL_POSITION_KEY);
       if (savedScrollPosition) {
         const scrollY = parseInt(savedScrollPosition, 10);
-
         const performScroll = () => {
           const mainElement = document.querySelector('main');
-          if (mainElement) {
-            mainElement.scrollTop = scrollY;
-          }
+          if (mainElement) mainElement.scrollTop = scrollY;
           window.scrollTo(0, scrollY);
         };
-
-        // Try multiple times to ensure scroll is applied even if content is still rendering
         requestAnimationFrame(() => {
           performScroll();
           requestAnimationFrame(() => {
             performScroll();
-            // Final fallback after a small delay for any late-rendering content
             setTimeout(performScroll, 100);
             setTimeout(performScroll, 300);
           });
         });
-
-        // Clear the saved position after some time to ensure AppLayout can also see it if needed
-        // but Home.tsx is the primary restorer now.
         setTimeout(() => {
           sessionStorage.removeItem(SCROLL_POSITION_KEY);
         }, 1000);
       } else {
-        // No saved position, ensure we start at the top
         const performReset = () => {
           const mainElement = document.querySelector('main');
-          if (mainElement) {
-            mainElement.scrollTop = 0;
-          }
+          if (mainElement) mainElement.scrollTop = 0;
           window.scrollTo(0, 0);
         };
         requestAnimationFrame(performReset);
@@ -198,16 +158,13 @@ export default function Home() {
     }
   }, [loading, homeData.shops]);
 
-  // Global click/touch listener to save scroll position before any navigation
   useEffect(() => {
     const handleNavigationEvent = (e: MouseEvent | TouchEvent) => {
       const target = e.target as HTMLElement;
-      // If clicking a link, button, or any element with cursor-pointer (like product cards/store tiles)
       if (target.closest('a') || target.closest('button') || target.closest('[role="button"]') || target.closest('.cursor-pointer')) {
         saveScrollPosition();
       }
     };
-
     window.addEventListener('click', handleNavigationEvent, { capture: true });
     window.addEventListener('touchstart', handleNavigationEvent, { capture: true, passive: true });
     return () => {
@@ -216,26 +173,16 @@ export default function Home() {
     };
   }, []);
 
-  // Removed duplicate saveScrollPosition
   const getFilteredProducts = (tabId: string) => {
-    if (tabId === "all") {
-      return products;
-    }
+    if (tabId === "all") return products;
     return products.filter(
-      (p) =>
-        p.categoryId === tabId ||
-        (p.category && (p.category._id === tabId || p.category.slug === tabId))
+      (p) => p.categoryId === tabId || (p.category && (p.category._id === tabId || p.category.slug === tabId))
     );
   };
 
-  const filteredProducts = useMemo(
-    () => getFilteredProducts(activeTab),
-    [activeTab, products]
-  );
+  const filteredProducts = useMemo(() => getFilteredProducts(activeTab), [activeTab, products]);
 
-  if (loading && !products.length) {
-    return <PageLoader />; // Let the global IconLoader handle the initial loading state
-  }
+  if (loading && !products.length) return <PageLoader />;
 
   if (error && !loading) {
     return (
@@ -247,262 +194,163 @@ export default function Home() {
         </div>
         <h3 className="text-lg font-semibold text-gray-900 mb-2">Oops! Something went wrong</h3>
         <p className="text-gray-600 mb-6 max-w-xs">{error}</p>
-        <button
-          onClick={() => window.location.reload()}
-          className="px-6 py-2 bg-green-600 text-white rounded-full font-medium hover:bg-green-700 transition-colors"
-        >
-          Try Refreshing
-        </button>
+        <button onClick={() => window.location.reload()} className="px-6 py-2 bg-green-600 text-white rounded-full font-medium hover:bg-green-700 transition-colors">Try Refreshing</button>
       </div>
     );
   }
 
-  // Pincode availability check
   const selectedPincode = getStoredPincode();
   const isCategoryUnavailable = activeTab !== "all" && selectedPincode && !isCategoryAvailable(activeTab, selectedPincode);
 
   return (
     <div className="bg-white min-h-screen pb-20 md:pb-0" ref={contentRef}>
-      {/* Hero Header with Gradient and Tabs */}
       <HomeHero activeTab={activeTab} onTabChange={setActiveTab} />
+      <div className="w-full relative z-10 mt-2">
+        <HomeHeroCarousel />
+      </div>
 
-      {/* Coming Soon - if category not available in pincode */}
       {isCategoryUnavailable ? (
         <ComingSoon />
       ) : (
-        <>
-          {/* Promo Strip */}
-          <PromoStrip activeTab={activeTab} />
+        <div
+          className={`bg-neutral-50 space-y-5 md:space-y-8 transition-colors duration-500 ${deliveryMode === 'scheduled' ? 'mt-4 pt-4 md:mt-6 md:pt-6' : '-mt-2 pt-1 md:pt-4'
+            }`}
+          style={{ backgroundColor: currentTheme.pageBg || '' }}
+        >
+          {activeTab === "all" && deliveryMode === "quick" && (
+            <div className="mt-2 md:mt-4">
+              <CategoryTileSection
+                title="Bestsellers"
+                tiles={
+                  homeData.bestsellers && homeData.bestsellers.length > 0
+                    ? homeData.bestsellers
+                      .filter((card: any) => {
+                        const name = (card.name || "").toLowerCase();
+                        const title = (card.title || "").toLowerCase();
+                        const catName = (card.categoryName || "").toLowerCase();
+                        const forbidden = ['non veg', 'meat', 'fish', 'chicken', 'egg', 'pharma', 'pet', 'baby', 'cleaning', 'office', 'personal care', 'health', 'wellness'];
+                        return !forbidden.some(word => name.includes(word) || title.includes(word) || catName.includes(word));
+                      })
+                      .slice(0, 6)
+                      .map((card: any) => ({
+                        id: card.id,
+                        categoryId: card.categoryId,
+                        name: card.name || "Category",
+                        productImages: card.productImages || [],
+                        productCount: card.productCount || 0,
+                      }))
+                    : []
+                }
+                columns={3}
+                showProductCount={true}
+              />
+            </div>
+          )}
 
-          {/* LOWEST PRICES EVER Section */}
-          <LowestPricesEver activeTab={activeTab} products={homeData.lowestPrices} />
-
-          {/* Main content */}
-          <div
-            className="bg-neutral-50 -mt-2 pt-1 space-y-5 md:space-y-8 md:pt-4">
-            {/* Bestsellers Section */}
-            {activeTab === "all" && (
-              <div className="mt-2 md:mt-4">
-                <CategoryTileSection
-                  title="Bestsellers"
-                  tiles={
-                    homeData.bestsellers && homeData.bestsellers.length > 0
-                      ? homeData.bestsellers
-                        .filter((card: any) => {
-                          const name = (card.name || "").toLowerCase();
-                          const title = (card.title || "").toLowerCase();
-                          const catName = (card.categoryName || "").toLowerCase();
-                          const forbidden = ['non veg', 'meat', 'fish', 'chicken', 'egg', 'pharma', 'pet', 'baby', 'cleaning', 'office', 'personal care', 'health', 'wellness'];
-                          const isForbidden = forbidden.some(word =>
-                            name.includes(word) || title.includes(word) || catName.includes(word)
-                          );
-                          return !isForbidden;
-                        })
-                        .slice(0, 6)
-                        .map((card: any) => {
-                          // Bestseller cards have categoryId and productImages array from backend
-                          return {
-                            id: card.id,
-                            categoryId: card.categoryId,
-                            name: card.name || "Category",
-                            productImages: card.productImages || [],
-                            productCount: card.productCount || 0,
-                          };
-                        })
-                      : []
+          {homeData.homeSections && homeData.homeSections.length > 0 && (
+            <>
+              {homeData.homeSections
+                .filter((section: any) => {
+                  const title = section.title?.toLowerCase() || '';
+                  const slug = section.categorySlug?.toLowerCase() || '';
+                  if (deliveryMode === 'quick') {
+                    const keywords = ['grocery', 'vegetable', 'fruit', 'bakery', 'cake', 'munchies', 'snack', 'sweet', 'chocolate', 'pan', 'corner'];
+                    if (!keywords.some(word => title.includes(word) || slug.includes(word))) return false;
+                  } else if (deliveryMode === 'scheduled') {
+                    const keywords = ['fashion', 'electronics', 'beauty', 'makeup', 'cosmetic', 'wedding', 'sports'];
+                    if (!keywords.some(word => title.includes(word) || slug.includes(word))) return false;
                   }
-                  columns={3}
-                  showProductCount={true}
-                />
-              </div>
-            )}
-
-            {/* Dynamic Home Sections - Render sections created by admin */}
-            {homeData.homeSections && homeData.homeSections.length > 0 && (
-              <>
-                {homeData.homeSections
-                  .filter((section: any) => {
-                    const sectionTitle = section.title?.toLowerCase() || '';
-                    const sectionSlug = section.categorySlug?.toLowerCase() || '';
-
-                    // Step 1: Explicitly remove forbidden sections
-                    const forbiddenKeywords = ['non veg', 'meat', 'fish', 'chicken', 'egg', 'pet care', 'pharma', 'wellness', 'cleaning', 'office', 'baby care', 'personal care', 'wash', 'sanitary'];
-                    if (forbiddenKeywords.some(word => sectionTitle.includes(word) || sectionSlug.includes(word))) {
-                      return false;
-                    }
-
-                    // Step 2: Strictly allow only sections matching the 8 categories when in "All" tab
-                    if (activeTab === 'all') {
-                      const allowedKeywords = [
-                        'fashion', 'grocery', 'kitchen', 'beauty', 'cosmetic', 'makeup', 'electronics', 'mobile', 'cpu',
-                        'pan', 'corner', 'bakery', 'cake', 'vegetable', 'fruit', 'munchies', 'snack', 'sweet', 'chocolate'
-                      ];
-                      return allowedKeywords.some(word => sectionTitle.includes(word) || sectionSlug.includes(word));
-                    }
-
-                    return true;
-                  })
-                  .map((section: any) => {
-                    // Filter the tiles (data) inside the section as well
-                    const filteredData = (section.data || []).filter((tile: any) => {
-                      const tileName = (tile.name || '').toLowerCase();
-                      const forbiddenKeywords = ['non veg', 'meat', 'fish', 'chicken', 'egg', 'pharma', 'pet care', 'baby care', 'cleaning', 'office', 'wellness', 'personal care', 'wash', 'sanitary'];
-                      return !forbiddenKeywords.some(word => tileName.includes(word));
-                    });
-
-                    // Skip the section if no data remains after filtering tiles
-                    if (filteredData.length === 0) return null;
-
-                    const columnCount = Number(section.columns) || 4;
-
-                    if (section.displayType === "products" && filteredData.length > 0) {
-                      const gridClass = {
-                        2: "grid-cols-2", 3: "grid-cols-3", 4: "grid-cols-4",
-                        6: "grid-cols-6", 8: "grid-cols-8"
-                      }[columnCount] || "grid-cols-4";
-
-                      const isCompact = columnCount >= 4;
-                      const gapClass = columnCount >= 4 ? "gap-2" : "gap-3 md:gap-4";
-
-                      return (
-                        <div key={section.id} className="mt-6 mb-6 md:mt-8 md:mb-8">
-                          {section.title && (
-                            <h2 className="text-lg md:text-2xl font-semibold text-neutral-900 mb-3 md:mb-6 px-4 md:px-6 lg:px-8 tracking-tight capitalize">
-                              {section.title}
-                            </h2>
-                          )}
-                          <div className="px-4 md:px-6 lg:px-8">
-                            <div className={`grid ${gridClass} ${gapClass}`}>
-                              {filteredData.map((product: any) => (
-                                <ProductCard
-                                  key={product.id || product._id}
-                                  product={product}
-                                  categoryStyle={true}
-                                  showBadge={true}
-                                  showPackBadge={false}
-                                  showStockInfo={false}
-                                  compact={isCompact}
-                                />
-                              ))}
-                            </div>
+                  const forbidden = ['non veg', 'meat', 'fish', 'chicken', 'egg', 'pet care', 'pharma', 'wellness', 'cleaning', 'office', 'baby care', 'personal care', 'wash', 'sanitary'];
+                  if (forbidden.some(word => title.includes(word) || slug.includes(word))) return false;
+                  if (activeTab === 'all') {
+                    const allowed = ['fashion', 'grocery', 'kitchen', 'beauty', 'cosmetic', 'makeup', 'electronics', 'mobile', 'cpu', 'pan', 'corner', 'bakery', 'cake', 'vegetable', 'fruit', 'munchies', 'snack', 'sweet', 'chocolate'];
+                    return allowed.some(word => title.includes(word) || slug.includes(word));
+                  }
+                  return true;
+                })
+                .map((section: any) => {
+                  const filteredData = (section.data || []).filter((tile: any) => {
+                    const name = (tile.name || '').toLowerCase();
+                    const forbidden = ['non veg', 'meat', 'fish', 'chicken', 'egg', 'pharma', 'pet care', 'baby care', 'cleaning', 'office', 'wellness', 'personal care', 'wash', 'sanitary'];
+                    return !forbidden.some(word => name.includes(word));
+                  });
+                  if (filteredData.length === 0) return null;
+                  const cols = Number(section.columns) || 4;
+                  if (section.displayType === "products") {
+                    const gridClass = { 2: "grid-cols-2", 3: "grid-cols-3", 4: "grid-cols-4", 6: "grid-cols-6", 8: "grid-cols-8" }[cols] || "grid-cols-4";
+                    const gapClass = deliveryMode === 'scheduled' ? (cols >= 4 ? "gap-4 md:gap-5" : "gap-6 md:gap-8") : (cols >= 4 ? "gap-2" : "gap-3 md:gap-4");
+                    return (
+                      <div key={section.id} className="mt-6 mb-6 md:mt-8 md:mb-8">
+                        {section.title && <h2 className="text-lg md:text-2xl font-semibold text-neutral-900 mb-3 md:mb-6 px-4 md:px-6 lg:px-8 tracking-tight capitalize">{section.title}</h2>}
+                        <div className="px-4 md:px-6 lg:px-8">
+                          <div className={`grid ${gridClass} ${gapClass}`}>
+                            {filteredData.map((p: any) => (
+                              <ProductCard key={p.id || p._id} product={p} categoryStyle={true} showBadge={true} showPackBadge={false} showStockInfo={false} compact={cols >= 4} />
+                            ))}
                           </div>
                         </div>
-                      );
-                    }
-
-                    return (
-                      <CategoryTileSection
-                        key={section.id}
-                        title={section.title}
-                        tiles={filteredData}
-                        columns={columnCount as 2 | 3 | 4 | 6 | 8}
-                        showProductCount={false}
-                      />
+                      </div>
                     );
-                  })}
-              </>
-            )}
+                  }
+                  return <CategoryTileSection key={section.id} title={section.title} tiles={filteredData} columns={cols as 2 | 3 | 4 | 6 | 8} showProductCount={false} />;
+                })}
+            </>
+          )}
 
-            {/* Filtered Products Section */}
-            {activeTab !== "all" && filteredProducts.length > 0 && (
-              <div data-products-section className="mt-6 mb-6 md:mt-8 md:mb-8">
-                <h2 className="text-lg md:text-2xl font-semibold text-neutral-900 mb-3 md:mb-6 px-4 md:px-6 lg:px-8 tracking-tight capitalize">
-                  {activeTab === "grocery" ? "Grocery Items" : activeTab}
-                </h2>
+          {activeTab !== "all" && filteredProducts.length > 0 && (
+            <div className="mt-6 mb-6 md:mt-8 md:mb-8">
+              <h2 className="text-lg md:text-2xl font-semibold text-neutral-900 mb-3 md:mb-6 px-4 md:px-6 lg:px-8 tracking-tight capitalize">{activeTab === "grocery" ? "Grocery Items" : activeTab}</h2>
+              <div className="px-4 md:px-6 lg:px-8">
+                <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4">
+                  {filteredProducts
+                    .filter(p => !['non veg', 'meat', 'fish', 'chicken', 'egg'].some(w => (p.name || '').toLowerCase().includes(w)))
+                    .map((p) => <ProductCard key={p.id} product={p} categoryStyle={true} showBadge={true} showPackBadge={false} showStockInfo={true} />)}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === "all" && (
+            <>
+              <FeaturedThisWeek />
+              <div className="mb-6 mt-6 md:mb-8 md:mt-8">
+                <h2 className="text-lg md:text-2xl font-semibold text-neutral-900 mb-3 md:mb-6 px-4 md:px-6 lg:px-8 tracking-tight">Shop by Store</h2>
                 <div className="px-4 md:px-6 lg:px-8">
-                  <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4">
-                    {filteredProducts
-                      .filter(product => {
-                        const name = (product.name || '').toLowerCase();
-                        const forbidden = ['non veg', 'meat', 'fish', 'chicken', 'egg'];
-                        return !forbidden.some(word => name.includes(word));
-                      })
-                      .map((product) => (
-                        <ProductCard
-                          key={product.id}
-                          product={product}
-                          categoryStyle={true}
-                          showBadge={true}
-                          showPackBadge={false}
-                          showStockInfo={true}
-                        />
-                      ))}
+                  <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2 md:gap-4">
+                    {(homeData.shops || [])
+                      .filter((tile: any) => !['pharma', 'pet', 'gift', 'spiritual', 'sport', 'book', 'toy', 'meat', 'chicken', 'fish', 'egg', 'non veg', 'baby', 'wellness', 'fitness'].some(w => (tile.name || '').toLowerCase().includes(w)))
+                      .map((tile: any) => {
+                        const hasImages = tile.image || (tile.productImages && tile.productImages.filter(Boolean).length > 0);
+                        return (
+                          <div key={tile.id} className="flex flex-col">
+                            <div
+                              onClick={() => { const slug = tile.slug || tile.id.replace("-store", ""); saveScrollPosition(); navigate(`/store/${slug}`); }}
+                              className="block bg-white rounded-full shadow-sm border border-neutral-200 hover:shadow-md transition-all cursor-pointer overflow-hidden aspect-square p-1.5"
+                            >
+                              {hasImages ? (
+                                <img
+                                  src={tile.image || tile.productImages?.[0] || ""}
+                                  alt={tile.name}
+                                  className="w-full h-full object-contain rounded-full"
+                                />
+                              ) : (
+                                <div className={`w-full h-full flex items-center justify-center text-2xl text-neutral-300 ${tile.bgColor || "bg-neutral-50"}`}>
+                                  {tile.name.charAt(0)}
+                                </div>
+                              )}
+                            </div>
+                            <div className="mt-1.5 text-center">
+                              <span className="text-xs font-semibold text-neutral-900 line-clamp-2 leading-tight">{tile.name}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
                   </div>
                 </div>
               </div>
-            )}
-
-            {activeTab === "all" && (
-              <>
-
-                {/* Featured this week Section */}
-                <FeaturedThisWeek />
-
-                {/* Shop by Store Section */}
-                <div className="mb-6 mt-6 md:mb-8 md:mt-8">
-                  <h2 className="text-lg md:text-2xl font-semibold text-neutral-900 mb-3 md:mb-6 px-4 md:px-6 lg:px-8 tracking-tight">
-                    Shop by Store
-                  </h2>
-                  <div className="px-4 md:px-6 lg:px-8">
-                    <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2 md:gap-4">
-                      {(homeData.shops || [])
-                        .filter((tile: any) => {
-                          const name = (tile.name || '').toLowerCase();
-                          const forbidden = ['pharma', 'pet', 'gift', 'spiritual', 'sport', 'book', 'toy', 'meat', 'chicken', 'fish', 'egg', 'non veg', 'baby', 'wellness', 'fitness'];
-                          return !forbidden.some(word => name.includes(word));
-                        })
-                        .map((tile: any) => {
-                          const hasImages =
-                            tile.image ||
-                            (tile.productImages &&
-                              tile.productImages.filter(Boolean).length > 0);
-
-                          return (
-                            <div key={tile.id} className="flex flex-col">
-                              <div
-                                onClick={() => {
-                                  const storeSlug =
-                                    tile.slug || tile.id.replace("-store", "");
-                                  saveScrollPosition();
-                                  navigate(`/store/${storeSlug}`);
-                                }}
-                                className="block bg-white rounded-xl shadow-sm border border-neutral-200 hover:shadow-md transition-shadow cursor-pointer overflow-hidden">
-                                {hasImages ? (
-                                  <img
-                                    src={
-                                      tile.image ||
-                                      (tile.productImages
-                                        ? tile.productImages[0]
-                                        : "")
-                                    }
-                                    alt={tile.name}
-                                    className="w-full h-16 object-cover"
-                                  />
-                                ) : (
-                                  <div
-                                    className={`w-full h-16 flex items-center justify-center text-3xl text-neutral-300 ${tile.bgColor || "bg-neutral-50"
-                                      }`}>
-                                    {tile.name.charAt(0)}
-                                  </div>
-                                )}
-                              </div>
-
-                              {/* Tile name - outside card */}
-                              <div className="mt-1.5 text-center">
-                                <span className="text-xs font-semibold text-neutral-900 line-clamp-2 leading-tight">
-                                  {tile.name}
-                                </span>
-                              </div>
-                            </div>
-                          );
-                        })}
-                    </div>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-        </>
+            </>
+          )}
+        </div>
       )}
     </div>
   );

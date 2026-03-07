@@ -15,6 +15,12 @@ export interface IPromoStrip extends Document {
   }>;
   featuredProducts: mongoose.Types.ObjectId[]; // Array of Product IDs for "CRAZY DEALS"
   crazyDealsTitle?: string; // Custom title for the CRAZY DEALS section (e.g., "CRAZY DEALS", "SPECIAL OFFERS")
+  showAsCarousel: boolean; // Toggle between classic layout and image carousel
+  carouselImages: Array<{
+    imageUrl: string;
+    link?: string;
+    order: number;
+  }>;
   isActive: boolean; // Enable/disable the PromoStrip
   order: number; // For sorting if multiple PromoStrips per category
   createdAt: Date;
@@ -96,6 +102,26 @@ const PromoStripSchema = new Schema<IPromoStrip>(
       maxlength: [30, "Crazy Deals title cannot exceed 30 characters"],
       default: "CRAZY DEALS",
     },
+    showAsCarousel: {
+      type: Boolean,
+      default: false,
+    },
+    carouselImages: [
+      {
+        imageUrl: {
+          type: String,
+          required: true,
+        },
+        link: {
+          type: String,
+          trim: true,
+        },
+        order: {
+          type: Number,
+          default: 0,
+        },
+      },
+    ],
     isActive: {
       type: Boolean,
       default: true,

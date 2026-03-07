@@ -82,7 +82,7 @@ export default function CategoryTileSection({
   };
 
   const gridCols = getGridCols();
-  const gapClass = columns >= 6 ? "gap-1.5 md:gap-2.5" : "gap-2.5 md:gap-4";
+  const gapClass = columns >= 6 ? "gap-2 md:gap-3" : "gap-4 md:gap-6";
 
   return (
     <div className="mb-6 md:mb-8 mt-0 overflow-visible">
@@ -140,11 +140,11 @@ export default function CategoryTileSection({
                       handleTileClick(tile);
                     }
                   }}
-                  className={`block bg-white rounded-xl shadow-sm border border-neutral-200 hover:shadow-md transition-shadow h-full ${showProductCount ? "px-2.5" : "px-1.5"
+                  className={`block bg-white shadow-sm border border-neutral-200 hover:shadow-md transition-all ${showProductCount ? "rounded-xl px-2.5 h-full" : "rounded-full aspect-square p-1.5"
                     }`}>
                   {/* Image - Single image for non-bestsellers, 2x2 grid for bestsellers */}
                   <div
-                    className={`w-full rounded-lg overflow-hidden ${showProductCount ? "h-32 md:h-36 mb-2" : "aspect-square"
+                    className={`w-full overflow-hidden ${showProductCount ? "rounded-lg h-32 md:h-36 mb-2" : "rounded-full aspect-square"
                       } ${tile.bgColor || "bg-cyan-50"}`}>
                     {hasImages ? (
                       showProductCount ? (

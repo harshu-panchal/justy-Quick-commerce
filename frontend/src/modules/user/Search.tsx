@@ -120,23 +120,24 @@ export default function Search() {
               <h2 className="text-lg md:text-2xl font-semibold text-neutral-900 mb-3 md:mb-6">Trending in your city</h2>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 md:gap-4">
                 {trendingItems.map((item) => (
-                  <div
-                    key={item.id || item._id}
-                    className="bg-white rounded-lg border-2 border-green-600 p-3 cursor-pointer hover:shadow-md transition-shadow"
-                    onClick={() => navigate(item.type === 'category' ? `/category/${item.id || item._id}` : `/product/${item.id || item._id}`)}
-                  >
-                    <div className="w-full h-24 rounded-lg mb-2 overflow-hidden bg-neutral-50 flex items-center justify-center">
-                      {item.image || item.imageUrl ? (
-                        <img
-                          src={item.image || item.imageUrl}
-                          alt={item.name}
-                          className="w-full h-full object-contain bg-white rounded-sm"
-                        />
-                      ) : (
-                        <div className="text-4xl">🔥</div>
-                      )}
+                  <div key={item.id || item._id} className="flex flex-col items-center">
+                    <div
+                      className="bg-white rounded-full border-2 border-green-600 p-2 cursor-pointer hover:shadow-md transition-all aspect-square flex flex-col items-center justify-center overflow-hidden mb-1.5"
+                      onClick={() => navigate(item.type === 'category' ? `/category/${item.id || item._id}` : `/product/${item.id || item._id}`)}
+                    >
+                      <div className="w-full h-full rounded-full overflow-hidden bg-neutral-50 flex items-center justify-center relative">
+                        {item.image || item.imageUrl ? (
+                          <img
+                            src={item.image || item.imageUrl}
+                            alt={item.name}
+                            className="w-full h-full object-contain bg-white rounded-full"
+                          />
+                        ) : (
+                          <div className="text-3xl">🔥</div>
+                        )}
+                      </div>
                     </div>
-                    <div className="text-xs font-semibold text-neutral-900 text-center line-clamp-2">
+                    <div className="text-[10px] font-semibold text-neutral-900 text-center line-clamp-2 leading-tight">
                       {item.name || item.title}
                     </div>
                   </div>

@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, useState, useEffect, useCallback } from "react";
 import { gsap } from "gsap";
+import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { getTheme } from "../../../utils/themes";
 import { getHomeContent } from "../../../services/api/customerHomeService";
@@ -37,6 +38,76 @@ const getCategoryIcons = (categoryId: string) => {
   return iconMap[categoryId] || ["📦", "📦", "📦", "📦"];
 };
 
+// Premium Carousel Slider Component
+const CarouselSlides = ({ images }: { images: { imageUrl: string; link?: string; order: number }[] }) => {
+  const [index, setIndex] = useState(0);
+  const sortedImages = [...images].sort((a, b) => a.order - b.order);
+
+  useEffect(() => {
+    if (sortedImages.length <= 1) return;
+    const timer = setInterval(() => {
+      setIndex((prev) => (prev + 1) % sortedImages.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [sortedImages.length]);
+
+  return (
+    <div className="relative w-full h-full group">
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={index}
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -20 }}
+          transition={{ duration: 0.5, ease: "easeInOut" }}
+          className="w-full h-full"
+        >
+          <Link to={sortedImages[index].link || "#"} className="block w-full h-full">
+            <img
+              src={sortedImages[index].imageUrl}
+              alt={`Slide ${index + 1}`}
+              className="w-full h-full object-cover rounded-xl"
+              style={{ minHeight: "133px" }}
+            />
+          </Link>
+        </motion.div>
+      </AnimatePresence>
+
+      {/* Pagination Dots */}
+      {sortedImages.length > 1 && (
+        <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 flex gap-1.5 z-10">
+          {sortedImages.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setIndex(i)}
+              className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${i === index ? "bg-white w-4" : "bg-white/50"
+                }`}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Navigation Arrows (Optional, subtle hover) */}
+      <button
+        onClick={() => setIndex((prev) => (prev - 1 + sortedImages.length) % sortedImages.length)}
+        className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full bg-black/20 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/40"
+      >
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+        </svg>
+      </button>
+      <button
+        onClick={() => setIndex((prev) => (prev + 1) % sortedImages.length)}
+        className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full bg-black/20 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/40"
+      >
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        </svg>
+      </button>
+    </div>
+  );
+};
+
 interface PromoStripProps {
   activeTab?: string;
 }
@@ -58,6 +129,8 @@ export default function PromoStrip({ activeTab = "all" }: PromoStripProps) {
   const saleRef = useRef<HTMLDivElement>(null);
   const dateRef = useRef<HTMLDivElement>(null);
   const [currentProductIndex, setCurrentProductIndex] = useState(0);
+  const [showAsCarousel, setShowAsCarousel] = useState(false);
+  const [carouselImages, setCarouselImages] = useState<{ imageUrl: string; link?: string; order: number }[]>([]);
   const priceContainerRef = useRef<HTMLDivElement>(null);
   const productNameRef = useRef<HTMLDivElement>(null);
   const productImageRef = useRef<HTMLDivElement>(null);
@@ -69,42 +142,42 @@ export default function PromoStrip({ activeTab = "all" }: PromoStripProps) {
     // Defer subcategory image fetching to not block initial render
     // Load them after a short delay to prioritize main content
     setTimeout(async () => {
-    const imagesMap: Record<string, string[]> = {};
+      const imagesMap: Record<string, string[]> = {};
 
       // Fetch images in batches to avoid overwhelming the network
       const batchSize = 2;
       for (let i = 0; i < cards.length; i += batchSize) {
         const batch = cards.slice(i, i + batchSize);
-    await Promise.all(
+        await Promise.all(
           batch.map(async (card) => {
-        const categoryId = card.categoryId;
-        if (!categoryId) return;
+            const categoryId = card.categoryId;
+            if (!categoryId) return;
 
-        try {
-          const response = await getSubcategories(categoryId, { limit: 4 });
-          if (response.success && response.data) {
-            const images = response.data
-              .filter((subcat) => subcat.subcategoryImage)
-              .map((subcat) => subcat.subcategoryImage!)
-              .slice(0, 4);
+            try {
+              const response = await getSubcategories(categoryId, { limit: 4 });
+              if (response.success && response.data) {
+                const images = response.data
+                  .filter((subcat) => subcat.subcategoryImage)
+                  .map((subcat) => subcat.subcategoryImage!)
+                  .slice(0, 4);
 
-            if (images.length > 0) {
-              imagesMap[card.id] = images;
-            }
-          }
-        } catch (error) {
+                if (images.length > 0) {
+                  imagesMap[card.id] = images;
+                }
+              }
+            } catch (error) {
               // Silently fail - emoji fallback will be used
-          console.error(`Error fetching subcategories for category ${categoryId}:`, error);
-        }
-      })
-    );
+              console.error(`Error fetching subcategories for category ${categoryId}:`, error);
+            }
+          })
+        );
         // Small delay between batches to prevent network congestion
         if (i + batchSize < cards.length) {
           await new Promise(resolve => setTimeout(resolve, 50));
         }
       }
 
-    setSubcategoryImagesMap(imagesMap);
+      setSubcategoryImagesMap(imagesMap);
     }, 300); // 300ms delay - allows main content to render first
   }, []);
 
@@ -151,6 +224,10 @@ export default function PromoStrip({ activeTab = "all" }: PromoStripProps) {
             } else {
               setCrazyDealsTitle("CRAZY DEALS");
             }
+
+            // Set Carousel data
+            setShowAsCarousel(!!promoStrip.showAsCarousel);
+            setCarouselImages(promoStrip.carouselImages || []);
 
             // Format date range
             if (promoStrip.startDate && promoStrip.endDate) {
@@ -278,8 +355,10 @@ export default function PromoStrip({ activeTab = "all" }: PromoStripProps) {
         // Reset CRAZY DEALS title if no PromoStrip data
         if (!response.data?.promoStrip || !response.data.promoStrip.isActive) {
           setCrazyDealsTitle("CRAZY DEALS");
+          setShowAsCarousel(false);
+          setCarouselImages([]);
         }
-        setHasData(fetchedCards.length > 0 || fetchedProducts.length > 0);
+        setHasData(fetchedCards.length > 0 || fetchedProducts.length > 0 || (response.data?.promoStrip?.showAsCarousel && response.data.promoStrip.carouselImages?.length > 0));
 
         // Fetch subcategory images AFTER setting hasData to true
         // This allows the main content to render immediately
@@ -319,21 +398,21 @@ export default function PromoStrip({ activeTab = "all" }: PromoStripProps) {
     // Defer card animation to prioritize content rendering
     const timeoutId = setTimeout(() => {
       ctx = gsap.context(() => {
-      const cards = container.querySelectorAll(".promo-card");
-      if (cards.length > 0) {
-        gsap.fromTo(
-          cards,
+        const cards = container.querySelectorAll(".promo-card");
+        if (cards.length > 0) {
+          gsap.fromTo(
+            cards,
             { y: 20, opacity: 0 },
-          {
-            y: 0,
-            opacity: 1,
+            {
+              y: 0,
+              opacity: 1,
               duration: 0.4, // Reduced duration
               stagger: 0.05, // Reduced stagger
               ease: "power2.out", // Simpler easing
-          }
-        );
-      }
-    }, container);
+            }
+          );
+        }
+      }, container);
     }, 100); // Start animation 100ms after render
 
     return () => {
@@ -352,29 +431,29 @@ export default function PromoStrip({ activeTab = "all" }: PromoStripProps) {
 
     // Defer animation start to prioritize content rendering
     const timeoutId = setTimeout(() => {
-    const snowflakes = snowflakesContainer.querySelectorAll(".snowflake");
+      const snowflakes = snowflakesContainer.querySelectorAll(".snowflake");
 
-    snowflakes.forEach((snowflake, index) => {
-      const delay = index * 0.3;
-      const duration = 3 + Math.random() * 2; // 3-5 seconds
-      const xOffset = (Math.random() - 0.5) * 40; // Random horizontal drift
+      snowflakes.forEach((snowflake, index) => {
+        const delay = index * 0.3;
+        const duration = 3 + Math.random() * 2; // 3-5 seconds
+        const xOffset = (Math.random() - 0.5) * 40; // Random horizontal drift
 
-      gsap.set(snowflake, {
-        y: -20,
-        x: xOffset,
-        opacity: 0.8 + Math.random() * 0.2, // 0.8-1.0 opacity for better visibility
-        scale: 0.6 + Math.random() * 0.4, // 0.6-1.0 scale for better visibility
+        gsap.set(snowflake, {
+          y: -20,
+          x: xOffset,
+          opacity: 0.8 + Math.random() * 0.2, // 0.8-1.0 opacity for better visibility
+          scale: 0.6 + Math.random() * 0.4, // 0.6-1.0 scale for better visibility
+        });
+
+        gsap.to(snowflake, {
+          y: "+=200",
+          x: `+=${xOffset}`,
+          duration: duration,
+          delay: delay,
+          ease: "none",
+          repeat: -1,
+        });
       });
-
-      gsap.to(snowflake, {
-        y: "+=200",
-        x: `+=${xOffset}`,
-        duration: duration,
-        delay: delay,
-        ease: "none",
-        repeat: -1,
-      });
-    });
     }, 200); // Start animation 200ms after render
 
     return () => {
@@ -396,7 +475,7 @@ export default function PromoStrip({ activeTab = "all" }: PromoStripProps) {
 
     // Defer animation start to prioritize content rendering
     const timeoutId = setTimeout(() => {
-    const letters = housefullContainer.querySelectorAll(".housefull-letter");
+      const letters = housefullContainer.querySelectorAll(".housefull-letter");
 
       // Simplified animation - single entrance animation instead of loop
       gsap.set([housefullContainer, saleText, dateText], {
@@ -406,9 +485,9 @@ export default function PromoStrip({ activeTab = "all" }: PromoStripProps) {
 
       gsap.to([housefullContainer, saleText, dateText], {
         scale: 1,
-          opacity: 1,
-          duration: 0.5,
-          ease: "back.out(1.7)",
+        opacity: 1,
+        duration: 0.5,
+        ease: "back.out(1.7)",
       });
 
       // Simplified letter animation - only run once
@@ -416,7 +495,7 @@ export default function PromoStrip({ activeTab = "all" }: PromoStripProps) {
         y: -10,
         duration: 0.15,
         stagger: 0.04,
-          ease: "power2.out",
+        ease: "power2.out",
         yoyo: true,
         repeat: 1,
       });
@@ -725,204 +804,211 @@ export default function PromoStrip({ activeTab = "all" }: PromoStripProps) {
         </div>
       </div>
 
-      {/* Main Content: Crazy Deals + Category Cards */}
+      {/* Main Content: Carousel OR (Crazy Deals + Category Cards) */}
       <div className="px-4 mt-2">
-        <div ref={containerRef} className="flex gap-2">
-          {/* Crazy Deals Section - Left */}
-          <div className="flex-shrink-0 w-[100px] promo-card">
-            <div
-              className="h-full rounded-lg p-1 flex flex-col items-center justify-between relative overflow-hidden"
-              style={{
-                background: `radial-gradient(circle at center, rgba(255, 255, 255, 0.15), transparent 60%), linear-gradient(to bottom, ${theme.primary[0]}, ${theme.primary[1]}, ${theme.primary[2]})`,
-                minHeight: "110px",
-              }}>
-              {/* CRAZY DEALS - Two lines, bigger */}
-              <div className="text-center mb-1.5" style={{ marginTop: "4px" }}>
-                <div
-                  className="text-white font-black leading-tight"
-                  style={{
-                    fontSize: "13px",
-                    fontFamily: "sans-serif",
-                    textShadow:
-                      "2px 2px 4px rgba(0, 0, 0, 0.8), 1px 1px 2px rgba(0, 0, 0, 0.9)",
-                    letterSpacing: "0.5px",
-                  }}>
-                  {crazyDealsTitle.split(" ").map((word, idx) => (
-                    <div key={idx}>{word}</div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Price Banners - Compact */}
+        {showAsCarousel && carouselImages.length > 0 ? (
+          /* Premium Image Carousel Section */
+          <div className="relative w-full overflow-hidden rounded-xl bg-white/5 shadow-lg mb-2" style={{ minHeight: "133px" }}>
+            <CarouselSlides images={carouselImages} />
+          </div>
+        ) : (
+          /* Existing Classic Layout: Crazy Deals Section - Left + Category Cards Grid - Right */
+          <div ref={containerRef} className="flex gap-2">
+            {/* Crazy Deals Section - Left */}
+            <div className="flex-shrink-0 w-[100px] promo-card">
               <div
-                ref={priceContainerRef}
-                className="flex flex-col items-center mb-0.5 relative">
-                {/* Original Price - Darker Gray, Smaller Banner */}
-                <div
-                  className="bg-neutral-600 rounded px-1.5 inline-block relative z-10"
-                  style={{
-                    height: "fit-content",
-                    lineHeight: "1",
-                    paddingTop: "2px",
-                    paddingBottom: "2px",
-                  }}>
-                  <span className="text-white text-[8px] font-medium line-through leading-none">
-                    ₹{safeOriginalPrice}
-                  </span>
+                className="h-full rounded-lg p-1 flex flex-col items-center justify-between relative overflow-hidden"
+                style={{
+                  background: `radial-gradient(circle at center, rgba(255, 255, 255, 0.15), transparent 60%), linear-gradient(to bottom, ${theme.primary[0]}, ${theme.primary[1]}, ${theme.primary[2]})`,
+                  minHeight: "110px",
+                }}>
+                {/* CRAZY DEALS - Two lines, bigger */}
+                <div className="text-center mb-1.5" style={{ marginTop: "4px" }}>
+                  <div
+                    className="text-white font-black leading-tight"
+                    style={{
+                      fontSize: "13px",
+                      fontFamily: "sans-serif",
+                      textShadow:
+                        "2px 2px 4px rgba(0, 0, 0, 0.8), 1px 1px 2px rgba(0, 0, 0, 0.9)",
+                      letterSpacing: "0.5px",
+                    }}>
+                    {crazyDealsTitle.split(" ").map((word, idx) => (
+                      <div key={idx}>{word}</div>
+                    ))}
+                  </div>
                 </div>
-                {/* Discounted Price - Bright Green Banner */}
+
+                {/* Price Banners - Compact */}
                 <div
-                  className="bg-green-500 rounded px-2 inline-block relative -mt-0.5 z-20"
-                  style={{
-                    height: "fit-content",
-                    lineHeight: "1",
-                    paddingTop: "2px",
-                    paddingBottom: "2px",
-                  }}>
-                  <span className="text-white text-[9px] font-bold leading-none">
-                    ₹{safeDiscountedPrice}
-                  </span>
+                  ref={priceContainerRef}
+                  className="flex flex-col items-center mb-0.5 relative">
+                  {/* Original Price - Darker Gray, Smaller Banner */}
+                  <div
+                    className="bg-neutral-600 rounded px-1.5 inline-block relative z-10"
+                    style={{
+                      height: "fit-content",
+                      lineHeight: "1",
+                      paddingTop: "2px",
+                      paddingBottom: "2px",
+                    }}>
+                    <span className="text-white text-[8px] font-medium line-through leading-none">
+                      ₹{safeOriginalPrice}
+                    </span>
+                  </div>
+                  {/* Discounted Price - Bright Green Banner */}
+                  <div
+                    className="bg-green-500 rounded px-2 inline-block relative -mt-0.5 z-20"
+                    style={{
+                      height: "fit-content",
+                      lineHeight: "1",
+                      paddingTop: "2px",
+                      paddingBottom: "2px",
+                    }}>
+                    <span className="text-white text-[9px] font-bold leading-none">
+                      ₹{safeDiscountedPrice}
+                    </span>
+                  </div>
                 </div>
-              </div>
 
-              {/* Product Name - Compact - Clickable */}
-              <div
-                ref={productNameRef}
-                onClick={handleProductClick}
-                className="text-neutral-900 font-black text-[9px] text-center mb-0.5 cursor-pointer hover:underline line-clamp-2"
-                title={displayProduct.productName || displayProduct.name}>
-                {displayProduct.productName || displayProduct.name}
-              </div>
-
-              {/* Product Thumbnail - Bottom Center, sized to container */}
-              <div
-                ref={productImageRef}
-                className="flex-1 flex items-end justify-center w-full"
-                style={{ minHeight: "50px", maxHeight: "65px" }}>
+                {/* Product Name - Compact - Clickable */}
                 <div
+                  ref={productNameRef}
                   onClick={handleProductClick}
-                  className="w-12 h-16 rounded flex items-center justify-center overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
-                  style={{ background: "transparent" }}>
-                  {displayProduct.imageUrl ? (
-                    <img
-                      src={displayProduct.imageUrl}
-                      alt={displayProduct.name}
-                      className="w-full h-full object-contain"
-                      loading="lazy"
-                      decoding="async"
-                      style={{
-                        mixBlendMode: "normal",
-                        backgroundColor: "transparent",
-                      }}
-                      referrerPolicy="no-referrer"
-                      onError={(e) => {
-                        // Hide broken image and show fallback
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = 'none';
-                        const parent = target.parentElement;
-                        if (parent && !parent.querySelector('.product-fallback')) {
-                          const fallback = document.createElement('div');
-                          fallback.className = 'product-fallback w-full h-full bg-gradient-to-b from-yellow-100 to-yellow-50 flex items-center justify-center';
-                          const icon = document.createElement('div');
-                          icon.className = 'w-7 h-9 bg-yellow-200 rounded-sm relative';
-                          icon.innerHTML = `
-                            <div class="absolute top-0 left-1/2 transform -translate-x-1/2 w-2.5 h-2.5 bg-blue-400 rounded-full"></div>
-                            <div class="absolute bottom-0 left-0 right-0 h-1.5 bg-white/80"></div>
-                          `;
-                          fallback.appendChild(icon);
-                          parent.appendChild(fallback);
-                        }
-                      }}
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-b from-yellow-100 to-yellow-50 flex items-center justify-center">
-                      <div className="w-7 h-9 bg-yellow-200 rounded-sm relative">
-                        <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-2.5 h-2.5 bg-blue-400 rounded-full"></div>
-                        <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-white/80"></div>
+                  className="text-neutral-900 font-black text-[9px] text-center mb-0.5 cursor-pointer hover:underline line-clamp-2"
+                  title={displayProduct.productName || displayProduct.name}>
+                  {displayProduct.productName || displayProduct.name}
+                </div>
+
+                {/* Product Thumbnail - Bottom Center, sized to container */}
+                <div
+                  ref={productImageRef}
+                  className="flex-1 flex items-end justify-center w-full"
+                  style={{ minHeight: "50px", maxHeight: "65px" }}>
+                  <div
+                    onClick={handleProductClick}
+                    className="w-12 h-16 rounded flex items-center justify-center overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
+                    style={{ background: "transparent" }}>
+                    {displayProduct.imageUrl ? (
+                      <img
+                        src={displayProduct.imageUrl}
+                        alt={displayProduct.name}
+                        className="w-full h-full object-contain"
+                        loading="lazy"
+                        decoding="async"
+                        style={{
+                          mixBlendMode: "normal",
+                          backgroundColor: "transparent",
+                        }}
+                        referrerPolicy="no-referrer"
+                        onError={(e) => {
+                          // Hide broken image and show fallback
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          const parent = target.parentElement;
+                          if (parent && !parent.querySelector('.product-fallback')) {
+                            const fallback = document.createElement('div');
+                            fallback.className = 'product-fallback w-full h-full bg-gradient-to-b from-yellow-100 to-yellow-50 flex items-center justify-center';
+                            const icon = document.createElement('div');
+                            icon.className = 'w-7 h-9 bg-yellow-200 rounded-sm relative';
+                            icon.innerHTML = `
+                              <div class="absolute top-0 left-1/2 transform -translate-x-1/2 w-2.5 h-2.5 bg-blue-400 rounded-full"></div>
+                              <div class="absolute bottom-0 left-0 right-0 h-1.5 bg-white/80"></div>
+                            `;
+                            fallback.appendChild(icon);
+                            parent.appendChild(fallback);
+                          }
+                        }}
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-b from-yellow-100 to-yellow-50 flex items-center justify-center">
+                        <div className="w-7 h-9 bg-yellow-200 rounded-sm relative">
+                          <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-2.5 h-2.5 bg-blue-400 rounded-full"></div>
+                          <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-white/80"></div>
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Category Cards Grid - Right */}
-          <div className="flex-1 grid grid-cols-2 gap-2">
-            {categoryCards.map((card) => {
-              // Use subcategory images from the map if available, otherwise check card.subcategoryImages, then fallback to emoji icons
-              const subcategoryImages = subcategoryImagesMap[card.id] || card.subcategoryImages || [];
-              const hasSubcategoryImages = subcategoryImages.length > 0;
-              const categoryIcons = getCategoryIcons(card.categoryId || "");
+            {/* Category Cards Grid - Right */}
+            <div className="flex-1 grid grid-cols-2 gap-2">
+              {categoryCards.map((card) => {
+                // Use subcategory images from the map if available, otherwise check card.subcategoryImages, then fallback to emoji icons
+                const subcategoryImages = subcategoryImagesMap[card.id] || card.subcategoryImages || [];
+                const hasSubcategoryImages = subcategoryImages.length > 0;
+                const categoryIcons = getCategoryIcons(card.categoryId || "");
 
-              return (
-                <div key={card.id} className="promo-card">
-                  <Link
-                    to={card.slug || card.categoryId ? `/category/${card.slug || card.categoryId}` : "#"}
-                    className="group rounded-lg transition-all duration-300 hover:shadow-md active:scale-[0.98] h-full flex flex-col overflow-hidden relative"
-                    style={{
-                      minHeight: "90px",
-                      background: "rgba(255, 247, 237, 0.9)", // Very light orange
-                    }}>
-                    {/* Green Discount Banner - Only around text, centered at top */}
-                    <div
-                      className="w-full flex justify-center"
-                      style={{ paddingTop: "0", paddingBottom: "2px" }}>
-                      <div className="bg-green-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded tracking-tight text-center inline-block">
-                        {card.badge}
-                      </div>
-                    </div>
-
-                    <div
-                      className="px-1 pb-1 flex flex-col flex-1 justify-between"
-                      style={{ paddingTop: "2px" }}>
-                      {/* Category Title */}
+                return (
+                  <div key={card.id} className="promo-card">
+                    <Link
+                      to={card.slug || card.categoryId ? `/category/${card.slug || card.categoryId}` : "#"}
+                      className="group rounded-lg transition-all duration-300 hover:shadow-md active:scale-[0.98] h-full flex flex-col overflow-hidden relative"
+                      style={{
+                        minHeight: "90px",
+                        background: "rgba(255, 247, 237, 0.9)", // Very light orange
+                      }}>
+                      {/* Green Discount Banner - Only around text, centered at top */}
                       <div
-                        className="text-neutral-900 font-bold text-center"
-                        style={{
-                          fontSize: "13px",
-                          lineHeight: "1.2",
-                          marginBottom: "6px",
-                        }}>
-                        {card.title}
+                        className="w-full flex justify-center"
+                        style={{ paddingTop: "0", paddingBottom: "2px" }}>
+                        <div className="bg-green-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded tracking-tight text-center inline-block">
+                          {card.badge}
+                        </div>
                       </div>
 
-                      {/* Subcategory Images or Emoji Icons - Horizontal Layout */}
                       <div
-                        className="flex items-center justify-center gap-1 overflow-hidden"
-                        style={{ marginTop: "auto" }}>
-                        {hasSubcategoryImages
-                          ? // Display subcategory images as small icons
+                        className="px-1 pb-1 flex flex-col flex-1 justify-between"
+                        style={{ paddingTop: "2px" }}>
+                        {/* Category Title */}
+                        <div
+                          className="text-neutral-900 font-bold text-center"
+                          style={{
+                            fontSize: "13px",
+                            lineHeight: "1.2",
+                            marginBottom: "6px",
+                          }}>
+                          {card.title}
+                        </div>
+
+                        {/* Subcategory Images or Emoji Icons - Horizontal Layout */}
+                        <div
+                          className="flex items-center justify-center gap-1 overflow-hidden"
+                          style={{ marginTop: "auto" }}>
+                          {hasSubcategoryImages
+                            ? // Display subcategory images as small icons
                             subcategoryImages.slice(0, 4).map((imageUrl, idx) => (
-                                <div
-                                  key={idx}
-                                  className="flex-shrink-0 bg-white rounded flex items-center justify-center overflow-hidden border border-neutral-200"
-                                  style={{ width: "24px", height: "24px" }}>
-                                  <img
-                                    src={imageUrl}
-                                    alt={`Subcategory ${idx + 1}`}
-                                    className="w-full h-full object-cover"
-                                    loading="lazy"
-                                    decoding="async"
-                                    onError={(e) => {
-                                      // Fallback to emoji if image fails to load
-                                      const target =
-                                        e.target as HTMLImageElement;
-                                      target.style.display = "none";
-                                      const parent = target.parentElement;
-                                      if (parent) {
-                                        parent.innerHTML =
-                                          categoryIcons[idx] || "📦";
-                                        parent.style.fontSize = "18px";
-                                        parent.style.display = "flex";
-                                        parent.style.alignItems = "center";
-                                        parent.style.justifyContent = "center";
-                                      }
-                                    }}
-                                  />
-                                </div>
-                              ))
-                          : // Fallback to emoji icons if no subcategory images
+                              <div
+                                key={idx}
+                                className="flex-shrink-0 bg-white rounded flex items-center justify-center overflow-hidden border border-neutral-200"
+                                style={{ width: "24px", height: "24px" }}>
+                                <img
+                                  src={imageUrl}
+                                  alt={`Subcategory ${idx + 1}`}
+                                  className="w-full h-full object-cover"
+                                  loading="lazy"
+                                  decoding="async"
+                                  onError={(e) => {
+                                    // Fallback to emoji if image fails to load
+                                    const target =
+                                      e.target as HTMLImageElement;
+                                    target.style.display = "none";
+                                    const parent = target.parentElement;
+                                    if (parent) {
+                                      parent.innerHTML =
+                                        categoryIcons[idx] || "📦";
+                                      parent.style.fontSize = "18px";
+                                      parent.style.display = "flex";
+                                      parent.style.alignItems = "center";
+                                      parent.style.justifyContent = "center";
+                                    }
+                                  }}
+                                />
+                              </div>
+                            ))
+                            : // Fallback to emoji icons if no subcategory images
                             categoryIcons.slice(0, 4).map((icon, idx) => (
                               <div
                                 key={idx}
@@ -935,14 +1021,15 @@ export default function PromoStrip({ activeTab = "all" }: PromoStripProps) {
                                 {icon}
                               </div>
                             ))}
+                        </div>
                       </div>
-                    </div>
-                  </Link>
-                </div>
-              );
-            })}
+                    </Link>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

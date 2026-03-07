@@ -18,6 +18,9 @@ export const createPromoStrip = asyncHandler(async (req: Request, res: Response)
     endDate,
     categoryCards,
     featuredProducts,
+    crazyDealsTitle,
+    showAsCarousel = false,
+    carouselImages = [],
     isActive = true,
     order = 0,
   } = req.body;
@@ -91,6 +94,9 @@ export const createPromoStrip = asyncHandler(async (req: Request, res: Response)
     endDate: end,
     categoryCards: categoryCards || [],
     featuredProducts: featuredProducts || [],
+    crazyDealsTitle,
+    showAsCarousel,
+    carouselImages: carouselImages || [],
     isActive,
     order,
   });
@@ -182,6 +188,9 @@ export const updatePromoStrip = asyncHandler(async (req: Request, res: Response)
     endDate,
     categoryCards,
     featuredProducts,
+    crazyDealsTitle,
+    showAsCarousel,
+    carouselImages,
     isActive,
     order,
   } = req.body;
@@ -254,6 +263,9 @@ export const updatePromoStrip = asyncHandler(async (req: Request, res: Response)
 
   if (heading !== undefined) promoStrip.heading = heading;
   if (saleText !== undefined) promoStrip.saleText = saleText;
+  if (crazyDealsTitle !== undefined) promoStrip.crazyDealsTitle = crazyDealsTitle;
+  if (showAsCarousel !== undefined) promoStrip.showAsCarousel = showAsCarousel;
+  if (carouselImages !== undefined) promoStrip.carouselImages = carouselImages;
   if (isActive !== undefined) promoStrip.isActive = isActive;
   if (order !== undefined) promoStrip.order = order;
 

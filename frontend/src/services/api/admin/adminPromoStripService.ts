@@ -19,6 +19,13 @@ export interface PromoStrip {
   categoryCards: CategoryCard[];
   featuredProducts: (string | { _id: string; productName?: string; mainImage?: string; price?: number; mrp?: number })[];
   crazyDealsTitle?: string;
+  showAsCarousel: boolean;
+  carouselImages: Array<{
+    imageUrl: string;
+    link?: string;
+    order: number;
+    _id?: string;
+  }>;
   isActive: boolean;
   order: number;
   createdAt: string;
@@ -34,6 +41,12 @@ export interface PromoStripFormData {
   categoryCards: CategoryCard[];
   featuredProducts: string[];
   crazyDealsTitle?: string;
+  showAsCarousel: boolean;
+  carouselImages: Array<{
+    imageUrl: string;
+    link?: string;
+    order: number;
+  }>;
   isActive: boolean;
   order: number;
 }

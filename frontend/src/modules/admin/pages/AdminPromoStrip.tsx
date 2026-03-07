@@ -22,6 +22,8 @@ export default function AdminPromoStrip() {
   const [categoryCards, setCategoryCards] = useState<CategoryCard[]>([]);
   const [featuredProducts, setFeaturedProducts] = useState<string[]>([]);
   const [crazyDealsTitle, setCrazyDealsTitle] = useState("CRAZY DEALS");
+  const [showAsCarousel, setShowAsCarousel] = useState(false);
+  const [carouselImages, setCarouselImages] = useState<{ imageUrl: string; link?: string; order: number }[]>([]);
   const [isActive, setIsActive] = useState(true);
   const [order, setOrder] = useState(0);
 
@@ -150,6 +152,9 @@ export default function AdminPromoStrip() {
         order: card.order,
       })),
       featuredProducts,
+      crazyDealsTitle,
+      showAsCarousel,
+      carouselImages,
       isActive,
       order,
     };
@@ -206,6 +211,8 @@ export default function AdminPromoStrip() {
       })
     );
     setCrazyDealsTitle(promoStrip.crazyDealsTitle || "CRAZY DEALS");
+    setShowAsCarousel(promoStrip.showAsCarousel || false);
+    setCarouselImages(promoStrip.carouselImages || []);
     setIsActive(promoStrip.isActive);
     setOrder(promoStrip.order);
     setEditingId(promoStrip._id);
@@ -238,6 +245,8 @@ export default function AdminPromoStrip() {
     setCategoryCards([]);
     setFeaturedProducts([]);
     setCrazyDealsTitle("CRAZY DEALS");
+    setShowAsCarousel(false);
+    setCarouselImages([]);
     setIsActive(true);
     setOrder(0);
     setEditingId(null);
@@ -408,162 +417,259 @@ export default function AdminPromoStrip() {
                 </div>
               </div>
 
-              {/* Category Cards */}
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <label className="block text-sm font-medium text-neutral-700">
-                    Category Cards
-                  </label>
-                  <button
-                    type="button"
-                    onClick={addCategoryCard}
-                    className="text-sm text-teal-600 hover:text-teal-700 font-medium"
-                  >
-                    + Add Card
-                  </button>
-                </div>
-                <div className="space-y-3 max-h-60 overflow-y-auto">
-                  {categoryCards.map((card, index) => (
-                    <div key={index} className="border border-neutral-200 rounded p-3 bg-neutral-50">
-                      <div className="flex justify-between items-start mb-2">
-                        <span className="text-xs font-medium text-neutral-600">Card {index + 1}</span>
-                        <button
-                          type="button"
-                          onClick={() => removeCategoryCard(index)}
-                          className="text-red-500 hover:text-red-700 text-xs"
-                        >
-                          Remove
-                        </button>
-                      </div>
-                      <div className="space-y-2">
-                        <select
-                          value={typeof card.categoryId === 'string' ? card.categoryId : (card.categoryId as any)?._id || ''}
-                          onChange={(e) => updateCategoryCard(index, "categoryId", e.target.value)}
-                          className="w-full px-2 py-1 text-sm border border-neutral-300 rounded bg-white"
-                          required
-                        >
-                          <option value="">Select category</option>
-                          {Array.isArray(categories) && categories.map((cat) => (
-                            <option key={cat._id} value={cat._id}>
-                              {cat.name}
-                            </option>
-                          ))}
-                        </select>
-                        <input
-                          type="text"
-                          value={card.title}
-                          onChange={(e) => updateCategoryCard(index, "title", e.target.value)}
-                          placeholder="Custom title"
-                          className="w-full px-2 py-1 text-sm border border-neutral-300 rounded bg-white"
-                        />
-                        <input
-                          type="text"
-                          value={card.badge}
-                          onChange={(e) => updateCategoryCard(index, "badge", e.target.value)}
-                          placeholder="Badge (e.g., Up to 55% OFF)"
-                          className="w-full px-2 py-1 text-sm border border-neutral-300 rounded bg-white"
-                          required
-                        />
-                        <input
-                          type="number"
-                          value={card.discountPercentage}
-                          onChange={(e) => updateCategoryCard(index, "discountPercentage", parseFloat(e.target.value) || 0)}
-                          placeholder="Discount %"
-                          min="0"
-                          max="100"
-                          className="w-full px-2 py-1 text-sm border border-neutral-300 rounded bg-white"
-                          required
-                        />
-                      </div>
+              {/* Show As Carousel Toggle */}
+              <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg border border-blue-100">
+                <input
+                  type="checkbox"
+                  id="showAsCarousel"
+                  checked={showAsCarousel}
+                  onChange={(e) => setShowAsCarousel(e.target.checked)}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label htmlFor="showAsCarousel" className="text-sm font-semibold text-blue-800">
+                  Show as Dynamic Image Carousel
+                </label>
+              </div>
+
+              {/* Classic Layout Section - Only show if not carousel */}
+              {!showAsCarousel && (
+                <div className="space-y-4 border-l-2 border-neutral-200 pl-4 py-2">
+                  <h3 className="text-sm font-bold text-neutral-800 uppercase tracking-wider">Classic Layout Settings</h3>
+                  {/* Category Cards */}
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <label className="block text-sm font-medium text-neutral-700">
+                        Category Cards
+                      </label>
+                      <button
+                        type="button"
+                        onClick={addCategoryCard}
+                        className="text-sm text-teal-600 hover:text-teal-700 font-medium"
+                      >
+                        + Add Card
+                      </button>
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* CRAZY DEALS Title */}
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">
-                  CRAZY DEALS Title
-                </label>
-                <input
-                  type="text"
-                  value={crazyDealsTitle}
-                  onChange={(e) => setCrazyDealsTitle(e.target.value)}
-                  placeholder="e.g., CRAZY DEALS, SPECIAL OFFERS"
-                  className="w-full px-3 py-2 border border-neutral-300 rounded bg-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none"
-                />
-                <p className="text-xs text-neutral-500 mt-1">
-                  Custom title for the featured products section (default: "CRAZY DEALS")
-                </p>
-              </div>
-
-              {/* Featured Products */}
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">
-                  Featured Products <span className="text-red-500">*</span>
-                  <span className="text-xs text-neutral-500 font-normal ml-2">
-                    (Minimum 4 required for carousel)
-                  </span>
-                </label>
-                <input
-                  type="text"
-                  value={productSearch}
-                  onChange={(e) => setProductSearch(e.target.value)}
-                  placeholder="Search products (type at least 3 characters)..."
-                  className="w-full px-3 py-2 border border-neutral-300 rounded bg-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none mb-2"
-                />
-                {productSearch.length > 0 && productSearch.length < 3 && (
-                  <p className="text-xs text-neutral-500 mb-2">Type at least 3 characters to search</p>
-                )}
-                {products.length > 0 && (
-                  <div className="border border-neutral-300 rounded max-h-40 overflow-y-auto mb-2">
-                    {products.map((product) => (
-                      <div
-                        key={product._id}
-                        onClick={() => addFeaturedProduct(product._id)}
-                        className="p-2 hover:bg-neutral-50 cursor-pointer text-sm"
-                      >
-                        {product.productName}
-                      </div>
-                    ))}
+                    <div className="space-y-3 max-h-60 overflow-y-auto">
+                      {categoryCards.map((card, index) => (
+                        <div key={index} className="border border-neutral-200 rounded p-3 bg-neutral-50">
+                          <div className="flex justify-between items-start mb-2">
+                            <span className="text-xs font-medium text-neutral-600">Card {index + 1}</span>
+                            <button
+                              type="button"
+                              onClick={() => removeCategoryCard(index)}
+                              className="text-red-500 hover:text-red-700 text-xs"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                          <div className="space-y-2">
+                            <select
+                              value={typeof card.categoryId === 'string' ? card.categoryId : (card.categoryId as any)?._id || ''}
+                              onChange={(e) => updateCategoryCard(index, "categoryId", e.target.value)}
+                              className="w-full px-2 py-1 text-sm border border-neutral-300 rounded bg-white"
+                              required
+                            >
+                              <option value="">Select category</option>
+                              {Array.isArray(categories) && categories.map((cat) => (
+                                <option key={cat._id} value={cat._id}>
+                                  {cat.name}
+                                </option>
+                              ))}
+                            </select>
+                            <input
+                              type="text"
+                              value={card.title}
+                              onChange={(e) => updateCategoryCard(index, "title", e.target.value)}
+                              placeholder="Custom title"
+                              className="w-full px-2 py-1 text-sm border border-neutral-300 rounded bg-white"
+                            />
+                            <input
+                              type="text"
+                              value={card.badge}
+                              onChange={(e) => updateCategoryCard(index, "badge", e.target.value)}
+                              placeholder="Badge (e.g., Up to 55% OFF)"
+                              className="w-full px-2 py-1 text-sm border border-neutral-300 rounded bg-white"
+                              required
+                            />
+                            <input
+                              type="number"
+                              value={card.discountPercentage}
+                              onChange={(e) => updateCategoryCard(index, "discountPercentage", parseFloat(e.target.value) || 0)}
+                              placeholder="Discount %"
+                              min="0"
+                              max="100"
+                              className="w-full px-2 py-1 text-sm border border-neutral-300 rounded bg-white"
+                              required
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                )}
-                {productSearch.length >= 3 && products.length === 0 && (
-                  <p className="text-xs text-neutral-500 mb-2">No products found</p>
-                )}
-                <div className="flex flex-wrap gap-2 mb-2">
-                  {featuredProducts.map((productId) => {
-                    const product = products.find((p) => p._id === productId);
-                    return (
-                      <div
-                        key={productId}
-                        className="flex items-center gap-1 bg-teal-50 text-teal-700 px-2 py-1 rounded text-sm"
-                      >
-                        <span>{product?.productName || productId}</span>
-                        <button
-                          type="button"
-                          onClick={() => removeFeaturedProduct(productId)}
-                          className="text-teal-700 hover:text-teal-900"
-                        >
-                          ×
-                        </button>
+
+                  {/* CRAZY DEALS Title */}
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      CRAZY DEALS Title
+                    </label>
+                    <input
+                      type="text"
+                      value={crazyDealsTitle}
+                      onChange={(e) => setCrazyDealsTitle(e.target.value)}
+                      placeholder="e.g., CRAZY DEALS, SPECIAL OFFERS"
+                      className="w-full px-3 py-2 border border-neutral-300 rounded bg-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none"
+                    />
+                    <p className="text-xs text-neutral-500 mt-1">
+                      Custom title for the featured products section (default: "CRAZY DEALS")
+                    </p>
+                  </div>
+
+                  {/* Featured Products */}
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      Featured Products <span className="text-red-500">*</span>
+                      <span className="text-xs text-neutral-500 font-normal ml-2">
+                        (Minimum 4 required for carousel)
+                      </span>
+                    </label>
+                    <input
+                      type="text"
+                      value={productSearch}
+                      onChange={(e) => setProductSearch(e.target.value)}
+                      placeholder="Search products (type at least 3 characters)..."
+                      className="w-full px-3 py-2 border border-neutral-300 rounded bg-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none mb-2"
+                    />
+                    {productSearch.length > 0 && productSearch.length < 3 && (
+                      <p className="text-xs text-neutral-500 mb-2">Type at least 3 characters to search</p>
+                    )}
+                    {products.length > 0 && (
+                      <div className="border border-neutral-300 rounded max-h-40 overflow-y-auto mb-2">
+                        {products.map((product) => (
+                          <div
+                            key={product._id}
+                            onClick={() => addFeaturedProduct(product._id)}
+                            className="p-2 hover:bg-neutral-50 cursor-pointer text-sm"
+                          >
+                            {product.productName}
+                          </div>
+                        ))}
                       </div>
-                    );
-                  })}
+                    )}
+                    {productSearch.length >= 3 && products.length === 0 && (
+                      <p className="text-xs text-neutral-500 mb-2">No products found</p>
+                    )}
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {featuredProducts.map((productId) => {
+                        const product = products.find((p) => p._id === productId);
+                        return (
+                          <div
+                            key={productId}
+                            className="flex items-center gap-1 bg-teal-50 text-teal-700 px-2 py-1 rounded text-sm"
+                          >
+                            <span>{product?.productName || productId}</span>
+                            <button
+                              type="button"
+                              onClick={() => removeFeaturedProduct(productId)}
+                              className="text-teal-700 hover:text-teal-900"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs font-medium ${featuredProducts.length >= 4 ? 'text-green-600' : 'text-orange-600'
+                        }`}>
+                        {featuredProducts.length} / 4 products selected
+                      </span>
+                      {featuredProducts.length < 4 && (
+                        <span className="text-xs text-orange-600">
+                          (Need {4 - featuredProducts.length} more)
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className={`text-xs font-medium ${
-                    featuredProducts.length >= 4 ? 'text-green-600' : 'text-orange-600'
-                  }`}>
-                    {featuredProducts.length} / 4 products selected
-                  </span>
-                  {featuredProducts.length < 4 && (
-                    <span className="text-xs text-orange-600">
-                      (Need {4 - featuredProducts.length} more)
-                    </span>
-                  )}
+              )}
+
+              {/* Carousel Section - Only show if carousel enabled */}
+              {showAsCarousel && (
+                <div className="space-y-4 border-l-2 border-blue-200 pl-4 py-2">
+                  <h3 className="text-sm font-bold text-blue-800 uppercase tracking-wider">Carousel Slider Settings</h3>
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <label className="block text-sm font-medium text-neutral-700">
+                        Carousel Images <span className="text-red-500">*</span>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setCarouselImages([...carouselImages, { imageUrl: "", link: "", order: carouselImages.length }])}
+                        className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                      >
+                        + Add Slide
+                      </button>
+                    </div>
+                    <div className="space-y-3 max-h-80 overflow-y-auto">
+                      {carouselImages.map((image, index) => (
+                        <div key={index} className="border border-blue-100 rounded p-3 bg-blue-50/30">
+                          <div className="flex justify-between items-start mb-2">
+                            <span className="text-xs font-medium text-blue-600">Slide {index + 1}</span>
+                            <button
+                              type="button"
+                              onClick={() => setCarouselImages(carouselImages.filter((_, i) => i !== index))}
+                              className="text-red-500 hover:text-red-700 text-xs"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                          <div className="space-y-2">
+                            <input
+                              type="text"
+                              value={image.imageUrl}
+                              onChange={(e) => {
+                                const updated = [...carouselImages];
+                                updated[index] = { ...updated[index], imageUrl: e.target.value };
+                                setCarouselImages(updated);
+                              }}
+                              placeholder="Image URL (e.g., https://...)"
+                              className="w-full px-2 py-1 text-sm border border-neutral-300 rounded bg-white"
+                              required
+                            />
+                            <input
+                              type="text"
+                              value={image.link || ""}
+                              onChange={(e) => {
+                                const updated = [...carouselImages];
+                                updated[index] = { ...updated[index], link: e.target.value };
+                                setCarouselImages(updated);
+                              }}
+                              placeholder="Link URL (Optional, e.g., /category/grocery)"
+                              className="w-full px-2 py-1 text-sm border border-neutral-300 rounded bg-white"
+                            />
+                            <input
+                              type="number"
+                              value={image.order}
+                              onChange={(e) => {
+                                const updated = [...carouselImages];
+                                updated[index] = { ...updated[index], order: parseInt(e.target.value) || 0 };
+                                setCarouselImages(updated);
+                              }}
+                              placeholder="Order"
+                              className="w-full px-2 py-1 text-sm border border-neutral-300 rounded bg-white"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                      {carouselImages.length === 0 && (
+                        <div className="text-center py-4 border border-dashed border-blue-200 rounded text-blue-400 text-xs">
+                          Add at least one slide for the carousel
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Active Toggle */}
               <div className="flex items-center gap-2">
@@ -660,14 +766,18 @@ export default function AdminPromoStrip() {
                           </td>
                           <td className="py-2 px-3 text-sm">
                             <span
-                              className={`px-2 py-1 rounded text-xs ${
-                                promoStrip.isActive
-                                  ? "bg-green-100 text-green-700"
-                                  : "bg-gray-100 text-gray-700"
-                              }`}
+                              className={`px-2 py-1 rounded text-xs ${promoStrip.isActive
+                                ? "bg-green-100 text-green-700"
+                                : "bg-gray-100 text-gray-700"
+                                }`}
                             >
                               {promoStrip.isActive ? "Active" : "Inactive"}
                             </span>
+                            {promoStrip.showAsCarousel && (
+                              <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">
+                                Carousel
+                              </span>
+                            )}
                           </td>
                           <td className="py-2 px-3 text-sm">
                             <div className="flex gap-2">

@@ -203,7 +203,7 @@ export default function SellerSignUp() {
         email: formData.email,
         storeName: formData.storeName,
         category: formData.category,
-        categories: [formData.category],
+        categories: formData.categories,
         address: formData.address || formData.searchLocation,
         city: formData.city,
         pincode: formData.pincode,

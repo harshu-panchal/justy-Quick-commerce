@@ -20,10 +20,6 @@ export default function SellerDashboard() {
   const [isShopOpen, setIsShopOpen] = useState(true);
   const [statusLoading, setStatusLoading] = useState(false);
 
-  useEffect(() => {
-    // Seed products for testing/mock purposes
-    seedSellerProducts();
-  }, []);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -364,21 +360,25 @@ export default function SellerDashboard() {
               {user?.depositPaid ? 'Paid' : 'Pending'}
             </span>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
+            <div>
+              <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Required Amount</p>
+              <p className="text-lg font-bold text-gray-900">₹{user?.securityDeposit ?? 1000}</p>
+            </div>
             <div>
               <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Amount Paid</p>
-              <p className="text-lg font-bold text-gray-900">₹{user?.depositAmount || user?.securityDeposit || 0}</p>
+              <p className="text-lg font-bold text-gray-900">₹{user?.depositPaid ? (user?.depositAmount ?? 0) : 0}</p>
             </div>
             <div>
               <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Payment Date</p>
               <p className="text-sm font-medium text-gray-900">
-                {(user?.depositPaidAt || user?.securityDepositPaidAt)
+                {user?.depositPaid && (user?.depositPaidAt || user?.securityDepositPaidAt)
                   ? new Date((user?.depositPaidAt || user?.securityDepositPaidAt)!).toLocaleDateString('en-IN', {
                     day: '2-digit',
                     month: 'short',
                     year: 'numeric'
                   })
-                  : 'N/A'}
+                  : '—'}
               </p>
             </div>
             <div>

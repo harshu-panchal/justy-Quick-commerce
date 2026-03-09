@@ -37,13 +37,5 @@ export interface DashboardResponse {
 export const getSellerDashboardStats = async (): Promise<DashboardResponse> => {
     const response = await api.get<DashboardResponse>('/seller/dashboard/stats');
 
-    // Mock augmentation for development/testing
-    const mockProducts = JSON.parse(localStorage.getItem("products") || "[]");
-    if (mockProducts.length > 0 && response.data.success) {
-        // Only count products belonging to the current seller mock ID if needed, 
-        // but for seeding demo we can just add them.
-        response.data.data.stats.totalProduct += mockProducts.length;
-    }
-
     return response.data;
 };

@@ -14,6 +14,12 @@ async function check() {
     await mongoose.connect(mongoUri);
     console.log('Connected to:', mongoose.connection.name);
 
+    if (!mongoose.connection.db) {
+        console.error('Database connection failed to initialize');
+        await mongoose.disconnect();
+        return;
+    }
+
     const collections = await mongoose.connection.db.listCollections().toArray();
     console.log('Collections:', collections.map(c => c.name));
 

@@ -1,10 +1,6 @@
 import { Request, Response } from "express";
 import Product from "../../../models/Product";
 import Shop from "../../../models/Shop";
-import Seller from "../../../models/Seller";
-import Category from "../../../models/Category";
-import SubCategory from "../../../models/SubCategory";
-import HeaderCategory from "../../../models/HeaderCategory";
 import { asyncHandler } from "../../../utils/asyncHandler";
 
 /**
@@ -22,52 +18,6 @@ export const createProduct = asyncHandler(
         message: "You can only create products for your own account",
       });
     }
-
-    // --- Start Hierarchy & Permission Validation ---
-    const seller = await Seller.findById(sellerId);
-    if (!seller) {
-      return res.status(404).json({
-        success: false,
-        message: "Seller not found",
-      });
-    }
-
-    if (productData.headerCategoryId) {
-      const headerCat = await HeaderCategory.findById(productData.headerCategoryId);
-      if (!headerCat) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid header category",
-        });
-      }
-      if (!seller.categories.includes(headerCat.name)) {
-        return res.status(403).json({
-          success: false,
-          message: `You are not authorized to sell in the ${headerCat.name} category. Please contact admin to update your profile.`,
-        });
-      }
-
-      if (productData.categoryId) {
-        const category = await Category.findById(productData.categoryId);
-        if (!category || category.headerCategoryId?.toString() !== productData.headerCategoryId) {
-          return res.status(400).json({
-            success: false,
-            message: "The selected category does not belong to the chosen header category",
-          });
-        }
-
-        if (productData.subcategoryId) {
-          const subcategory = await SubCategory.findById(productData.subcategoryId);
-          if (!subcategory || subcategory.category?.toString() !== productData.categoryId) {
-            return res.status(400).json({
-              success: false,
-              message: "The selected subcategory does not belong to the chosen category",
-            });
-          }
-        }
-      }
-    }
-    // --- End Hierarchy & Permission Validation ---
 
     // 2. Map fields to match Product model
     const newProductData: any = {
@@ -400,61 +350,19 @@ export const updateProduct = asyncHandler(
     const product = await Product.findOne({ _id: id, seller: sellerId });
 
     if (!product) {
+      // Check if product exists at all
+      const existingProduct = await Product.findById(id).select("seller");
+      if (existingProduct) {
+        console.log(
+          "DEBUG updateProduct: product exists but owned by:",
+          existingProduct.seller
+        );
+      }
       return res.status(404).json({
         success: false,
         message: "Product not found",
       });
     }
-
-    // --- Start Hierarchy & Permission Validation (for update) ---
-    const seller = await Seller.findById(sellerId);
-    if (!seller) {
-      return res.status(404).json({
-        success: false,
-        message: "Seller not found",
-      });
-    }
-
-    const headerId = updateData.headerCategoryId || product.headerCategoryId?.toString();
-    const catId = updateData.category || product.category?.toString();
-    const subCatId = updateData.subcategory || product.subcategory?.toString();
-
-    if (headerId) {
-      const headerCat = await HeaderCategory.findById(headerId);
-      if (!headerCat) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid header category",
-        });
-      }
-      if (!seller.categories.includes(headerCat.name)) {
-        return res.status(403).json({
-          success: false,
-          message: `You are not authorized to sell in the ${headerCat.name} category.`,
-        });
-      }
-
-      if (catId) {
-        const category = await Category.findById(catId);
-        if (!category || category.headerCategoryId?.toString() !== headerId) {
-          return res.status(400).json({
-            success: false,
-            message: "The selected category does not belong to the chosen header category",
-          });
-        }
-
-        if (subCatId) {
-          const subcategory = await SubCategory.findById(subCatId);
-          if (!subcategory || subcategory.category?.toString() !== catId) {
-            return res.status(400).json({
-              success: false,
-              message: "The selected subcategory does not belong to the chosen category",
-            });
-          }
-        }
-      }
-    }
-    // --- End Hierarchy & Permission Validation ---
 
     // Apply updates
     Object.assign(product, updateData);

@@ -931,7 +931,7 @@ export default function ProductDetail() {
                           Seller:
                         </span>
                         <span className="text-xs text-neutral-600 leading-relaxed flex-1">
-                          Zeto Mart Partner (
+                          Jasti Partner (
                           {product.sellerId.slice(-6).toUpperCase()})
                         </span>
                       </div>

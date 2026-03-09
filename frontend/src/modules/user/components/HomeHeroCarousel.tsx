@@ -159,7 +159,7 @@ const HomeHeroCarousel: React.FC = () => {
                             transition={{ delay: 0.5, duration: 0.4 }}
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
-                            className="w-fit px-8 py-3 bg-white text-black rounded-full font-bold text-sm md:text-base shadow-lg hover:bg-neutral-100 transition-colors"
+                            className="w-fit px-6 py-2.5 bg-white text-black rounded-full font-bold text-[13px] md:text-sm shadow-lg hover:bg-neutral-100 transition-colors"
                             onClick={() => window.location.href = slides[currentIndex].link}
                         >
                             {slides[currentIndex].cta}

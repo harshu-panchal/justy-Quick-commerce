@@ -176,18 +176,7 @@ export function getAvailableParents(
   categoryId: string | null,
   categories: Category[]
 ): Category[] {
-  if (!categoryId) {
-    // For new categories, return all active root categories
-    return getActiveCategories(getRootCategories(categories));
-  }
-
-  // For existing categories, exclude self and all descendants
-  const descendants = getAllDescendants(categoryId, categories);
-  const excludeIds = new Set([categoryId, ...descendants.map((d) => d._id)]);
-
-  return getActiveCategories(categories).filter(
-    (cat) => !excludeIds.has(cat._id)
-  );
+  return getActiveCategories(getRootCategories(categories));
 }
 
 /**

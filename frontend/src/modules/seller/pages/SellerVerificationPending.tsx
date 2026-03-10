@@ -1,5 +1,5 @@
 import Lottie from 'lottie-react';
-import verificationAnimation from '../../../assets/animations/Verification Status.json';
+import verificationAnimation from '../../../assets/animations/VerificationStatus.json';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import { useEffect, useState } from 'react';

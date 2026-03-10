@@ -1,5 +1,5 @@
 import Lottie from 'lottie-react';
-import verificationAnimation from '../../assets/animations/Verification Status.json';
+import verificationAnimation from '../../assets/animations/VerificationStatus.json';
 
 const UnderReviewScreen = () => {
     const steps = [

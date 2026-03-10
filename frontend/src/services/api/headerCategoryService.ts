@@ -12,24 +12,24 @@ export interface HeaderCategory {
     order?: number;
 }
 
-export const HOME_CATEGORIES: HeaderCategory[] = [
-    { _id: '2', name: 'Fashion', iconLibrary: 'Feather', iconName: 'shirt', slug: 'fashion', status: 'Published', order: 2 },
-    { _id: '3', name: 'Grocery', iconLibrary: 'Feather', iconName: 'shopping-basket', slug: 'grocery', status: 'Published', order: 3 },
-    { _id: '4', name: 'Beauty', iconLibrary: 'Feather', iconName: 'sparkles', slug: 'beauty', status: 'Published', order: 4 },
-    { _id: '5', name: 'Electronics', iconLibrary: 'Feather', iconName: 'cpu', slug: 'electronics', status: 'Published', order: 5 },
-    { _id: '6', name: 'Pan Corner', iconLibrary: 'Feather', iconName: 'store', slug: 'pan-corner', status: 'Published', order: 6 },
-    { _id: '7', name: 'Bakery', iconLibrary: 'Feather', iconName: 'cake', slug: 'bakery', status: 'Published', order: 7 },
-    { _id: '8', name: 'Vegetables', iconLibrary: 'Feather', iconName: 'carrot', slug: 'vegetables', status: 'Published', order: 8 },
-];
-
 export const getHeaderCategoriesPublic = async (skipLoader = false): Promise<HeaderCategory[]> => {
-    // Return mock categories for frontend-only requirement
-    return HOME_CATEGORIES;
+    try {
+        const response = await api.get<HeaderCategory[]>('/header-categories');
+        return response.data;
+    } catch (error) {
+        console.error('Failed to fetch public header categories', error);
+        return []; // Fallback to empty instead of crashing
+    }
 };
 
 export const getHeaderCategoriesAdmin = async (): Promise<HeaderCategory[]> => {
-    // Return same mock categories for consistency in frontend-only dev
-    return HOME_CATEGORIES;
+    try {
+        const response = await api.get<HeaderCategory[]>('/header-categories');
+        return response.data;
+    } catch (error) {
+        console.error('Failed to fetch admin header categories', error);
+        return [];
+    }
 };
 
 export const createHeaderCategory = async (data: Partial<HeaderCategory>): Promise<HeaderCategory> => {

@@ -257,12 +257,15 @@ export default function Home() {
                 .filter((section: any) => {
                   const title = section.title?.toLowerCase() || '';
                   const slug = section.categorySlug?.toLowerCase() || '';
+
+                  // Known scheduled keywords
+                  const scheduledKeywords = ['fashion', 'electronics', 'beauty', 'makeup', 'cosmetic', 'wedding', 'sports', 'lux', 'home-decor'];
+                  const isScheduled = scheduledKeywords.some(word => title.includes(word) || slug.includes(word));
+
                   if (deliveryMode === 'quick') {
-                    const keywords = ['grocery', 'vegetable', 'fruit', 'bakery', 'cake', 'munchies', 'snack', 'sweet', 'chocolate', 'pan', 'corner'];
-                    if (!keywords.some(word => title.includes(word) || slug.includes(word))) return false;
+                    if (isScheduled) return false;
                   } else if (deliveryMode === 'scheduled') {
-                    const keywords = ['fashion', 'electronics', 'beauty', 'makeup', 'cosmetic', 'wedding', 'sports'];
-                    if (!keywords.some(word => title.includes(word) || slug.includes(word))) return false;
+                    if (!isScheduled) return false;
                   }
                   const forbidden = ['non veg', 'meat', 'fish', 'chicken', 'egg', 'pet care', 'pharma', 'wellness', 'cleaning', 'office', 'baby care', 'personal care', 'wash', 'sanitary'];
                   if (forbidden.some(word => title.includes(word) || slug.includes(word))) return false;

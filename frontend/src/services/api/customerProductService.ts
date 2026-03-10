@@ -121,17 +121,9 @@ export const getCategoryById = async (id: string): Promise<any> => {
 /**
  * Get all categories (Public)
  * Using /tree endpoint to get hierarchy if available, otherwise just /
- * Cached for 10 minutes as categories don't change frequently
  */
 export const getCategories = async (tree: boolean = false): Promise<CategoryListResponse> => {
-    const cacheKey = `customer-categories-${tree ? 'tree' : 'list'}`;
-    return apiCache.getOrFetch(
-        cacheKey,
-        async () => {
-            const url = tree ? '/customer/categories/tree' : '/customer/categories';
-            const response = await api.get<CategoryListResponse>(url);
-            return response.data;
-        },
-        10 * 60 * 1000 // 10 minutes cache
-    );
+    const url = tree ? '/customer/categories/tree' : '/customer/categories';
+    const response = await api.get<CategoryListResponse>(url);
+    return response.data;
 };

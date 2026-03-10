@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import Product from "../../../models/Product";
 import Category from "../../../models/Category";
 import SubCategory from "../../../models/SubCategory";
+import Seller from "../../../models/Seller";
 import mongoose from "mongoose";
 import { findSellersWithinRange } from "../../../utils/locationHelper";
 
@@ -21,6 +22,7 @@ export const getProducts = async (req: Request, res: Response) => {
       minDiscount,
       latitude, // User location latitude
       longitude, // User location longitude
+      pincode, // User pincode for quick delivery
     } = req.query;
 
     const query: any = {
@@ -33,130 +35,126 @@ export const getProducts = async (req: Request, res: Response) => {
       ],
     };
 
-    // Location-based filtering: Only show products from sellers within user's range
+    // Location-based filtering setup
     const userLat = latitude ? parseFloat(latitude as string) : null;
     const userLng = longitude ? parseFloat(longitude as string) : null;
 
-    if (userLat && userLng && !isNaN(userLat) && !isNaN(userLng)) {
-      // Find sellers within user's location range
-      const nearbySellerIds = await findSellersWithinRange(userLat, userLng);
-
-      if (nearbySellerIds.length === 0) {
-        // No sellers within range, return empty result
-        return res.status(200).json({
-          success: true,
-          data: [],
-          pagination: {
-            page: Number(page),
-            limit: Number(limit),
-            total: 0,
-            pages: 0,
-          },
-          message:
-            "No sellers available in your area. Please update your location.",
-        });
-      }
-
-      // Filter products by sellers within range
-      query.seller = { $in: nearbySellerIds };
-    } else {
-      // If no location provided, return empty result (strictly enforce location)
-      return res.status(200).json({
-        success: true,
-        data: [],
-        pagination: {
-          page: Number(page),
-          limit: Number(limit),
-          total: 0,
-          pages: 0,
-        },
-        message: "Please provide your location to see products available in your area.",
-      });
-    }
-
     // Helper to resolve category/subcategory ID from slug or ID
-    const resolveId = async (
+    const resolveIdAndSlug = async (
       model: any,
       value: string,
       modelName: string = ""
     ) => {
-      if (mongoose.Types.ObjectId.isValid(value)) return value;
+      if (mongoose.Types.ObjectId.isValid(value)) {
+        const item = await model.findById(value).select("_id slug name").lean();
+        return item;
+      }
 
-      // Build query - only check status if model has status field (Category has it, SubCategory might not)
       const baseQuery: any = {};
       if (modelName === "Category") {
         baseQuery.status = "Active";
       }
 
-      // Try exact slug match first
-      let item = await model
-        .findOne({ ...baseQuery, slug: value })
-        .select("_id")
-        .lean();
-      if (item) return item._id;
+      // Try exact slug match
+      let item = await model.findOne({ ...baseQuery, slug: value }).select("_id slug name").lean();
+      if (item) return item;
 
       // Try case-insensitive slug match
-      item = await model
-        .findOne({
-          ...baseQuery,
-          slug: { $regex: new RegExp(`^${value}$`, "i") },
-        })
-        .select("_id")
-        .lean();
-      if (item) return item._id;
+      item = await model.findOne({
+        ...baseQuery,
+        slug: { $regex: new RegExp(`^${value}$`, "i") },
+      }).select("_id slug name").lean();
+      if (item) return item;
 
-      // Try name match as fallback (case-insensitive) - replace hyphens/underscores with spaces
+      // Try name match
       let namePattern = value.replace(/[-_]/g, " ");
-      item = await model
-        .findOne({
-          ...baseQuery,
-          name: { $regex: new RegExp(`^${namePattern}$`, "i") },
-        })
-        .select("_id")
-        .lean();
-      if (item) return item._id;
+      item = await model.findOne({
+        ...baseQuery,
+        name: { $regex: new RegExp(`^${namePattern}$`, "i") },
+      }).select("_id slug name").lean();
+      if (item) return item;
 
-      // Special handling for Category and "and" -> "&"
       if (modelName === "Category" && value.includes("and")) {
-         const withAmpersand = value.replace(/-and-/g, " & ").replace(/-/g, " ");
-         item = await model
-           .findOne({
-             ...baseQuery,
-             name: { $regex: new RegExp(`^${withAmpersand}$`, "i") },
-           })
-           .select("_id")
-           .lean();
-         if (item) return item._id;
+        const withAmpersand = value.replace(/-and-/g, " & ").replace(/-/g, " ");
+        item = await model.findOne({
+          ...baseQuery,
+          name: { $regex: new RegExp(`^${withAmpersand}$`, "i") },
+        }).select("_id slug name").lean();
+        if (item) return item;
       }
 
       return null;
     };
 
+    let resolvedCategory = null;
+    let resolvedSubcategory = null;
+
     if (category) {
-      const categoryId = await resolveId(
-        Category,
-        category as string,
-        "Category"
-      );
-      if (categoryId) query.category = categoryId;
+      resolvedCategory = await resolveIdAndSlug(Category, category as string, "Category");
+      if (resolvedCategory) query.category = resolvedCategory._id;
     }
 
     if (subcategory) {
-      // Try to resolve from Category model first (new structure where subcategories are categories with parentId)
-      let subcategoryId = await resolveId(
-        Category,
-        subcategory as string,
-        "Category"
-      );
-      // If not found in Category, try old SubCategory model (backward compatibility)
-      if (!subcategoryId) {
-        subcategoryId = await resolveId(
-          SubCategory,
-          subcategory as string,
-          "SubCategory"
-        );
+      resolvedSubcategory = await resolveIdAndSlug(Category, subcategory as string, "Category");
+      if (!resolvedSubcategory) {
+        resolvedSubcategory = await resolveIdAndSlug(SubCategory, subcategory as string, "SubCategory");
       }
-      if (subcategoryId) query.subcategory = subcategoryId;
+      if (resolvedSubcategory) query.subcategory = resolvedSubcategory._id;
+    }
+
+    // Determine delivery type for filtering
+    const scheduledSlugs = ['electronics', 'fashion', 'beauty', 'sports', 'wedding', 'winter'];
+    let isScheduled = false;
+
+    if (resolvedCategory && scheduledSlugs.includes(resolvedCategory.slug)) {
+      isScheduled = true;
+    } else if (resolvedSubcategory) {
+      // If subcategory is provided, we check its parent category slug if needed
+      // But usually root category slug tells the story
+      if (resolvedCategory && scheduledSlugs.includes(resolvedCategory.slug)) {
+        isScheduled = true;
+      }
+    }
+
+    // Seller validation query (approved, paid deposit, active)
+    const validSellerQuery: any = {
+      status: "Approved",
+      securityDepositStatus: "Paid",
+      isActive: true
+    };
+
+    if (isScheduled) {
+      // For scheduled products, just ensure seller is valid
+      const validSellers = await Seller.find(validSellerQuery).select("_id");
+      query.seller = { $in: validSellers.map(s => s._id) };
+    } else {
+      // For quick delivery products
+      if (pincode) {
+        // Priority 1: Match by Pincode if provided
+        validSellerQuery.pincode = pincode;
+        const sellersWithPincode = await Seller.find(validSellerQuery).select("_id");
+        query.seller = { $in: sellersWithPincode.map(s => s._id) };
+      } else if (userLat && userLng && !isNaN(userLat) && !isNaN(userLng)) {
+        // Priority 2: Match by Radius if location provided
+        const nearbySellerIds = await findSellersWithinRange(userLat, userLng);
+        if (nearbySellerIds.length === 0) {
+          return res.status(200).json({
+            success: true,
+            data: [],
+            pagination: { page: Number(page), limit: Number(limit), total: 0, pages: 0 },
+            message: "No sellers available in your area.",
+          });
+        }
+        query.seller = { $in: nearbySellerIds };
+      } else {
+        // Strictly enforce location/pincode for quick delivery
+        return res.status(200).json({
+          success: true,
+          data: [],
+          pagination: { page: Number(page), limit: Number(limit), total: 0, pages: 0 },
+          message: "Please provide your location or pincode to see products available.",
+        });
+      }
     }
 
     if (brand) {

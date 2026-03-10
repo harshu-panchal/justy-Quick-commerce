@@ -4,7 +4,6 @@ import HomeHero from "./components/HomeHero";
 import HomeHeroCarousel from "./components/HomeHeroCarousel";
 import PromoStrip from "./components/PromoStrip";
 import CategoryTileSection from "./components/CategoryTileSection";
-import FeaturedThisWeek from "./components/FeaturedThisWeek";
 import ProductCard from "./components/ProductCard";
 import QuickDeliverySection from "./components/QuickDeliverySection";
 import { getHomeContent } from "../../services/api/customerHomeService";
@@ -221,35 +220,6 @@ export default function Home() {
             }`}
           style={{ backgroundColor: currentTheme.pageBg || '' }}
         >
-          {activeTab === "all" && deliveryMode === "quick" && (
-            <div className="mt-2 md:mt-4">
-              <CategoryTileSection
-                title="Bestsellers"
-                tiles={
-                  homeData.bestsellers && homeData.bestsellers.length > 0
-                    ? homeData.bestsellers
-                      .filter((card: any) => {
-                        const name = (card.name || "").toLowerCase();
-                        const title = (card.title || "").toLowerCase();
-                        const catName = (card.categoryName || "").toLowerCase();
-                        const forbidden = ['non veg', 'meat', 'fish', 'chicken', 'egg', 'pharma', 'pet', 'baby', 'cleaning', 'office', 'personal care', 'health', 'wellness'];
-                        return !forbidden.some(word => name.includes(word) || title.includes(word) || catName.includes(word));
-                      })
-                      .slice(0, 6)
-                      .map((card: any) => ({
-                        id: card.id,
-                        categoryId: card.categoryId,
-                        name: card.name || "Category",
-                        productImages: card.productImages || [],
-                        productCount: card.productCount || 0,
-                      }))
-                    : []
-                }
-                columns={3}
-                showProductCount={true}
-              />
-            </div>
-          )}
 
           {homeData.homeSections && homeData.homeSections.length > 0 && (
             <>
@@ -319,7 +289,6 @@ export default function Home() {
 
           {activeTab === "all" && (
             <>
-              <FeaturedThisWeek />
               <div className="mb-6 mt-6 md:mb-8 md:mt-8">
                 <h2 className="text-lg md:text-2xl font-semibold text-neutral-900 mb-3 md:mb-6 px-4 md:px-6 lg:px-8 tracking-tight">Shop by Store</h2>
                 <div className="px-4 md:px-6 lg:px-8">

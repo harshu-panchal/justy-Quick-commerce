@@ -50,11 +50,18 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
         if (cats && cats.length > 0) {
           const mapped = cats
             .filter(c => {
+              if (c.status !== 'Published') return false;
               const slug = c.slug.toLowerCase();
-              if (deliveryMode === 'quick') {
-                return ['grocery', 'vegetables', 'bakery', 'pan-corner', 'munchies', 'snacks', 'sweets', 'chocolate'].some(word => slug.includes(word));
+
+              // Known scheduled categories
+              const scheduledKeywords = ['fashion', 'electronics', 'beauty', 'wedding', 'sports', 'lux', 'home-decor'];
+              const isScheduled = scheduledKeywords.some(word => slug.includes(word));
+
+              if (deliveryMode === 'scheduled') {
+                return isScheduled;
               } else {
-                return ['fashion', 'electronics', 'beauty', 'wedding', 'sports'].some(word => slug.includes(word));
+                // For quick mode, show everything that is NOT strictly scheduled
+                return !isScheduled;
               }
             })
             .map(c => ({

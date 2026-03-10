@@ -374,7 +374,7 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
         <div className="w-full">
           <div
             ref={tabsContainerRef}
-            className={`relative flex ${deliveryMode === 'scheduled' ? 'gap-4 md:gap-6' : 'gap-2 md:gap-3'} overflow-x-auto scrollbar-hide px-4 md:px-6 lg:px-8 md:justify-center scroll-smooth py-1.5 md:py-3`}
+            className={`relative flex ${deliveryMode === 'scheduled' ? 'gap-10 md:gap-16' : 'gap-2 md:gap-3'} overflow-x-auto scrollbar-hide px-4 md:px-6 lg:px-8 md:justify-center scroll-smooth py-1.5 md:py-3`}
           >
             {/* Sliding Indicator */}
             {indicatorStyle.width > 0 && (

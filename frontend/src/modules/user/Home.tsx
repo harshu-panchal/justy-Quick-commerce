@@ -259,7 +259,7 @@ export default function Home() {
                   const slug = section.categorySlug?.toLowerCase() || '';
 
                   // Known scheduled keywords
-                  const scheduledKeywords = ['fashion', 'electronics', 'beauty', 'makeup', 'cosmetic', 'wedding', 'sports', 'lux', 'home-decor'];
+                  const scheduledKeywords = ['fashion', 'electronics', 'beauty', 'makeup', 'cosmetic', 'wedding', 'sports', 'lux', 'home-decor', 'mobile'];
                   const isScheduled = scheduledKeywords.some(word => title.includes(word) || slug.includes(word));
 
                   if (deliveryMode === 'quick') {

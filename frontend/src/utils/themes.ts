@@ -13,16 +13,16 @@ export interface Theme {
 
 export const themes: Record<string, Theme> = {
   all: {
-    primary: ['#754B4D', '#5E3C3E', '#8E5F61', '#A67779'],
-    secondary: ['#BFA0A2', '#D8C8C9', '#F1EBEB'],
+    primary: ['#70C247', '#5E9D3B', '#85D15E', '#9AD97B'],
+    secondary: ['#E8F5E1', '#D2EAAC', '#F1F8ED'],
     textColor: '#1a1a1a',
-    accentColor: '#000',
+    accentColor: '#539132',
     bannerText: 'HOUSEFULL',
     saleText: 'SALE',
     headerTextColor: '#ffffff',
-    headerBg: '#754B4D',
-    searchBarBg: '#5E3C3E',
-    pageBg: '#F1EBEB',
+    headerBg: '#70C247',
+    searchBarBg: '#5E9D3B',
+    pageBg: '#f8fafc',
   },
   wedding: {
     primary: ['rgb(252, 165, 165)', 'rgb(253, 182, 182)', 'rgb(254, 202, 202)', 'rgb(255, 228, 228)'],
@@ -31,7 +31,9 @@ export const themes: Record<string, Theme> = {
     accentColor: '#991b1b',
     bannerText: 'WEDDING',
     saleText: 'SALE',
-    headerTextColor: '#7f1d1d',
+    headerTextColor: '#ffffff',
+    headerBg: 'rgb(252, 165, 165)',
+    searchBarBg: 'rgb(253, 182, 182)',
   },
   winter: {
     primary: ['rgb(186, 230, 253)', 'rgb(191, 234, 255)', 'rgb(207, 250, 254)', 'rgb(224, 242, 254)'],
@@ -40,7 +42,9 @@ export const themes: Record<string, Theme> = {
     accentColor: '#075985',
     bannerText: 'WINTER',
     saleText: 'SALE',
-    headerTextColor: '#0c4a6e',
+    headerTextColor: '#ffffff',
+    headerBg: 'rgb(186, 230, 253)',
+    searchBarBg: 'rgb(191, 234, 255)',
   },
   electronics: {
     primary: ['#001D39', '#0A4174', '#49769F', '#4E8EA2'],
@@ -133,7 +137,9 @@ export const themes: Record<string, Theme> = {
     accentColor: '#1e40af',
     bannerText: 'SPORTS',
     saleText: 'SALE',
-    headerTextColor: '#1e3a8a',
+    headerTextColor: '#ffffff',
+    headerBg: 'rgb(147, 197, 253)',
+    searchBarBg: 'rgb(165, 208, 255)',
   },
   orange: {
     primary: ['rgb(251, 146, 60)', 'rgb(253, 186, 116)', 'rgb(254, 215, 170)', 'rgb(255, 237, 213)'],
@@ -142,7 +148,9 @@ export const themes: Record<string, Theme> = {
     accentColor: '#c2410c',
     bannerText: 'AUTUMN',
     saleText: 'SALE',
-    headerTextColor: '#7c2d12',
+    headerTextColor: '#ffffff',
+    headerBg: 'rgb(251, 146, 60)',
+    searchBarBg: 'rgb(253, 186, 116)',
   },
   violet: {
     primary: ['rgb(167, 139, 250)', 'rgb(196, 181, 253)', 'rgb(221, 214, 254)', 'rgb(237, 233, 254)'],
@@ -151,7 +159,9 @@ export const themes: Record<string, Theme> = {
     accentColor: '#5b21b6',
     bannerText: 'VIOLET',
     saleText: 'SALE',
-    headerTextColor: '#2e1065',
+    headerTextColor: '#ffffff',
+    headerBg: 'rgb(167, 139, 250)',
+    searchBarBg: 'rgb(196, 181, 253)',
   },
   teal: {
     primary: ['rgb(45, 212, 191)', 'rgb(94, 234, 212)', 'rgb(153, 246, 228)', 'rgb(204, 251, 241)'],
@@ -160,7 +170,9 @@ export const themes: Record<string, Theme> = {
     accentColor: '#0f766e',
     bannerText: 'TEAL',
     saleText: 'SALE',
-    headerTextColor: '#134e4a',
+    headerTextColor: '#ffffff',
+    headerBg: 'rgb(45, 212, 191)',
+    searchBarBg: 'rgb(94, 234, 212)',
   },
   dark: {
     primary: ['rgb(75, 85, 99)', 'rgb(107, 114, 128)', 'rgb(156, 163, 175)', 'rgb(209, 213, 219)'],
@@ -169,7 +181,9 @@ export const themes: Record<string, Theme> = {
     accentColor: '#1f2937',
     bannerText: 'DARK',
     saleText: 'SALE',
-    headerTextColor: '#000000',
+    headerTextColor: '#ffffff',
+    headerBg: 'rgb(75, 85, 99)',
+    searchBarBg: 'rgb(107, 114, 128)',
   },
   hotpink: {
     primary: ['rgb(244, 114, 182)', 'rgb(249, 168, 212)', 'rgb(251, 207, 232)', 'rgb(253, 224, 239)'],
@@ -178,7 +192,9 @@ export const themes: Record<string, Theme> = {
     accentColor: '#9d174d',
     bannerText: 'PINK',
     saleText: 'SALE',
-    headerTextColor: '#831843',
+    headerTextColor: '#ffffff',
+    headerBg: 'rgb(244, 114, 182)',
+    searchBarBg: 'rgb(249, 168, 212)',
   },
   gold: {
     primary: ['rgb(250, 204, 21)', 'rgb(253, 224, 71)', 'rgb(254, 240, 138)', 'rgb(254, 249, 195)'],
@@ -187,7 +203,9 @@ export const themes: Record<string, Theme> = {
     accentColor: '#a16207',
     bannerText: 'GOLD',
     saleText: 'SALE',
-    headerTextColor: '#713f12',
+    headerTextColor: '#ffffff',
+    headerBg: 'rgb(250, 204, 21)',
+    searchBarBg: 'rgb(253, 224, 71)',
   },
 };
 

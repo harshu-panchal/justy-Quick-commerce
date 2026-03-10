@@ -52,10 +52,11 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
             .filter(c => {
               if (c.status !== 'Published') return false;
               const slug = c.slug.toLowerCase();
+              const name = c.name.toLowerCase();
 
               // Known scheduled categories
-              const scheduledKeywords = ['fashion', 'electronics', 'beauty', 'wedding', 'sports', 'lux', 'home-decor'];
-              const isScheduled = scheduledKeywords.some(word => slug.includes(word));
+              const scheduledKeywords = ['fashion', 'electronics', 'beauty', 'wedding', 'sports', 'lux', 'home-decor', 'mobile'];
+              const isScheduled = scheduledKeywords.some(word => slug.includes(word) || name.includes(word));
 
               if (deliveryMode === 'scheduled') {
                 return isScheduled;

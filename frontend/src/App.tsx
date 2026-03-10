@@ -35,6 +35,8 @@ const OrderAgain = lazy(() => import("./modules/user/OrderAgain"));
 const Account = lazy(() => import("./modules/user/Account"));
 const Categories = lazy(() => import("./modules/user/Categories"));
 const Category = lazy(() => import("./modules/user/Category"));
+const SubCategoryPage = lazy(() => import("./modules/user/SubCategoryPage"));
+const HeaderCategoryPage = lazy(() => import("./modules/user/HeaderCategoryPage"));
 const Invoice = lazy(() => import("./modules/user/Invoice"));
 const Login = lazy(() => import("./modules/user/Login"));
 
@@ -138,7 +140,6 @@ const AdminOrders = lazy(() => import("./modules/admin/pages/AdminOrders"));
 const AdminOrderDetail = lazy(() => import("./modules/admin/pages/AdminOrderDetail"));
 const AdminManageCustomer = lazy(() => import("./modules/admin/pages/AdminManageCustomer"));
 const AdminProfile = lazy(() => import("./modules/admin/pages/AdminProfile"));
-const AdminProductEdit = lazy(() => import("./modules/admin/pages/AdminProductEdit"));
 
 const AdminWithdrawals = lazy(() => import("./modules/admin/pages/AdminWithdrawals"));
 const AdminPayments = lazy(() => import("./modules/admin/pages/AdminPayments"));
@@ -368,7 +369,6 @@ function App() {
                                         <Route path="payments" element={<AdminPayments />} />
                                         <Route path="wallet" element={<AdminWallet />} />
                                         <Route path="billing-settings" element={<AdminBillingSettings />} />
-                                        <Route path="product/edit/:id" element={<AdminProductEdit />} />
                                       </Routes>
                                     </AdminLayout>
                                   </Suspense>
@@ -394,7 +394,9 @@ function App() {
                                       <Route path="/faq" element={<FAQ />} />
                                       <Route path="/wishlist" element={<Wishlist />} />
                                       <Route path="/categories" element={<Categories />} />
-                                      <Route path="/category/:id" element={<Category />} />
+                                      <Route path="/category/:slug" element={<Category />} />
+                                      <Route path="/subcategory/:slug" element={<SubCategoryPage />} />
+                                      <Route path="/header-category/:slug" element={<HeaderCategoryPage />} />
                                       <Route path="/address-book" element={<AddressBook />} />
                                       <Route path="/checkout" element={<Checkout />} />
                                       <Route path="/checkout/address" element={<CheckoutAddress />} />

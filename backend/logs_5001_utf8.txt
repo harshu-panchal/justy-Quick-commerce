@@ -1,0 +1,796 @@
+﻿
+> dhakad-snazzy-backend@1.0.0 dev
+> tsx watch src/server.ts
+
+≡ƒöÑ REGISTERING CUSTOMER ORDER ROUTES
+≡ƒöî Socket.io initialized
+node.exe : 
+(node:6588) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on {"mobile":1} 
+found. This is often 
+due to declaring an 
+index using both 
+"index: true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+At line:1 char:1
++ & "C:\Program Files\
+nodejs/node.exe" 
+"C:\Program 
+Files\nodejs/node_mo 
+...
++ ~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
+~~~~~
+    + CategoryInfo    
+          : NotSpeci  
+  fied: ((node:6588   
+ ) [MO...dex defin    
+ition.:String) []    
+, RemoteException
+    + FullyQualifiedE 
+   rrorId : NativeCo  
+  mmandError
+ 
+(Use `node 
+--trace-warnings ...` 
+to show where the 
+warning was created)
+(node:6588) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on 
+{"orderNumber":1} 
+found. This is often 
+due to declaring an 
+index using both 
+"index: true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+(node:6588) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on 
+{"product":1} found. 
+This is often due to 
+declaring an index 
+using both "index: 
+true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+(node:6588) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on {"order":1} 
+found. This is often 
+due to declaring an 
+index using both 
+"index: true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+(node:6588) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on {"name":1} 
+found. This is often 
+due to declaring an 
+index using both 
+"index: true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+(node:6588) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on {"slug":1} 
+found. This is often 
+due to declaring an 
+index using both 
+"index: true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+(node:6588) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on {"name":1} 
+found. This is often 
+due to declaring an 
+index using both 
+"index: true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+(node:6588) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on {"name":1} 
+found. This is often 
+due to declaring an 
+index using both 
+"index: true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+(node:6588) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on {"code":1} 
+found. This is often 
+due to declaring an 
+index using both 
+"index: true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+(node:6588) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on {"slug":1} 
+found. This is often 
+due to declaring an 
+index using both 
+"index: true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+(node:6588) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on 
+{"customer":1} found. 
+This is often due to 
+declaring an index 
+using both "index: 
+true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+(node:6588) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on 
+{"transactionId":1} 
+found. This is often 
+due to declaring an 
+index using both 
+"index: true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+
+[32mΓ£ô[0m [1mMongoDB Connected Successfully[0m
+   [36mHost:[0m ac-dpcwywl-shard-00-00.nd3xlri.mongodb.net
+   [36mDatabase:[0m zeto-mart
+
+Default admin already exists (mobile: 9876543210)
+Header categories already exist. Skipping seed.
+≡ƒöº Using Firebase credentials from environment variable (production mode)
+Γ£à Firebase Admin SDK initialized successfully
+
+[32mΓ£ô[0m [1mdhakadsnazzy Server Started[0m
+   [36mPort:[0m http://localhost:5001
+   [36mEnvironment:[0m development
+   [36mSocket.IO:[0m Γ£ô Ready for connections
+
+[2026-03-10T11:34:33.070Z] GET /api/v1/customer/products
+[getProducts] Category ID: 69afdc2a2949708f001335d2, Subcategory IDs found: 1
+[getProducts] Query: {"status":"Active","publish":true,"$or":[{"isShopByStoreOnly":{"$ne":true}},{"isShopByStoreOnly":{"$exists":false}}],"seller":{"$in":["6964b1733e4ae3afaa996a76","695b7d5ea0b51822cd33332b","695cbdc15cd5cbace1782a0e","6957da3ccf26a48558c0247e","695e050535bbc5334299d06d","6984747fd8e6141224acff1b"]},"$and":[{"$or":[{"category":"69afdc2a2949708f001335d2"},{"subcategory":{"$in":["69afdc3e2949708f001337c1"]}},{"category":{"$in":["69afdc3e2949708f001337c1"]}}]}]}
+5:05:28 pm [tsx] change in ./src\modules\customer\controllers\customerProductController.ts Restarting...
+c≡ƒöÑ REGISTERING CUSTOMER ORDER ROUTES
+≡ƒöî Socket.io initialized
+(node:16144) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on {"mobile":1} 
+found. This is often 
+due to declaring an 
+index using both 
+"index: true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+(Use `node 
+--trace-warnings ...` 
+to show where the 
+warning was created)
+(node:16144) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on 
+{"orderNumber":1} 
+found. This is often 
+due to declaring an 
+index using both 
+"index: true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+(node:16144) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on 
+{"product":1} found. 
+This is often due to 
+declaring an index 
+using both "index: 
+true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+(node:16144) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on {"order":1} 
+found. This is often 
+due to declaring an 
+index using both 
+"index: true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+(node:16144) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on {"name":1} 
+found. This is often 
+due to declaring an 
+index using both 
+"index: true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+(node:16144) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on {"slug":1} 
+found. This is often 
+due to declaring an 
+index using both 
+"index: true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+(node:16144) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on {"name":1} 
+found. This is often 
+due to declaring an 
+index using both 
+"index: true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+(node:16144) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on {"name":1} 
+found. This is often 
+due to declaring an 
+index using both 
+"index: true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+(node:16144) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on {"code":1} 
+found. This is often 
+due to declaring an 
+index using both 
+"index: true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+(node:16144) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on {"slug":1} 
+found. This is often 
+due to declaring an 
+index using both 
+"index: true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+(node:16144) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on 
+{"customer":1} found. 
+This is often due to 
+declaring an index 
+using both "index: 
+true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+(node:16144) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on 
+{"transactionId":1} 
+found. This is often 
+due to declaring an 
+index using both 
+"index: true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+
+[32mΓ£ô[0m [1mMongoDB Connected Successfully[0m
+   [36mHost:[0m ac-dpcwywl-shard-00-02.nd3xlri.mongodb.net
+   [36mDatabase:[0m zeto-mart
+
+Default admin already exists (mobile: 9876543210)
+Header categories already exist. Skipping seed.
+≡ƒöº Using Firebase credentials from environment variable (production mode)
+Γ£à Firebase Admin SDK initialized successfully
+
+[32mΓ£ô[0m [1mdhakadsnazzy Server Started[0m
+   [36mPort:[0m http://localhost:5001
+   [36mEnvironment:[0m development
+   [36mSocket.IO:[0m Γ£ô Ready for connections
+
+[2026-03-10T11:35:40.879Z] GET /api/v1/customer/products
+[getProducts] Category ID: 69afdc2a2949708f001335d2, Subcategory IDs found: 1
+[getProducts] Query: {"status":"Active","publish":true,"$or":[{"isShopByStoreOnly":{"$ne":true}},{"isShopByStoreOnly":{"$exists":false}}],"seller":{"$in":["6964b1733e4ae3afaa996a76","695b7d5ea0b51822cd33332b","695cbdc15cd5cbace1782a0e","6957da3ccf26a48558c0247e","695e050535bbc5334299d06d","6984747fd8e6141224acff1b"]},"$and":[{"$or":[{"category":{"$in":["69afdc2a2949708f001335d2","69afdc3e2949708f001337c1"]}},{"subcategory":{"$in":["69afdc2a2949708f001335d2","69afdc3e2949708f001337c1"]}}]}]}
+5:06:29 pm [tsx] change in ./src\modules\customer\controllers\customerProductController.ts Restarting...
+c≡ƒöÑ REGISTERING CUSTOMER ORDER ROUTES
+≡ƒöî Socket.io initialized
+(node:13956) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on {"mobile":1} 
+found. This is often 
+due to declaring an 
+index using both 
+"index: true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+(Use `node 
+--trace-warnings ...` 
+to show where the 
+warning was created)
+(node:13956) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on 
+{"orderNumber":1} 
+found. This is often 
+due to declaring an 
+index using both 
+"index: true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+(node:13956) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on 
+{"product":1} found. 
+This is often due to 
+declaring an index 
+using both "index: 
+true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+(node:13956) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on {"order":1} 
+found. This is often 
+due to declaring an 
+index using both 
+"index: true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+(node:13956) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on {"name":1} 
+found. This is often 
+due to declaring an 
+index using both 
+"index: true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+(node:13956) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on {"slug":1} 
+found. This is often 
+due to declaring an 
+index using both 
+"index: true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+(node:13956) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on {"name":1} 
+found. This is often 
+due to declaring an 
+index using both 
+"index: true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+(node:13956) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on {"name":1} 
+found. This is often 
+due to declaring an 
+index using both 
+"index: true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+(node:13956) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on {"code":1} 
+found. This is often 
+due to declaring an 
+index using both 
+"index: true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+(node:13956) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on {"slug":1} 
+found. This is often 
+due to declaring an 
+index using both 
+"index: true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+(node:13956) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on 
+{"customer":1} found. 
+This is often due to 
+declaring an index 
+using both "index: 
+true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+(node:13956) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on 
+{"transactionId":1} 
+found. This is often 
+due to declaring an 
+index using both 
+"index: true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+
+[32mΓ£ô[0m [1mMongoDB Connected Successfully[0m
+   [36mHost:[0m ac-dpcwywl-shard-00-02.nd3xlri.mongodb.net
+   [36mDatabase:[0m zeto-mart
+
+Default admin already exists (mobile: 9876543210)
+Header categories already exist. Skipping seed.
+≡ƒöº Using Firebase credentials from environment variable (production mode)
+Γ£à Firebase Admin SDK initialized successfully
+
+[32mΓ£ô[0m [1mdhakadsnazzy Server Started[0m
+   [36mPort:[0m http://localhost:5001
+   [36mEnvironment:[0m development
+   [36mSocket.IO:[0m Γ£ô Ready for connections
+
+[2026-03-10T11:36:44.809Z] GET /api/v1/customer/products
+[getProducts] Category ID: 69afdc2a2949708f001335d2, Subcategory IDs found: 1
+[getProducts] Query: {"status":"Active","publish":true,"$or":[{"isShopByStoreOnly":{"$ne":true}},{"isShopByStoreOnly":{"$exists":false}}],"seller":{"$in":["6964b1733e4ae3afaa996a76","695b7d5ea0b51822cd33332b","695cbdc15cd5cbace1782a0e","6957da3ccf26a48558c0247e","695e050535bbc5334299d06d","6984747fd8e6141224acff1b"]},"$and":[{"$or":[{"category":{"$in":["69afdc2a2949708f001335d2","69afdc3e2949708f001337c1"]}},{"subcategory":{"$in":["69afdc2a2949708f001335d2","69afdc3e2949708f001337c1"]}}]}]}
+[2026-03-10T11:38:58.809Z] GET /api/v1/customer/products
+[getProducts] Category ID: 69afdc2a2949708f001335d2, Subcategory IDs found: 1
+[getProducts] Query: {"status":"Active","publish":true,"$or":[{"isShopByStoreOnly":{"$ne":true}},{"isShopByStoreOnly":{"$exists":false}}],"seller":{"$in":["6964b1733e4ae3afaa996a76","695b7d5ea0b51822cd33332b","695cbdc15cd5cbace1782a0e","6957da3ccf26a48558c0247e","695e050535bbc5334299d06d","6984747fd8e6141224acff1b"]},"$and":[{"$or":[{"category":{"$in":["69afdc2a2949708f001335d2","69afdc3e2949708f001337c1"]}},{"subcategory":{"$in":["69afdc2a2949708f001335d2","69afdc3e2949708f001337c1"]}}]}]}
+[2026-03-10T11:40:59.974Z] GET /api/v1/customer/products/subcategory/cargo
+[getProductsBySubcategory] slug: cargo, pincode: undefined
+[getProductsBySubcategory] Delivery Mode: Scheduled for parent: pants
+5:12:54 pm [tsx] change in ./src\modules\customer\controllers\customerProductController.ts Restarting...
+node:internal/modules/
+run_main:105
+    triggerUncaughtExc
+eption(
+    ^
+
+Error: Transform 
+failed with 1 error:
+C:\Users\91704\OneDriv
+e\Desktop\QickCommerce
+\backend\src\modules\c
+ustomer\controllers\cu
+stomerProductControlle
+r.ts:181:10: ERROR: 
+The symbol 
+"resolveId" has 
+already been declared
+    at 
+failureErrorWithLog (C
+:\Users\91704\OneDrive
+\Desktop\QickCommerce\
+backend\node_modules\e
+sbuild\lib\main.js:146
+7:15)
+    at C:\Users\91704\
+OneDrive\Desktop\QickC
+ommerce\backend\node_m
+odules\esbuild\lib\mai
+n.js:736:50
+    at responseCallbac
+ks.<computed> (C:\User
+s\91704\OneDrive\Deskt
+op\QickCommerce\backen
+d\node_modules\esbuild
+\lib\main.js:603:9)
+    at 
+handleIncomingPacket (
+C:\Users\91704\OneDriv
+e\Desktop\QickCommerce
+\backend\node_modules\
+esbuild\lib\main.js:65
+8:12)
+    at 
+Socket.readFromStdout 
+(C:\Users\91704\OneDri
+ve\Desktop\QickCommerc
+e\backend\node_modules
+\esbuild\lib\main.js:5
+81:7)
+    at Socket.emit 
+(node:events:507:28)
+    at addChunk (node:
+internal/streams/reada
+ble:559:12)
+    at readableAddChun
+kPushByteMode (node:in
+ternal/streams/readabl
+e:510:3)
+    at Readable.push (
+node:internal/streams/
+readable:390:5)
+    at 
+Pipe.onStreamRead (nod
+e:internal/stream_base
+_commons:189:23) {
+  name: 
+'TransformError'
+}
+
+Node.js v24.3.0
+c5:13:56 pm [tsx] change in ./src\modules\customer\controllers\customerProductController.ts Rerunning...
+c≡ƒöÑ REGISTERING CUSTOMER ORDER ROUTES
+≡ƒöî Socket.io initialized
+(node:10648) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on {"mobile":1} 
+found. This is often 
+due to declaring an 
+index using both 
+"index: true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+(Use `node 
+--trace-warnings ...` 
+to show where the 
+warning was created)
+(node:10648) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on 
+{"orderNumber":1} 
+found. This is often 
+due to declaring an 
+index using both 
+"index: true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+(node:10648) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on 
+{"product":1} found. 
+This is often due to 
+declaring an index 
+using both "index: 
+true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+(node:10648) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on {"order":1} 
+found. This is often 
+due to declaring an 
+index using both 
+"index: true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+(node:10648) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on {"name":1} 
+found. This is often 
+due to declaring an 
+index using both 
+"index: true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+(node:10648) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on {"slug":1} 
+found. This is often 
+due to declaring an 
+index using both 
+"index: true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+(node:10648) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on {"name":1} 
+found. This is often 
+due to declaring an 
+index using both 
+"index: true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+(node:10648) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on {"name":1} 
+found. This is often 
+due to declaring an 
+index using both 
+"index: true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+(node:10648) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on {"code":1} 
+found. This is often 
+due to declaring an 
+index using both 
+"index: true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+(node:10648) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on {"slug":1} 
+found. This is often 
+due to declaring an 
+index using both 
+"index: true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+(node:10648) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on 
+{"customer":1} found. 
+This is often due to 
+declaring an index 
+using both "index: 
+true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+(node:10648) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on 
+{"transactionId":1} 
+found. This is often 
+due to declaring an 
+index using both 
+"index: true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+
+[32mΓ£ô[0m [1mMongoDB Connected Successfully[0m
+   [36mHost:[0m ac-dpcwywl-shard-00-01.nd3xlri.mongodb.net
+   [36mDatabase:[0m zeto-mart
+
+Default admin already exists (mobile: 9876543210)
+Header categories already exist. Skipping seed.
+≡ƒöº Using Firebase credentials from environment variable (production mode)
+Γ£à Firebase Admin SDK initialized successfully
+
+[32mΓ£ô[0m [1mdhakadsnazzy Server Started[0m
+   [36mPort:[0m http://localhost:5001
+   [36mEnvironment:[0m development
+   [36mSocket.IO:[0m Γ£ô Ready for connections
+
+[2026-03-10T11:44:11.048Z] GET /api/v1/customer/products
+[getProducts] Category ID: 69afdc2a2949708f001335d2, Subcategory IDs found: 1
+[getProducts] Query: {"status":"Active","publish":true,"$or":[{"isShopByStoreOnly":{"$ne":true}},{"isShopByStoreOnly":{"$exists":false}}],"seller":{"$in":["69ac1304ffdee53c2212d52a","69ae56f3285315863e52f7d7","69ae66b1285315863e530856","69ae849d285315863e531e72","69afd9058a78933d6729befc","69afe1bc8a78933d6729e922","69affad72ace0497296cbd7c"]},"$and":[{"$or":[{"category":{"$in":["69afdc2a2949708f001335d2","69afdc3e2949708f001337c1"]}},{"subcategory":{"$in":["69afdc2a2949708f001335d2","69afdc3e2949708f001337c1"]}}]}]}
+[2026-03-10T11:44:37.707Z] GET /api/v1/customer/products
+[getProducts] Category ID: 69afdc2a2949708f001335d2, Subcategory IDs found: 1
+[getProducts] Query: {"status":"Active","publish":true,"$or":[{"isShopByStoreOnly":{"$ne":true}},{"isShopByStoreOnly":{"$exists":false}}],"seller":{"$in":["69ac1304ffdee53c2212d52a","69ae56f3285315863e52f7d7","69ae66b1285315863e530856","69ae849d285315863e531e72","69afd9058a78933d6729befc","69afe1bc8a78933d6729e922","69affad72ace0497296cbd7c"]},"$and":[{"$or":[{"category":{"$in":["69afdc2a2949708f001335d2","69afdc3e2949708f001337c1"]}},{"subcategory":{"$in":["69afdc2a2949708f001335d2","69afdc3e2949708f001337c1"]}}]}]}

@@ -11,6 +11,7 @@ export interface Category {
     icon?: string;
     description?: string;
     isActive: boolean;
+    slug?: string;
     children?: Category[];
     subcategories?: Category[];
     headerCategoryId?: string | { _id: string; name?: string };
@@ -115,6 +116,16 @@ export const getProductById = async (id: string, latitude?: number, longitude?: 
  */
 export const getCategoryById = async (id: string): Promise<any> => {
     const response = await api.get<any>(`/customer/categories/${id}`);
+    return response.data;
+};
+
+/**
+ * Get products by subcategory slug (Public)
+ */
+export const getProductsBySubcategory = async (slug: string, pincode?: string): Promise<any> => {
+    const params: any = {};
+    if (pincode) params.pincode = pincode;
+    const response = await api.get<any>(`/customer/products/subcategory/${slug}`, { params });
     return response.data;
 };
 

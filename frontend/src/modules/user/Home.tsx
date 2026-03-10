@@ -241,10 +241,7 @@ export default function Home() {
                   }
                   const forbidden = ['non veg', 'meat', 'fish', 'chicken', 'egg', 'pet care', 'pharma', 'wellness', 'cleaning', 'office', 'baby care', 'personal care', 'wash', 'sanitary'];
                   if (forbidden.some(word => title.includes(word) || slug.includes(word))) return false;
-                  if (activeTab === 'all') {
-                    const allowed = ['fashion', 'grocery', 'kitchen', 'beauty', 'cosmetic', 'makeup', 'electronics', 'mobile', 'cpu', 'pan', 'corner', 'bakery', 'cake', 'vegetable', 'fruit', 'munchies', 'snack', 'sweet', 'chocolate'];
-                    return allowed.some(word => title.includes(word) || slug.includes(word));
-                  }
+
                   return true;
                 })
                 .map((section: any) => {

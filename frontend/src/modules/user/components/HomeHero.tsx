@@ -277,7 +277,11 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
 
   const handleTabClick = (tabId: string) => {
     onTabChange?.(tabId);
-    // Don't scroll - keep page at current position
+    if (tabId === 'all') {
+      navigate('/');
+    } else {
+      navigate(`/header-category/${tabId}`);
+    }
   };
 
   const theme = getTheme(activeTab || 'all');

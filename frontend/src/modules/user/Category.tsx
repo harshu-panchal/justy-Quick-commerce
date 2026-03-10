@@ -10,7 +10,7 @@ import {
 import { useLocation as useLocationContext } from "../../hooks/useLocation";
 
 export default function CategoryPage() {
-  const { id } = useParams<{ id: string }>();
+  const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { location: userLocation } = useLocationContext();
@@ -33,7 +33,7 @@ export default function CategoryPage() {
       setCategoryLoading(true);
       setError(null);
       try {
-        const response = await getCategoryById(id!);
+        const response = await getCategoryById(slug!);
         if (response.success && response.data) {
           const {
             category: cat,
@@ -73,10 +73,10 @@ export default function CategoryPage() {
       }
     };
 
-    if (id) {
+    if (slug) {
       fetchCategoryDetails();
     }
-  }, [id, searchParams]);
+  }, [slug, searchParams]);
 
   // Fetch Products when category or subcategory changes
   useEffect(() => {
@@ -89,7 +89,7 @@ export default function CategoryPage() {
         // However, for fetching products, the backend getProducts handles 'category' (parent)
         // and 'subcategory' separately.
 
-        const params: any = { category: category?._id || id };
+        const params: any = { category: category?._id || slug };
         if (selectedSubcategory !== "all") {
           params.subcategory = selectedSubcategory;
         }
@@ -119,10 +119,10 @@ export default function CategoryPage() {
       }
     };
 
-    if (id) {
+    if (slug) {
       fetchProducts();
     }
-  }, [id, selectedSubcategory, category?._id, userLocation]);
+  }, [slug, selectedSubcategory, category?._id, userLocation]);
 
   // Client-side filtering removed in favor of backend subcategory filtering
   const categoryProducts = products;
@@ -166,7 +166,7 @@ export default function CategoryPage() {
 
   // Extract filter options from products
   const getFilterOptions = () => {
-    const categoryProducts = products.filter((p) => p.categoryId === id);
+    const categoryProducts = products.filter((p) => p.categoryId === (category?._id || slug));
     const filterMap = new Map<string, number>();
 
     categoryProducts.forEach((product) => {
@@ -284,7 +284,11 @@ export default function CategoryPage() {
                 type="button"
                 onClick={() => {
                   console.log("Clicked subcategory:", subcat.id || subcat._id);
-                  setSelectedSubcategory(subcat.id || subcat._id);
+                  if (subcat.slug) {
+                    navigate(`/subcategory/${subcat.slug}`);
+                  } else {
+                    setSelectedSubcategory(subcat.id || subcat._id);
+                  }
                 }}
                 className={`w-full flex flex-col items-center justify-center py-2 relative transition-all duration-200 group ${isSelected ? "bg-green-50" : "hover:bg-neutral-50"
                   }`}
@@ -435,7 +439,13 @@ export default function CategoryPage() {
                 return (
                   <button
                     key={subId}
-                    onClick={() => setSelectedSubcategory(subId)}
+                    onClick={() => {
+                      if (subcat.slug) {
+                        navigate(`/subcategory/${subcat.slug}`);
+                      } else {
+                        setSelectedSubcategory(subId);
+                      }
+                    }}
                     className={`flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md transition-colors flex-shrink-0 whitespace-nowrap ${isSelected
                       ? "bg-white border border-neutral-300 text-neutral-900"
                       : "bg-white border border-neutral-300 text-neutral-700 hover:bg-neutral-50"

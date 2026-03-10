@@ -11,6 +11,7 @@ import PromoStrip from "../../../models/PromoStrip";
 import mongoose from "mongoose";
 import { cache } from "../../../utils/cache";
 import { findSellersWithinRange } from "../../../utils/locationHelper";
+import Seller from "../../../models/Seller";
 
 // Helper function to fetch data for a home section based on its configuration
 async function fetchSectionData(
@@ -172,8 +173,9 @@ async function fetchSectionData(
 
       return products.map((p: any) => {
         // Check if the product's seller is within range
-        const isAvailable = nearbySellerIds && nearbySellerIds.length > 0 && p.seller
-          ? nearbySellerIds.some(id => id.toString() === p.seller.toString())
+        const sellerId = p.seller?._id || p.seller;
+        const isAvailable = nearbySellerIds && nearbySellerIds.length > 0 && sellerId
+          ? nearbySellerIds.some(id => id.toString() === sellerId.toString())
           : false;
 
         return {
@@ -218,10 +220,11 @@ async function fetchSectionData(
 
         return fetchedCategories.map((c: any) => ({
           id: c._id.toString(),
-          categoryId: c.slug || c._id.toString(), // Use slug for SEO-friendly URLs, fallback to _id
+          _id: c._id.toString(),
           name: c.name,
           image: c.image,
           slug: c.slug,
+          status: c.status,
           type: "category",
         }));
       } else {
@@ -347,8 +350,9 @@ export const getHomeContent = async (req: Request, res: Response) => {
       .map((item: any) => {
         const product = item.product;
         // Check if the product's seller is within range
-        const isAvailable = nearbySellerIds && nearbySellerIds.length > 0 && product.seller
-          ? nearbySellerIds.some(id => id.toString() === product.seller.toString())
+        const sellerId = product.seller?._id || product.seller;
+        const isAvailable = nearbySellerIds && nearbySellerIds.length > 0 && sellerId
+          ? nearbySellerIds.some(id => id.toString() === sellerId.toString())
           : false;
 
         return {
@@ -374,7 +378,7 @@ export const getHomeContent = async (req: Request, res: Response) => {
     const categories = await Category.find({
       status: "Active",
     })
-      .select("name image icon color slug")
+      .select("name image icon color slug status")
       .sort({ order: 1 });
 
     // 4. Shop By Store - Fetch from database
@@ -618,13 +622,16 @@ export const getHomeContent = async (req: Request, res: Response) => {
       promoStrip = promoStripDoc;
 
       // If we have promoStrip, add availability flag to featured products
-      if (promoStrip && (promoStrip as any).featuredProducts) {
-        (promoStrip as any).featuredProducts = (promoStrip as any).featuredProducts.map((p: any) => {
-          const isAvailable = nearbySellerIds && nearbySellerIds.length > 0 && p.seller
-            ? nearbySellerIds.some(id => id.toString() === p.seller.toString())
-            : false;
-          return { ...p, isAvailable };
-        });
+      if (promoStrip && Array.isArray((promoStrip as any).featuredProducts)) {
+        (promoStrip as any).featuredProducts = (promoStrip as any).featuredProducts
+          .filter((p: any) => p !== null)
+          .map((p: any) => {
+            const sellerId = p.seller?._id || p.seller;
+            const isAvailable = nearbySellerIds && nearbySellerIds.length > 0 && sellerId
+              ? nearbySellerIds.some(id => id.toString() === sellerId.toString())
+              : false;
+            return { ...p, isAvailable };
+          });
       }
 
       // Cache for 3 minutes (PromoStrip data doesn't change frequently)
@@ -926,6 +933,177 @@ export const checkServiceability = async (req: Request, res: Response) => {
       message: "Error checking serviceability",
       error: error.message,
       isServiceAvailable: false
+    });
+  }
+};
+// Get Header Category Page Sections
+export const getHeaderCategorySections = async (req: Request, res: Response) => {
+  try {
+    const { slug } = req.params;
+    const { pincode, latitude, longitude } = req.query;
+
+    if (!slug) {
+      return res.status(400).json({
+        success: false,
+        message: "Header category slug is required",
+      });
+    }
+
+    // 1. Fetch the Header Category
+    const headerCategory = await HeaderCategory.findOne({
+      slug: slug,
+      status: "Published",
+    }).lean();
+
+    if (!headerCategory) {
+      return res.status(404).json({
+        success: false,
+        message: "Header category not found",
+      });
+    }
+
+    // 2. Fetch active "Home Sections" for this header category page
+    const homeSections = await HomeSection.find({
+      pageLocation: "Header Category Page",
+      targetHeaderCategory: headerCategory._id,
+      isActive: true,
+    })
+      .populate("categories", "name slug image")
+      .populate("subCategories", "name")
+      .sort({ order: 1 })
+      .lean();
+
+    if (!homeSections || homeSections.length === 0) {
+      return res.status(200).json({
+        success: true,
+        data: [],
+      });
+    }
+
+    // 3. Find eligible sellers based on user location/pincode
+    let nearbySellerIds: mongoose.Types.ObjectId[] = [];
+    const userLat = latitude ? parseFloat(latitude as string) : null;
+    const userLng = longitude ? parseFloat(longitude as string) : null;
+
+    if (userLat !== null && userLng !== null && !isNaN(userLat) && !isNaN(userLng)) {
+      nearbySellerIds = await findSellersWithinRange(userLat, userLng);
+    }
+
+    // Find sellers that match the pincode and are active/approved
+    const eligibleSellerQuery: any = {
+      status: "Approved",
+      depositPaid: true,
+      isShopOpen: true,
+    };
+
+    if (pincode) {
+      eligibleSellerQuery.pincode = pincode;
+    }
+
+    const eligibleSellers = await Seller.find(eligibleSellerQuery).select("_id pincode").lean();
+    const eligibleSellerIds = eligibleSellers.map((s: any) => s._id.toString());
+    const pincodeSellerIds = eligibleSellers
+      .filter((s: any) => pincode && s.pincode === pincode)
+      .map((s: any) => s._id.toString());
+
+    // 4. Fetch data for each section with strict rules
+    const sectionsWithData = await Promise.all(
+      homeSections.map(async (section: any) => {
+        const { title, displayType, categories, subCategories, limit } = section;
+        let data: any[] = [];
+
+        if (displayType === "categories") {
+          if (categories && categories.length > 0) {
+            const categoryIds = categories.map((cat: any) => cat._id || cat);
+            const fetchedCategories = await Category.find({
+              _id: { $in: categoryIds },
+              status: "Active",
+            })
+              .select("name image slug status")
+              .sort({ order: 1 })
+              .limit(limit || 8)
+              .lean();
+
+            data = fetchedCategories.map((c: any) => ({
+              id: c._id.toString(),
+              _id: c._id.toString(),
+              name: c.name,
+              image: c.image,
+              slug: c.slug,
+              status: c.status,
+              type: "category",
+            }));
+          }
+        } else if (displayType === "products") {
+          const productQuery: any = {
+            status: "Active",
+            publish: true,
+            stock: { $gt: 0 },
+            seller: { $in: eligibleSellerIds },
+          };
+
+          if (categories && categories.length > 0) {
+            productQuery.category = { $in: categories.map((c: any) => c._id || c) };
+          }
+
+          if (subCategories && subCategories.length > 0) {
+            productQuery.subcategory = { $in: subCategories.map((s: any) => s._id || s) };
+          }
+
+          // Fetch products
+          const products = await Product.find(productQuery)
+            .sort({ createdAt: -1 })
+            .limit(limit || 8)
+            .select("productName mainImage price mrp discount rating reviewsCount pack seller variations")
+            .lean();
+
+          data = products.map((p: any) => {
+            const sellerId = p.seller?.toString();
+            if (!sellerId) return null;
+
+            // Assuming "quick" delivery logic: 
+            // If product is in a context where quick delivery matters, it should be from a local seller.
+            // For general category page, we might show both but mark availability.
+            const isAvailable = nearbySellerIds && nearbySellerIds.length > 0
+              ? nearbySellerIds.some(id => id.toString() === sellerId)
+              : false;
+            const isLocal = pincodeSellerIds.includes(sellerId);
+
+            return {
+              id: p._id.toString(),
+              name: p.productName,
+              image: p.mainImage,
+              price: p.price,
+              mrp: p.mrp || p.price,
+              discount: p.discount || 0,
+              rating: p.rating || 0,
+              reviewsCount: p.reviewsCount || 0,
+              pack: p.pack || "",
+              type: "product",
+              isAvailable,
+              isLocal,
+            };
+          }).filter((p: any) => p !== null);
+        }
+
+        return {
+          title,
+          type: displayType,
+          data,
+        };
+      })
+    );
+
+    res.status(200).json({
+      success: true,
+      data: sectionsWithData,
+    });
+  } catch (error: any) {
+    console.error("Error in getHeaderCategorySections:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching header category sections",
+      error: error.message,
     });
   }
 };

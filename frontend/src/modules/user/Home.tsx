@@ -228,14 +228,16 @@ export default function Home() {
                   const title = section.title?.toLowerCase() || '';
                   const slug = section.categorySlug?.toLowerCase() || '';
 
-                  // Known scheduled keywords
+                  // Determine deliveryType: use section field if present, fallback to keyword heuristic
                   const scheduledKeywords = ['fashion', 'electronics', 'beauty', 'makeup', 'cosmetic', 'wedding', 'sports', 'lux', 'home-decor', 'mobile'];
-                  const isScheduled = scheduledKeywords.some(word => title.includes(word) || slug.includes(word));
+                  const isScheduledByKeyword = scheduledKeywords.some(word => title.includes(word) || slug.includes(word));
+
+                  const sectionDeliveryType = section.deliveryType || (isScheduledByKeyword ? 'scheduled' : 'quick');
 
                   if (deliveryMode === 'quick') {
-                    if (isScheduled) return false;
+                    if (sectionDeliveryType === 'scheduled') return false;
                   } else if (deliveryMode === 'scheduled') {
-                    if (!isScheduled) return false;
+                    if (sectionDeliveryType !== 'scheduled') return false;
                   }
                   const forbidden = ['non veg', 'meat', 'fish', 'chicken', 'egg', 'pet care', 'pharma', 'wellness', 'cleaning', 'office', 'baby care', 'personal care', 'wash', 'sanitary'];
                   if (forbidden.some(word => title.includes(word) || slug.includes(word))) return false;

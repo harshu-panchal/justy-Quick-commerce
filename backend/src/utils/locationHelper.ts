@@ -65,11 +65,9 @@ export async function findSellersWithinRange(
   }
 
   try {
-    // Fetch all approved and paid sellers with location
+    // Fetch all approved sellers with location
     const sellers = await Seller.find({
       status: "Approved",
-      securityDepositStatus: "Paid",
-      isActive: true,
     }).select("_id location serviceRadiusKm latitude longitude serviceAreaGeo");
 
     // Filter sellers where user is within their service radius

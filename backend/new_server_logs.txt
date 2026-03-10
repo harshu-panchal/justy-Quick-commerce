@@ -1,0 +1,203 @@
+﻿
+> dhakad-snazzy-backend@1.0.0 dev
+> tsx watch src/server.ts
+
+≡ƒöÑ REGISTERING CUSTOMER ORDER ROUTES
+≡ƒöî Socket.io initialized
+node.exe : 
+(node:11624) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on {"mobile":1} 
+found. This is often 
+due to declaring an 
+index using both 
+"index: true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+At line:1 char:1
++ & "C:\Program Files\
+nodejs/node.exe" 
+"C:\Program 
+Files\nodejs/node_mo 
+...
++ ~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
+~~~~~
+    + CategoryInfo    
+          : NotSpeci  
+  fied: ((node:1162   
+ 4) [M...dex defin    
+ition.:String) []    
+, RemoteException
+    + FullyQualifiedE 
+   rrorId : NativeCo  
+  mmandError
+ 
+(Use `node 
+--trace-warnings ...` 
+to show where the 
+warning was created)
+(node:11624) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on 
+{"orderNumber":1} 
+found. This is often 
+due to declaring an 
+index using both 
+"index: true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+(node:11624) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on 
+{"product":1} found. 
+This is often due to 
+declaring an index 
+using both "index: 
+true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+(node:11624) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on {"order":1} 
+found. This is often 
+due to declaring an 
+index using both 
+"index: true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+(node:11624) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on {"name":1} 
+found. This is often 
+due to declaring an 
+index using both 
+"index: true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+(node:11624) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on {"slug":1} 
+found. This is often 
+due to declaring an 
+index using both 
+"index: true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+(node:11624) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on {"name":1} 
+found. This is often 
+due to declaring an 
+index using both 
+"index: true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+(node:11624) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on {"name":1} 
+found. This is often 
+due to declaring an 
+index using both 
+"index: true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+(node:11624) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on {"code":1} 
+found. This is often 
+due to declaring an 
+index using both 
+"index: true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+(node:11624) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on {"slug":1} 
+found. This is often 
+due to declaring an 
+index using both 
+"index: true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+(node:11624) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on 
+{"customer":1} found. 
+This is often due to 
+declaring an index 
+using both "index: 
+true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+(node:11624) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on 
+{"transactionId":1} 
+found. This is often 
+due to declaring an 
+index using both 
+"index: true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+
+[32mΓ£ô[0m [1mMongoDB Connected Successfully[0m
+   [36mHost:[0m ac-dpcwywl-shard-00-01.nd3xlri.mongodb.net
+   [36mDatabase:[0m zeto-mart
+
+Default admin already exists (mobile: 9876543210)
+Header categories already exist. Skipping seed.
+≡ƒöº Using Firebase credentials from environment variable (production mode)
+Γ£à Firebase Admin SDK initialized successfully
+
+[31mΓ£ù Port 5000 is 
+already in use![0m
+[33m  ΓåÆ Another 
+instance of the 
+server may be 
+running.[0m
+[33m  ΓåÆ Run: 
+taskkill /f /im 
+node.exe (Windows) or 
+killall node 
+(Mac/Linux)[0m
+[33m  ΓåÆ Or change 
+PORT in .env file[0m
+

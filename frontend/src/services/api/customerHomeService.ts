@@ -83,3 +83,26 @@ export const checkServiceability = async (
   );
   return response.data;
 };
+
+/**
+ * Get dynamic sections for a specific header category page
+ */
+export const getHeaderCategorySections = async (
+  slug: string,
+  pincode?: string,
+  latitude?: number,
+  longitude?: number
+): Promise<{ success: boolean; data: any[] }> => {
+  const params: any = {};
+  if (pincode) params.pincode = pincode;
+  if (latitude !== undefined && longitude !== undefined) {
+    params.latitude = latitude;
+    params.longitude = longitude;
+  }
+
+  const response = await api.get<{ success: boolean; data: any[] }>(
+    `/customer/home/header-category/${slug}`,
+    { params }
+  );
+  return response.data;
+};

@@ -2,8 +2,8 @@ import { Request, Response } from "express";
 import Product from "../../../models/Product";
 import Category from "../../../models/Category";
 import SubCategory from "../../../models/SubCategory";
-import Seller from "../../../models/Seller";
 import mongoose from "mongoose";
+import Seller from "../../../models/Seller";
 import { findSellersWithinRange } from "../../../utils/locationHelper";
 
 // Get products with filtering options (public)
@@ -22,7 +22,6 @@ export const getProducts = async (req: Request, res: Response) => {
       minDiscount,
       latitude, // User location latitude
       longitude, // User location longitude
-      pincode, // User pincode for quick delivery
     } = req.query;
 
     const query: any = {
@@ -35,126 +34,157 @@ export const getProducts = async (req: Request, res: Response) => {
       ],
     };
 
-    // Location-based filtering setup
+    // Location-based filtering: Only show products from sellers within user's range
     const userLat = latitude ? parseFloat(latitude as string) : null;
     const userLng = longitude ? parseFloat(longitude as string) : null;
 
+    if (userLat && userLng && !isNaN(userLat) && !isNaN(userLng)) {
+      // Find sellers within user's location range
+      const nearbySellerIds = await findSellersWithinRange(userLat, userLng);
+
+      if (nearbySellerIds.length === 0) {
+        // No sellers within range, return empty result
+        return res.status(200).json({
+          success: true,
+          data: [],
+          pagination: {
+            page: Number(page),
+            limit: Number(limit),
+            total: 0,
+            pages: 0,
+          },
+          message:
+            "No sellers available in your area. Please update your location.",
+        });
+      }
+
+      // Filter products by sellers within range
+      query.seller = { $in: nearbySellerIds };
+    } else {
+      // If no location provided, return empty result (strictly enforce location)
+      return res.status(200).json({
+        success: true,
+        data: [],
+        pagination: {
+          page: Number(page),
+          limit: Number(limit),
+          total: 0,
+          pages: 0,
+        },
+        message: "Please provide your location to see products available in your area.",
+      });
+    }
+
     // Helper to resolve category/subcategory ID from slug or ID
-    const resolveIdAndSlug = async (
+    const resolveId = async (
       model: any,
       value: string,
       modelName: string = ""
     ) => {
-      if (mongoose.Types.ObjectId.isValid(value)) {
-        const item = await model.findById(value).select("_id slug name").lean();
-        return item;
-      }
+      if (mongoose.Types.ObjectId.isValid(value)) return value;
 
+      // Build query - only check status if model has status field (Category has it, SubCategory might not)
       const baseQuery: any = {};
       if (modelName === "Category") {
         baseQuery.status = "Active";
       }
 
-      // Try exact slug match
-      let item = await model.findOne({ ...baseQuery, slug: value }).select("_id slug name").lean();
-      if (item) return item;
+      // Try exact slug match first
+      let item = await model
+        .findOne({ ...baseQuery, slug: value })
+        .select("_id")
+        .lean();
+      if (item) return item._id;
 
       // Try case-insensitive slug match
-      item = await model.findOne({
-        ...baseQuery,
-        slug: { $regex: new RegExp(`^${value}$`, "i") },
-      }).select("_id slug name").lean();
-      if (item) return item;
+      item = await model
+        .findOne({
+          ...baseQuery,
+          slug: { $regex: new RegExp(`^${value}$`, "i") },
+        })
+        .select("_id")
+        .lean();
+      if (item) return item._id;
 
-      // Try name match
+      // Try name match as fallback (case-insensitive) - replace hyphens/underscores with spaces
       let namePattern = value.replace(/[-_]/g, " ");
-      item = await model.findOne({
-        ...baseQuery,
-        name: { $regex: new RegExp(`^${namePattern}$`, "i") },
-      }).select("_id slug name").lean();
-      if (item) return item;
+      item = await model
+        .findOne({
+          ...baseQuery,
+          name: { $regex: new RegExp(`^${namePattern}$`, "i") },
+        })
+        .select("_id")
+        .lean();
+      if (item) return item._id;
 
+      // Special handling for Category and "and" -> "&"
       if (modelName === "Category" && value.includes("and")) {
         const withAmpersand = value.replace(/-and-/g, " & ").replace(/-/g, " ");
-        item = await model.findOne({
-          ...baseQuery,
-          name: { $regex: new RegExp(`^${withAmpersand}$`, "i") },
-        }).select("_id slug name").lean();
-        if (item) return item;
+        item = await model
+          .findOne({
+            ...baseQuery,
+            name: { $regex: new RegExp(`^${withAmpersand}$`, "i") },
+          })
+          .select("_id")
+          .lean();
+        if (item) return item._id;
       }
 
       return null;
     };
 
-    let resolvedCategory = null;
-    let resolvedSubcategory = null;
-
     if (category) {
-      resolvedCategory = await resolveIdAndSlug(Category, category as string, "Category");
-      if (resolvedCategory) query.category = resolvedCategory._id;
+      const categoryId = await resolveId(
+        Category,
+        category as string,
+        "Category"
+      );
+
+      if (categoryId) {
+        if (!subcategory) {
+          // If no specific subcategory is requested, fetch all products (including from subcategories)
+          const newHierarchySubs = await Category.find({ parentId: categoryId, status: "Active" }).select("_id").lean();
+          const oldHierarchySubs = await SubCategory.find({ category: categoryId }).select("_id").lean();
+
+          const subIds = [
+            ...newHierarchySubs.map(s => s._id),
+            ...oldHierarchySubs.map(s => s._id)
+          ];
+
+          if (subIds.length > 0) {
+            query.$and = query.$and || [];
+            query.$and.push({
+              $or: [
+                { category: categoryId },
+                { subcategory: { $in: subIds } },
+                { category: { $in: subIds } } // In case legacy products mapped subcategory to category field
+              ]
+            });
+          } else {
+            query.category = categoryId;
+          }
+        } else {
+          query.category = categoryId;
+        }
+      }
     }
 
     if (subcategory) {
-      resolvedSubcategory = await resolveIdAndSlug(Category, subcategory as string, "Category");
-      if (!resolvedSubcategory) {
-        resolvedSubcategory = await resolveIdAndSlug(SubCategory, subcategory as string, "SubCategory");
+      // Try to resolve from Category model first (new structure where subcategories are categories with parentId)
+      let subcategoryId = await resolveId(
+        Category,
+        subcategory as string,
+        "Category"
+      );
+      // If not found in Category, try old SubCategory model (backward compatibility)
+      if (!subcategoryId) {
+        subcategoryId = await resolveId(
+          SubCategory,
+          subcategory as string,
+          "SubCategory"
+        );
       }
-      if (resolvedSubcategory) query.subcategory = resolvedSubcategory._id;
-    }
-
-    // Determine delivery type for filtering
-    const scheduledSlugs = ['electronics', 'fashion', 'beauty', 'sports', 'wedding', 'winter'];
-    let isScheduled = false;
-
-    if (resolvedCategory && scheduledSlugs.includes(resolvedCategory.slug)) {
-      isScheduled = true;
-    } else if (resolvedSubcategory) {
-      // If subcategory is provided, we check its parent category slug if needed
-      // But usually root category slug tells the story
-      if (resolvedCategory && scheduledSlugs.includes(resolvedCategory.slug)) {
-        isScheduled = true;
-      }
-    }
-
-    // Seller validation query (approved, paid deposit, active)
-    const validSellerQuery: any = {
-      status: "Approved",
-      securityDepositStatus: "Paid",
-      isActive: true
-    };
-
-    if (isScheduled) {
-      // For scheduled products, just ensure seller is valid
-      const validSellers = await Seller.find(validSellerQuery).select("_id");
-      query.seller = { $in: validSellers.map(s => s._id) };
-    } else {
-      // For quick delivery products
-      if (pincode) {
-        // Priority 1: Match by Pincode if provided
-        validSellerQuery.pincode = pincode;
-        const sellersWithPincode = await Seller.find(validSellerQuery).select("_id");
-        query.seller = { $in: sellersWithPincode.map(s => s._id) };
-      } else if (userLat && userLng && !isNaN(userLat) && !isNaN(userLng)) {
-        // Priority 2: Match by Radius if location provided
-        const nearbySellerIds = await findSellersWithinRange(userLat, userLng);
-        if (nearbySellerIds.length === 0) {
-          return res.status(200).json({
-            success: true,
-            data: [],
-            pagination: { page: Number(page), limit: Number(limit), total: 0, pages: 0 },
-            message: "No sellers available in your area.",
-          });
-        }
-        query.seller = { $in: nearbySellerIds };
-      } else {
-        // Strictly enforce location/pincode for quick delivery
-        return res.status(200).json({
-          success: true,
-          data: [],
-          pagination: { page: Number(page), limit: Number(limit), total: 0, pages: 0 },
-          message: "Please provide your location or pincode to see products available.",
-        });
-      }
+      if (subcategoryId) query.subcategory = subcategoryId;
     }
 
     if (brand) {
@@ -212,6 +242,141 @@ export const getProducts = async (req: Request, res: Response) => {
       success: false,
       message: "Error fetching products",
       error: error.message,
+    });
+  }
+};
+
+/**
+ * Get products by subcategory slug with delivery mode logic (Public)
+ * Rules:
+ * 1. Quick Delivery Categories: Vegetables, Pan Corner, Bakery, Grocery, etc.
+ *    - Filter by user's pincode.
+ * 2. Scheduled Delivery Categories: Electronics, Beauty, Fashion, etc.
+ *    - Visible to all users.
+ */
+export const getProductsBySubcategory = async (req: Request, res: Response) => {
+  try {
+    const { slug } = req.params;
+    const { pincode } = req.query;
+
+    console.log(`[getProductsBySubcategory] slug: ${slug}, pincode: ${pincode}`);
+
+    // 1. Resolve subcategory and its parent to determine delivery mode
+    // We check Category model (new hierarchy: subcategories have parentId)
+    let subcategory = await Category.findOne({
+      slug: { $regex: new RegExp(`^${slug}$`, "i") },
+      status: "Active",
+    }).populate("parentId").lean();
+
+    // Fallback to old SubCategory model if not found in new structure
+    if (!subcategory) {
+      const oldSub = await SubCategory.findOne({
+        slug: { $regex: new RegExp(`^${slug}$`, "i") }
+      }).populate("category").lean();
+
+      if (oldSub) {
+        subcategory = {
+          _id: oldSub._id,
+          name: oldSub.name,
+          slug: slug,
+          parentId: (oldSub as any).category,
+          status: "Active"
+        } as any;
+      }
+    }
+
+    if (!subcategory) {
+      return res.status(404).json({
+        success: false,
+        message: "Subcategory not found",
+      });
+    }
+
+    const parentCategory = subcategory.parentId as any;
+    const parentName = parentCategory?.name?.toLowerCase() || "";
+    const parentSlug = parentCategory?.slug?.toLowerCase() || "";
+
+    // 2. Determine delivery mode logic
+    // Quick Delivery: Vegetables, Fruits, Pan Corner, Bakery, Grocery, Milk, Dairy, Fresh, Meat
+    const quickDeliveryKeywords = [
+      "vegetable", "fruit", "pan corner", "bakery", "grocery",
+      "milk", "dairy", "fresh", "meat", "poultry", "fish", "oil", "masala",
+      "atta", "dal", "sugar", "salt", "tea", "coffee", "biscuits", "snacks"
+    ];
+
+    const isQuickDelivery = quickDeliveryKeywords.some(kw =>
+      parentName.includes(kw) || parentSlug.includes(kw)
+    );
+
+    console.log(`[getProductsBySubcategory] Delivery Mode: ${isQuickDelivery ? "Quick" : "Scheduled"} for parent: ${parentName}`);
+
+    // 3. Seller Filtering
+    const sellerQuery: any = {
+      status: "Approved",
+      depositPaid: true,
+      isShopOpen: true,
+      isActive: true
+    };
+
+    // Apply pincode filter only for Quick Delivery mode
+    if (isQuickDelivery && pincode) {
+      sellerQuery.pincode = pincode;
+    }
+
+    const eligibleSellers = await Seller.find(sellerQuery).select("_id").lean();
+    const eligibleSellerIds = eligibleSellers.map(s => s._id);
+
+    if (eligibleSellerIds.length === 0) {
+      return res.status(200).json({
+        success: true,
+        data: [],
+        deliveryMode: isQuickDelivery ? "Quick" : "Scheduled",
+        message: isQuickDelivery
+          ? "No quick delivery sellers found in your area for this subcategory."
+          : "No sellers found for this subcategory."
+      });
+    }
+
+    // 4. Product Query
+    const productQuery: any = {
+      subcategory: subcategory._id,
+      status: "Active",
+      publish: true,
+      stock: { $gt: 0 },
+      seller: { $in: eligibleSellerIds }
+    };
+
+    const products = await Product.find(productQuery)
+      .populate("category", "name slug")
+      .populate("subcategory", "name slug")
+      .populate("seller", "storeName pincode logo deliveryTimeMin deliveryTimeMax")
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // Map to frontend-friendly format if needed (consistent with getProducts)
+    const formattedProducts = products.map((p: any) => ({
+      ...p,
+      id: p._id.toString(),
+      price: p.variations?.[0]?.price || p.price,
+      mrp: p.variations?.[0]?.discPrice || p.compareAtPrice || p.price,
+      image: p.mainImage,
+      name: p.productName
+    }));
+
+    return res.status(200).json({
+      success: true,
+      data: formattedProducts,
+      deliveryMode: isQuickDelivery ? "Quick" : "Scheduled",
+      subcategoryName: subcategory.name,
+      parentName: parentCategory?.name
+    });
+
+  } catch (error: any) {
+    console.error("Error in getProductsBySubcategory:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while fetching subcategory products",
+      error: error.message
     });
   }
 };

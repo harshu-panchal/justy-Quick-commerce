@@ -85,12 +85,8 @@ export default function Categories() {
                   return false;
                 }
 
-                // Step 2: Strictly allow only sections matching the 8 categories
-                const allowedKeywords = [
-                  'fashion', 'grocery', 'kitchen', 'beauty', 'cosmetic', 'makeup', 'electronics', 'mobile', 'cpu',
-                  'pan', 'corner', 'bakery', 'cake', 'vegetable', 'fruit', 'munchies', 'snack', 'sweet', 'chocolate'
-                ];
-                return allowedKeywords.some(word => sectionTitle.includes(word) || sectionSlug.includes(word));
+                // Removed strict allowed keywords to allow dynamic admin categories
+                return true;
               })
               .map((section: any) => {
                 // Filter the tiles (data) inside the section as well

@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import Category from "../../../models/Category";
 import SubCategory from "../../../models/SubCategory";
+import HeaderCategory from "../../../models/HeaderCategory";
 import Product from "../../../models/Product";
 import mongoose from "mongoose";
 import { cache } from "../../../utils/cache";
@@ -53,13 +54,14 @@ export const getCategoriesWithSubs = async (_req: Request, res: Response) => {
       });
     }
 
-    const categories = await Category.find({ status: "Active" })
-      .sort({ order: 1 })
-      .lean();
+    const [headerCategories, categories, subcategoriesFromModel] = await Promise.all([
+      HeaderCategory.find({ status: "Published" }).sort({ order: 1 }).lean(),
+      Category.find({ status: "Active" }).sort({ order: 1 }).lean(),
+      SubCategory.find().sort({ order: 1 }).lean(),
+    ]);
 
-    // Build product count maps to filter categories/subcategories that actually have products
+    // Build product count maps
     const activeProductMatch = { status: "Active", publish: true };
-
     const [categoryCounts, subcategoryCounts] = await Promise.all([
       Product.aggregate([
         { $match: activeProductMatch },
@@ -73,52 +75,71 @@ export const getCategoriesWithSubs = async (_req: Request, res: Response) => {
 
     const categoryCountMap = new Map<string, number>();
     categoryCounts.forEach((item) => {
-      if (item._id) {
-        categoryCountMap.set(item._id.toString(), item.count);
-      }
+      if (item._id) categoryCountMap.set(item._id.toString(), item.count);
     });
 
     const subcategoryCountMap = new Map<string, number>();
     subcategoryCounts.forEach((item) => {
-      if (item._id) {
-        subcategoryCountMap.set(item._id.toString(), item.count);
-      }
+      if (item._id) subcategoryCountMap.set(item._id.toString(), item.count);
     });
 
-    categoriesWithSubs = await Promise.all(
-      categories.map(async (category) => {
-        const subcategories = await SubCategory.find({
-          category: category._id,
-        })
-          .sort({ order: 1 })
-          .select("name image order");
+    // Build the tree
+    categoriesWithSubs = headerCategories.map((header) => {
+      // Find categories belonging to this header
+      const headerChildCategories = categories.filter(
+        (cat) => cat.headerCategoryId?.toString() === header._id.toString() && !cat.parentId
+      );
 
-        // Keep only subcategories that have at least one product
-        const filteredSubs = subcategories.filter((sub) =>
-          subcategoryCountMap.has(sub._id.toString())
-        );
+      const mappedCategories = headerChildCategories.map((cat) => {
+        // Find subcategories for this category (from both models)
+        // 1. From Category model (parentId)
+        const subCatsFromCategory = categories.filter(
+          (sub) => sub.parentId?.toString() === cat._id.toString()
+        ).map(sub => ({
+          _id: sub._id,
+          name: sub.name,
+          image: sub.image,
+          order: sub.order,
+          slug: sub.slug,
+          count: categoryCountMap.get(sub._id.toString()) || 0
+        }));
 
-        const directCategoryCount =
-          categoryCountMap.get(category._id.toString()) || 0;
-        const subsProductCount = filteredSubs.reduce(
-          (total, sub) =>
-            total + (subcategoryCountMap.get(sub._id.toString()) || 0),
-          0
-        );
-        const totalProducts = directCategoryCount + subsProductCount;
+        // 2. From SubCategory model (category)
+        const subCatsFromSub = subcategoriesFromModel.filter(
+          (sub) => sub.category?.toString() === cat._id.toString()
+        ).map(sub => ({
+          _id: sub._id,
+          name: sub.name,
+          image: sub.image,
+          order: sub.order,
+          slug: sub.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+          count: subcategoryCountMap.get(sub._id.toString()) || 0
+        }));
 
-        // Exclude category if no products in category or its subcategories
-        if (totalProducts === 0) {
-          return null;
-        }
+        const allSubs = [...subCatsFromCategory, ...subCatsFromSub]
+          .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+        // Filter out subcategories with no products
+        const filteredSubs = allSubs.filter(sub => sub.count > 0);
+
+        const directCategoryCount = categoryCountMap.get(cat._id.toString()) || 0;
+        const totalProducts = directCategoryCount + filteredSubs.reduce((acc, s) => acc + s.count, 0);
 
         return {
-          ...category,
+          ...cat,
           subcategories: filteredSubs,
-          totalProducts,
+          totalProducts
         };
-      })
-    ).then((list) => list.filter(Boolean));
+      }).filter(cat => cat.totalProducts > 0);
+
+      const totalHeaderProducts = mappedCategories.reduce((acc, cat) => acc + cat.totalProducts, 0);
+
+      return {
+        ...header,
+        categories: mappedCategories,
+        totalProducts: totalHeaderProducts
+      };
+    }).filter(header => header.totalProducts > 0);
 
     // Cache for 10 minutes
     cache.set(cacheKey, categoriesWithSubs, 10 * 60 * 1000);
@@ -189,11 +210,11 @@ export const getCategoryById = async (req: Request, res: Response) => {
 
         // If not found, try replacing " and " with " & " specifically for categories like "Vegetables & Fruits"
         if (!category && id.includes("and")) {
-           const withAmpersand = id.replace(/-and-/g, " & ").replace(/-/g, " ");
-           category = await Category.findOne({
-             name: { $regex: new RegExp(`^${withAmpersand}$`, "i") },
-             status: "Active",
-           }).lean();
+          const withAmpersand = id.replace(/-and-/g, " & ").replace(/-/g, " ");
+          category = await Category.findOne({
+            name: { $regex: new RegExp(`^${withAmpersand}$`, "i") },
+            status: "Active",
+          }).lean();
         }
       }
     }
@@ -240,11 +261,11 @@ export const getCategoryById = async (req: Request, res: Response) => {
     // Ensure category._id is treated as ObjectId for the query
     let catId = category._id;
     if (typeof catId === 'string') {
-        try {
-            catId = new mongoose.Types.ObjectId(catId);
-        } catch (e) {
-            console.error("Failed to cast category ID to ObjectId:", e);
-        }
+      try {
+        catId = new mongoose.Types.ObjectId(catId);
+      } catch (e) {
+        console.error("Failed to cast category ID to ObjectId:", e);
+      }
     }
 
     // Query for BOTH ObjectId and String representation to be safe against legacy data references

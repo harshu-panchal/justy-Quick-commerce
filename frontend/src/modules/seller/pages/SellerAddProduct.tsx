@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useAuth } from "../../../context/AuthContext";
 import { uploadImage, uploadImages } from "../../../services/api/uploadService";
 import {
   validateImageFile,
@@ -31,6 +32,7 @@ import {
 export default function SellerAddProduct() {
   const navigate = useNavigate();
   const { id } = useParams();
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     productName: "",
     headerCategory: "",
@@ -47,7 +49,6 @@ export default function SellerAddProduct() {
     seoKeywords: "",
     seoImageAlt: "",
     seoDescription: "",
-    variationType: "",
     manufacturer: "",
     madeIn: "",
     tax: "",
@@ -120,11 +121,28 @@ export default function SellerAddProduct() {
         // Handle header categories
         if (results[3].status === "fulfilled") {
           const headerCatRes = results[3].value;
+
           if (headerCatRes && Array.isArray(headerCatRes)) {
             // Filter only Published header categories
-            const published = headerCatRes.filter(
+            let published = headerCatRes.filter(
               (hc: HeaderCategory) => hc.status === "Published"
             );
+
+            // Filter by seller's registered categories
+            if (user?.categories && user.categories.length > 0) {
+              const sellerCategories = user.categories.map((c: string) =>
+                c.toLowerCase().trim()
+              );
+              console.log("🔍 Seller Registered Categories:", sellerCategories);
+              console.log("📦 All Published Categories:", published.map(p => p.name));
+
+              published = published.filter((hc: HeaderCategory) =>
+                sellerCategories.includes(hc.name.toLowerCase().trim())
+              );
+
+              console.log("✅ Filtered Categories for Dropdown:", published.map(p => p.name));
+            }
+
             setHeaderCategories(published);
           }
         }
@@ -176,7 +194,6 @@ export default function SellerAddProduct() {
               seoKeywords: product.seoKeywords || "",
               seoImageAlt: product.seoImageAlt || "",
               seoDescription: product.seoDescription || "",
-              variationType: product.variationType || "",
               manufacturer: product.manufacturer || "",
               madeIn: product.madeIn || "",
               tax: (product.tax as any)?._id || product.taxId || "",
@@ -487,7 +504,6 @@ export default function SellerAddProduct() {
         mainImageUrl: mainImageUrl || undefined,
         galleryImageUrls,
         variations: variations,
-        variationType: formData.variationType || undefined,
         isShopByStoreOnly: formData.isShopByStoreOnly === "Yes",
         shopId: formData.isShopByStoreOnly === "Yes" && formData.shopId ? formData.shopId : undefined,
       };
@@ -523,7 +539,6 @@ export default function SellerAddProduct() {
               seoKeywords: "",
               seoImageAlt: "",
               seoDescription: "",
-              variationType: "",
               manufacturer: "",
               madeIn: "",
               tax: "",
@@ -859,22 +874,6 @@ export default function SellerAddProduct() {
               <h2 className="text-lg font-semibold">Add Variation</h2>
             </div>
             <div className="p-4 sm:p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">
-                  Select Product Variation Type
-                </label>
-                <select
-                  name="variationType"
-                  value={formData.variationType}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white">
-                  <option value="">Select Product Type</option>
-                  <option value="Size">Size</option>
-                  <option value="Weight">Weight</option>
-                  <option value="Color">Color</option>
-                  <option value="Pack">Pack</option>
-                </select>
-              </div>
 
               {/* Variation Form */}
               <div className="grid grid-cols-1 md:grid-cols-5 gap-4 p-4 bg-neutral-50 rounded-lg">

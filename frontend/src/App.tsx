@@ -138,6 +138,7 @@ const AdminOrders = lazy(() => import("./modules/admin/pages/AdminOrders"));
 const AdminOrderDetail = lazy(() => import("./modules/admin/pages/AdminOrderDetail"));
 const AdminManageCustomer = lazy(() => import("./modules/admin/pages/AdminManageCustomer"));
 const AdminProfile = lazy(() => import("./modules/admin/pages/AdminProfile"));
+const AdminProductEdit = lazy(() => import("./modules/admin/pages/AdminProductEdit"));
 
 const AdminWithdrawals = lazy(() => import("./modules/admin/pages/AdminWithdrawals"));
 const AdminPayments = lazy(() => import("./modules/admin/pages/AdminPayments"));
@@ -275,27 +276,38 @@ function App() {
                               path="/seller/*"
                               element={
                                 <ProtectedRoute requiredUserType="Seller" redirectTo="/seller/login">
-                                  <Suspense fallback={<IconLoader forceShow />}>
-                                    <SellerLayout>
+                                  <SellerAccessGuard>
+                                    <Suspense fallback={<IconLoader forceShow />}>
                                       <Routes>
-                                        <Route path="" element={<SellerDashboard />} />
-                                        <Route path="orders" element={<SellerOrders />} />
-                                        <Route path="orders/:id" element={<SellerOrderDetail />} />
-                                        <Route path="category" element={<SellerCategory />} />
-                                        <Route path="subcategory" element={<SellerSubCategory />} />
-                                        <Route path="product/add" element={<SellerAddProduct />} />
-                                        <Route path="product/edit/:id" element={<SellerAddProduct />} />
-                                        <Route path="product/taxes" element={<SellerTaxes />} />
-                                        <Route path="product/list" element={<SellerProductList />} />
-                                        <Route path="product/stock" element={<SellerStockManagement />} />
-                                        <Route path="return" element={<SellerReturnRequest />} />
-                                        <Route path="return-order" element={<SellerReturnRequest />} />
-                                        <Route path="wallet" element={<SellerWallet />} />
-                                        <Route path="reports/sales" element={<SellerSalesReport />} />
-                                        <Route path="account-settings" element={<SellerAccountSettings />} />
+                                        <Route path="verification-pending" element={<SellerVerificationPending />} />
+                                        <Route path="deposit-payment" element={<SellerDepositPayment />} />
+                                        <Route
+                                          path="*"
+                                          element={
+                                            <SellerLayout>
+                                              <Routes>
+                                                <Route path="" element={<SellerDashboard />} />
+                                                <Route path="orders" element={<SellerOrders />} />
+                                                <Route path="orders/:id" element={<SellerOrderDetail />} />
+                                                <Route path="category" element={<SellerCategory />} />
+                                                <Route path="subcategory" element={<SellerSubCategory />} />
+                                                <Route path="product/add" element={<SellerAddProduct />} />
+                                                <Route path="product/edit/:id" element={<SellerAddProduct />} />
+                                                <Route path="product/taxes" element={<SellerTaxes />} />
+                                                <Route path="product/list" element={<SellerProductList />} />
+                                                <Route path="product/stock" element={<SellerStockManagement />} />
+                                                <Route path="return" element={<SellerReturnRequest />} />
+                                                <Route path="return-order" element={<SellerReturnRequest />} />
+                                                <Route path="wallet" element={<SellerWallet />} />
+                                                <Route path="reports/sales" element={<SellerSalesReport />} />
+                                                <Route path="account-settings" element={<SellerAccountSettings />} />
+                                              </Routes>
+                                            </SellerLayout>
+                                          }
+                                        />
                                       </Routes>
-                                    </SellerLayout>
-                                  </Suspense>
+                                    </Suspense>
+                                  </SellerAccessGuard>
                                 </ProtectedRoute>
                               }
                             />
@@ -356,6 +368,7 @@ function App() {
                                         <Route path="payments" element={<AdminPayments />} />
                                         <Route path="wallet" element={<AdminWallet />} />
                                         <Route path="billing-settings" element={<AdminBillingSettings />} />
+                                        <Route path="product/edit/:id" element={<AdminProductEdit />} />
                                       </Routes>
                                     </AdminLayout>
                                   </Suspense>

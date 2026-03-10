@@ -144,6 +144,7 @@ export interface Product {
   seoDescription?: string;
   seoImageAlt?: string;
   tags: string[];
+  headerCategoryId?: string | any;
   requiresApproval: boolean;
   approvedBy?: string | { firstName: string; lastName: string };
   approvedAt?: string;
@@ -190,6 +191,7 @@ export interface CreateProductData {
   seoDescription?: string;
   seoImageAlt?: string;
   tags?: string[];
+  headerCategoryId?: string;
   commission?: number;
 }
 

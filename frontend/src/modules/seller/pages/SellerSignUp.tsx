@@ -6,7 +6,7 @@ import { useAuth } from '../../../context/AuthContext';
 import LocationPickerMap from '../../../components/LocationPickerMap';
 import ServiceAreaMap from '../../../components/ServiceAreaMap';
 import { getCategories, Category } from '../../../services/api/categoryService';
-import { HOME_CATEGORIES } from '../../../services/api/headerCategoryService';
+import { getHeaderCategoriesPublic, HeaderCategory } from '../../../services/api/headerCategoryService';
 
 const StepIndicator = ({ currentStep }: { currentStep: number }) => {
   const steps = [
@@ -88,9 +88,10 @@ export default function SellerSignUp() {
   const [categories, setCategories] = useState<Category[]>([]);
 
   useEffect(() => {
-    // Sync with Home Page categories instead of fetching all from DB
-    const syncCategories = () => {
-      const mappedCategories = HOME_CATEGORIES.map(cat => ({
+    // Sync with Home Page categories by fetching from API
+    const syncCategories = async () => {
+      const headerCategories = await getHeaderCategoriesPublic();
+      const mappedCategories = headerCategories.map((cat: HeaderCategory) => ({
         _id: cat._id,
         name: cat.name,
         isBestseller: false,

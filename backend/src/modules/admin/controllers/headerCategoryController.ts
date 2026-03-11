@@ -45,6 +45,7 @@ export const createHeaderCategory = async (req: Request, res: Response) => {
       iconName,
       slug,
       relatedCategory,
+      deliveryType,
       status,
       order,
     } = req.body;
@@ -56,12 +57,15 @@ export const createHeaderCategory = async (req: Request, res: Response) => {
         .json({ message: "Header category already exists" });
     }
 
+    console.log("createHeaderCategory Payload:", req.body);
+
     const category = await HeaderCategory.create({
       name,
       iconLibrary,
       iconName,
       slug,
       relatedCategory,
+      deliveryType,
       status,
       order,
     });
@@ -86,6 +90,7 @@ export const updateHeaderCategory = async (req: Request, res: Response) => {
       iconName,
       slug,
       relatedCategory,
+      deliveryType,
       status,
       order,
     } = req.body;
@@ -107,6 +112,7 @@ export const updateHeaderCategory = async (req: Request, res: Response) => {
       category.iconName = iconName || category.iconName;
       category.slug = slug || category.slug;
       category.relatedCategory = relatedCategory; // Allow clearing it (undefined or null or empty string)
+      if (deliveryType) category.deliveryType = deliveryType;
       category.status = status || category.status;
       category.order = order !== undefined ? order : category.order;
 

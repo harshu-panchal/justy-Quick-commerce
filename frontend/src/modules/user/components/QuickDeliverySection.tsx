@@ -1,9 +1,7 @@
 import React from 'react';
 import { useQuickDelivery } from '../../../hooks/useQuickDelivery';
 import ProductCard from './ProductCard';
-
-// These categories show products to ALL users — no pincode restriction
-const UNIVERSAL_TABS = ['electronics', 'beauty', 'fashion'];
+import { useDeliveryMode } from '../../../hooks/useDeliveryMode';
 
 interface QuickDeliverySectionProps {
     activeTab?: string;
@@ -11,9 +9,9 @@ interface QuickDeliverySectionProps {
 
 const QuickDeliverySection: React.FC<QuickDeliverySectionProps> = ({ activeTab = 'all' }) => {
     const { loading, available, products, pincode } = useQuickDelivery();
+    const { deliveryMode } = useDeliveryMode();
 
-    // Universal categories: hide this section entirely
-    if (UNIVERSAL_TABS.includes(activeTab?.toLowerCase())) return null;
+    if (deliveryMode === 'scheduled') return null;
 
     // No pincode detected: hide silently
     if (!pincode) return null;

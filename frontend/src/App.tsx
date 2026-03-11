@@ -111,7 +111,7 @@ const AdminManageSellerList = lazy(() => import("./modules/admin/pages/AdminMana
 const AdminCoupon = lazy(() => import("./modules/admin/pages/AdminCoupon"));
 const AdminNotification = lazy(() => import("./modules/admin/pages/AdminNotification"));
 const AdminSellerLocation = lazy(() => import("./modules/admin/pages/AdminSellerLocation"));
-
+const AdminDemandTracking = lazy(() => import("./modules/admin/pages/AdminDemandTracking"));
 const AdminManageDeliveryBoy = lazy(() => import("./modules/admin/pages/AdminManageDeliveryBoy"));
 const AdminFundTransfer = lazy(() => import("./modules/admin/pages/AdminFundTransfer"));
 const AdminCashCollection = lazy(() => import("./modules/admin/pages/AdminCashCollection"));
@@ -336,6 +336,7 @@ function App() {
                                         <Route path="delivery-boy/fund-transfer" element={<AdminFundTransfer />} />
                                         <Route path="delivery-boy/cash-collection" element={<AdminCashCollection />} />
                                         <Route path="manage-location/seller-location" element={<AdminSellerLocation />} />
+                                        <Route path="pincode-demands" element={<AdminDemandTracking />} />
 
                                         <Route path="coupon" element={<AdminCoupon />} />
                                         <Route path="return" element={<AdminReturnRequest />} />

@@ -13,6 +13,7 @@ import { getRoadDistances } from "../../../services/mapService";
 import { Server as SocketIOServer } from "socket.io";
 import { getOrderItemCommissionRate } from "../../../services/commissionService";
 import WalletTransaction from "../../../models/WalletTransaction";
+import PincodeDemand from "../../../models/PincodeDemand";
 
 
 // Create a new order
@@ -524,18 +525,14 @@ export const createOrder = async (req: Request, res: Response) => {
         newOrder.walletAmountUsed = walletAmountUsed;
 
         // Determine Delivery Type (Instant vs Scheduled)
-        // Instant: vegetables, grocery, bakery, snacks, etc.
-        // Scheduled: electronics, fashion, beauty, sports, wedding, winter
-        const scheduledSlugs = ['electronics', 'fashion', 'beauty', 'sports', 'wedding', 'winter'];
-
-        // Fetch categories of all products in order
+        // Dynamically get from HeaderCategory deliveryType field
         const productsInOrder = await Product.find({ _id: { $in: items.map((i: any) => i.product.id) } })
-            .populate('category');
+            .populate('headerCategoryId');
 
         let deliveryType: "instant" | "scheduled" = "instant";
         for (const prod of productsInOrder) {
-            const cat = prod.category as any;
-            if (cat && scheduledSlugs.includes(cat.slug)) {
+            const headerCat = prod.headerCategoryId as any; // Cast for now
+            if (headerCat && headerCat.deliveryType === "scheduled") {
                 deliveryType = "scheduled";
                 break;
             }
@@ -545,8 +542,34 @@ export const createOrder = async (req: Request, res: Response) => {
         let sellerPincode = "";
         if (sellerIds.size > 0) {
             const firstSellerId = Array.from(sellerIds)[0];
-            const firstSeller = await Seller.findById(firstSellerId).select('pincode');
+            const firstSeller = session 
+                ? await Seller.findById(firstSellerId).select('pincode').session(session)
+                : await Seller.findById(firstSellerId).select('pincode');
+                
             sellerPincode = firstSeller?.pincode || "";
+
+            // Enforce pincode matching for quick delivery orders
+            if (deliveryType === 'instant' && newOrder.deliveryAddress.pincode !== sellerPincode) {
+                // Record demand for the unserviceable pincode
+                if (session) {
+                    await PincodeDemand.findOneAndUpdate(
+                        { pincode: newOrder.deliveryAddress.pincode },
+                        { $inc: { requestCount: 1 }, lastRequested: new Date() },
+                        { upsert: true, session }
+                    );
+                    await session.abortTransaction();
+                } else {
+                    await PincodeDemand.findOneAndUpdate(
+                        { pincode: newOrder.deliveryAddress.pincode },
+                        { $inc: { requestCount: 1 }, lastRequested: new Date() },
+                        { upsert: true }
+                    );
+                }
+                return res.status(403).json({
+                    success: false,
+                    message: `Quick delivery is not currently available for your pincode (${newOrder.deliveryAddress.pincode}). We've recorded your demand and are working on expanding our service area!`,
+                });
+            }
         }
 
         newOrder.deliveryType = deliveryType;

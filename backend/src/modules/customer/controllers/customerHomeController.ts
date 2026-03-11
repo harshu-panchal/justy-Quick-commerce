@@ -643,7 +643,7 @@ export const getHomeContent = async (req: Request, res: Response) => {
       }
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       data: {
         bestsellers,
@@ -673,7 +673,7 @@ export const getHomeContent = async (req: Request, res: Response) => {
       },
     });
   } catch (error: any) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Error fetching home content",
       error: error.message,
@@ -1094,13 +1094,13 @@ export const getHeaderCategorySections = async (req: Request, res: Response) => 
       })
     );
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       data: sectionsWithData,
     });
   } catch (error: any) {
     console.error("Error in getHeaderCategorySections:", error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Error fetching header category sections",
       error: error.message,

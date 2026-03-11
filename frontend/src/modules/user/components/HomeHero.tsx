@@ -54,23 +54,23 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
               const slug = c.slug.toLowerCase();
               const name = c.name.toLowerCase();
 
-              // Known scheduled categories
-              const scheduledKeywords = ['fashion', 'electronics', 'beauty', 'wedding', 'sports', 'lux', 'home-decor', 'mobile'];
-              const isScheduled = scheduledKeywords.some(word => slug.includes(word) || name.includes(word));
-
-              if (deliveryMode === 'scheduled') {
-                return isScheduled;
-              } else {
-                // For quick mode, show everything that is NOT strictly scheduled
-                return !isScheduled;
-              }
+              return (c.deliveryType || 'quick') === deliveryMode;
             })
             .map(c => ({
               id: c.slug,
               label: c.name,
-              icon: getIconByName(c.iconName)
+              icon: getIconByName(c.iconName),
             }));
-          setTabs([ALL_TAB, ...mapped]);
+          
+          const newTabs = [ALL_TAB, ...mapped];
+          setTabs(newTabs);
+
+          // If current activeTab is not "all" and is no longer in the tabs list for the current deliveryMode,
+          // redirect the user back to "all" to avoid showing a category from the wrong delivery mode
+          if (activeTab !== 'all' && !newTabs.some((t) => t.id === activeTab)) {
+            onTabChange?.('all');
+            navigate('/');
+          }
         }
       } catch (error) {
         console.error('Failed to fetch header categories', error);

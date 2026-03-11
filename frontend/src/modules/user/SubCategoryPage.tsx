@@ -8,7 +8,8 @@ import { motion } from "framer-motion";
 export default function SubCategoryPage() {
     const { slug } = useParams<{ slug: string }>();
     const navigate = useNavigate();
-    const { pincode: userPincode } = useLocationContext();
+    const { location: userLocation } = useLocationContext();
+    const userPincode = userLocation?.pincode;
 
     const [products, setProducts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);

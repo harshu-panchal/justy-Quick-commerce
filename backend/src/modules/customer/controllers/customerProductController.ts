@@ -318,10 +318,7 @@ export const getProductsBySubcategory = async (req: Request, res: Response) => {
       isActive: true
     };
 
-    // Apply pincode filter only for Quick Delivery mode
-    if (isQuickDelivery && pincode) {
-      sellerQuery.pincode = pincode;
-    }
+    // removed pincode filter based on user request (visible to all users)
 
     const eligibleSellers = await Seller.find(sellerQuery).select("_id").lean();
     const eligibleSellerIds = eligibleSellers.map(s => s._id);
@@ -360,7 +357,8 @@ export const getProductsBySubcategory = async (req: Request, res: Response) => {
       price: p.variations?.[0]?.price || p.price,
       mrp: p.variations?.[0]?.discPrice || p.compareAtPrice || p.price,
       image: p.mainImage,
-      name: p.productName
+      name: p.productName,
+      isAvailable: isQuickDelivery && pincode ? (p.seller?.pincode === pincode) : true
     }));
 
     return res.status(200).json({

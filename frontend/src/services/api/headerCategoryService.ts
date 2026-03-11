@@ -8,6 +8,7 @@ export interface HeaderCategory {
     iconName: string;
     slug: string; // Maps to theme key
     relatedCategory?: string;
+    deliveryType: 'quick' | 'scheduled';
     status: 'Published' | 'Unpublished';
     order?: number;
 }
@@ -24,7 +25,7 @@ export const getHeaderCategoriesPublic = async (skipLoader = false): Promise<Hea
 
 export const getHeaderCategoriesAdmin = async (): Promise<HeaderCategory[]> => {
     try {
-        const response = await api.get<HeaderCategory[]>('/header-categories');
+        const response = await api.get<HeaderCategory[]>('/header-categories/admin');
         return response.data;
     } catch (error) {
         console.error('Failed to fetch admin header categories', error);

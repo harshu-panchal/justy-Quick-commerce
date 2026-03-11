@@ -6,6 +6,7 @@ export interface IHeaderCategory extends Document {
     iconName: string;
     slug: string;
     relatedCategory?: string; // Links to a product category
+    deliveryType: 'quick' | 'scheduled';
     order: number;
     status: 'Published' | 'Unpublished';
     createdAt: Date;
@@ -19,6 +20,7 @@ const HeaderCategorySchema: Schema = new Schema(
         iconName: { type: String, required: true },
         slug: { type: String, required: true, unique: true },
         relatedCategory: { type: String, required: false },
+        deliveryType: { type: String, enum: ['quick', 'scheduled'], default: 'quick' },
         order: { type: Number, default: 0 },
         status: { type: String, enum: ['Published', 'Unpublished'], default: 'Published' },
     },

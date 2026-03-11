@@ -74,6 +74,9 @@ import * as lowestPricesController from "../modules/admin/controllers/adminLowes
 // PromoStrip Controllers
 import * as promoStripController from "../modules/admin/controllers/adminPromoStripController";
 
+// Pincode Demand Controllers
+import * as pincodeDemandController from "../modules/admin/controllers/pincodeDemandController";
+
 const router = Router();
 
 // All routes require admin authentication
@@ -357,5 +360,8 @@ router.get("/promo-strips/:id", promoStripController.getPromoStripById);
 router.post("/promo-strips", promoStripController.createPromoStrip);
 router.put("/promo-strips/:id", promoStripController.updatePromoStrip);
 router.delete("/promo-strips/:id", promoStripController.deletePromoStrip);
+
+// ==================== Pincode Demand Routes ====================
+router.get("/pincode-demands", pincodeDemandController.getPincodeDemands);
 
 export default router;

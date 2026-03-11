@@ -1,0 +1,199 @@
+﻿Connecting to MongoDB...
+node.exe : 
+(node:14444) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on {"name":1} 
+found. This is often 
+due to declaring an 
+index using both 
+"index: true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+At line:1 char:1
++ & "C:\Program Files\
+nodejs/node.exe" 
+"C:\Program 
+Files\nodejs/node_mo 
+...
++ ~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
+~~~~~
+    + CategoryInfo    
+          : NotSpeci  
+  fied: ((node:1444   
+ 4) [M...dex defin    
+ition.:String) []    
+, RemoteException
+    + FullyQualifiedE 
+   rrorId : NativeCo  
+  mmandError
+ 
+(Use `node 
+--trace-warnings ...` 
+to show where the 
+warning was created)
+(node:14444) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on {"slug":1} 
+found. This is often 
+due to declaring an 
+index using both 
+"index: true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+(node:14444) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on {"mobile":1} 
+found. This is often 
+due to declaring an 
+index using both 
+"index: true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+Connected successfully.
+
+Investigating for Category: 69afdc2a2949708f001335d2, Lat: 22.71104944845361, Lng: 75.90014426159794
+
+--- Step 1: Location Filtering ---
+Nearby Seller IDs found: 6
+IDs: 6964b1733e4ae3afaa996a76, 695b7d5ea0b51822cd33332b, 695cbdc15cd5cbace1782a0e, 6957da3ccf26a48558c0247e, 695e050535bbc5334299d06d, 6984747fd8e6141224acff1b
+
+--- Step 2: Category Resolution ---
+Resolved Category ID: 69afdc2a2949708f001335d2
+
+--- Step 3: Subcategory Lookup ---
+Found 2 subcategories.
+Sub-IDs: 69afdc3e2949708f001337c1, 69b0072c217c978ec9fd2f83
+
+--- Step 4: Constructing Final Query ---
+Final MongoDB Query Execution Plan:
+{
+  status: 'Active',
+  publish: true,
+  '$or': [
+    { isShopByStoreOnly: { '$ne': true } },
+    { isShopByStoreOnly: { '$exists': false } }
+  ],
+  seller: {
+    '$in': [
+      ObjectId {
+        buffer: Buffer(12) [Uint8Array] [
+          105, 100, 177, 115,
+           62,  74, 227, 175,
+          170, 153, 106, 118
+        ]
+      },
+      ObjectId {
+        buffer: Buffer(12) [Uint8Array] [
+          105, 91, 125,  94, 160,
+          181, 24,  34, 205,  51,
+           51, 43
+        ]
+      },
+      ObjectId {
+        buffer: Buffer(12) [Uint8Array] [
+          105,  92, 189, 193,  92,
+          213, 203, 172, 225, 120,
+           42,  14
+        ]
+      },
+      ObjectId {
+        buffer: Buffer(12) [Uint8Array] [
+          105,  87, 218, 60, 207,
+           38, 164, 133, 88, 192,
+           36, 126
+        ]
+      },
+      ObjectId {
+        buffer: Buffer(12) [Uint8Array] [
+          105,  94,  5,  5,  53,
+          187, 197, 51, 66, 153,
+          208, 109
+        ]
+      },
+      ObjectId {
+        buffer: Buffer(12) [Uint8Array] [
+          105, 132, 116, 127, 216,
+          230,  20,  18,  36, 172,
+          255,  27
+        ]
+      }
+    ]
+  },
+  '$and': [
+    {
+      '$or': [
+        {
+          category: ObjectId {
+            buffer: Buffer(12) [Uint8Array] [
+              105, 175, 220, 42, 41,
+               73, 112, 143,  0, 19,
+               53, 210
+            ]
+          }
+        },
+        {
+          subcategory: {
+            '$in': [
+              ObjectId {
+                buffer: Buffer(12) [Uint8Array] [
+                  105, 175, 220, 62, 41,
+                   73, 112, 143,  0, 19,
+                   55, 193
+                ]
+              },
+              ObjectId {
+                buffer: Buffer(12) [Uint8Array] [
+                  105, 176,   7,  44,  33,
+                  124, 151, 142, 201, 253,
+                   47, 131
+                ]
+              }
+            ]
+          }
+        },
+        {
+          category: {
+            '$in': [
+              ObjectId {
+                buffer: Buffer(12) [Uint8Array] [
+                  105, 175, 220, 62, 41,
+                   73, 112, 143,  0, 19,
+                   55, 193
+                ]
+              },
+              ObjectId {
+                buffer: Buffer(12) [Uint8Array] [
+                  105, 176,   7,  44,  33,
+                  124, 151, 142, 201, 253,
+                   47, 131
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
+
+--- Step 5: Executing Final Query ---
+Total Products matching exact query: 0
+
+Why is it zero? Let's check partial matches:
+Count ignoring location filter: 2
+Count ignoring category filter: 6
+
+Found 2 raw products for this category hierarchy.
+- pant: Status=Active, Publish=true, ShopByStoreOnly=false, SellerNear=false
+- jeans: Status=Active, Publish=true, ShopByStoreOnly=false, SellerNear=false

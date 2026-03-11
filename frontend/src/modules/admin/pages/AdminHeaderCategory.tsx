@@ -17,8 +17,8 @@ export default function AdminHeaderCategory() {
   const [headerCategoryName, setHeaderCategoryName] = useState('');
   const [selectedIconLibrary, setSelectedIconLibrary] = useState('Custom'); // Default to Custom for SVG
   const [headerCategoryIcon, setHeaderCategoryIcon] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState(''); // This maps to relatedCategory
   const [selectedTheme, setSelectedTheme] = useState('all'); // This maps to slug
+  const [selectedDeliveryType, setSelectedDeliveryType] = useState<'quick' | 'scheduled'>('quick');
   const [selectedStatus, setSelectedStatus] = useState<'Published' | 'Unpublished'>('Published');
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -104,8 +104,8 @@ export default function AdminHeaderCategory() {
     setHeaderCategoryName('');
     setSelectedIconLibrary('Custom');
     setHeaderCategoryIcon('');
-    setSelectedCategory('');
     setSelectedTheme('all');
+    setSelectedDeliveryType('quick');
     setSelectedStatus('Published');
     setEditingId(null);
     setIconSearchTerm('');
@@ -122,7 +122,7 @@ export default function AdminHeaderCategory() {
         iconLibrary: selectedIconLibrary,
         iconName: headerCategoryIcon,
         slug: selectedTheme, // Use theme as slug for color mapping
-        relatedCategory: selectedCategory,
+        deliveryType: selectedDeliveryType,
         status: selectedStatus,
       };
 
@@ -147,8 +147,8 @@ export default function AdminHeaderCategory() {
     setHeaderCategoryName(category.name);
     setSelectedIconLibrary(category.iconLibrary);
     setHeaderCategoryIcon(category.iconName);
-    setSelectedCategory(category.relatedCategory || '');
     setSelectedTheme(category.slug);
+    setSelectedDeliveryType(category.deliveryType || 'quick');
     setSelectedStatus(category.status);
     setIconSearchTerm('');
   };
@@ -309,23 +309,20 @@ export default function AdminHeaderCategory() {
               </div>
             </div>
 
-            {/* Related Category */}
+
+
+            {/* Delivery Type */}
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-2">
-                Related Category (Slug):
+                Delivery Type:
               </label>
               <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
+                value={selectedDeliveryType}
+                onChange={(e) => setSelectedDeliveryType(e.target.value as any)}
                 className="w-full px-3 py-2 border border-neutral-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-teal-500"
               >
-                <option value="">Select Category</option>
-                <option value="fashion">Fashion</option>
-                <option value="electronics">Electronics</option>
-                <option value="home">Home</option>
-                <option value="beauty">Beauty</option>
-                <option value="mobiles">Mobiles</option>
-                <option value="grocery">Grocery</option>
+                <option value="quick">Quick</option>
+                <option value="scheduled">Scheduled</option>
               </select>
             </div>
 
@@ -392,7 +389,7 @@ export default function AdminHeaderCategory() {
             <table className="w-full text-left border-collapse">
               <thead className="bg-neutral-50 sticky top-0 z-10">
                 <tr>
-                  {['Name', 'Icon', 'Theme', 'Status', 'Actions'].map((header) => (
+                  {['Name', 'Icon', 'Theme', 'Delivery', 'Status', 'Actions'].map((header) => (
                     <th
                       key={header}
                       onClick={() => handleSort(header.toLowerCase())}
@@ -428,6 +425,9 @@ export default function AdminHeaderCategory() {
                           />
                           {category.slug}
                         </span>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-neutral-600 capitalize">
+                        {category.deliveryType || 'quick'}
                       </td>
                       <td className="px-4 py-3 text-sm">
                         <span

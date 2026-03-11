@@ -7,8 +7,8 @@ interface ComingSoonProps {
 }
 
 export default function ComingSoon({
-    title = "Coming Soon",
-    subtitle = "This category is not available in your area yet.",
+    title = "No Products Available",
+    subtitle = "There are currently no products or sellers available for this category in your area.",
 }: ComingSoonProps) {
     return (
         <div className="flex flex-col items-center justify-center min-h-[50vh] p-6 text-center">

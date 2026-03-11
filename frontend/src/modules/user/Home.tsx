@@ -20,7 +20,7 @@ import { useDeliveryMode } from "../../hooks/useDeliveryMode";
 
 export default function Home() {
   const navigate = useNavigate();
-  const { location } = useLocation();
+  const { location: userLocation } = useLocation();
   const { activeCategory, setActiveCategory, currentTheme } = useThemeContext();
   const { deliveryMode } = useDeliveryMode();
   const { startRouteLoading, stopRouteLoading } = useLoading();
@@ -41,6 +41,7 @@ export default function Home() {
     trending: [],
     cookingIdeas: [],
   });
+  const [headerCategories, setHeaderCategories] = useState<any[]>([]);
 
   const [products, setProducts] = useState<any[]>([]);
 
@@ -66,8 +67,8 @@ export default function Home() {
 
         const response = await getHomeContent(
           slug,
-          location?.latitude,
-          location?.longitude
+          userLocation?.latitude,
+          userLocation?.longitude
         );
         if (response.success && response.data) {
           setHomeData(response.data);
@@ -87,14 +88,15 @@ export default function Home() {
     };
 
     fetchData();
-  }, [location?.latitude, location?.longitude, activeTab]);
+  }, [userLocation?.latitude, userLocation?.longitude, activeTab]);
 
   useEffect(() => {
     const preloadHeaderCategories = async () => {
       try {
         await new Promise(resolve => setTimeout(resolve, 1000));
-        const headerCategories = await getHeaderCategoriesPublic(true);
-        const slugsToPreload = ['all', ...headerCategories.map(cat => cat.slug)];
+        const cats = await getHeaderCategoriesPublic(true);
+        setHeaderCategories(cats);
+        const slugsToPreload = ['all', ...cats.map(cat => cat.slug)];
         const batchSize = 2;
         for (let i = 0; i < slugsToPreload.length; i += batchSize) {
           const batch = slugsToPreload.slice(i, i + batchSize);
@@ -102,8 +104,8 @@ export default function Home() {
             batch.map(slug =>
               getHomeContent(
                 slug,
-                location?.latitude,
-                location?.longitude,
+                userLocation?.latitude,
+                userLocation?.longitude,
                 true,
                 5 * 60 * 1000,
                 true
@@ -121,7 +123,7 @@ export default function Home() {
       }
     };
     preloadHeaderCategories();
-  }, [location?.latitude, location?.longitude]);
+  }, [userLocation?.latitude, userLocation?.longitude]);
 
   useEffect(() => {
     if (!loading && homeData.shops) {

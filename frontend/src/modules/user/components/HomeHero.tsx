@@ -65,13 +65,23 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
               } else {
                 return catDeliveryType === 'quick';
               }
+              return (c.deliveryType || 'quick') === deliveryMode;
             })
             .map(c => ({
               id: c.slug,
               label: c.name,
-              icon: getIconByName(c.iconName)
+              icon: getIconByName(c.iconName),
             }));
-          setTabs([ALL_TAB, ...mapped]);
+
+          const newTabs = [ALL_TAB, ...mapped];
+          setTabs(newTabs);
+
+          // If current activeTab is not "all" and is no longer in the tabs list for the current deliveryMode,
+          // redirect the user back to "all" to avoid showing a category from the wrong delivery mode
+          if (activeTab !== 'all' && !newTabs.some((t) => t.id === activeTab)) {
+            onTabChange?.('all');
+            navigate('/');
+          }
         }
       } catch (error) {
         console.error('Failed to fetch header categories', error);

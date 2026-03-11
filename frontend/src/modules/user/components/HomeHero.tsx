@@ -54,6 +54,17 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
               const slug = c.slug.toLowerCase();
               const name = c.name.toLowerCase();
 
+              // Determine deliveryType: use API field if present, fallback to keyword heuristic
+              const scheduledKeywords = ['fashion', 'electronics', 'beauty', 'wedding', 'sports', 'lux', 'home-decor', 'mobile'];
+              const isScheduledByKeyword = scheduledKeywords.some(word => slug.includes(word) || name.includes(word));
+
+              const catDeliveryType = c.deliveryType || (isScheduledByKeyword ? 'scheduled' : 'quick');
+
+              if (deliveryMode === 'scheduled') {
+                return catDeliveryType === 'scheduled';
+              } else {
+                return catDeliveryType === 'quick';
+              }
               return (c.deliveryType || 'quick') === deliveryMode;
             })
             .map(c => ({
@@ -61,7 +72,7 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
               label: c.name,
               icon: getIconByName(c.iconName),
             }));
-          
+
           const newTabs = [ALL_TAB, ...mapped];
           setTabs(newTabs);
 
@@ -378,7 +389,7 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
         <div className="w-full">
           <div
             ref={tabsContainerRef}
-            className={`relative flex ${deliveryMode === 'scheduled' ? 'gap-10 md:gap-16' : 'gap-2 md:gap-3'} overflow-x-auto scrollbar-hide px-4 md:px-6 lg:px-8 md:justify-center scroll-smooth py-1.5 md:py-3`}
+            className={`relative flex ${deliveryMode === 'scheduled' ? 'gap-5 md:gap-8' : 'gap-2 md:gap-3'} overflow-x-auto scrollbar-hide px-4 md:px-6 lg:px-8 md:justify-center scroll-smooth py-1.5 md:py-3`}
           >
             {/* Sliding Indicator */}
             {indicatorStyle.width > 0 && (

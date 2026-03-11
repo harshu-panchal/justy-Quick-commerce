@@ -230,28 +230,16 @@ export default function Home() {
                   const title = section.title?.toLowerCase() || '';
                   const slug = section.categorySlug?.toLowerCase() || '';
 
-                  // Known scheduled keywords
+                  // Determine deliveryType: use section field if present, fallback to keyword heuristic
                   const scheduledKeywords = ['fashion', 'electronics', 'beauty', 'makeup', 'cosmetic', 'wedding', 'sports', 'lux', 'home-decor', 'mobile'];
-                  
-                  // Check if the section title or slug matches any header category to get its deliveryType
-                  const matchingHeader = headerCategories.find(hc => 
-                    title.includes(hc.name.toLowerCase()) || 
-                    slug.includes(hc.slug.toLowerCase()) ||
-                    (hc.slug.length > 3 && (title.includes(hc.slug.toLowerCase()) || slug.includes(hc.name.toLowerCase())))
-                  );
+                  const isScheduledByKeyword = scheduledKeywords.some(word => title.includes(word) || slug.includes(word));
 
-                  let isScheduled = false;
-                  if (matchingHeader) {
-                    isScheduled = matchingHeader.deliveryType === 'scheduled';
-                  } else {
-                    // Fallback to keywords if no header matches
-                    isScheduled = scheduledKeywords.some(word => title.includes(word) || slug.includes(word));
-                  }
+                  const sectionDeliveryType = section.deliveryType || (isScheduledByKeyword ? 'scheduled' : 'quick');
 
                   if (deliveryMode === 'quick') {
-                    if (isScheduled) return false;
+                    if (sectionDeliveryType === 'scheduled') return false;
                   } else if (deliveryMode === 'scheduled') {
-                    if (!isScheduled) return false;
+                    if (sectionDeliveryType !== 'scheduled') return false;
                   }
                   const forbidden = ['non veg', 'meat', 'fish', 'chicken', 'egg', 'pet care', 'pharma', 'wellness', 'cleaning', 'office', 'baby care', 'personal care', 'wash', 'sanitary'];
                   if (forbidden.some(word => title.includes(word) || slug.includes(word))) return false;

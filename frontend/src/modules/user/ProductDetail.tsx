@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 // import { products } from '../../data/products'; // REMOVED
 // import { categories } from '../../data/categories'; // REMOVED
 import { useCart } from '../../context/CartContext';
+import { useAuth } from '../../context/AuthContext';
 import { useLocation } from '../../hooks/useLocation';
 import { useLoading } from '../../context/LoadingContext';
 import Button from '../../components/ui/button';
@@ -23,6 +24,7 @@ export default function ProductDetail() {
   const navigate = useNavigate();
   const routerLocation = useRouterLocation();
   const { cart, addToCart, updateQuantity } = useCart();
+  const { isAuthenticated } = useAuth();
   const { location } = useLocation();
   const { startLoading, stopLoading } = useLoading();
   const addButtonRef = useRef<HTMLButtonElement>(null);
@@ -255,6 +257,11 @@ export default function ProductDetail() {
     }
     if (!isVariantAvailable && variantStock !== 0) {
       alert("This variant is currently out of stock.");
+      return;
+    }
+    // Redirect to login if not authenticated
+    if (!isAuthenticated) {
+      navigate('/login');
       return;
     }
     // Create product with selected variant info

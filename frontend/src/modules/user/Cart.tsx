@@ -3,9 +3,11 @@ import { useCart } from '../../context/CartContext';
 import Button from '../../components/ui/button';
 import { appConfig } from '../../services/configService';
 import { calculateProductPrice } from '../../utils/priceUtils';
+import { useAuth } from '../../context/AuthContext';
 
 export default function Cart() {
   const { cart, updateQuantity, removeFromCart, clearCart } = useCart();
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   const deliveryFee = cart.total >= appConfig.freeDeliveryThreshold ? 0 : appConfig.deliveryFee;
@@ -13,6 +15,10 @@ export default function Cart() {
   const totalAmount = cart.total + deliveryFee + platformFee;
 
   const handleCheckout = () => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
     navigate('/checkout');
   };
 

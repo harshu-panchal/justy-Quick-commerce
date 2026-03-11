@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import HomeHero from './components/HomeHero';
 import { useOrders } from '../../hooks/useOrders';
 import { useCart } from '../../context/CartContext';
+import { useAuth } from '../../context/AuthContext';
 import { getProducts } from '../../services/api/customerProductService';
 import WishlistButton from '../../components/WishlistButton';
 import { calculateProductPrice } from '../../utils/priceUtils';
@@ -37,6 +38,7 @@ const getStatusColor = (status: string) => {
 export default function OrderAgain() {
   const { orders } = useOrders();
   const { cart, addToCart, updateQuantity } = useCart();
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [addedOrders, setAddedOrders] = useState<Set<string>>(new Set());
 
@@ -44,6 +46,12 @@ export default function OrderAgain() {
   const handleOrderAgain = (order: any, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+
+    // Redirect to login if not authenticated
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
 
     // Mark this order as added
     setAddedOrders(prev => new Set(prev).add(order.id));
@@ -265,6 +273,10 @@ export default function OrderAgain() {
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
+                                if (!isAuthenticated) {
+                                  navigate('/login');
+                                  return;
+                                }
                                 addToCart(product, e.currentTarget);
                               }}
                               className="bg-white/95 backdrop-blur-sm text-green-600 border-2 border-green-600 text-[10px] font-semibold px-2 py-1 rounded shadow-md hover:bg-white transition-colors"

@@ -145,6 +145,12 @@ export default function ProductCard({
       return;
     }
 
+    // Redirect to login if not authenticated
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+
     // Prevent any operation while another is in progress
     if (isOperationPendingRef.current) {
       return;
@@ -169,6 +175,12 @@ export default function ProductCard({
       return;
     }
 
+    // Redirect to login if not authenticated
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+
     isOperationPendingRef.current = true;
 
     try {
@@ -185,6 +197,12 @@ export default function ProductCard({
 
     // Check if product is available in user's location
     if (product.isAvailable === false) {
+      return;
+    }
+
+    // Redirect to login if not authenticated
+    if (!isAuthenticated) {
+      navigate('/login');
       return;
     }
 

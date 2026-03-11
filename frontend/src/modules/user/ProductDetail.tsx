@@ -18,6 +18,7 @@ import WishlistButton from '../../components/WishlistButton';
 import StarRating from "../../components/ui/StarRating";
 import { calculateProductPrice } from '../../utils/priceUtils';
 import { getCategoryType, getDeliveryInfo } from '../../config/pincodeService';
+import ComboOfferSection from './components/ComboOfferSection';
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
@@ -949,6 +950,15 @@ export default function ProductDetail() {
             </div>
           </div>
         )}
+
+        {/* Combo Offers Section */}
+        <div className="px-4 md:px-6 lg:px-8">
+          <ComboOfferSection
+            categoryId={product.category?.slug || product.category?._id || product.categoryId}
+            categoryName={product.category?.name}
+            currentProductId={product.id || product._id}
+          />
+        </div>
 
 
 

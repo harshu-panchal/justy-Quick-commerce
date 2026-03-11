@@ -108,12 +108,11 @@ export default function OrderAgain() {
   return (
     <div className="pb-4">
       {/* BESSELLERS SECTION REMOVED - If you see this comment, new code is loaded */}
-      {/* Header - Same as Home page */}
-      <HomeHero />
+
 
       {/* Orders Section - Show when orders exist */}
       {hasOrders && (
-        <div className="px-4 mt-2 mb-2">
+        <div className="px-4 mt-6 mb-2">
           <h2 className="text-sm font-semibold text-neutral-900 mb-2">Your Previous Orders</h2>
           <div className="space-y-1.5">
             {orders.map((order) => {

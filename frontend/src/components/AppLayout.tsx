@@ -5,6 +5,7 @@ import FloatingCartPill from './FloatingCartPill';
 import { useLocation as useLocationContext } from '../hooks/useLocation';
 import LocationPermissionRequest from './LocationPermissionRequest';
 import { useThemeContext } from '../context/ThemeContext';
+import { useDeliveryMode } from '../hooks/useDeliveryMode';
 import ServiceNotAvailable from './ServiceNotAvailable';
 import { checkServiceability } from '../services/api/customerHomeService';
 
@@ -23,7 +24,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const { isLocationEnabled, isLocationLoading, location: userLocation } = useLocationContext();
   const [showLocationRequest, setShowLocationRequest] = useState(false);
   const [showLocationChangeModal, setShowLocationChangeModal] = useState(false);
-  const { currentTheme } = useThemeContext();
+  const { currentTheme, activeCategory } = useThemeContext();
+  const { deliveryMode } = useDeliveryMode();
 
   // State to track if service is available at user's location
   const [isServiceAvailable, setIsServiceAvailable] = useState<boolean>(true);
@@ -180,10 +182,12 @@ export default function AppLayout({ children }: AppLayoutProps) {
             <nav
               className="hidden md:flex items-center justify-center gap-8 px-6 lg:px-8 py-3 shadow-sm transition-colors duration-300"
               style={{
-                background: currentTheme.headerBg
-                  ? `linear-gradient(to right, ${currentTheme.headerBg}, ${currentTheme.searchBarBg || currentTheme.headerBg})`
-                  : `linear-gradient(to right, ${currentTheme.primary[0]}, ${currentTheme.primary[1]})`,
-                borderBottom: `1px solid ${currentTheme.headerBg || currentTheme.primary[0]}`
+                background: (activeCategory === 'all' && deliveryMode === 'scheduled')
+                  ? '#00796B'
+                  : currentTheme.headerBg
+                    ? `linear-gradient(to right, ${currentTheme.headerBg}, ${currentTheme.searchBarBg || currentTheme.headerBg})`
+                    : `linear-gradient(to right, ${currentTheme.primary[0]}, ${currentTheme.primary[1]})`,
+                borderBottom: `1px solid ${(activeCategory === 'all' && deliveryMode === 'scheduled') ? '#00695C' : (currentTheme.headerBg || currentTheme.primary[0])}`
               }}
             >
               {/* Home */}
@@ -400,9 +404,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
               <div
                 className="absolute inset-0 border-t transition-all duration-300 shadow-[0_-10px_40px_rgba(0,0,0,0.15)]"
                 style={{
-                  background: currentTheme.headerBg
-                    ? `linear-gradient(to right, ${currentTheme.headerBg}, ${currentTheme.searchBarBg || currentTheme.headerBg})`
-                    : 'rgba(255, 255, 255, 0.95)',
+                  background: (activeCategory === 'all' && deliveryMode === 'scheduled')
+                    ? '#00796B'
+                    : currentTheme.headerBg
+                      ? `linear-gradient(to right, ${currentTheme.headerBg}, ${currentTheme.searchBarBg || currentTheme.headerBg})`
+                      : 'rgba(255, 255, 255, 0.95)',
                   backdropFilter: currentTheme.headerBg ? 'none' : 'blur(20px)',
                   borderColor: currentTheme.headerBg ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)'
                 }}

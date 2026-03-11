@@ -291,7 +291,7 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
       {/* Top Header Section */}
       <div
         className="px-4 md:px-6 lg:px-8 pt-3 pb-3 transition-colors duration-500"
-        style={{ backgroundColor: theme.headerBg || '#007fb1' }}
+        style={{ backgroundColor: (activeTab === 'all' && deliveryMode === 'scheduled') ? '#00796B' : (theme.headerBg || '#007fb1') }}
       >
         {/* 1. Full-width Mode Toggle */}
         <div className="mb-4 max-w-2xl mx-auto">
@@ -304,7 +304,7 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
           <div
             onClick={() => navigate('/search')}
             className="flex-1 rounded-full h-12 flex items-center px-4 gap-3 cursor-pointer border border-white/10 transition-colors duration-500"
-            style={{ backgroundColor: theme.searchBarBg || '#004e6e' }}
+            style={{ backgroundColor: (activeTab === 'all' && deliveryMode === 'scheduled') ? '#00695C' : (theme.searchBarBg || '#004e6e') }}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-white/70">
               <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2.5" />

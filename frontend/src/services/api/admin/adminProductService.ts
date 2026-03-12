@@ -148,6 +148,7 @@ export interface Product {
   requiresApproval: boolean;
   approvedBy?: string | { firstName: string; lastName: string };
   approvedAt?: string;
+  rejectionReason?: string;
   commission?: number;
   createdAt?: string;
   updatedAt?: string;

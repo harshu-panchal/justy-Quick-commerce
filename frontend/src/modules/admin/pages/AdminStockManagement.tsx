@@ -19,13 +19,13 @@ interface ProductVariation {
   image: string;
   variation: string;
   stock: number | "Unlimited";
-  status: "Published" | "Unpublished";
+  status: "Published" | "Unpublished" | "Active" | "Inactive" | "Pending" | "Rejected";
   category: string;
   categoryId: string;
   headerCategoryId: string;
 }
 
-const STATUS_OPTIONS = ["All Products", "Published", "Unpublished"];
+const STATUS_OPTIONS = ["All Products", "Pending", "Active", "Rejected", "Inactive"];
 const STOCK_OPTIONS = ["All Products", "In Stock", "Out of Stock", "Unlimited"];
 
 export default function AdminStockManagement() {
@@ -73,7 +73,7 @@ export default function AdminStockManagement() {
       }
 
       if (filterStatus !== "All Products") {
-        params.publish = filterStatus === "Published";
+        params.status = filterStatus;
       }
 
       const response = await getProducts(params);
@@ -182,7 +182,7 @@ export default function AdminStockManagement() {
               variation.stock !== undefined
                 ? variation.stock
                 : product.stock || 0,
-            status: product.publish ? "Published" : "Unpublished",
+            status: product.status || (product.publish ? "Active" : "Inactive"),
             category: categoryName,
             categoryId: categoryId,
             headerCategoryId: headerCategoryId,
@@ -628,10 +628,12 @@ export default function AdminStockManagement() {
                       </td>
                       <td className="p-4 align-middle">
                         <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${product.status === "Published"
-                            ? "bg-teal-100 text-teal-800"
-                            : "bg-gray-100 text-gray-800"
-                            }`}>
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            product.status === "Active" ? "bg-teal-100 text-teal-800" :
+                            product.status === "Pending" ? "bg-yellow-100 text-yellow-800" :
+                            product.status === "Rejected" ? "bg-red-100 text-red-800" :
+                            "bg-gray-100 text-gray-800"
+                          }`}>
                           {product.status}
                         </span>
                       </td>

@@ -61,7 +61,8 @@ export interface Product {
   categoryId?: string;
   subcategoryId?: string;
   brandId?: string;
-  taxId?: string;
+  status?: string;
+  rejectionReason?: string;
   // Shop by Store fields
   isShopByStoreOnly?: boolean;
   shopId?: string | any;

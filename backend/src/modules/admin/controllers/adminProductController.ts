@@ -1088,6 +1088,7 @@ export const deleteProduct = asyncHandler(
  */
 export const approveProductRequest = asyncHandler(
   async (req: Request, res: Response) => {
+    console.log(`🔥 APPROVE PRODUCT REQUEST HIT: ${req.params.id}`);
     const { id } = req.params;
     const { status, rejectionReason } = req.body;
 

@@ -140,6 +140,7 @@ const AdminOrders = lazy(() => import("./modules/admin/pages/AdminOrders"));
 const AdminOrderDetail = lazy(() => import("./modules/admin/pages/AdminOrderDetail"));
 const AdminManageCustomer = lazy(() => import("./modules/admin/pages/AdminManageCustomer"));
 const AdminProfile = lazy(() => import("./modules/admin/pages/AdminProfile"));
+const AdminProductEdit = lazy(() => import("./modules/admin/pages/AdminProductEdit"));
 
 const AdminWithdrawals = lazy(() => import("./modules/admin/pages/AdminWithdrawals"));
 const AdminPayments = lazy(() => import("./modules/admin/pages/AdminPayments"));
@@ -330,6 +331,7 @@ function App() {
                                         <Route path="brand" element={<AdminBrand />} />
                                         <Route path="product/taxes" element={<AdminTaxes />} />
                                         <Route path="product/list" element={<AdminStockManagement />} />
+                                        <Route path="product/edit/:id" element={<AdminProductEdit />} />
                                         <Route path="manage-seller/list" element={<AdminManageSellerList />} />
                                         <Route path="manage-seller/transaction" element={<AdminSellerTransaction />} />
                                         <Route path="delivery-boy/manage" element={<AdminManageDeliveryBoy />} />

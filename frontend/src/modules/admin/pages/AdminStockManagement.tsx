@@ -22,6 +22,8 @@ interface ProductVariation {
   status: "Published" | "Unpublished" | "Active" | "Inactive" | "Pending" | "Rejected";
   category: string;
   categoryId: string;
+  subcategory: string;
+  subcategoryId: string;
   headerCategoryId: string;
 }
 
@@ -141,6 +143,8 @@ export default function AdminStockManagement() {
       // Handle null/undefined category
       let categoryName = "Unknown";
       let categoryId = "";
+      let subcategoryName = "None";
+      let subcategoryId = "";
       let headerCategoryId = "";
 
       if (product.category) {
@@ -158,6 +162,17 @@ export default function AdminStockManagement() {
           headerCategoryId = typeof foundCat?.headerCategoryId === 'string'
             ? foundCat.headerCategoryId
             : (foundCat as any)?.headerCategoryId?._id || "";
+        }
+      }
+
+      if (product.subcategory) {
+        const productSubcategory = product.subcategory as any;
+        if (typeof productSubcategory === "object" && productSubcategory !== null) {
+          subcategoryName = productSubcategory.name || productSubcategory.subcategoryName || "None";
+          subcategoryId = productSubcategory._id || "";
+        } else if (typeof productSubcategory === "string") {
+          subcategoryId = productSubcategory;
+          subcategoryName = "Populated"; // Fallback if name not available in string case
         }
       }
 
@@ -185,6 +200,8 @@ export default function AdminStockManagement() {
             status: product.status || (product.publish ? "Active" : "Inactive"),
             category: categoryName,
             categoryId: categoryId,
+            subcategory: subcategoryName,
+            subcategoryId: subcategoryId,
             headerCategoryId: headerCategoryId,
           });
         });
@@ -202,6 +219,8 @@ export default function AdminStockManagement() {
           status: product.publish ? "Published" : "Unpublished",
           category: categoryName,
           categoryId: categoryId,
+          subcategory: subcategoryName,
+          subcategoryId: subcategoryId,
           headerCategoryId: headerCategoryId,
         });
       }
@@ -298,6 +317,14 @@ export default function AdminStockManagement() {
         case "seller":
           aValue = a.seller.toLowerCase();
           bValue = b.seller.toLowerCase();
+          break;
+        case "category":
+          aValue = a.category.toLowerCase();
+          bValue = b.category.toLowerCase();
+          break;
+        case "subcategory":
+          aValue = a.subcategory.toLowerCase();
+          bValue = b.subcategory.toLowerCase();
           break;
         case "variation":
           aValue = a.variation.toLowerCase();
@@ -526,6 +553,20 @@ export default function AdminStockManagement() {
                   </th>
                   <th
                     className="p-4 cursor-pointer hover:bg-neutral-100 transition-colors"
+                    onClick={() => handleSort("category")}>
+                    <div className="flex items-center">
+                      Category <SortIcon column="category" />
+                    </div>
+                  </th>
+                  <th
+                    className="p-4 cursor-pointer hover:bg-neutral-100 transition-colors"
+                    onClick={() => handleSort("subcategory")}>
+                    <div className="flex items-center">
+                      Subcategory <SortIcon column="subcategory" />
+                    </div>
+                  </th>
+                  <th
+                    className="p-4 cursor-pointer hover:bg-neutral-100 transition-colors"
                     onClick={() => handleSort("seller")}>
                     <div className="flex items-center">
                       Seller <SortIcon column="seller" />
@@ -598,6 +639,8 @@ export default function AdminStockManagement() {
                         {product.id.slice(-6)}
                       </td>
                       <td className="p-4 align-middle">{product.name}</td>
+                      <td className="p-4 align-middle">{product.category}</td>
+                      <td className="p-4 align-middle">{product.subcategory}</td>
                       <td className="p-4 align-middle">{product.seller}</td>
                       <td className="p-4 align-middle">
                         {product.image ? (
@@ -639,6 +682,17 @@ export default function AdminStockManagement() {
                       </td>
                       <td className="p-4 align-middle">
                         <div className="flex items-center gap-2">
+                          <a
+                            href={`/product/${product.productId}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-1 text-teal-600 hover:bg-teal-50 rounded"
+                            title="Preview">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                              <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                          </a>
                           <button
                             onClick={() => handleEdit(product.productId)}
                             className="p-1 text-blue-600 hover:bg-blue-50 rounded"

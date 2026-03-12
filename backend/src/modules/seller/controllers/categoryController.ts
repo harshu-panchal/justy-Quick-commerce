@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import mongoose from "mongoose";
 import Category from "../../../models/Category";
 import SubCategory from "../../../models/SubCategory";
 import Product from "../../../models/Product";
@@ -109,14 +110,24 @@ export const getSubcategories = asyncHandler(
       sortOrder = "asc",
     } = req.query;
 
-    // Verify parent category exists
-    const parentCategory = await Category.findById(id);
+    // Verify parent category exists - supports both ID and Slug
+    let parentCategory;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      parentCategory = await Category.findById(id);
+    }
+
+    if (!parentCategory) {
+      parentCategory = await Category.findOne({ slug: id });
+    }
+
     if (!parentCategory) {
       return res.status(404).json({
         success: false,
         message: "Parent category not found",
       });
     }
+
+    const parentCategoryId = parentCategory._id.toString();
 
     // Pagination
     const pageNum = parseInt(page as string);
@@ -136,7 +147,7 @@ export const getSubcategories = asyncHandler(
 
     // 1. Get subcategories from new Category model (where parentId = category id)
     const categorySubcategoriesQuery: any = {
-      parentId: id,
+      parentId: parentCategoryId,
       status: "Active", // Only active subcategories
     };
     if (searchQuery) {
@@ -147,20 +158,16 @@ export const getSubcategories = asyncHandler(
       categorySubcategoriesQuery
     )
       .sort(sort)
-      .skip(skip)
-      .limit(limitNum)
       .lean();
 
     // 2. Get subcategories from old SubCategory model (for backward compatibility)
-    const oldSubcategoryQuery: any = { category: id };
+    const oldSubcategoryQuery: any = { category: parentCategoryId };
     if (searchQuery) {
       oldSubcategoryQuery.name = searchQuery;
     }
 
     const oldSubcategories = await SubCategory.find(oldSubcategoryQuery)
       .sort(sort)
-      .skip(skip)
-      .limit(limitNum)
       .lean();
 
     // Combine both results
@@ -171,6 +178,7 @@ export const getSubcategories = asyncHandler(
         subcategoryName: cat.name, // Map name to subcategoryName for frontend compatibility
         categoryName: parentCategory.name,
         image: cat.image,
+        icon: (cat as any).icon,
         subcategoryImage: cat.image,
         order: cat.order || 0,
         totalProduct: 0, // Will be calculated below
@@ -340,35 +348,80 @@ export const getAllSubcategories = asyncHandler(
       sortBy === "subcategoryName" ? "name" : (sortBy as string);
     sort[sortField] = sortOrder === "asc" ? 1 : -1;
 
-    // Fetch subcategories from the SubCategory model instead of Category model
-    // This fixes the issue where subcategories created by Admin (in SubCategory collection)
-    // were not visible to Sellers because this controller was looking in Category collection
-    const subcategories = await SubCategory.find(query)
+    // Fetch subcategories from both models
+    // 1. From SubCategory model
+    const oldSubcategories = await SubCategory.find(query)
       .populate("category", "name image")
-      .sort(sort)
-      .skip(skip)
-      .limit(limitNum);
+      .lean();
+
+    // 2. From Category model (hierarchical)
+    const catQuery = { ...query, parentId: { $ne: null } };
+    const newSubcategories = await Category.find(catQuery)
+      .populate("parentId", "name image")
+      .lean();
+
+    // Combine and format
+    const allSubcategories = [
+      ...oldSubcategories.map((sub: any) => ({
+        _id: sub._id,
+        id: sub._id,
+        categoryName: sub.category?.name || "Unknown",
+        subcategoryName: sub.name,
+        subcategoryImage: sub.image || "",
+        totalProduct: 0,
+        isNewModel: false,
+      })),
+      ...newSubcategories.map((cat: any) => ({
+        _id: cat._id,
+        id: cat._id,
+        categoryName: cat.parentId?.name || "Unknown",
+        subcategoryName: cat.name,
+        subcategoryImage: cat.image || "",
+        totalProduct: 0,
+        isNewModel: true,
+      })),
+    ];
+
+    // Remove duplicates
+    const uniqueSubcategories = Array.from(
+      new Map(
+        allSubcategories.map((item) => [item._id.toString(), item])
+      ).values()
+    );
+
+    // Sort
+    uniqueSubcategories.sort((a: any, b: any) => {
+      const field = sortField === "name" ? "subcategoryName" : sortField;
+      const order = sortOrder === "asc" ? 1 : -1;
+      const valA = a[field] || "";
+      const valB = b[field] || "";
+      if (valA < valB) return -order;
+      if (valA > valB) return order;
+      return 0;
+    });
+
+    // Pagination
+    const paginatedSubcategories = uniqueSubcategories.slice(skip, skip + limitNum);
 
     // Get product counts and format response
     const subcategoriesWithCounts = await Promise.all(
-      subcategories.map(async (subcategory) => {
-        const productCount = await Product.countDocuments({
-          subcategory: subcategory._id, // Note: Product model uses 'subcategory', not 'subcategoryId'
+      paginatedSubcategories.map(async (subcategory: any) => {
+        const productCountOld = await Product.countDocuments({
+          subcategory: subcategory._id,
+        });
+        
+        const productCountNew = await Product.countDocuments({
+          category: subcategory._id,
         });
 
-        const parentCategory = subcategory.category as any;
-
         return {
-          id: subcategory._id,
-          categoryName: parentCategory?.name || "Unknown",
-          subcategoryName: subcategory.name,
-          subcategoryImage: subcategory.image || "",
-          totalProduct: productCount,
+          ...subcategory,
+          totalProduct: productCountOld + productCountNew,
         };
       })
     );
 
-    const total = await SubCategory.countDocuments(query);
+    const total = uniqueSubcategories.length;
 
     return res.status(200).json({
       success: true,

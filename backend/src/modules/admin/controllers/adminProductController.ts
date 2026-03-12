@@ -592,33 +592,92 @@ export const createSubCategory = asyncHandler(
  */
 export const getSubCategories = asyncHandler(
   async (req: Request, res: Response) => {
-    const { category, search, sortBy = "order", sortOrder = "asc" } = req.query;
+    const { category, categoryId, search, sortBy = "order", sortOrder = "asc" } = req.query;
+    const parentCategoryId = category || categoryId;
 
-    const query: any = {};
-    if (category) {
-      query.category = category;
+    // 1. Query from SubCategory model (old)
+    const subQuery: any = {};
+    if (parentCategoryId) {
+      subQuery.category = parentCategoryId;
     }
     if (search) {
-      query.name = { $regex: search as string, $options: "i" };
+      subQuery.name = { $regex: search as string, $options: "i" };
     }
 
-    const sort: any = {};
-    sort[sortBy as string] = sortOrder === "desc" ? -1 : 1;
-
-    const subcategories = await SubCategory.find(query)
+    const oldSubcategories = await SubCategory.find(subQuery)
       .populate("category", "name")
-      .sort(sort);
+      .lean();
 
-    // Get product counts for each subcategory
-    const subcategoriesWithCounts = await Promise.all(
-      subcategories.map(async (subcategory) => {
-        const productCount = await Product.countDocuments({
+    // 2. Query from Category model (new hierarchy)
+    const catQuery: any = {};
+    if (parentCategoryId) {
+      catQuery.parentId = parentCategoryId;
+    } else {
+      // If no category specified, find categories that have a parent (acting as subcategories)
+      catQuery.parentId = { $ne: null };
+    }
+    if (search) {
+      catQuery.name = { $regex: search as string, $options: "i" };
+    }
+
+    const newSubcategories = await Category.find(catQuery)
+      .populate("parentId", "name")
+      .lean();
+
+    // Combine and format
+    const combinedSubcategories = [
+      ...oldSubcategories.map((s: any) => ({
+        ...s,
+        id: s._id,
+        subcategoryName: s.name,
+        categoryName: s.category?.name || "Unknown",
+        isNewModel: false,
+      })),
+      ...newSubcategories.map((c: any) => ({
+        ...c,
+        id: c._id,
+        subcategoryName: c.name,
+        categoryName: c.parentId?.name || "Unknown",
+        category: c.parentId, // For compatibility
+        isNewModel: true,
+      })),
+    ];
+
+    // Remove duplicates by ID
+    const uniqueSubcategories = Array.from(
+      new Map(
+        combinedSubcategories.map((item) => [item._id.toString(), item])
+      ).values()
+    );
+
+    // Sorting
+    uniqueSubcategories.sort((a: any, b: any) => {
+      const field = sortBy as string;
+      const order = sortOrder === "desc" ? -1 : 1;
+      
+      const valA = a[field] || "";
+      const valB = b[field] || "";
+      
+      if (valA < valB) return -order;
+      if (valA > valB) return order;
+      return 0;
+    });
+
+    // Get product counts
+    const data = await Promise.all(
+      uniqueSubcategories.map(async (subcategory: any) => {
+        // Check both subcategory field and category field in products
+        const productCountOld = await Product.countDocuments({
           subcategory: subcategory._id,
+        });
+        
+        const productCountNew = await Product.countDocuments({
+          category: subcategory._id,
         });
 
         return {
-          ...subcategory.toObject(),
-          totalProduct: productCount,
+          ...subcategory,
+          totalProduct: productCountOld + productCountNew,
         };
       })
     );
@@ -626,7 +685,7 @@ export const getSubCategories = asyncHandler(
     return res.status(200).json({
       success: true,
       message: "Subcategories fetched successfully",
-      data: subcategoriesWithCounts,
+      data: data,
     });
   }
 );
@@ -1115,6 +1174,8 @@ export const approveProductRequest = asyncHandler(
       status,
       approvedBy: req.user?.userId,
       approvedAt: new Date(),
+      // Automatically set publish based on approval status
+      publish: status === "Active" ? true : false,
     };
 
     if (status === "Rejected" && rejectionReason) {

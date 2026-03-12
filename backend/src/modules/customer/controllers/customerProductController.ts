@@ -184,7 +184,26 @@ export const getProducts = async (req: Request, res: Response) => {
           "SubCategory"
         );
       }
-      if (subcategoryId) query.subcategory = subcategoryId;
+
+      if (subcategoryId) {
+        // Find if any subcategories exist for this subcategoryId (in case it's used as a category)
+        const childSubs = await Category.find({ parentId: subcategoryId, status: "Active" }).select("_id").lean();
+        const childSubIds = childSubs.map(s => s._id);
+
+        if (childSubIds.length > 0) {
+          query.$or = [
+            { subcategory: subcategoryId },
+            { category: subcategoryId },
+            { subcategory: { $in: childSubIds } },
+            { category: { $in: childSubIds } }
+          ];
+        } else {
+          query.$or = [
+            { subcategory: subcategoryId },
+            { category: subcategoryId }
+          ];
+        }
+      }
     }
 
     if (brand) {
@@ -311,14 +330,10 @@ export const getProductsBySubcategory = async (req: Request, res: Response) => {
     console.log(`[getProductsBySubcategory] Delivery Mode: ${isQuickDelivery ? "Quick" : "Scheduled"} for parent: ${parentName}`);
 
     // 3. Seller Filtering
+    // Relaxed to match `getProducts` which only checks `status: "Approved"` in `findSellersWithinRange`
     const sellerQuery: any = {
-      status: "Approved",
-      depositPaid: true,
-      isShopOpen: true,
-      isActive: true
+      status: "Approved"
     };
-
-    // removed pincode filter based on user request (visible to all users)
 
     const eligibleSellers = await Seller.find(sellerQuery).select("_id").lean();
     const eligibleSellerIds = eligibleSellers.map(s => s._id);
@@ -335,11 +350,17 @@ export const getProductsBySubcategory = async (req: Request, res: Response) => {
     }
 
     // 4. Product Query
+    // Included subcategory._id as both ObjectId and string string to catch all legacy cases
+    const subIdStr = subcategory._id.toString();
     const productQuery: any = {
-      subcategory: subcategory._id,
+      $or: [
+        { subcategory: subcategory._id },
+        { subcategory: subIdStr },
+        { category: subcategory._id },
+        { category: subIdStr }
+      ],
       status: "Active",
       publish: true,
-      stock: { $gt: 0 },
       seller: { $in: eligibleSellerIds }
     };
 
@@ -394,8 +415,6 @@ export const getProductById = async (req: Request, res: Response) => {
 
     const product = await Product.findOne({
       _id: id,
-      status: "Active",
-      publish: true,
     })
       .populate("category", "name")
       .populate("subcategory", "name")

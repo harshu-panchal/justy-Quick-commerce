@@ -90,6 +90,7 @@ export interface IProduct extends Document {
   isShopByStoreOnly?: boolean;
   shopId?: mongoose.Types.ObjectId;
 
+  rejectionReason?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -312,6 +313,10 @@ const ProductSchema = new Schema<IProduct>(
       type: Date,
     },
 
+    rejectionReason: {
+      type: String,
+      trim: true,
+    },
     // Commission
     commission: {
       type: Number,

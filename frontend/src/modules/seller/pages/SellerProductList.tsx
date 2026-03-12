@@ -638,12 +638,16 @@ export default function SellerProductList() {
                         {variation.variation}
                       </td>
                       <td className="p-4 align-middle border border-neutral-200">
-                        <ProductStatusBadge
-                          status={
-                            (product as any)?.approvalStatus ||
-                            (["approved", "pending", "rejected"] as const)[index % 3]
-                          }
-                        />
+                        <div>
+                          <ProductStatusBadge
+                            status={product?.status || "Pending"}
+                          />
+                          {product?.status === "Rejected" && product.rejectionReason && (
+                            <div className="text-[10px] text-red-500 mt-1 max-w-[150px] italic">
+                              Reason: {product.rejectionReason}
+                            </div>
+                          )}
+                        </div>
                       </td>
                       <td className="p-4 align-middle border border-neutral-200">
                         <div className="flex items-center justify-center gap-2">

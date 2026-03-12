@@ -585,7 +585,7 @@ export const getHomeContent = async (req: Request, res: Response) => {
       .lean();
 
     // Fetch data for each section
-    const dynamicSections = await Promise.all(
+    let dynamicSections = await Promise.all(
       homeSections.map(async (section: any) => {
         const sectionData = await fetchSectionData(section, nearbySellerIds);
         return {
@@ -598,6 +598,56 @@ export const getHomeContent = async (req: Request, res: Response) => {
         };
       })
     );
+
+    // Filter out empty sections
+    dynamicSections = dynamicSections.filter(s => s.data && s.data.length > 0);
+
+    // Fallback: If no sections exist for a header category page, add a "New Arrivals" section
+    if (dynamicSections.length === 0 && headerCategorySlug && headerCategorySlug !== "all") {
+      const headerCategory = await HeaderCategory.findOne({
+        slug: headerCategorySlug,
+        status: "Published"
+      }).select("_id");
+
+      if (headerCategory) {
+        const latestProducts = await Product.find({
+          headerCategoryId: headerCategory._id,
+          status: "Active",
+          publish: true,
+          $or: [
+            { isShopByStoreOnly: { $ne: true } },
+            { isShopByStoreOnly: { $exists: false } },
+          ],
+        })
+          .sort({ createdAt: -1 })
+          .limit(8)
+          .populate("seller", "storeName")
+          .lean();
+
+        if (latestProducts.length > 0) {
+          const formattedProducts = latestProducts.map(p => {
+            const sellerId = (p.seller as any)?._id || p.seller;
+            const isAvailable = nearbySellerIds && nearbySellerIds.length > 0 && sellerId
+              ? nearbySellerIds.some(id => id.toString() === sellerId.toString())
+              : false;
+            return {
+              ...p,
+              id: p._id.toString(),
+              isAvailable
+            };
+          });
+
+          dynamicSections.push({
+            id: "fallback-new-arrivals",
+            title: "New Arrivals",
+            slug: "new-arrivals",
+            displayType: "products",
+            columns: 4,
+            data: formattedProducts
+          });
+        }
+      }
+    }
 
     // 10. Fetch PromoStrip for the current header category (with caching)
     const currentHeaderCategorySlug = (headerCategorySlug as string) || "all";

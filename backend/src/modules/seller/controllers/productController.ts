@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import Product from "../../../models/Product";
 import Shop from "../../../models/Shop";
 import { asyncHandler } from "../../../utils/asyncHandler";
+import { cache } from "../../../utils/cache";
 
 /**
  * Create a new product
@@ -90,10 +91,10 @@ export const createProduct = asyncHandler(
       }
     }
 
-    // 6. Set product status - All products are published automatically without approval
-    newProductData.publish = true;
-    newProductData.status = "Active";
-    newProductData.requiresApproval = false;
+    // 6. Set product status - Products require admin approval
+    newProductData.publish = false;
+    newProductData.status = "Pending";
+    newProductData.requiresApproval = true;
 
     // Set default values for other required fields if not provided
     if (!newProductData.popular) newProductData.popular = false;
@@ -116,6 +117,9 @@ export const createProduct = asyncHandler(
     }
 
     const product = await Product.create(newProductData);
+
+    // Invalidate home page cache
+    cache.invalidatePattern(/home-content/);
 
     return res.status(201).json({
       success: true,
@@ -374,6 +378,9 @@ export const updateProduct = asyncHandler(
 
     await product.save();
 
+    // Invalidate home page cache
+    cache.invalidatePattern(/home-content/);
+
     // Re-populate for response
     const populatedProduct = await Product.findById(product._id)
       .populate("category", "name")
@@ -414,6 +421,9 @@ export const deleteProduct = asyncHandler(
         message: "Product not found",
       });
     }
+
+    // Invalidate home page cache
+    cache.invalidatePattern(/home-content/);
 
     return res.status(200).json({
       success: true,

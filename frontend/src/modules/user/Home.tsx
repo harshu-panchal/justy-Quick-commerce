@@ -40,6 +40,9 @@ export default function Home() {
     promoBanners: [],
     trending: [],
     cookingIdeas: [],
+    promoCards: [],
+    promoStrip: null,
+    lowestPrices: [],
   });
   const [headerCategories, setHeaderCategories] = useState<any[]>([]);
 
@@ -72,9 +75,29 @@ export default function Home() {
         );
         if (response.success && response.data) {
           setHomeData(response.data);
+          
+          let allProducts: any[] = [];
+          
+          // Add bestsellers
           if (response.data.bestsellers) {
-            setProducts(response.data.bestsellers);
+            allProducts = [...response.data.bestsellers];
           }
+          
+          // If in a specific category tab, also aggregate products from all dynamic sections
+          if (slug && response.data.homeSections) {
+            response.data.homeSections.forEach((section: any) => {
+              if (section.displayType === "products" && section.data) {
+                // Add unique products to the list
+                section.data.forEach((p: any) => {
+                  if (!allProducts.some(existing => (existing._id || existing.id) === (p._id || p.id))) {
+                    allProducts.push(p);
+                  }
+                });
+              }
+            });
+          }
+          
+          setProducts(allProducts);
         } else {
           setError("Failed to load content. Please try again.");
         }

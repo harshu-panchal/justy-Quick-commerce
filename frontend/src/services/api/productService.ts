@@ -63,6 +63,7 @@ export interface Product {
   brandId?: string;
   status?: string;
   rejectionReason?: string;
+  taxId?: string; // Added for compatibility
   // Shop by Store fields
   isShopByStoreOnly?: boolean;
   shopId?: string | any;

@@ -12,12 +12,13 @@ import { useLocation } from '../../hooks/useLocation';
 import { useLoading } from '../../context/LoadingContext';
 import Button from '../../components/ui/button';
 import Badge from '../../components/ui/badge';
-import { getProductById } from '../../services/api/customerProductService';
+import { getProductById, getProducts } from '../../services/api/customerProductService';
 import WishlistButton from '../../components/WishlistButton';
 import StarRating from "../../components/ui/StarRating";
 import { calculateProductPrice } from '../../utils/priceUtils';
 import { getCategoryType, getDeliveryInfo } from '../../config/pincodeService';
 import ComboOfferSection from './components/ComboOfferSection';
+import BuyTogetherSection from './components/BuyTogetherSection';
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
@@ -94,6 +95,21 @@ export default function ProductDetail() {
           setSelectedVariantIndex(0);
           setSelectedImageIndex(0);
           setSimilarProducts(response.data.similarProducts || []);
+
+          // Fallback: If no similar products are returned, fetch some from the same category
+          if (!response.data.similarProducts || response.data.similarProducts.length === 0) {
+            const categoryId = productData.category?.id || productData.category?._id || productData.categoryId;
+            if (categoryId) {
+              getProducts({ category: categoryId, limit: 10 }).then(fallbackRes => {
+                if (fallbackRes.success && fallbackRes.data) {
+                  // Exclude the current product from the fallback list
+                  const productId = productData._id || productData.id;
+                  const filtered = fallbackRes.data.filter((p: any) => (p._id || p.id) !== productId);
+                  setSimilarProducts(filtered);
+                }
+              }).catch(err => console.error("Fallback fetching failed", err));
+            }
+          }
 
 
         } else {
@@ -952,6 +968,16 @@ export default function ProductDetail() {
             currentProductId={product.id || product._id}
           />
         </div>
+
+        {/* Buy Together Section */}
+        {similarProducts.length > 0 && (
+          <div className="px-4 md:px-6 lg:px-8">
+            <BuyTogetherSection
+              currentProduct={product}
+              products={similarProducts}
+            />
+          </div>
+        )}
 
 
 

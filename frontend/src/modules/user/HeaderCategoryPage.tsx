@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import HomeHero from "./components/HomeHero";
+import BannerCarousel from "../../components/banners/BannerCarousel";
 import CategoryTileSection from "./components/CategoryTileSection";
 import ProductCard from "./components/ProductCard";
 import { getHeaderCategorySections } from "../../services/api/customerHomeService";
@@ -8,11 +9,13 @@ import { useLocation } from "../../hooks/useLocation";
 import PageLoader from "../../components/PageLoader";
 import { getStoredPincode } from "../../components/PincodeSelector";
 import { useThemeContext } from "../../context/ThemeContext";
+import { useDeliveryMode } from "../../hooks/useDeliveryMode";
 
 export default function HeaderCategoryPage() {
     const { slug } = useParams<{ slug: string }>();
     const { location } = useLocation();
     const { setActiveCategory } = useThemeContext();
+    const { deliveryMode } = useDeliveryMode();
     const [loading, setLoading] = useState(true);
     const [sections, setSections] = useState<any[]>([]);
     const [error, setError] = useState<string | null>(null);
@@ -81,6 +84,9 @@ export default function HeaderCategoryPage() {
     return (
         <div className="bg-white min-h-screen pb-20 md:pb-0">
             <HomeHero activeTab={slug || "all"} onTabChange={setActiveCategory} />
+            <div className="w-full relative z-10 mt-2">
+                <BannerCarousel mode={deliveryMode} />
+            </div>
             <div className="bg-neutral-50 min-h-screen pt-4 pb-12">
                 {sections.length > 0 ? (
                     <div className="space-y-6 md:space-y-10">

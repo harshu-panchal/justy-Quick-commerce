@@ -13,6 +13,7 @@ import PincodeSelector from '../../../components/PincodeSelector';
 import DeliveryToggle from '../../../components/header/DeliveryToggle';
 import { useDeliveryMode } from '../../../hooks/useDeliveryMode';
 import { useCart } from '../../../context/CartContext'; // Assuming CartContext exists
+import LocationModal from '../../../components/header/LocationModal';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -103,6 +104,7 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
   const [, setIsSticky] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0 });
+  const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
 
   // Format location display text - only show if user has provided location
   const locationDisplayText = useMemo(() => {
@@ -369,15 +371,43 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
           </div>
         </div>
 
-        {/* 3. Location Strip */}
-        <div className="max-w-2xl mx-auto flex items-center justify-between text-white/90 text-xs px-1">
-          <div className="flex items-center gap-1.5 flex-1 min-w-0">
-            <span className="font-bold whitespace-nowrap opacity-80 uppercase tracking-wider text-[10px]">Delivery To:</span>
-            <span className="truncate font-semibold">{locationDisplayText || 'Select Location'}</span>
+        {/* 3. Redesigned Location & Delivery Strip */}
+        <div className="max-w-2xl mx-auto flex flex-col gap-1 px-1">
+          {/* Top Row: Delivery To text */}
+          <div className="flex items-center justify-between text-white/95">
+            <div className="flex items-center gap-1.5 flex-1 min-w-0">
+              <span className="font-semibold text-xs opacity-90">Delivery To:</span>
+              <span className="truncate font-bold text-sm tracking-tight">{locationDisplayText || 'Select Location'}</span>
+            </div>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-white/80 ml-2">
+              <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           </div>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-white/60 ml-2">
-            <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+
+          {/* Bottom Row: Delivery Mode Indicator/Badge */}
+          <div className="flex items-center gap-2">
+            <div className="flex items-center">
+              {deliveryMode === 'quick' ? (
+                <>
+                  <span className="text-white font-black italic text-lg tracking-tighter mr-2">
+                    <span className="text-white/60">⎯ </span>Quick
+                  </span>
+                  <div className="bg-[#e8f5e9] border border-[#2e7d32] px-3 py-1 rounded-lg">
+                    <span className="text-[#1b5e20] text-xs font-bold whitespace-nowrap">Quick Delivery</span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <span className="text-white font-bold text-base tracking-tight mr-2">
+                    Scheduled
+                  </span>
+                  <div className="bg-amber-50 border border-amber-600 px-3 py-1 rounded-lg">
+                    <span className="text-amber-800 text-xs font-bold whitespace-nowrap">Scheduled Delivery</span>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -434,6 +464,11 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
           </div>
         </div>
       </div>
+
+      <LocationModal
+        open={isLocationModalOpen}
+        onOpenChange={setIsLocationModalOpen}
+      />
     </div>
   );
 }

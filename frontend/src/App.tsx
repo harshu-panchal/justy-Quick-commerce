@@ -54,6 +54,7 @@ const FashionStore = lazy(() => import("./modules/user/FashionStore"));
 const ToyStore = lazy(() => import("./modules/user/ToyStore"));
 const HobbyStore = lazy(() => import("./modules/user/HobbyStore"));
 const StorePage = lazy(() => import("./modules/user/StorePage"));
+const OfferPage = lazy(() => import("./modules/user/pages/offers/OfferPage"));
 // Lazy load delivery routes
 const DeliveryLayout = lazy(() => import("./modules/delivery/components/DeliveryLayout"));
 const DeliveryDashboard = lazy(() => import("./modules/delivery/pages/DeliveryDashboard"));
@@ -146,6 +147,7 @@ const AdminPayments = lazy(() => import("./modules/admin/pages/AdminPayments"));
 const AdminWallet = lazy(() => import("./modules/admin/pages/AdminWallet"));
 const AdminBillingSettings = lazy(() => import("./modules/admin/pages/AdminBillingSettings"));
 const AdminComboOffers = lazy(() => import("./modules/admin/pages/AdminComboOffers"));
+const AdminBanners = lazy(() => import("./modules/admin/pages/AdminBanners"));
 
 import { DeliveryModeProvider } from "./context/DeliveryModeContext";
 
@@ -372,6 +374,7 @@ function App() {
                                         <Route path="wallet" element={<AdminWallet />} />
                                         <Route path="billing-settings" element={<AdminBillingSettings />} />
                                         <Route path="combo-offers" element={<AdminComboOffers />} />
+                                        <Route path="banners" element={<AdminBanners />} />
                                       </Routes>
                                     </AdminLayout>
                                   </Suspense>
@@ -408,6 +411,7 @@ function App() {
                                       <Route path="/cart" element={<Cart />} />
                                       <Route path="/addresses" element={<Addresses />} />
                                       <Route path="/store/:slug" element={<StorePage />} />
+                                      <Route path="/offers/:type/:id" element={<OfferPage />} />
                                       <Route path="/store/spiritual" element={<SpiritualStore />} />
                                       <Route path="/store/pharma" element={<PharmaStore />} />
                                       <Route path="/store/e-gifts" element={<EGiftStore />} />

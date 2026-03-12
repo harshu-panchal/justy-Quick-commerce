@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import HomeHero from "./components/HomeHero";
-import HomeHeroCarousel from "./components/HomeHeroCarousel";
+import BannerCarousel from "../../components/banners/BannerCarousel";
 import PromoStrip from "./components/PromoStrip";
 import CategoryTileSection from "./components/CategoryTileSection";
 import ProductCard from "./components/ProductCard";
@@ -208,7 +208,7 @@ export default function Home() {
     <div className="bg-white min-h-screen pb-20 md:pb-0" ref={contentRef}>
       <HomeHero activeTab={activeTab} onTabChange={setActiveTab} />
       <div className="w-full relative z-10 mt-2">
-        <HomeHeroCarousel />
+        <BannerCarousel mode={deliveryMode} />
       </div>
 
       {/* Quick Delivery Section — hidden for universal categories (electronics, beauty, fashion) */}

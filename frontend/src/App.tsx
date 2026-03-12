@@ -146,6 +146,7 @@ const AdminWithdrawals = lazy(() => import("./modules/admin/pages/AdminWithdrawa
 const AdminPayments = lazy(() => import("./modules/admin/pages/AdminPayments"));
 const AdminWallet = lazy(() => import("./modules/admin/pages/AdminWallet"));
 const AdminBillingSettings = lazy(() => import("./modules/admin/pages/AdminBillingSettings"));
+const AdminComboOffers = lazy(() => import("./modules/admin/pages/AdminComboOffers"));
 
 import { DeliveryModeProvider } from "./context/DeliveryModeContext";
 
@@ -372,6 +373,7 @@ function App() {
                                         <Route path="payments" element={<AdminPayments />} />
                                         <Route path="wallet" element={<AdminWallet />} />
                                         <Route path="billing-settings" element={<AdminBillingSettings />} />
+                                        <Route path="combo-offers" element={<AdminComboOffers />} />
                                       </Routes>
                                     </AdminLayout>
                                   </Suspense>

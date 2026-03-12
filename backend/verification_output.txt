@@ -1,0 +1,18 @@
+(node:15648) [MONGOOSE] Warning: Duplicate schema index on {"name":1} found. This is often due to declaring an index using both "index: true" and "schema.index()". Please remove the duplicate index definition.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:15648) [MONGOOSE] Warning: Duplicate schema index on {"slug":1} found. This is often due to declaring an index using both "index: true" and "schema.index()". Please remove the duplicate index definition.
+(node:15648) [MONGOOSE] Warning: Duplicate schema index on {"mobile":1} found. This is often due to declaring an index using both "index: true" and "schema.index()". Please remove the duplicate index definition.
+Connected to DB
+Using seller: 695e0015345299f85ec85f94
+Old Sub ID: 69b281d5759ee918dd2af8aa (Model: SubCategory)
+New Sub ID: 69491ffdd0b55f7c04ad2ca9 (Model: Category)
+
+Verification Results:
+Product: Test Product Old Sub
+SubCategory populated: {"_id":"69b281d5759ee918dd2af8aa","name":"Test Old Sub"}
+✅ Success: Found subcategory name: Test Old Sub
+Product: Test Product New Sub
+SubCategory populated: {"_id":"69491ffdd0b55f7c04ad2ca9","name":"Bridal Lehengas","id":"69491ffdd0b55f7c04ad2ca9"}
+✅ Success: Found subcategory name: Bridal Lehengas
+
+Cleanup done.

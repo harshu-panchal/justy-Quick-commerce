@@ -867,6 +867,12 @@ export const createProduct = asyncHandler(
       productData.publish = true;
       productData.requiresApproval = false;
 
+      // Detect subcategory model
+      if (productData.subcategory) {
+        const isOldSub = await SubCategory.findById(productData.subcategory);
+        productData.subcategoryModel = isOldSub ? "SubCategory" : "Category";
+      }
+
       const product = await Product.create(productData);
 
       // Create inventory record
@@ -1021,6 +1027,12 @@ export const updateProduct = asyncHandler(
   async (req: Request, res: Response) => {
     const { id } = req.params;
     const updateData = req.body;
+
+    // Detect subcategory model if subcategory is being updated
+    if (updateData.subcategory) {
+      const isOldSub = await SubCategory.findById(updateData.subcategory);
+      updateData.subcategoryModel = isOldSub ? "SubCategory" : "Category";
+    }
 
     const product = await Product.findByIdAndUpdate(id, updateData, {
       new: true,
@@ -1188,6 +1200,12 @@ export const bulkImportProducts = asyncHandler(
         productData.status = "Active";
         productData.publish = true;
         productData.requiresApproval = false;
+
+        // Detect subcategory model
+        if (productData.subcategory) {
+          const isOldSub = await SubCategory.findById(productData.subcategory);
+          productData.subcategoryModel = isOldSub ? "SubCategory" : "Category";
+        }
 
         const product = await Product.create(productData);
 

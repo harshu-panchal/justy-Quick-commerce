@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import Product from "../../../models/Product";
+import SubCategory from "../../../models/SubCategory";
 import Shop from "../../../models/Shop";
 import { asyncHandler } from "../../../utils/asyncHandler";
 import { cache } from "../../../utils/cache";
@@ -11,6 +12,7 @@ export const createProduct = asyncHandler(
   async (req: Request, res: Response) => {
     const sellerId = (req as any).user.userId;
     const productData = req.body;
+    console.log("DEBUG: createProduct received body:", JSON.stringify(productData, null, 2));
 
     // Ensure sellerId matches authenticated seller
     if (productData.sellerId && productData.sellerId !== sellerId) {
@@ -27,6 +29,7 @@ export const createProduct = asyncHandler(
       headerCategoryId: productData.headerCategoryId, // Map headerCategoryId
       category: productData.categoryId, // Map categoryId to category
       subcategory: productData.subcategoryId,
+      subcategoryModel: "SubCategory", // Default
       brand: productData.brandId,
       mainImage: productData.mainImageUrl, // Map mainImageUrl to mainImage
       galleryImages: productData.galleryImageUrls,
@@ -70,7 +73,21 @@ export const createProduct = asyncHandler(
     // 5. Clean up undefined fields
     if (!newProductData.headerCategoryId)
       delete newProductData.headerCategoryId;
-    if (!newProductData.subcategory) delete newProductData.subcategory;
+    if (!newProductData.subcategory) {
+      delete newProductData.subcategory;
+      delete newProductData.subcategoryModel;
+    } else {
+      // Check if this is an old-style subcategory (in SubCategory collection)
+      const isOldSub = await SubCategory.findById(newProductData.subcategory);
+      if (!isOldSub) {
+        // Must be a new-style subcategory (in Category collection)
+        newProductData.subcategoryModel = "Category";
+      }
+    }
+    console.log("DEBUG: newProductData before save:", JSON.stringify({
+      subcategory: newProductData.subcategory,
+      subcategoryModel: newProductData.subcategoryModel
+    }, null, 2));
     if (!newProductData.brand) delete newProductData.brand;
 
     // Handle Tax: Frontend sends taxId, Model expects 'tax' (string) or something else?
@@ -236,7 +253,7 @@ export const getProductById = asyncHandler(
 
     const product = await Product.findOne({ _id: id, seller: sellerId })
       .populate("category", "name")
-      .populate("subcategory", "subcategoryName")
+      .populate("subcategory", "name")
       .populate("headerCategoryId", "name slug")
       .populate("brand", "name")
       .populate("tax", "name rate");
@@ -282,6 +299,9 @@ export const updateProduct = asyncHandler(
     }
     if (updateData.subcategoryId) {
       updateData.subcategory = updateData.subcategoryId;
+      // Check if this is an old-style subcategory (in SubCategory collection)
+      const isOldSub = await SubCategory.findById(updateData.subcategory);
+      updateData.subcategoryModel = isOldSub ? "SubCategory" : "Category";
       delete updateData.subcategoryId;
     }
     if (updateData.brandId) {
@@ -384,7 +404,7 @@ export const updateProduct = asyncHandler(
     // Re-populate for response
     const populatedProduct = await Product.findById(product._id)
       .populate("category", "name")
-      .populate("subcategory", "subcategoryName")
+      .populate("subcategory", "name")
       .populate("headerCategoryId", "name slug")
       .populate("brand", "name")
       .populate("tax", "name rate");

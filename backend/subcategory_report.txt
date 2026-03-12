@@ -1,0 +1,65 @@
+Total Products: 96
+With Subcategory: 91
+Without Subcategory: 5
+
+Recent 10 Products Details:
+- Name: white bread
+  ID: 69b2835da8decb2ef98e663f
+  Sub: 69b282eca8decb2ef98e625e
+  Model: UNDEFINED
+  Created: Thu Mar 12 2026 14:41:57 GMT+0530 (India Standard Time)
+-------------------
+- Name: fries
+  ID: 69b27e2da8decb2ef98e4e4f
+  Sub: 69b1545b64b2b9715d4d1ba4
+  Model: UNDEFINED
+  Created: Thu Mar 12 2026 14:19:49 GMT+0530 (India Standard Time)
+-------------------
+- Name: Burger
+  ID: 69b24f933b9184f99b1a7653
+  Sub: 69affa1689cb4cf8fca1daab
+  Model: UNDEFINED
+  Created: Thu Mar 12 2026 11:00:59 GMT+0530 (India Standard Time)
+-------------------
+- Name: kurkure
+  ID: 69b24f0c3b9184f99b1a6f63
+  Sub: 69b1545b64b2b9715d4d1ba4
+  Model: UNDEFINED
+  Created: Thu Mar 12 2026 10:58:44 GMT+0530 (India Standard Time)
+-------------------
+- Name: Basmati Rice
+  ID: 69b24d043b9184f99b1a6adc
+  Sub: 69b1545b64b2b9715d4d1ba4
+  Model: UNDEFINED
+  Created: Thu Mar 12 2026 10:50:04 GMT+0530 (India Standard Time)
+-------------------
+- Name: fries
+  ID: 69b14eb464b2b9715d4d128f
+  Sub: 69b14e3464b2b9715d4d0f13
+  Model: UNDEFINED
+  Created: Wed Mar 11 2026 16:45:00 GMT+0530 (India Standard Time)
+-------------------
+- Name: Burger
+  ID: 69b146c064b2b9715d4d030e
+  Sub: NULL
+  Model: UNDEFINED
+  Created: Wed Mar 11 2026 16:11:04 GMT+0530 (India Standard Time)
+-------------------
+- Name: French fries
+  ID: 69b144b764b2b9715d4cf4f2
+  Sub: NULL
+  Model: UNDEFINED
+  Created: Wed Mar 11 2026 16:02:23 GMT+0530 (India Standard Time)
+-------------------
+- Name: boat earbuds
+  ID: 69b11c76f3370533c201faab
+  Sub: 69afddd58a78933d6729d07a
+  Model: UNDEFINED
+  Created: Wed Mar 11 2026 13:10:38 GMT+0530 (India Standard Time)
+-------------------
+- Name: brown forest
+  ID: 69affd2b2ace0497296cc45b
+  Sub: 69affa582ace0497296cbb7a
+  Model: UNDEFINED
+  Created: Tue Mar 10 2026 16:44:51 GMT+0530 (India Standard Time)
+-------------------

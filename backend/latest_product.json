@@ -1,0 +1,40 @@
+{
+  "_id": "69b2835da8decb2ef98e663f",
+  "productName": "white bread",
+  "category": "69b1543564b2b9715d4d1999",
+  "subcategory": "69b282eca8decb2ef98e625e",
+  "headerCategoryId": "698ae36bd1dd070a1028685e",
+  "brand": "6943fcd1123aa11115751452",
+  "seller": "695cbdc15cd5cbace1782a0e",
+  "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1773306716/dhakadsnazzy/products/ngaq7ddejgpy99waxwzz.webp",
+  "galleryImages": [],
+  "price": 200,
+  "discPrice": 0,
+  "stock": 17,
+  "variations": [
+    {
+      "name": "Variation",
+      "value": "100",
+      "price": 200,
+      "discPrice": 0,
+      "stock": 17,
+      "status": "Available",
+      "_id": "69b2835da8decb2ef98e6640"
+    }
+  ],
+  "publish": false,
+  "popular": true,
+  "dealOfDay": false,
+  "status": "Pending",
+  "totalAllowedQuantity": 10,
+  "isReturnable": false,
+  "rating": 0,
+  "reviewsCount": 0,
+  "discount": 0,
+  "tags": [],
+  "requiresApproval": true,
+  "isShopByStoreOnly": false,
+  "createdAt": "2026-03-12T09:11:57.212Z",
+  "updatedAt": "2026-03-12T09:11:57.212Z",
+  "__v": 0
+}

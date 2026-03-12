@@ -9,6 +9,7 @@ export interface IProduct extends Document {
   // Categorization
   category: mongoose.Types.ObjectId;
   subcategory?: mongoose.Types.ObjectId;
+  subcategoryModel: "SubCategory" | "Category";
   subSubCategory?: mongoose.Types.ObjectId;
   headerCategoryId?: mongoose.Types.ObjectId;
   brand?: mongoose.Types.ObjectId;
@@ -125,7 +126,13 @@ const ProductSchema = new Schema<IProduct>(
     },
     subcategory: {
       type: Schema.Types.ObjectId,
-      ref: "SubCategory",
+      refPath: "subcategoryModel",
+    },
+    subcategoryModel: {
+      type: String,
+      required: true,
+      enum: ["SubCategory", "Category"],
+      default: "SubCategory",
     },
     subSubCategory: {
       type: Schema.Types.ObjectId,

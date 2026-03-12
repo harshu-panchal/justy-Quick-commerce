@@ -11,7 +11,11 @@ export const getPincodeDemands = async (req: Request, res: Response) => {
     const skip = (page - 1) * limit;
 
     const demands = await PincodeDemand.find()
-      .sort({ requestCount: -1, lastRequested: -1 })
+      .populate('userId', 'name email phone avatar')
+      .populate('productId', 'productName mainImage price')
+      .populate('sellerId', 'storeName city email phone')
+      .populate('headerCategoryId', 'name slug')
+      .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
 

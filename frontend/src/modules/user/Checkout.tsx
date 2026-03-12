@@ -53,7 +53,7 @@ export default function Checkout() {
   const { addOrder } = useOrders();
   const { location: userLocation } = useLocationContext();
   const { showToast: showGlobalToast } = useToast();
-  const { user, updateUser } = useAuth();
+  const { isAuthenticated, user, updateUser } = useAuth();
   const navigate = useNavigate();
   const [tipAmount, setTipAmount] = useState<number | null>(null);
   const [customTipAmount, setCustomTipAmount] = useState<number>(0);
@@ -117,6 +117,13 @@ export default function Checkout() {
   // Check if user has placeholder data (needs profile completion)
   const isPlaceholderUser =
     user?.name === "User" || user?.email?.endsWith("@dhakadsnazzy.temp");
+
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate("/login");
+    }
+  }, [isAuthenticated, navigate]);
 
   // Redirect if empty
   useEffect(() => {

@@ -550,21 +550,33 @@ export const createOrder = async (req: Request, res: Response) => {
 
             // Enforce pincode matching for quick delivery orders
             if (deliveryType === 'instant' && newOrder.deliveryAddress.pincode !== sellerPincode) {
-                // Record demand for the unserviceable pincode
-                if (session) {
-                    await PincodeDemand.findOneAndUpdate(
-                        { pincode: newOrder.deliveryAddress.pincode },
-                        { $inc: { requestCount: 1 }, lastRequested: new Date() },
-                        { upsert: true, session }
-                    );
-                    await session.abortTransaction();
-                } else {
-                    await PincodeDemand.findOneAndUpdate(
-                        { pincode: newOrder.deliveryAddress.pincode },
-                        { $inc: { requestCount: 1 }, lastRequested: new Date() },
-                        { upsert: true }
-                    );
+                // Record demand for the unserviceable pincode with details
+                try {
+                    const firstItem = items[0];
+                    const firstProduct = productsInOrder.find(p => p._id.toString() === firstItem.product.id);
+                    
+                    const demandData = {
+                        pincode: newOrder.deliveryAddress.pincode,
+                        userId: userId,
+                        productId: firstItem.product.id,
+                        sellerId: firstSellerId,
+                        headerCategoryId: firstProduct?.headerCategoryId,
+                        address: newOrder.deliveryAddress.address || address.address || address.street || 'N/A'
+                    };
+
+                    const newDemand = new PincodeDemand(demandData);
+                    if (session) {
+                        await newDemand.save({ session });
+                        await session.abortTransaction();
+                    } else {
+                        await newDemand.save();
+                    }
+                } catch (demandError) {
+                    console.error("Error recording pincode demand:", demandError);
+                    // Still return the unserviceable error even if recording fails
+                    if (session) await session.abortTransaction();
                 }
+
                 return res.status(403).json({
                     success: false,
                     message: `Quick delivery is not currently available for your pincode (${newOrder.deliveryAddress.pincode}). We've recorded your demand and are working on expanding our service area!`,

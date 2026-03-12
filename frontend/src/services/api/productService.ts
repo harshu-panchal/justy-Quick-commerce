@@ -61,6 +61,7 @@ export interface Product {
   categoryId?: string;
   subcategoryId?: string;
   brandId?: string;
+  taxId?: string;
   status?: string;
   rejectionReason?: string;
   taxId?: string; // Added for compatibility

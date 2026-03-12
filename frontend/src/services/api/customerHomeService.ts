@@ -7,6 +7,7 @@ export interface HomeContentResponse {
     bestsellers: any[];
     lowestPrices?: any[];
     categories: any[];
+    homeSections: any[];
     shops: any[];
     promoBanners: any[];
     trending: any[];

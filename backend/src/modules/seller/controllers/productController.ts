@@ -77,10 +77,16 @@ export const createProduct = asyncHandler(
       delete newProductData.subcategory;
       delete newProductData.subcategoryModel;
     } else {
-      // Check if this is an old-style subcategory (in SubCategory collection)
-      const isOldSub = await SubCategory.findById(newProductData.subcategory);
-      if (!isOldSub) {
-        // Must be a new-style subcategory (in Category collection)
+      // Determine which collection the subcategory belongs to
+      // First check old SubCategory collection
+      const isOldSub = await SubCategory.findById(newProductData.subcategory).lean();
+      if (isOldSub) {
+        // Old-style: stored in SubCategory collection
+        newProductData.subcategoryModel = "SubCategory";
+      } else {
+        // New-style: stored in Category collection (has parentId)
+        // We set "Category" regardless — if the ID doesn't exist, it's a dangling ref
+        // but at least the model field is correct
         newProductData.subcategoryModel = "Category";
       }
     }
@@ -299,8 +305,8 @@ export const updateProduct = asyncHandler(
     }
     if (updateData.subcategoryId) {
       updateData.subcategory = updateData.subcategoryId;
-      // Check if this is an old-style subcategory (in SubCategory collection)
-      const isOldSub = await SubCategory.findById(updateData.subcategory);
+      // Determine which collection the subcategory belongs to
+      const isOldSub = await SubCategory.findById(updateData.subcategory).lean();
       updateData.subcategoryModel = isOldSub ? "SubCategory" : "Category";
       delete updateData.subcategoryId;
     }

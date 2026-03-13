@@ -168,15 +168,29 @@ async function fetchSectionData(
       const products = await Product.find(query)
         .sort({ createdAt: -1 }) // Show newest items first
         .limit(limit || 8)
-        .select("productName mainImage price mrp discount rating reviewsCount pack seller variations")
+        .select("productName mainImage price mrp discount rating reviewsCount pack seller variations headerCategoryId category subcategory")
+        .populate("headerCategoryId")
+        .populate({
+          path: "category",
+          populate: { path: "headerCategoryId" }
+        })
+        .populate({
+          path: "subcategory",
+          populate: { path: "headerCategoryId" }
+        })
         .lean();
 
       return products.map((p: any) => {
         // Check if the product's seller is within range
         const sellerId = p.seller?._id || p.seller;
-        const isAvailable = nearbySellerIds && nearbySellerIds.length > 0 && sellerId
+        const isProdScheduled = 
+          (p.headerCategoryId as any)?.deliveryType === "scheduled" ||
+          (p.category as any)?.headerCategoryId?.deliveryType === "scheduled" ||
+          (p.subcategory as any)?.headerCategoryId?.deliveryType === "scheduled";
+          
+        const isAvailable = isProdScheduled || (nearbySellerIds && nearbySellerIds.length > 0 && sellerId
           ? nearbySellerIds.some(id => id.toString() === sellerId.toString())
-          : false;
+          : false);
 
         return {
           id: p._id.toString(),
@@ -341,6 +355,20 @@ export const getHomeContent = async (req: Request, res: Response) => {
           // Removed location filter to show preview images irrespective of radius
         },
       })
+      .populate({
+        path: "product",
+        populate: [
+          { path: "headerCategoryId" },
+          { 
+            path: "category",
+            populate: { path: "headerCategoryId" }
+          },
+          {
+            path: "subcategory",
+            populate: { path: "headerCategoryId" }
+          }
+        ]
+      })
       .sort({ order: 1 })
       .lean();
 
@@ -351,9 +379,14 @@ export const getHomeContent = async (req: Request, res: Response) => {
         const product = item.product;
         // Check if the product's seller is within range
         const sellerId = product.seller?._id || product.seller;
-        const isAvailable = nearbySellerIds && nearbySellerIds.length > 0 && sellerId
+        const isProdScheduled = 
+          (product.headerCategoryId as any)?.deliveryType === "scheduled" ||
+          (product.category as any)?.headerCategoryId?.deliveryType === "scheduled" ||
+          (product.subcategory as any)?.headerCategoryId?.deliveryType === "scheduled";
+
+        const isAvailable = isProdScheduled || (nearbySellerIds && nearbySellerIds.length > 0 && sellerId
           ? nearbySellerIds.some(id => id.toString() === sellerId.toString())
-          : false;
+          : false);
 
         return {
           id: product._id.toString(),
@@ -854,65 +887,55 @@ export const getStoreProducts = async (req: Request, res: Response) => {
 
     console.log(`[getStoreProducts] User location: lat=${userLat}, lng=${userLng}`);
 
+    let nearbySellerIds: mongoose.Types.ObjectId[] = [];
     if (userLat && userLng && !isNaN(userLat) && !isNaN(userLng)) {
-      const nearbySellerIds = await findSellersWithinRange(userLat, userLng);
+      nearbySellerIds = await findSellersWithinRange(userLat, userLng);
       console.log(`[getStoreProducts] Found ${nearbySellerIds.length} sellers within range`);
-
-      if (nearbySellerIds.length === 0) {
-        // No sellers within range, return shop data but empty products
-        console.log(`[getStoreProducts] No sellers in range, returning empty products`);
-        return res.status(200).json({
-          success: true,
-          data: [],
-          shop: shopData,
-          pagination: {
-            page: 1,
-            limit: 50,
-            total: 0,
-            pages: 0,
-          },
-          message: "No sellers available in your area. Please update your location.",
-        });
-      }
-
-      // Filter products by sellers within range
-      query.seller = { $in: nearbySellerIds };
-      console.log(`[getStoreProducts] Added seller filter to query`);
-    } else {
-      // If no location provided, return empty (require location for marketplace)
-      console.log(`[getStoreProducts] No location provided, returning empty products`);
-      return res.status(200).json({
-        success: true,
-        data: [],
-        shop: shopData,
-        pagination: {
-          page: 1,
-          limit: 50,
-          total: 0,
-          pages: 0,
-        },
-        message: "Location is required to view products. Please enable location access.",
-      });
     }
 
-    console.log(`[getStoreProducts] Final query:`, JSON.stringify(query, null, 2));
+    // Build the products query results
+    const fetchAndFilterProducts = async () => {
+      const allProducts = await Product.find(query)
+        .populate("headerCategoryId")
+        .populate({
+          path: "category",
+          populate: { path: "headerCategoryId" }
+        })
+        .populate("seller", "storeName location")
+        .populate({
+          path: "subcategory",
+          populate: { path: "headerCategoryId" }
+        })
+        .populate("brand", "name")
+        .sort({ createdAt: -1 })
+        .limit(50)
+        .lean();
 
-    const products = await Product.find(query)
-      .populate("category", "name icon image")
-      .populate("subcategory", "name")
-      .populate("brand", "name")
-      .populate("seller", "storeName")
-      .sort({ createdAt: -1 })
-      .limit(50)
-      .lean({ virtuals: true });
+      return allProducts.map(p => {
+        const sellerId = (p.seller as any)?._id || p.seller;
+        const isProdScheduled = 
+          (p.headerCategoryId as any)?.deliveryType === "scheduled" ||
+          (p.category as any)?.headerCategoryId?.deliveryType === "scheduled" ||
+          (p.subcategory as any)?.headerCategoryId?.deliveryType === "scheduled";
 
-    const total = await Product.countDocuments(query);
+        const isAvailable = isProdScheduled || (nearbySellerIds.length > 0 && sellerId
+          ? nearbySellerIds.some(id => id.toString() === sellerId.toString())
+          : false);
 
-    console.log(`[getStoreProducts] Found ${total} products matching query, returning ${products.length}`);
+        return {
+          ...p,
+          id: p._id.toString(),
+          isAvailable
+        };
+      }).filter(p => p.isAvailable); // Only show available products
+    };
+
+    const finalProducts = await fetchAndFilterProducts();
+    const total = finalProducts.length;
 
     return res.status(200).json({
       success: true,
-      data: products.map(p => ({ ...p, isAvailable: true })),
+      data: finalProducts,
       shop: shopData,
       pagination: {
         page: 1,

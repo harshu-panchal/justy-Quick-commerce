@@ -48,6 +48,20 @@ export default function AdminProductEdit() {
       if (response.success) {
         setProduct(response.data);
         setManagedProduct(response.data);
+
+        // Immediately load subcategories for the product's category
+        // This ensures the subcategory dropdown is populated on first load
+        const productData = response.data;
+        const categoryId =
+          typeof productData.category === "string"
+            ? productData.category
+            : (productData.category as any)?._id;
+
+        if (categoryId) {
+          getSubCategories({ category: categoryId }).then((res) => {
+            if (res.success) setSubcategories(res.data);
+          });
+        }
       } else {
         showToast("Failed to load product", "error");
       }
@@ -74,14 +88,16 @@ export default function AdminProductEdit() {
     }
   };
 
+  // Reload subcategories whenever admin changes the Main Category dropdown
   useEffect(() => {
     if (managedProduct.category) {
-      const categoryId = typeof managedProduct.category === "string" 
-        ? managedProduct.category 
-        : (managedProduct.category as any)._id;
-      
+      const categoryId =
+        typeof managedProduct.category === "string"
+          ? managedProduct.category
+          : (managedProduct.category as any)?._id;
+
       if (categoryId) {
-        getSubCategories({ category: categoryId }).then(res => {
+        getSubCategories({ category: categoryId }).then((res) => {
           if (res.success) setSubcategories(res.data);
         });
       }
@@ -456,14 +472,29 @@ export default function AdminProductEdit() {
                   <select 
                     name="subcategory"
                     value={typeof managedProduct.subcategory === "string" ? managedProduct.subcategory : (managedProduct.subcategory as any)?._id || ""}
-                    onChange={handleInputChange}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setManagedProduct(prev => ({ ...prev, subcategory: val || undefined }));
+                    }}
                     className="w-full bg-neutral-50 border-none rounded py-2 text-sm focus:ring-1 focus:ring-teal-500"
                   >
                     <option value="">Select Subcategory</option>
-                    {subcategories.map(sc => (
-                      <option key={sc._id} value={sc._id}>{sc.name}</option>
+                    {subcategories.map((sc: any) => (
+                      <option key={sc._id} value={sc._id}>
+                        {/* Support both old SubCategory (name) and new Category-based subcategory (subcategoryName or name) */}
+                        {sc.subcategoryName || sc.name || "Unknown"}
+                      </option>
                     ))}
                   </select>
+                  {/* Show currently saved subcategory name if list is still loading */}
+                  {subcategories.length === 0 && managedProduct.subcategory && (
+                    <p className="text-xs text-amber-600 mt-1">
+                      Saved: {typeof managedProduct.subcategory === "object" 
+                        ? (managedProduct.subcategory as any)?.name 
+                        : "(loading subcategory list...)"
+                      }
+                    </p>
+                  )}
                 </div>
               </div>
             </div>

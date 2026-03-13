@@ -8,6 +8,7 @@ import mongoose from 'mongoose';
 import AppSettings from '../../../models/AppSettings';
 import { getRoadDistances } from '../../../services/mapService';
 import Seller from '../../../models/Seller';
+import HeaderCategory from '../../../models/HeaderCategory';
 
 // Helper to calculate item price matching frontend logic
 const calculateItemPrice = (product: any, variationSelector: any) => {
@@ -43,16 +44,36 @@ const calculateItemPrice = (product: any, variationSelector: any) => {
 const calculateCartTotal = async (cartId: any, nearbySellerIds: mongoose.Types.ObjectId[] = []) => {
     const items = await CartItem.find({ cart: cartId }).populate({
         path: 'product',
-        select: 'price discPrice variations seller status publish productName'
+        select: 'price discPrice variations seller status publish productName headerCategoryId category subcategory',
+        populate: [
+            { path: 'headerCategoryId', select: 'deliveryType' },
+            {
+                path: 'category',
+                select: 'headerCategoryId',
+                populate: { path: 'headerCategoryId', select: 'deliveryType' }
+            },
+            {
+                path: 'subcategory',
+                select: 'headerCategoryId',
+                populate: { path: 'headerCategoryId', select: 'deliveryType' }
+            }
+        ]
     });
 
     let total = 0;
+    const hasLocation = nearbySellerIds.length > 0;
+
     for (const item of items) {
         const product = item.product as any;
         if (product && product.status === 'Active' && product.publish) {
-            // Check if seller is in range
-            const isAvailable = nearbySellerIds.some(id => id.toString() === product.seller.toString());
-            if (isAvailable) {
+            const isScheduled =
+                product.headerCategoryId?.deliveryType === 'scheduled' ||
+                (product.category as any)?.headerCategoryId?.deliveryType === 'scheduled' ||
+                (product.subcategory as any)?.headerCategoryId?.deliveryType === 'scheduled';
+
+            const isNearby = hasLocation ? nearbySellerIds.some(id => id.toString() === product.seller.toString()) : false;
+
+            if (isScheduled || isNearby) {
                 const price = calculateItemPrice(product, item.variation);
                 total += price * item.quantity;
             }
@@ -144,26 +165,43 @@ export const getCart = async (req: Request, res: Response) => {
         const userId = req.user?.userId;
         const { latitude, longitude } = req.query;
 
-        // Parse location
         const userLat = latitude ? parseFloat(latitude as string) : null;
         const userLng = longitude ? parseFloat(longitude as string) : null;
 
-        // Strictly enforce location
-        if (userLat === null || userLng === null || isNaN(userLat) || isNaN(userLng)) {
-            return res.status(200).json({
-                success: true,
-                message: 'Location required to view available items',
-                data: { items: [], total: 0 }
-            });
+        let nearbySellerIds: mongoose.Types.ObjectId[] = [];
+        const hasLocation = userLat !== null && userLng !== null && !isNaN(userLat) && !isNaN(userLng);
+        
+        if (hasLocation) {
+            nearbySellerIds = await findSellersWithinRange(userLat!, userLng!);
         }
-
-        const nearbySellerIds = await findSellersWithinRange(userLat, userLng);
 
         let cart = await Cart.findOne({ customer: userId }).populate({
             path: 'items',
             populate: {
                 path: 'product',
-                select: 'productName price mainImage stock pack mrp category seller status publish discPrice variations'
+                select: 'productName price mainImage stock pack mrp category seller status publish discPrice variations headerCategoryId',
+                populate: [
+                    {
+                        path: 'headerCategoryId',
+                        select: 'deliveryType'
+                    },
+                    {
+                        path: 'category',
+                        select: 'headerCategoryId',
+                        populate: {
+                            path: 'headerCategoryId',
+                            select: 'deliveryType'
+                        }
+                    },
+                    {
+                        path: 'subcategory',
+                        select: 'headerCategoryId',
+                        populate: {
+                            path: 'headerCategoryId',
+                            select: 'deliveryType'
+                        }
+                    }
+                ]
             }
         });
 
@@ -179,8 +217,14 @@ export const getCart = async (req: Request, res: Response) => {
         for (const item of (cart.items as any)) {
             const product = item.product;
             if (product && product.status === 'Active' && product.publish) {
-                const isAvailable = nearbySellerIds.some(id => id.toString() === product.seller.toString());
-                if (isAvailable) {
+                const isScheduled =
+                    product.headerCategoryId?.deliveryType === 'scheduled' ||
+                    (product.category as any)?.headerCategoryId?.deliveryType === 'scheduled' ||
+                    (product.subcategory as any)?.headerCategoryId?.deliveryType === 'scheduled';
+
+                const isNearby = hasLocation ? nearbySellerIds.some(id => id.toString() === product.seller.toString()) : false;
+
+                if (isScheduled || isNearby) {
                     filteredItems.push(item);
                     const price = calculateItemPrice(product, item.variation);
                     total += price * item.quantity;
@@ -231,17 +275,50 @@ export const addToCart = async (req: Request, res: Response) => {
         const userLat = latitude ? parseFloat(latitude as string) : null;
         const userLng = longitude ? parseFloat(longitude as string) : null;
 
-        if (userLat === null || userLng === null || isNaN(userLat) || isNaN(userLng)) {
-            return res.status(400).json({
-                success: false,
-                message: 'Location is required to add items to cart'
+        // Verify product exists
+        const product = await Product.findOne({ _id: productId, status: 'Active', publish: true })
+            .populate('seller')
+            .populate('headerCategoryId')
+            .populate({
+                path: 'category',
+                populate: { path: 'headerCategoryId' }
+            })
+            .populate({
+                path: 'subcategory',
+                populate: { path: 'headerCategoryId' }
             });
-        }
 
-        // Verify product exists and is available at location
-        const product = await Product.findOne({ _id: productId, status: 'Active', publish: true }).populate('seller');
         if (!product) {
             return res.status(404).json({ success: false, message: 'Product not found or unavailable' });
+        }
+
+        const isScheduled =
+            (product.headerCategoryId as any)?.deliveryType === 'scheduled' ||
+            (product.category as any)?.headerCategoryId?.deliveryType === 'scheduled' ||
+            (product.subcategory as any)?.headerCategoryId?.deliveryType === 'scheduled';
+
+        let nearbySellerIds: mongoose.Types.ObjectId[] = [];
+        if (userLat && userLng && !isNaN(userLat) && !isNaN(userLng)) {
+            nearbySellerIds = await findSellersWithinRange(userLat, userLng);
+        }
+
+        // Location check - only for Quick Delivery
+        if (!isScheduled) {
+            if (userLat === null || userLng === null || isNaN(userLat) || isNaN(userLng)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Location is required to add items to cart'
+                });
+            }
+
+            const isNearby = nearbySellerIds.some(id => id.toString() === ((product.seller as any)._id || product.seller).toString());
+
+            if (!isNearby) {
+                return res.status(403).json({
+                    success: false,
+                    message: 'This product is not available in your current location'
+                });
+            }
         }
 
         // Check if seller's shop is open
@@ -250,16 +327,6 @@ export const addToCart = async (req: Request, res: Response) => {
             return res.status(400).json({
                 success: false,
                 message: 'Seller is not available at this moment'
-            });
-        }
-
-        const nearbySellerIds = await findSellersWithinRange(userLat, userLng);
-        const isAvailable = nearbySellerIds.some(id => id.toString() === (seller._id || seller).toString());
-
-        if (!isAvailable) {
-            return res.status(403).json({
-                success: false,
-                message: 'This product is not available in your current location'
             });
         }
 
@@ -291,7 +358,7 @@ export const addToCart = async (req: Request, res: Response) => {
             cart.items.push(cartItem._id as any);
         }
 
-        // Update total with location filtering
+        // Update total (helper is now aware of scheduled products)
         cart.total = await calculateCartTotal(cart._id, nearbySellerIds);
         await cart.save();
 
@@ -300,13 +367,32 @@ export const addToCart = async (req: Request, res: Response) => {
             path: 'items',
             populate: {
                 path: 'product',
-                select: 'productName price mainImage stock pack mrp category seller status publish discPrice variations'
+                select: 'productName price mainImage stock pack mrp category seller status publish discPrice variations headerCategoryId',
+                populate: [
+                    {
+                        path: 'headerCategoryId',
+                        select: 'deliveryType'
+                    },
+                    {
+                        path: 'category',
+                        select: 'headerCategoryId',
+                        populate: {
+                            path: 'headerCategoryId',
+                            select: 'deliveryType'
+                        }
+                    }
+                ]
             }
         });
 
         const filteredItems = (updatedCart?.items as any[] || []).filter(item => {
             const prod = item.product;
-            return prod && nearbySellerIds.some(id => id.toString() === prod.seller.toString());
+            if (!prod) return false;
+            const isProdScheduled =
+                prod.headerCategoryId?.deliveryType === 'scheduled' ||
+                (prod.category as any)?.headerCategoryId?.deliveryType === 'scheduled';
+            const isProdNearby = nearbySellerIds.some(id => id.toString() === prod.seller.toString());
+            return isProdScheduled || isProdNearby;
         });
 
         // Calculate fees
@@ -347,30 +433,48 @@ export const updateCartItem = async (req: Request, res: Response) => {
         const userLat = latitude ? parseFloat(latitude as string) : null;
         const userLng = longitude ? parseFloat(longitude as string) : null;
 
-        if (userLat === null || userLng === null || isNaN(userLat) || isNaN(userLng)) {
-            return res.status(400).json({
-                success: false,
-                message: 'Location is required to update cart'
-            });
+        let nearbySellerIds: mongoose.Types.ObjectId[] = [];
+        const hasLocation = userLat !== null && userLng !== null && !isNaN(userLat) && !isNaN(userLng);
+        
+        if (hasLocation) {
+            nearbySellerIds = await findSellersWithinRange(userLat!, userLng!);
         }
-
-        const nearbySellerIds = await findSellersWithinRange(userLat, userLng);
 
         const cart = await Cart.findOne({ customer: userId });
         if (!cart) {
             return res.status(404).json({ success: false, message: 'Cart not found' });
         }
 
-        const cartItem = await CartItem.findOne({ _id: itemId, cart: cart._id }).populate('product');
+        const cartItem = await CartItem.findOne({ _id: itemId, cart: cart._id }).populate({
+            path: 'product',
+            populate: [
+                { path: 'headerCategoryId', select: 'deliveryType' },
+                {
+                    path: 'category',
+                    select: 'headerCategoryId',
+                    populate: { path: 'headerCategoryId', select: 'deliveryType' }
+                },
+                {
+                    path: 'subcategory',
+                    select: 'headerCategoryId',
+                    populate: { path: 'headerCategoryId', select: 'deliveryType' }
+                }
+            ]
+        });
         if (!cartItem) {
             return res.status(404).json({ success: false, message: 'Item not found in cart' });
         }
 
-        // Verify item is still available at location
+        // Verify item availability
         const product = cartItem.product as any;
-        const isAvailable = product && nearbySellerIds.some(id => id.toString() === product.seller.toString());
+        const isScheduled =
+            product?.headerCategoryId?.deliveryType === 'scheduled' ||
+            (product?.category as any)?.headerCategoryId?.deliveryType === 'scheduled' ||
+            (product?.subcategory as any)?.headerCategoryId?.deliveryType === 'scheduled';
 
-        if (!isAvailable) {
+        const isNearby = hasLocation && product && nearbySellerIds.some(id => id.toString() === product.seller.toString());
+
+        if (!isScheduled && !isNearby) {
             return res.status(403).json({
                 success: false,
                 message: 'This item is no longer available in your location'
@@ -387,13 +491,41 @@ export const updateCartItem = async (req: Request, res: Response) => {
             path: 'items',
             populate: {
                 path: 'product',
-                select: 'productName price mainImage stock pack mrp category seller status publish discPrice variations'
+                select: 'productName price mainImage stock pack mrp category seller status publish discPrice variations headerCategoryId',
+                populate: [
+                    {
+                        path: 'headerCategoryId',
+                        select: 'deliveryType'
+                    },
+                    {
+                        path: 'category',
+                        select: 'headerCategoryId',
+                        populate: {
+                            path: 'headerCategoryId',
+                            select: 'deliveryType'
+                        }
+                    },
+                    {
+                        path: 'subcategory',
+                        select: 'headerCategoryId',
+                        populate: {
+                            path: 'headerCategoryId',
+                            select: 'deliveryType'
+                        }
+                    }
+                ]
             }
         });
 
         const filteredItems = (updatedCart?.items as any[] || []).filter(item => {
             const prod = item.product;
-            return prod && nearbySellerIds.some(id => id.toString() === prod.seller.toString());
+            if (!prod) return false;
+            const isProdScheduled =
+                prod.headerCategoryId?.deliveryType === 'scheduled' ||
+                (prod.category as any)?.headerCategoryId?.deliveryType === 'scheduled' ||
+                (prod.subcategory as any)?.headerCategoryId?.deliveryType === 'scheduled';
+            const isProdNearby = hasLocation ? nearbySellerIds.some(id => id.toString() === prod.seller.toString()) : false;
+            return isProdScheduled || isProdNearby;
         });
 
         // Calculate fees
@@ -452,16 +584,24 @@ export const removeFromCart = async (req: Request, res: Response) => {
             path: 'items',
             populate: {
                 path: 'product',
-                select: 'productName price mainImage stock pack mrp category seller status publish discPrice variations'
+                select: 'productName price mainImage stock pack mrp category seller status publish discPrice variations headerCategoryId',
+                populate: {
+                    path: 'headerCategoryId',
+                    select: 'deliveryType'
+                }
             }
         });
 
         const filteredItems = (updatedCart?.items as any[] || []).filter(item => {
             const prod = item.product;
-            if (nearbySellerIds.length > 0) {
-                return prod && nearbySellerIds.some(id => id.toString() === prod.seller.toString());
-            }
-            return true; // If no location provided for removal, just return all (though getCart will filter)
+            if (!prod) return false;
+            const isProdScheduled =
+                prod.headerCategoryId?.deliveryType === 'scheduled' ||
+                (prod.category as any)?.headerCategoryId?.deliveryType === 'scheduled' ||
+                (prod.subcategory as any)?.headerCategoryId?.deliveryType === 'scheduled';
+
+            const isProdNearby = hasLocation ? nearbySellerIds.some(id => id.toString() === prod.seller.toString()) : false;
+            return isProdScheduled || isProdNearby;
         });
 
         // Calculate fees

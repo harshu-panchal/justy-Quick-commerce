@@ -6,6 +6,7 @@ import {
     requestWithdrawal,
     getWithdrawals,
     getCommissions,
+    getWalletHistory,
 } from '../modules/seller/controllers/sellerWalletController';
 
 const router = Router();
@@ -18,6 +19,9 @@ router.get('/balance', getBalance);
 
 // Wallet transactions
 router.get('/transactions', getTransactions);
+
+// Wallet history (including penalties)
+router.get('/history', getWalletHistory);
 
 // Withdrawal requests
 router.post('/withdraw', requestWithdrawal);

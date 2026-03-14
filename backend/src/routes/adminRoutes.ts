@@ -306,6 +306,7 @@ router.delete("/policies/:id", policyController.deletePolicy);
 
 // ==================== Seller Routes ====================
 router.get("/sellers", sellerController.getAllSellers);
+router.post("/seller/penalty", sellerController.applySellerPenalty);
 
 // ==================== Shop Management ====================
 // Legacy routes (keep for backward compatibility)

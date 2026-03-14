@@ -85,19 +85,32 @@ export async function findSellersWithinRange(
       let sellerLat: number | null = null;
       let sellerLng: number | null = null;
 
-
       // Try GeoJSON first
       if (seller.location && seller.location.coordinates && seller.location.coordinates.length === 2) {
-        sellerLng = seller.location.coordinates[0];
-        sellerLat = seller.location.coordinates[1];
+        const [lng, lat] = seller.location.coordinates;
+        // Skip sellers with placeholder 0,0 coordinates (means location not set)
+        if (lng !== 0 || lat !== 0) {
+          sellerLng = lng;
+          sellerLat = lat;
+        }
       }
       // Fallback to string fields if GeoJSON missing
       else if (seller.latitude && seller.longitude) {
-        sellerLat = parseFloat(seller.latitude);
-        sellerLng = parseFloat(seller.longitude);
+        const parsedLat = parseFloat(seller.latitude);
+        const parsedLng = parseFloat(seller.longitude);
+        // Skip 0,0 (unset placeholder) and invalid coordinate ranges
+        if (
+          !isNaN(parsedLat) && !isNaN(parsedLng) &&
+          (parsedLat !== 0 || parsedLng !== 0) &&
+          parsedLat >= -90 && parsedLat <= 90 &&
+          parsedLng >= -180 && parsedLng <= 180
+        ) {
+          sellerLat = parsedLat;
+          sellerLng = parsedLng;
+        }
       }
 
-      if (sellerLat !== null && sellerLng !== null && !isNaN(sellerLat) && !isNaN(sellerLng)) {
+      if (sellerLat !== null && sellerLng !== null) {
         const distance = calculateDistance(
           userLat,
           userLng,

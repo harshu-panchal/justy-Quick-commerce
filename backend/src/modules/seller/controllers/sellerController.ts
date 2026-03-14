@@ -144,11 +144,16 @@ export const updateSeller = asyncHandler(
     delete updateData.password;
 
     // Handle location update (convert lat/lng to GeoJSON)
-    if (updateData.latitude && updateData.longitude) {
+    if (updateData.latitude !== undefined && updateData.longitude !== undefined) {
       const latitude = parseFloat(updateData.latitude);
       const longitude = parseFloat(updateData.longitude);
 
-      if (!isNaN(latitude) && !isNaN(longitude)) {
+      if (
+        !isNaN(latitude) && !isNaN(longitude) &&
+        (latitude !== 0 || longitude !== 0) && // Skip 0,0 placeholder
+        latitude >= -90 && latitude <= 90 &&
+        longitude >= -180 && longitude <= 180
+      ) {
         // Update GeoJSON location for geospatial queries
         updateData.location = {
           type: "Point",
@@ -157,6 +162,10 @@ export const updateSeller = asyncHandler(
         // Ensure string fields are also synchronized
         updateData.latitude = latitude.toString();
         updateData.longitude = longitude.toString();
+      } else if (latitude === 0 && longitude === 0) {
+        // If 0,0 sent, treat as "clear location"
+        delete updateData.latitude;
+        delete updateData.longitude;
       }
     }
 

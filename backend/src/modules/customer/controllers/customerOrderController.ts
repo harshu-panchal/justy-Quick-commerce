@@ -316,13 +316,43 @@ export const createOrder = async (req: Request, res: Response) => {
             orderItemIds.push(newOrderItem._id as mongoose.Types.ObjectId);
         }
 
-        // Validate all sellers can deliver to user's location
-        if (sellerIds.size > 0) {
-            const uniqueSellerIds = Array.from(sellerIds).map(id => new mongoose.Types.ObjectId(id));
+        // --- Determine Delivery Type and Validate Location ---
+        // Dynamically get from HeaderCategory deliveryType field
+        const productsInOrder = await Product.find({ _id: { $in: items.map((i: any) => i.product.id) } })
+            .populate('headerCategoryId')
+            .populate({
+                path: 'category',
+                populate: { path: 'headerCategoryId' }
+            });
 
-            // Find sellers and check if user is within their service radius
+        let hasScheduled = false;
+        let hasInstant = false;
+        const sellersRequiringLocation = new Set<string>();
+
+        for (const prod of productsInOrder) {
+            const isProdScheduled = 
+                (prod.headerCategoryId as any)?.deliveryType === "scheduled" ||
+                (prod.category as any)?.headerCategoryId?.deliveryType === "scheduled";
+                
+            if (isProdScheduled) {
+                hasScheduled = true;
+            } else {
+                hasInstant = true;
+                if (prod.seller) {
+                    sellersRequiringLocation.add(prod.seller.toString());
+                }
+            }
+        }
+
+        // Final order deliveryType: if it has any scheduled, we treat as scheduled for timeframe
+        const deliveryType: "instant" | "scheduled" = hasScheduled ? "scheduled" : "instant";
+
+        // Validate sellers that have instant products
+        if (sellersRequiringLocation.size > 0 && hasInstant) {
+            const locationSellerIds = Array.from(sellersRequiringLocation).map(id => new mongoose.Types.ObjectId(id));
+
             const sellers = await Seller.find({
-                _id: { $in: uniqueSellerIds },
+                _id: { $in: locationSellerIds },
                 status: "Approved",
                 location: { $exists: true, $ne: null },
             });
@@ -524,28 +554,16 @@ export const createOrder = async (req: Request, res: Response) => {
         newOrder.deliveryDistanceKm = deliveryDistanceKm; // Store distance for commission calc
         newOrder.walletAmountUsed = walletAmountUsed;
 
-        // Determine Delivery Type (Instant vs Scheduled)
-        // Dynamically get from HeaderCategory deliveryType field
-        const productsInOrder = await Product.find({ _id: { $in: items.map((i: any) => i.product.id) } })
-            .populate('headerCategoryId');
-
-        let deliveryType: "instant" | "scheduled" = "instant";
-        for (const prod of productsInOrder) {
-            const headerCat = prod.headerCategoryId as any; // Cast for now
-            if (headerCat && headerCat.deliveryType === "scheduled") {
-                deliveryType = "scheduled";
-                break;
-            }
-        }
+        // Delivery Type already determined above
 
         // Get Seller Pincode (from the first seller for now)
         let sellerPincode = "";
         if (sellerIds.size > 0) {
             const firstSellerId = Array.from(sellerIds)[0];
-            const firstSeller = session 
+            const firstSeller = session
                 ? await Seller.findById(firstSellerId).select('pincode').session(session)
                 : await Seller.findById(firstSellerId).select('pincode');
-                
+
             sellerPincode = firstSeller?.pincode || "";
 
             // Enforce pincode matching for quick delivery orders
@@ -554,7 +572,7 @@ export const createOrder = async (req: Request, res: Response) => {
                 try {
                     const firstItem = items[0];
                     const firstProduct = productsInOrder.find(p => p._id.toString() === firstItem.product.id);
-                    
+
                     const demandData = {
                         pincode: newOrder.deliveryAddress.pincode,
                         userId: userId,

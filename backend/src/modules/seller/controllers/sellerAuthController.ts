@@ -137,9 +137,12 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
     });
   }
 
-  // Validate location is provided
-  const latitude = req.body.latitude ? parseFloat(req.body.latitude) : null;
-  const longitude = req.body.longitude ? parseFloat(req.body.longitude) : null;
+  // Validate location is provided (treat 0,0 as "not set")
+  const rawLat = req.body.latitude ? parseFloat(req.body.latitude) : null;
+  const rawLng = req.body.longitude ? parseFloat(req.body.longitude) : null;
+  // A lat/lng of 0,0 means "not provided" (Gulf of Guinea placeholder)
+  const latitude = (rawLat !== null && rawLng !== null && (rawLat !== 0 || rawLng !== 0)) ? rawLat : null;
+  const longitude = (rawLat !== null && rawLng !== null && (rawLat !== 0 || rawLng !== 0)) ? rawLng : null;
 
   // Parse and validate service radius
   let serviceRadiusKm = 10; // Default 10km
@@ -163,10 +166,7 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
     }
   }
 
-  if (!latitude || !longitude || isNaN(latitude) || isNaN(longitude)) {
-    // Location is optional now to allow dynamic setting later
-    // Just proceed without setting location if not provided
-  }
+  // Location is optional — proceed without it if not provided or if 0,0
 
   // Validate latitude and longitude ranges if provided
   if (
@@ -214,8 +214,8 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
     pincode,
     ...(serviceableArea && { serviceableArea }),
     searchLocation: req.body.searchLocation,
-    latitude: req.body.latitude,
-    longitude: req.body.longitude,
+    // Only store lat/lng strings if they are real non-zero coordinates
+    ...(latitude !== null && longitude !== null ? { latitude: latitude.toString(), longitude: longitude.toString() } : {}),
     location, // GeoJSON location for geospatial queries
     serviceRadiusKm, // Service radius in kilometers
     serviceAreaGeo: (req.body.serviceAreaGeo && req.body.serviceAreaGeo.coordinates && Array.isArray(req.body.serviceAreaGeo.coordinates) && req.body.serviceAreaGeo.coordinates.length > 0)
@@ -296,11 +296,11 @@ export const updateProfile = asyncHandler(
     restrictedFields.forEach((field) => delete updates[field]);
 
     // Handle location update (convert lat/lng to GeoJSON)
-    if (updates.latitude && updates.longitude) {
+    if (updates.latitude !== undefined && updates.longitude !== undefined) {
       const latitude = parseFloat(updates.latitude);
       const longitude = parseFloat(updates.longitude);
 
-      if (!isNaN(latitude) && !isNaN(longitude)) {
+      if (!isNaN(latitude) && !isNaN(longitude) && (latitude !== 0 || longitude !== 0)) {
         // Update GeoJSON location for geospatial queries
         updates.location = {
           type: "Point",

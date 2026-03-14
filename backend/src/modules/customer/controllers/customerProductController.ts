@@ -4,6 +4,7 @@ import Category from "../../../models/Category";
 import SubCategory from "../../../models/SubCategory";
 import mongoose from "mongoose";
 import Seller from "../../../models/Seller";
+import HeaderCategory from "../../../models/HeaderCategory";
 import { findSellersWithinRange } from "../../../utils/locationHelper";
 
 // Get products with filtering options (public)
@@ -38,41 +39,29 @@ export const getProducts = async (req: Request, res: Response) => {
     const userLat = latitude ? parseFloat(latitude as string) : null;
     const userLng = longitude ? parseFloat(longitude as string) : null;
 
+    // Identify scheduled versus quick delivery header categories
+    const scheduledHeaders = await HeaderCategory.find({ deliveryType: 'scheduled' }).select('_id').lean();
+    const scheduledIds = scheduledHeaders.map(h => h._id);
+
     if (userLat && userLng && !isNaN(userLat) && !isNaN(userLng)) {
       // Find sellers within user's location range
       const nearbySellerIds = await findSellersWithinRange(userLat, userLng);
 
-      if (nearbySellerIds.length === 0) {
-        // No sellers within range, return empty result
-        return res.status(200).json({
-          success: true,
-          data: [],
-          pagination: {
-            page: Number(page),
-            limit: Number(limit),
-            total: 0,
-            pages: 0,
-          },
-          message:
-            "No sellers available in your area. Please update your location.",
-        });
-      }
-
-      // Filter products by sellers within range
-      query.seller = { $in: nearbySellerIds };
-    } else {
-      // If no location provided, return empty result (strictly enforce location)
-      return res.status(200).json({
-        success: true,
-        data: [],
-        pagination: {
-          page: Number(page),
-          limit: Number(limit),
-          total: 0,
-          pages: 0,
-        },
-        message: "Please provide your location to see products available in your area.",
+      // We allow products that are either:
+      // 1. In a scheduled delivery category (visible from any seller)
+      // 2. From a seller within range (standard for quick delivery)
+      query.$and = query.$and || [];
+      query.$and.push({
+        $or: [
+          { headerCategoryId: { $in: scheduledIds } },
+          { seller: { $in: nearbySellerIds } }
+        ]
       });
+    } else {
+      // If no location provided, we can strictly show only scheduled products
+      // This ensures quick delivery products (which REQUIRE location) are filtered out,
+      // while scheduled products remain visible.
+      query.headerCategoryId = { $in: scheduledIds };
     }
 
     // Helper to resolve category/subcategory ID from slug or ID
@@ -311,83 +300,94 @@ export const getProductsBySubcategory = async (req: Request, res: Response) => {
       });
     }
 
-    const parentCategory = subcategory.parentId as any;
-    const parentName = parentCategory?.name?.toLowerCase() || "";
-    const parentSlug = parentCategory?.slug?.toLowerCase() || "";
+    // Fix: Properly determine isScheduled from HeaderCategory, not keywords
+    const isScheduled =
+      (subcategory.headerCategoryId as any)?.deliveryType === 'scheduled' ||
+      (subcategory.parentId as any)?.headerCategoryId?.deliveryType === 'scheduled';
 
-    // 2. Determine delivery mode logic
-    // Quick Delivery: Vegetables, Fruits, Pan Corner, Bakery, Grocery, Milk, Dairy, Fresh, Meat
-    const quickDeliveryKeywords = [
-      "vegetable", "fruit", "pan corner", "bakery", "grocery",
-      "milk", "dairy", "fresh", "meat", "poultry", "fish", "oil", "masala",
-      "atta", "dal", "sugar", "salt", "tea", "coffee", "biscuits", "snacks"
-    ];
-
-    const isQuickDelivery = quickDeliveryKeywords.some(kw =>
-      parentName.includes(kw) || parentSlug.includes(kw)
-    );
-
-    console.log(`[getProductsBySubcategory] Delivery Mode: ${isQuickDelivery ? "Quick" : "Scheduled"} for parent: ${parentName}`);
-
-    // 3. Seller Filtering
-    // Relaxed to match `getProducts` which only checks `status: "Approved"` in `findSellersWithinRange`
-    const sellerQuery: any = {
-      status: "Approved"
-    };
-
-    const eligibleSellers = await Seller.find(sellerQuery).select("_id").lean();
-    const eligibleSellerIds = eligibleSellers.map(s => s._id);
+    // 3. Seller Filtering (only for quick delivery products if pincode is provided)
+    let eligibleSellerIds: mongoose.Types.ObjectId[] = [];
+    if (!isScheduled && pincode) {
+      const sellersInPincode = await Seller.find({
+        pincode: pincode,
+        status: "Approved"
+      }).select("_id").lean();
+      eligibleSellerIds = sellersInPincode.map(s => s._id);
+    } else {
+      // For scheduled delivery or if no pincode, all approved sellers are eligible
+      const allApprovedSellers = await Seller.find({ status: "Approved" }).select("_id").lean();
+      eligibleSellerIds = allApprovedSellers.map(s => s._id);
+    }
 
     if (eligibleSellerIds.length === 0) {
       return res.status(200).json({
         success: true,
         data: [],
-        deliveryMode: isQuickDelivery ? "Quick" : "Scheduled",
-        message: isQuickDelivery
-          ? "No quick delivery sellers found in your area for this subcategory."
-          : "No sellers found for this subcategory."
+        deliveryMode: isScheduled ? "Scheduled" : "Quick",
+        message: isScheduled
+          ? "No sellers found for this subcategory."
+          : "No quick delivery sellers found in your area for this subcategory."
       });
     }
 
     // 4. Product Query
-    // Included subcategory._id as both ObjectId and string string to catch all legacy cases
-    const subIdStr = subcategory._id.toString();
     const productQuery: any = {
       $or: [
         { subcategory: subcategory._id },
-        { subcategory: subIdStr },
+        { subcategory: subcategory._id.toString() },
         { category: subcategory._id },
-        { category: subIdStr }
+        { category: subcategory._id.toString() }
       ],
       status: "Active",
       publish: true,
-      seller: { $in: eligibleSellerIds }
+      seller: { $in: eligibleSellerIds } // Filter by eligible sellers
     };
 
     const products = await Product.find(productQuery)
-      .populate("category", "name slug")
-      .populate("subcategory", "name slug")
+      .populate({
+        path: "category",
+        select: "name slug headerCategoryId",
+        populate: {
+          path: "headerCategoryId",
+          select: "deliveryType"
+        }
+      })
+      .populate({
+        path: "subcategory",
+        select: "name slug headerCategoryId",
+        populate: {
+          path: "headerCategoryId",
+          select: "deliveryType"
+        }
+      })
       .populate("seller", "storeName pincode logo deliveryTimeMin deliveryTimeMax")
+      .populate("headerCategoryId", "deliveryType")
       .sort({ createdAt: -1 })
       .lean();
 
-    // Map to frontend-friendly format if needed (consistent with getProducts)
-    const formattedProducts = products.map((p: any) => ({
-      ...p,
-      id: p._id.toString(),
-      price: p.variations?.[0]?.price || p.price,
-      mrp: p.variations?.[0]?.discPrice || p.compareAtPrice || p.price,
-      image: p.mainImage,
-      name: p.productName,
-      isAvailable: isQuickDelivery && pincode ? (p.seller?.pincode === pincode) : true
-    }));
+    const formattedProducts = products.map((p: any) => {
+      const isProdScheduled =
+        p.headerCategoryId?.deliveryType === 'scheduled' ||
+        (p.category as any)?.headerCategoryId?.deliveryType === 'scheduled' ||
+        (p.subcategory as any)?.headerCategoryId?.deliveryType === 'scheduled';
+
+      return {
+        ...p,
+        id: p._id.toString(),
+        price: p.variations?.[0]?.price || p.price,
+        mrp: p.variations?.[0]?.discPrice || p.compareAtPrice || p.price,
+        image: p.mainImage,
+        name: p.productName,
+        isAvailable: isProdScheduled ? true : (pincode ? (p.seller?.pincode === pincode) : false)
+      };
+    });
 
     return res.status(200).json({
       success: true,
       data: formattedProducts,
-      deliveryMode: isQuickDelivery ? "Quick" : "Scheduled",
+      deliveryMode: isScheduled ? "Scheduled" : "Quick",
       subcategoryName: subcategory.name,
-      parentName: parentCategory?.name
+      parentName: (subcategory.parentId as any)?.name
     });
 
   } catch (error: any) {
@@ -416,13 +416,28 @@ export const getProductById = async (req: Request, res: Response) => {
     const product = await Product.findOne({
       _id: id,
     })
-      .populate("category", "name")
-      .populate("subcategory", "name")
+      .populate({
+        path: "category",
+        select: "name headerCategoryId",
+        populate: {
+          path: "headerCategoryId",
+          select: "deliveryType"
+        }
+      })
+      .populate({
+        path: "subcategory",
+        select: "name headerCategoryId",
+        populate: {
+          path: "headerCategoryId",
+          select: "deliveryType"
+        }
+      })
       .populate("brand", "name")
       .populate(
         "seller",
         "storeName city fssaiLicNo address location serviceRadiusKm"
-      );
+      )
+      .populate("headerCategoryId", "deliveryType");
 
     if (!product) {
       return res.status(404).json({
@@ -455,7 +470,14 @@ export const getProductById = async (req: Request, res: Response) => {
     }
 
     // Check location availability if coordinates are provided
-    if (
+    const isScheduled = 
+      (product.headerCategoryId as any)?.deliveryType === "scheduled" ||
+      (product.category as any)?.headerCategoryId?.deliveryType === "scheduled" ||
+      (product.subcategory as any)?.headerCategoryId?.deliveryType === "scheduled";
+
+    if (isScheduled) {
+      isAvailableAtLocation = true;
+    } else if (
       userLat &&
       userLng &&
       !isNaN(userLat) &&
@@ -467,6 +489,9 @@ export const getProductById = async (req: Request, res: Response) => {
       isAvailableAtLocation = nearbySellerIds.some(
         (id) => id.toString() === sellerId!.toString()
       );
+    } else if (!userLat || !userLng) {
+      // If no location provided, quick delivery products are not available
+      isAvailableAtLocation = false;
     }
 
     // Find similar products (by category)
@@ -505,15 +530,24 @@ export const getProductById = async (req: Request, res: Response) => {
       similarProductsQuery.category = categoryId;
     }
 
-    // Filter similar products by location
+    // Filter similar products by location (only for quick delivery)
     if (userLat && userLng && !isNaN(userLat) && !isNaN(userLng)) {
       const nearbySellerIds = await findSellersWithinRange(userLat, userLng);
-      if (nearbySellerIds.length > 0) {
-        similarProductsQuery.seller = { $in: nearbySellerIds };
-      } else {
-        // No sellers nearby, return empty similar products
-        similarProductsQuery.seller = { $in: [] };
-      }
+      const scheduledHeaders = await HeaderCategory.find({ deliveryType: 'scheduled' }).select('_id').lean();
+      const scheduledIds = scheduledHeaders.map(h => h._id);
+
+      similarProductsQuery.$and = similarProductsQuery.$and || [];
+      similarProductsQuery.$and.push({
+        $or: [
+          { headerCategoryId: { $in: scheduledIds } },
+          { seller: { $in: nearbySellerIds } }
+        ]
+      });
+    } else {
+      // If no location, only show scheduled similar products
+      const scheduledHeaders = await HeaderCategory.find({ deliveryType: 'scheduled' }).select('_id').lean();
+      const scheduledIds = scheduledHeaders.map(h => h._id);
+      similarProductsQuery.headerCategoryId = { $in: scheduledIds };
     }
 
     const similarProducts = await Product.find(similarProductsQuery)

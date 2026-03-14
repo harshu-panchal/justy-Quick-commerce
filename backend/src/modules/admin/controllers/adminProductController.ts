@@ -1071,6 +1071,36 @@ export const getProductById = asyncHandler(
       });
     }
 
+    // ─── Detect & repair wrong subcategoryModel ───────────────────────────────
+    // If subcategory field has an ID stored but populate returned null,
+    // it means subcategoryModel is pointing to the wrong collection.
+    // We auto-detect the correct model and repair it so the admin sees the right data.
+    const rawProduct = product.toObject() as any;
+    if (rawProduct.subcategory === null && (product as any)._doc?.subcategory) {
+      // Populate failed — fix it by checking which collection actually has this ID
+      const subcategoryId = (product as any)._doc.subcategory;
+      const isOldSub = await SubCategory.findById(subcategoryId);
+      const correctModel = isOldSub ? "SubCategory" : "Category";
+
+      // Repair the subcategoryModel in DB silently
+      await Product.findByIdAndUpdate(id, { subcategoryModel: correctModel });
+
+      // Re-fetch with corrected model
+      const repairedProduct = await Product.findById(id)
+        .populate("category", "name")
+        .populate("subcategory", "name")
+        .populate("brand", "name")
+        .populate("seller", "sellerName storeName")
+        .populate("approvedBy", "firstName lastName");
+
+      return res.status(200).json({
+        success: true,
+        message: "Product fetched successfully",
+        data: repairedProduct,
+      });
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
     return res.status(200).json({
       success: true,
       message: "Product fetched successfully",
@@ -1089,8 +1119,13 @@ export const updateProduct = asyncHandler(
 
     // Detect subcategory model if subcategory is being updated
     if (updateData.subcategory) {
+      // Check old SubCategory collection first, then assume Category (new-style)
       const isOldSub = await SubCategory.findById(updateData.subcategory);
       updateData.subcategoryModel = isOldSub ? "SubCategory" : "Category";
+    } else if (updateData.subcategory === null || updateData.subcategory === "") {
+      // Explicitly clearing subcategory
+      updateData.subcategory = undefined;
+      updateData.subcategoryModel = "SubCategory"; // Reset to default
     }
 
     const product = await Product.findByIdAndUpdate(id, updateData, {
@@ -1163,22 +1198,35 @@ export const approveProductRequest = asyncHandler(
     const { id } = req.params;
     const { status, rejectionReason } = req.body;
 
-    if (!["Active", "Rejected"].includes(status)) {
+    if (!['Active', 'Rejected'].includes(status)) {
       return res.status(400).json({
         success: false,
-        message: "Status must be Active or Rejected",
+        message: 'Status must be Active or Rejected',
       });
     }
+
+    // ─── Detect & repair wrong subcategoryModel before approval ──────────────
+    // Ensures the subcategory reference is correct before product goes live
+    const existingProduct = await Product.findById(id).lean() as any;
+    if (existingProduct?.subcategory) {
+      const isOldSub = await SubCategory.findById(existingProduct.subcategory);
+      const correctModel = isOldSub ? 'SubCategory' : 'Category';
+      if (existingProduct.subcategoryModel !== correctModel) {
+        console.log(`🔧 Repairing subcategoryModel: ${existingProduct.subcategoryModel} → ${correctModel}`);
+        await Product.findByIdAndUpdate(id, { subcategoryModel: correctModel });
+      }
+    }
+    // ─────────────────────────────────────────────────────────────────────────
 
     const updateData: any = {
       status,
       approvedBy: req.user?.userId,
       approvedAt: new Date(),
       // Automatically set publish based on approval status
-      publish: status === "Active" ? true : false,
+      publish: status === 'Active' ? true : false,
     };
 
-    if (status === "Rejected" && rejectionReason) {
+    if (status === 'Rejected' && rejectionReason) {
       updateData.rejectionReason = rejectionReason;
     }
 
@@ -1186,22 +1234,24 @@ export const approveProductRequest = asyncHandler(
       new: true,
       runValidators: true,
     })
-      .populate("category", "name")
-      .populate("subcategory", "name")
-      .populate("brand", "name")
-      .populate("seller", "sellerName storeName");
+      .populate('category', 'name')
+      .populate('subcategory', 'name')
+      .populate('brand', 'name')
+      .populate('seller', 'sellerName storeName');
 
     if (!product) {
       return res.status(404).json({
         success: false,
-        message: "Product not found",
+        message: 'Product not found',
       });
     }
 
+    // Invalidate product caches
+    cache.invalidatePattern(/home-content/);
+
     return res.status(200).json({
       success: true,
-      message: `Product ${status === "Active" ? "approved" : "rejected"
-        } successfully`,
+      message: `Product ${status === 'Active' ? 'approved' : 'rejected'} successfully`,
       data: product,
     });
   }

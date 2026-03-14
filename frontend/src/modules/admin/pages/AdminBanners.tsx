@@ -8,25 +8,26 @@ const AdminBanners: React.FC = () => {
     const [banners, setBanners] = useState<Banner[]>([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
-    const [editingBanner, setEditingBanner] = useState<Banner | null>(null);
     const [uploading, setUploading] = useState(false);
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string>("");
+    
+    // Initializing state to match CreateBannerInput exactly
     const [formData, setFormData] = useState<CreateBannerInput>({
         title: "",
-        image: "",
-        mode: "quick",
-        categoryId: "",
-        redirectType: "category",
-        redirectId: "",
-        priority: 1,
-        active: true,
+        imageUrl: "",
+        type: "quick",
+        isActive: true,
     });
 
     const fetchBanners = async () => {
         setLoading(true);
-        const data = await bannerService.getBanners();
-        setBanners(data);
+        try {
+            const data = await bannerService.getBanners();
+            setBanners(data);
+        } catch (error) {
+            console.error("Failed to load banners:", error);
+        }
         setLoading(false);
     };
 
@@ -63,33 +64,25 @@ const AdminBanners: React.FC = () => {
         e.preventDefault();
         try {
             setUploading(true);
-            let imageUrl = formData.image;
+            let finalImageUrl = formData.imageUrl;
 
             if (imageFile) {
                 const uploadResult = await uploadImage(imageFile, "banners");
-                imageUrl = uploadResult.secureUrl;
+                finalImageUrl = uploadResult.secureUrl;
             }
 
-            const bannerData = { ...formData, image: imageUrl };
+            const bannerData: CreateBannerInput = { ...formData, imageUrl: finalImageUrl };
 
-            if (editingBanner) {
-                await bannerService.updateBanner({ ...bannerData, id: editingBanner.id });
-            } else {
-                await bannerService.createBanner(bannerData);
-            }
+            await bannerService.createBanner(bannerData);
+            
             setShowForm(false);
-            setEditingBanner(null);
             setImageFile(null);
             setImagePreview("");
             setFormData({
                 title: "",
-                image: "",
-                mode: "quick",
-                categoryId: "",
-                redirectType: "category",
-                redirectId: "",
-                priority: 1,
-                active: true,
+                imageUrl: "",
+                type: "quick",
+                isActive: true,
             });
             fetchBanners();
             window.dispatchEvent(new CustomEvent("bannersUpdated"));
@@ -101,34 +94,12 @@ const AdminBanners: React.FC = () => {
         }
     };
 
-    const handleEdit = (banner: Banner) => {
-        setEditingBanner(banner);
-        setImagePreview(banner.image);
-        setFormData({
-            title: banner.title,
-            image: banner.image,
-            mode: banner.mode,
-            categoryId: banner.categoryId || "",
-            redirectType: banner.redirectType,
-            redirectId: banner.redirectId,
-            priority: banner.priority,
-            active: banner.active,
-        });
-        setShowForm(true);
-    };
-
     const handleDelete = async (id: string) => {
         if (window.confirm("Are you sure you want to delete this banner?")) {
             await bannerService.deleteBanner(id);
             fetchBanners();
             window.dispatchEvent(new CustomEvent("bannersUpdated"));
         }
-    };
-
-    const toggleStatus = async (id: string) => {
-        await bannerService.toggleBannerStatus(id);
-        fetchBanners();
-        window.dispatchEvent(new CustomEvent("bannersUpdated"));
     };
 
     return (
@@ -139,7 +110,7 @@ const AdminBanners: React.FC = () => {
                     <p className="text-neutral-500 mt-1">Manage promotional banners for Quick and Scheduled modes</p>
                 </div>
                 <button
-                    onClick={() => { setShowForm(true); setEditingBanner(null); }}
+                    onClick={() => { setShowForm(true); }}
                     className="px-6 py-2.5 bg-green-600 text-white rounded-xl font-semibold shadow-sm hover:bg-green-700 transition-all flex items-center gap-2"
                 >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -154,7 +125,7 @@ const AdminBanners: React.FC = () => {
                     <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
                         <div className="px-8 py-6 border-b border-neutral-100 flex justify-between items-center bg-neutral-50/50">
                             <h2 className="text-xl font-bold bg-gradient-to-r from-neutral-900 to-neutral-700 bg-clip-text text-transparent">
-                                {editingBanner ? "Edit Banner" : "Create New Banner"}
+                                Create New Banner
                             </h2>
                             <button onClick={() => setShowForm(false)} className="p-2 hover:bg-neutral-100 rounded-full transition-colors">
                                 <svg className="w-6 h-6 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -179,8 +150,8 @@ const AdminBanners: React.FC = () => {
                                 <div className="space-y-2">
                                     <label className="text-sm font-semibold text-neutral-700 ml-1">Banner Mode</label>
                                     <select
-                                        name="mode"
-                                        value={formData.mode}
+                                        name="type"
+                                        value={formData.type}
                                         onChange={handleInputChange}
                                         className="w-full px-4 py-3 rounded-xl border border-neutral-200 focus:ring-2 focus:ring-green-500 outline-none transition-all appearance-none bg-white"
                                     >
@@ -208,7 +179,7 @@ const AdminBanners: React.FC = () => {
                                                             e.preventDefault();
                                                             setImageFile(null);
                                                             setImagePreview("");
-                                                            setFormData(prev => ({ ...prev, image: "" }));
+                                                            setFormData(prev => ({ ...prev, imageUrl: "" }));
                                                         }}
                                                         className="p-1 px-2 bg-red-50 text-red-600 rounded-md text-[10px] font-bold uppercase hover:bg-red-100 transition-colors"
                                                     >
@@ -248,57 +219,11 @@ const AdminBanners: React.FC = () => {
                                     </div>
                                     <input
                                         type="url"
-                                        name="image"
-                                        value={formData.image}
+                                        name="imageUrl"
+                                        value={formData.imageUrl}
                                         onChange={handleInputChange}
                                         placeholder="https://example.com/banner.jpg"
                                         className="w-full px-4 py-2 text-sm rounded-xl border border-neutral-200 focus:ring-2 focus:ring-green-500 outline-none transition-all placeholder:text-neutral-400"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-semibold text-neutral-700 ml-1">Redirect Type</label>
-                                    <select
-                                        name="redirectType"
-                                        value={formData.redirectType}
-                                        onChange={handleInputChange}
-                                        className="w-full px-4 py-3 rounded-xl border border-neutral-200 focus:ring-2 focus:ring-green-500 outline-none transition-all appearance-none bg-white"
-                                    >
-                                        <option value="category">Category</option>
-                                        <option value="product">Product</option>
-                                        <option value="combo">Combo</option>
-                                    </select>
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-semibold text-neutral-700 ml-1">Redirect ID / Slug</label>
-                                    <input
-                                        type="text"
-                                        name="redirectId"
-                                        value={formData.redirectId}
-                                        onChange={handleInputChange}
-                                        placeholder="e.g. bakery or prod_123"
-                                        className="w-full px-4 py-3 rounded-xl border border-neutral-200 focus:ring-2 focus:ring-green-500 outline-none transition-all placeholder:text-neutral-400"
-                                        required
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-semibold text-neutral-700 ml-1">Category ID (Optional)</label>
-                                    <input
-                                        type="text"
-                                        name="categoryId"
-                                        value={formData.categoryId}
-                                        onChange={handleInputChange}
-                                        placeholder="Filter category ID"
-                                        className="w-full px-4 py-3 rounded-xl border border-neutral-200 focus:ring-2 focus:ring-green-500 outline-none transition-all placeholder:text-neutral-400"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-semibold text-neutral-700 ml-1">Priority (1 = Highest)</label>
-                                    <input
-                                        type="number"
-                                        name="priority"
-                                        value={formData.priority}
-                                        onChange={handleInputChange}
-                                        className="w-full px-4 py-3 rounded-xl border border-neutral-200 focus:ring-2 focus:ring-green-500 outline-none transition-all"
                                     />
                                 </div>
                             </div>
@@ -306,9 +231,9 @@ const AdminBanners: React.FC = () => {
                                 <label className="relative inline-flex items-center cursor-pointer">
                                     <input
                                         type="checkbox"
-                                        name="active"
-                                        checked={formData.active}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, active: e.target.checked }))}
+                                        name="isActive"
+                                        checked={formData.isActive}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.checked }))}
                                         className="sr-only peer"
                                     />
                                     <div className="w-11 h-6 bg-neutral-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
@@ -328,7 +253,7 @@ const AdminBanners: React.FC = () => {
                                     disabled={uploading}
                                     className={`px-8 py-2.5 rounded-xl text-white font-bold shadow-lg transition-all focus:scale-95 ${uploading ? "bg-neutral-400 cursor-not-allowed" : "bg-green-600 shadow-green-200 hover:bg-green-700"}`}
                                 >
-                                    {uploading ? "Uploading..." : (editingBanner ? "Save Changes" : "Create Banner")}
+                                    {uploading ? "Uploading..." : "Create Banner"}
                                 </button>
                             </div>
                         </form>
@@ -349,19 +274,19 @@ const AdminBanners: React.FC = () => {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {banners.map((banner) => (
-                        <div key={banner.id} className="group bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-neutral-100 flex flex-col h-full">
+                        <div key={banner._id} className="group bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-neutral-100 flex flex-col h-full">
                             <div className="relative h-48 overflow-hidden">
                                 <img
-                                    src={banner.image}
+                                    src={banner.imageUrl}
                                     alt={banner.title}
                                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                                 />
                                 <div className="absolute top-4 left-4 flex gap-2">
-                                    <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${banner.mode === "quick" ? "bg-orange-100 text-orange-700" : "bg-blue-100 text-blue-700"
+                                    <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${banner.type === "quick" ? "bg-orange-100 text-orange-700" : "bg-blue-100 text-blue-700"
                                         } backdrop-blur-md bg-opacity-90`}>
-                                        {banner.mode}
+                                        {banner.type}
                                     </span>
-                                    {!banner.active && (
+                                    {!banner.isActive && (
                                         <span className="px-3 py-1 rounded-full bg-neutral-900/80 text-white text-[10px] font-bold uppercase tracking-wider backdrop-blur-md">
                                             Inactive
                                         </span>
@@ -369,15 +294,7 @@ const AdminBanners: React.FC = () => {
                                 </div>
                                 <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <button
-                                        onClick={() => handleEdit(banner)}
-                                        className="p-2 bg-white/90 backdrop-blur-sm text-neutral-700 rounded-full hover:bg-white shadow-lg transition-all transform hover:scale-110"
-                                    >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                        </svg>
-                                    </button>
-                                    <button
-                                        onClick={() => handleDelete(banner.id)}
+                                        onClick={() => handleDelete(banner._id)}
                                         className="p-2 bg-white/90 backdrop-blur-sm text-red-600 rounded-full hover:bg-white shadow-lg transition-all transform hover:scale-110"
                                     >
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -389,26 +306,16 @@ const AdminBanners: React.FC = () => {
                             <div className="p-6 flex-1 flex flex-col justify-between">
                                 <div>
                                     <h3 className="text-lg font-bold text-neutral-900 group-hover:text-green-600 transition-colors line-clamp-1">{banner.title}</h3>
-                                    <div className="mt-3 flex flex-wrap gap-2">
-                                        <span className="px-2.5 py-1 bg-neutral-50 text-neutral-600 rounded-lg text-[11px] font-semibold border border-neutral-100">
-                                            To: {banner.redirectType} ({banner.redirectId})
-                                        </span>
-                                        <span className="px-2.5 py-1 bg-neutral-50 text-neutral-600 rounded-lg text-[11px] font-semibold border border-neutral-100">
-                                            Pri: {banner.priority}
-                                        </span>
-                                    </div>
                                 </div>
                                 <div className="mt-6 flex items-center justify-between pt-4 border-t border-neutral-50">
                                     <div className="text-[10px] text-neutral-400 font-medium">
-                                        Updated: {new Date(banner.updatedAt).toLocaleDateString()}
+                                        Created: {new Date(banner.createdAt).toLocaleDateString()}
                                     </div>
-                                    <button
-                                        onClick={() => toggleStatus(banner.id)}
-                                        className={`text-xs font-bold uppercase tracking-widest ${banner.active ? "text-green-600" : "text-neutral-400"
-                                            } hover:opacity-70 transition-opacity`}
+                                    <div
+                                        className={`text-xs font-bold uppercase tracking-widest ${banner.isActive ? "text-green-600" : "text-neutral-400"}`}
                                     >
-                                        {banner.active ? "Enabled" : "Disabled"}
-                                    </button>
+                                        {banner.isActive ? "Enabled" : "Disabled"}
+                                    </div>
                                 </div>
                             </div>
                         </div>

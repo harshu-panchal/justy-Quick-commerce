@@ -63,7 +63,7 @@ export default function OfferPage() {
                 }
 
                 // Strictly filter by delivery mode (Quick/Scheduled)
-                const bannerMode = banner?.mode || deliveryMode;
+                const bannerMode = banner?.type || deliveryMode;
                 const filteredByMode = finalProducts.filter(p => {
                     const name = (p.productName || p.name || '').toLowerCase();
                     const catName = (p.category?.name || '').toLowerCase();
@@ -92,7 +92,7 @@ export default function OfferPage() {
         if (id) {
             fetchOfferProducts();
         }
-    }, [type, id, userLocation, banner?.mode, deliveryMode]);
+    }, [type, id, userLocation, banner?.type, deliveryMode]);
 
     // If banner is missing (e.g., refresh), we could fetch it, 
     // but for now let's just use defaults or placeholders if state is empty.
@@ -137,7 +137,7 @@ export default function OfferPage() {
                         className="relative w-full h-[180px] md:h-[300px] overflow-hidden rounded-2xl md:rounded-3xl shadow-xl"
                     >
                         <img
-                            src={displayBanner.image}
+                            src={displayBanner.imageUrl}
                             alt={displayBanner.title}
                             className="w-full h-full object-cover"
                         />

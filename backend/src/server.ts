@@ -136,3 +136,5 @@ startServer().catch((err) => {
   process.exit(1);
 });
 
+
+// Trigger nodemon restart

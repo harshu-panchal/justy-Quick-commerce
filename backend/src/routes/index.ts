@@ -36,6 +36,7 @@ import paymentRoutes from "./paymentRoutes";
 import sellerWalletRoutes from "./sellerWalletRoutes";
 import deliveryWalletRoutes from "./deliveryWalletRoutes";
 import adminWithdrawalRoutes from "./adminWithdrawalRoutes";
+import * as bannerController from "../controllers/bannerController";
 
 import {
   createOrder,
@@ -119,6 +120,9 @@ router.use("/seller/dashboard", dashboardRoutes);
 
 // Seller management routes (protected, admin only)
 router.use("/sellers", sellerRoutes);
+
+// Banner routes (public)
+router.get("/banners/:type", bannerController.getBannersByType);
 
 // Admin routes (protected, admin only)
 router.use("/admin", adminRoutes);

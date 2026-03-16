@@ -1,0 +1,2 @@
+﻿src/modules/customer/controllers/customerCartController.ts(11,1): error TS6133: 'HeaderCategory' is declared but its value is never read.
+src/modules/customer/controllers/customerCartController.ts(603,34): error TS2304: Cannot find name 'hasLocation'.

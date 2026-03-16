@@ -79,7 +79,7 @@ const BannerCarousel: React.FC<BannerCarouselProps> = ({ mode }) => {
             <div className="relative w-full h-full">
                 <AnimatePresence initial={false} custom={direction}>
                     <motion.div
-                        key={banners[currentIndex].id}
+                        key={banners[currentIndex]._id}
                         custom={direction}
                         variants={slideVariants}
                         initial="enter"

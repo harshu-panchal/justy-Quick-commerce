@@ -48,7 +48,8 @@ export default function SellerDashboard() {
             const profileData = profileResponse.data;
             const needsSync =
               user.depositPaid !== profileData.depositPaid ||
-              user.securityDepositStatus !== profileData.securityDepositStatus;
+              user.securityDepositStatus !== profileData.securityDepositStatus ||
+              user.securityDeposit !== profileData.securityDeposit;
 
             if (needsSync) {
               updateUser({
@@ -229,6 +230,13 @@ export default function SellerDashboard() {
       />
     </svg>
   );
+  
+  const walletIcon = (
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M20 12V8C20 6.89543 19.1046 6 18 6H4C2.89543 6 2 6.89543 2 8V16C2 17.1046 2.89543 18 4 18H18C19.1046 18 20 17.1046 20 16V14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M16 12C16 13.1046 16.8954 14 18 14H22V10H18C16.8954 10 16 10.8954 16 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
 
   // Alert icons
   const soldOutIcon = (
@@ -363,7 +371,11 @@ export default function SellerDashboard() {
           <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
             <div>
               <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Required Amount</p>
-              <p className="text-lg font-bold text-gray-900">₹{user?.securityDeposit ?? 1000}</p>
+              <p className="text-lg font-bold text-gray-900">₹1000</p>
+            </div>
+            <div>
+              <p className="text-xs text-orange-600 uppercase font-bold mb-1">Current Balance</p>
+              <p className="text-lg font-bold text-orange-600">₹{user?.securityDeposit ?? 1000}</p>
             </div>
             <div>
               <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Amount Paid</p>
@@ -394,15 +406,18 @@ export default function SellerDashboard() {
       </div>
 
       {/* KPI Cards Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-        <DashboardCard icon={userIcon} title="Total User" value={stats.totalUser} accentColor="#3b82f6" />
-        <DashboardCard icon={categoryIcon} title="Total Category" value={stats.totalCategory} accentColor="#eab308" />
-        <DashboardCard icon={subcategoryIcon} title="Total Subcategory" value={stats.totalSubcategory} accentColor="#ec4899" />
-        <DashboardCard icon={productIcon} title="Total Product" value={stats.totalProduct} accentColor="#f97316" />
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-3 sm:gap-4">
+        <DashboardCard 
+          icon={walletIcon} 
+          title="Security Deposit Balance" 
+          value={`₹${user?.securityDeposit ?? 1000}`} 
+          accentColor="#0d9488" 
+        />
         <DashboardCard icon={ordersIcon} title="Total Orders" value={stats.totalOrders} accentColor="#3b82f6" />
         <DashboardCard icon={completedOrdersIcon} title="Completed Orders" value={stats.completedOrders} accentColor="#16a34a" />
         <DashboardCard icon={pendingOrdersIcon} title="Pending Orders" value={stats.pendingOrders} accentColor="#a855f7" />
         <DashboardCard icon={cancelledOrdersIcon} title="Cancelled Orders" value={stats.cancelledOrders} accentColor="#ef4444" />
+        <DashboardCard icon={productIcon} title="Total Product" value={stats.totalProduct} accentColor="#f97316" />
       </div>
 
       {/* Charts Row */}

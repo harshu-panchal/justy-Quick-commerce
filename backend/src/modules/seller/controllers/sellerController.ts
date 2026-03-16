@@ -27,10 +27,26 @@ export const getAllSellers = asyncHandler(
       .select("-password") // Exclude password
       .sort({ createdAt: -1 }); // Sort by newest first
 
+    const processedSellers = sellers.map(seller => {
+      const s = seller.toObject();
+      let securityDeposit = 1000;
+      if (typeof s.securityDeposit === 'number') {
+        securityDeposit = s.securityDeposit;
+      } else if (typeof s.depositAmount === 'number') {
+        securityDeposit = s.depositAmount;
+      }
+
+      return {
+        ...s,
+        email: s.email || s.mobile || "No Contact Info",
+        securityDeposit: securityDeposit
+      };
+    });
+
     return res.status(200).json({
       success: true,
       message: "Sellers fetched successfully",
-      data: sellers,
+      data: processedSellers,
     });
   }
 );

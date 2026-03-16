@@ -7,6 +7,7 @@ import {
   requestSellerWithdrawal,
   getSellerWithdrawals,
   getSellerCommissions,
+  getSellerWalletHistory,
 } from '../../../services/api/sellerWalletService';
 
 type Tab = 'transactions' | 'withdrawals' | 'commissions';
@@ -31,15 +32,34 @@ export default function SellerWallet() {
   const fetchWalletData = async () => {
     try {
       setLoading(true);
-      const [balanceRes, transactionsRes, withdrawalsRes, commissionsRes] = await Promise.all([
+      const [balanceRes, transactionsRes, historyRes, withdrawalsRes, commissionsRes] = await Promise.all([
         getSellerWalletBalance(),
         getSellerWalletTransactions(),
+        getSellerWalletHistory(1, 50),
         getSellerWithdrawals(),
         getSellerCommissions(),
       ]);
 
       if (balanceRes.success) setBalance(balanceRes.data.balance);
-      if (transactionsRes.success) setTransactions(transactionsRes.data.transactions || []);
+      
+      // Combine legacy transactions and new history
+      const legacyTxs = transactionsRes.success ? (transactionsRes.data.transactions || []) : [];
+      const historyTxs = historyRes.success ? (historyRes.data.transactions || []) : [];
+      
+      // Map history transactions to format used in UI
+      const mappedHistory = historyTxs.map((h: any) => ({
+        ...h,
+        _id: h._id,
+        description: `${h.reason}${h.orderId ? ` (Order #${h.orderId.substring(0, 8)})` : ''}`,
+        amount: h.amount,
+        type: h.type,
+        createdAt: h.createdAt,
+        status: 'Completed',
+        source: 'history'
+      }));
+
+      setTransactions([...legacyTxs, ...mappedHistory]);
+      
       if (withdrawalsRes.success) setWithdrawals(withdrawalsRes.data || []);
       if (commissionsRes.success) setCommissions(commissionsRes.data);
     } catch (error: any) {
@@ -100,7 +120,7 @@ export default function SellerWallet() {
         animate={{ opacity: 1, y: 0 }}
         className="m-4 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl p-6 text-white shadow-lg"
       >
-        <p className="text-sm opacity-90 mb-1">Wallet Balance</p>
+        <p className="text-sm opacity-90 mb-1">Security Deposit Wallet Balance</p>
         <h1 className="text-4xl font-bold mb-4">₹{balance.toFixed(2)}</h1>
         <button
           onClick={() => setShowWithdrawModal(true)}

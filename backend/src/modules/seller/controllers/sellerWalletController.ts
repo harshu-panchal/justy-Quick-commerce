@@ -1,29 +1,75 @@
 import { Request, Response } from 'express';
 import {
-    getWalletBalance,
     getWalletTransactions,
     createWithdrawalRequest,
     getWithdrawalRequests,
 } from '../../../services/walletManagementService';
+import Seller from '../../../models/Seller';
 import { getCommissionSummary } from '../../../services/commissionService';
 
-/**
- * Get seller wallet balance
- */
+import SellerWalletTransaction from '../../../models/SellerWalletTransaction';
+
 export const getBalance = async (req: Request, res: Response) => {
     try {
         const sellerId = req.user!.userId;
-        const balance = await getWalletBalance(sellerId, 'SELLER');
+        const seller = await Seller.findById(sellerId).select('balance securityDeposit depositAmount');
+        
+        // Use securityDeposit, or depositAmount, or fallback to 1000
+        const currentDeposit = (typeof seller?.securityDeposit === 'number') 
+            ? seller.securityDeposit 
+            : (typeof seller?.depositAmount === 'number' ? seller.depositAmount : 1000);
 
         return res.status(200).json({
             success: true,
-            data: { balance },
+            data: { 
+                balance: currentDeposit, 
+                salesBalance: seller?.balance || 0,
+                securityDepositBalance: currentDeposit
+            },
         });
     } catch (error: any) {
         console.error('Error getting wallet balance:', error);
         return res.status(500).json({
             success: false,
             message: error.message || 'Failed to get wallet balance',
+        });
+    }
+};
+
+/**
+ * Get seller wallet history (including penalties)
+ */
+export const getWalletHistory = async (req: Request, res: Response) => {
+    try {
+        const sellerId = req.user!.userId;
+        const { page = 1, limit = 20 } = req.query;
+        const skip = (Number(page) - 1) * Number(limit);
+
+        const transactions = await SellerWalletTransaction.find({ sellerId })
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(Number(limit));
+
+        const total = await SellerWalletTransaction.countDocuments({ sellerId });
+
+        return res.status(200).json({
+            success: true,
+            message: "Wallet history fetched successfully",
+            data: {
+                transactions,
+                pagination: {
+                    page: Number(page),
+                    limit: Number(limit),
+                    total,
+                    pages: Math.ceil(total / Number(limit)),
+                },
+            },
+        });
+    } catch (error: any) {
+        console.error('Error getting wallet history:', error);
+        return res.status(500).json({
+            success: false,
+            message: error.message || 'Failed to get wallet history',
         });
     }
 };

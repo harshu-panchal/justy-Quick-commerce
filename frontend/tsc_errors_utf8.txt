@@ -1,0 +1,9 @@
+﻿src/modules/seller/pages/SellerAddProduct.tsx(197,15): error TS2353: Object literal may only specify known properties, and 'isShopByStoreOnly' does not exist in type 'SetStateAction<{ productName: string; headerCategory: string; category: string; subcategory: string; publish: string; popular: string; dealOfDay: string; brand: string; tags: string; smallDescription: string; ... 12 more ...; galleryImageUrls: string[]; }>'.
+src/modules/user/pages/offers/OfferPage.tsx(66,44): error TS2339: Property 'mode' does not exist on type 'Banner'.
+src/modules/user/pages/offers/OfferPage.tsx(95,41): error TS2339: Property 'mode' does not exist on type 'Banner'.
+src/modules/user/pages/offers/OfferPage.tsx(140,48): error TS2339: Property 'image' does not exist on type 'Banner'.
+src/services/api/customerHomeService.ts(10,5): error TS2300: Duplicate identifier 'homeSections'.
+src/services/api/customerHomeService.ts(10,5): error TS2687: All declarations of 'homeSections' must have identical modifiers.
+src/services/api/customerHomeService.ts(17,5): error TS2300: Duplicate identifier 'homeSections'.
+src/services/api/customerHomeService.ts(17,5): error TS2687: All declarations of 'homeSections' must have identical modifiers.
+src/services/api/customerHomeService.ts(17,5): error TS2717: Subsequent property declarations must have the same type.  Property 'homeSections' must be of type 'any[]', but here has type 'any[] | undefined'.

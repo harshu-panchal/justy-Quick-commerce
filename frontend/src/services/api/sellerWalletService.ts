@@ -71,3 +71,18 @@ export const getSellerCommissions = async () => {
         throw error;
     }
 };
+
+/**
+ * Get wallet history (including penalties)
+ */
+export const getSellerWalletHistory = async (page: number = 1, limit: number = 20) => {
+    try {
+        const response = await api.get('/seller/wallet-new/history', {
+            params: { page, limit },
+        });
+        return response.data;
+    } catch (error: any) {
+        console.error('Error getting wallet history:', error);
+        throw error;
+    }
+};

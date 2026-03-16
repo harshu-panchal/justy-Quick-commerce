@@ -230,29 +230,46 @@ const menuSections: MenuSection[] = [
               </svg>
             ),
           },
-          {
-            label: "Seller Transaction",
-            path: "/admin/manage-seller/transaction",
-            icon: (
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10"></circle>
-                <path d="M12 6V12M12 18V12"></path>
-                <path d="M8 12H16"></path>
-                <path d="M8 8L12 4L16 8"></path>
-                <path d="M8 16L12 20L16 16"></path>
-                <path d="M16 8L12 4L8 8"></path>
-                <path d="M16 16L12 20L8 16"></path>
-              </svg>
-            ),
-          },
+            {
+              label: "Seller Transaction",
+              path: "/admin/manage-seller/transaction",
+              icon: (
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <path d="M12 6V12M12 18V12"></path>
+                  <path d="M8 12H16"></path>
+                  <path d="M8 8L12 4L16 8"></path>
+                  <path d="M8 16L12 20L16 16"></path>
+                  <path d="M16 8L12 4L8 8"></path>
+                  <path d="M16 16L12 20L8 16"></path>
+                </svg>
+              ),
+            },
+            {
+              label: "Seller Penalty",
+              path: "/admin/seller/penalty",
+              icon: (
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round">
+                  <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              ),
+            },
         ],
       },
     ],

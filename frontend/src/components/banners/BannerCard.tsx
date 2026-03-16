@@ -1,5 +1,4 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
 import { Banner } from "./banner.types";
 
 interface BannerCardProps {
@@ -7,25 +6,13 @@ interface BannerCardProps {
 }
 
 const BannerCard: React.FC<BannerCardProps> = ({ banner }) => {
-    const navigate = useNavigate();
-
-    const handleClick = () => {
-        const type = banner.redirectType;
-        const id = banner.redirectId;
-
-        // Redirect to offer page instead of direct category/product/combo pages
-        if (type && id) {
-            navigate(`/offers/${type}/${id}`, { state: { banner } });
-        }
-    };
 
     return (
         <div
-            onClick={handleClick}
             className="relative w-full h-full cursor-pointer overflow-hidden rounded-2xl md:rounded-3xl shadow-lg border border-neutral-100 transition-transform duration-300 hover:scale-[1.01]"
         >
             <img
-                src={banner.image}
+                src={banner.imageUrl}
                 alt={banner.title}
                 className="w-full h-full object-cover select-none"
                 loading="lazy"

@@ -78,6 +78,9 @@ import * as promoStripController from "../modules/admin/controllers/adminPromoSt
 // Pincode Demand Controllers
 import * as pincodeDemandController from "../modules/admin/controllers/pincodeDemandController";
 
+// Banner Controllers
+import * as bannerController from "../controllers/bannerController";
+
 const router = Router();
 
 // All routes require admin authentication
@@ -307,6 +310,7 @@ router.delete("/policies/:id", policyController.deletePolicy);
 
 // ==================== Seller Routes ====================
 router.get("/sellers", sellerController.getAllSellers);
+router.post("/seller/penalty", sellerController.applySellerPenalty);
 
 // Seller Category Commissions
 router.get("/sellers/:sellerId/category-commissions", sellerCommissionController.getSellerCategoryCommissions);
@@ -367,5 +371,10 @@ router.delete("/promo-strips/:id", promoStripController.deletePromoStrip);
 
 // ==================== Pincode Demand Routes ====================
 router.get("/pincode-demands", pincodeDemandController.getPincodeDemands);
+
+// ==================== Banner Routes ====================
+router.post('/banners', bannerController.createBanner);
+router.get('/banners', bannerController.getAllBanners);
+router.delete('/banners/:id', bannerController.deleteBanner);
 
 export default router;

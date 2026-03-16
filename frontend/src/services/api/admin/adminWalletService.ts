@@ -148,3 +148,25 @@ export const getSellerTransactions = async (
   );
   return response.data;
 };
+
+/**
+ * Apply penalty to seller
+ */
+export const applySellerPenalty = async (data: {
+  sellerId: string;
+  amount: number;
+  reason: string;
+  orderId?: string;
+  note?: string;
+}): Promise<ApiResponse<any>> => {
+  const response = await api.post<ApiResponse<any>>("/admin/seller/penalty", data);
+  return response.data;
+};
+
+/**
+ * Get all sellers for penalty dropdown
+ */
+export const getAdminSellers = async (): Promise<ApiResponse<any[]>> => {
+  const response = await api.get<ApiResponse<any[]>>("/admin/sellers");
+  return response.data;
+};

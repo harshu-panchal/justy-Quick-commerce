@@ -1,31 +1,22 @@
 export type BannerMode = "quick" | "scheduled";
-export type BannerRedirectType = "category" | "product" | "combo";
 
 export interface Banner {
-    id: string;
+    _id: string;
     title: string;
-    image: string;
-    mode: BannerMode;
-    categoryId?: string;
-    redirectType: BannerRedirectType;
-    redirectId: string;
-    priority: number;
-    active: boolean;
+    imageUrl: string;
+    type: BannerMode;
+    isActive: boolean;
     createdAt: string;
-    updatedAt: string;
+    updatedAt?: string;
 }
 
 export interface CreateBannerInput {
     title: string;
-    image: string;
-    mode: BannerMode;
-    categoryId?: string;
-    redirectType: BannerRedirectType;
-    redirectId: string;
-    priority: number;
-    active: boolean;
+    imageUrl: string;
+    type: BannerMode;
+    isActive: boolean;
 }
 
 export interface UpdateBannerInput extends Partial<CreateBannerInput> {
-    id: string;
+    _id: string;
 }

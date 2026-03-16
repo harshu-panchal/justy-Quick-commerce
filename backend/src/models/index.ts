@@ -46,5 +46,7 @@ export { default as Wishlist } from "./Wishlist";
 export { default as HeaderCategory } from "./HeaderCategory";
 export { default as BestsellerCard } from "./BestsellerCard";
 export { default as WalletTransaction } from "./WalletTransaction";
+export { default as SellerWalletTransaction } from "./SellerWalletTransaction";
 export { default as PlatformWallet } from "./PlatformWallet";
+export { default as Banner } from "./Banner";
 export { default as SellerCategoryCommission } from "./SellerCategoryCommission";

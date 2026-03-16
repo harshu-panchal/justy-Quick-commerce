@@ -7,11 +7,9 @@ import AppSettings from "../models/AppSettings";
 import { creditWallet } from "./walletManagementService";
 import mongoose from "mongoose";
 import Category from "../models/Category";
-import SubCategory from "../models/SubCategory";
 import Product from "../models/Product";
 import WalletTransaction from "../models/WalletTransaction";
 import SellerCategoryCommission from "../models/SellerCategoryCommission";
-import HeaderCategory from "../models/HeaderCategory";
 
 /**
  * Get the effective commission rate for a product/item

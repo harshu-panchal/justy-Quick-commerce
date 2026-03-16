@@ -7,7 +7,7 @@ import { OrderStatus } from "../../types/order";
 import GoogleMapsTracking from "../../components/GoogleMapsTracking";
 import { useDeliveryTracking } from "../../hooks/useDeliveryTracking";
 import DeliveryPartnerCard from "../../components/DeliveryPartnerCard";
-import { cancelOrder, updateOrderNotes, getSellerLocationsForOrder, refreshDeliveryOtp } from "../../services/api/customerOrderService";
+import { cancelOrder, updateOrderNotes, getSellerLocationsForOrder, refreshDeliveryOtp, cancelOrderItem, requestReturn } from "../../services/api/customerOrderService";
 
 // Icon Components
 const ArrowLeftIcon = ({ className }: { className?: string }) => (
@@ -459,6 +459,7 @@ export default function OrderDetail() {
     distanceValue: number;
   } | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   // Modal states
   const [showCancelModal, setShowCancelModal] = useState(false);
@@ -473,6 +474,24 @@ export default function OrderDetail() {
   const [cancellationReason, setCancellationReason] = useState("");
   const [selectedTip, setSelectedTip] = useState<number | "other" | null>(null);
   const [customTip, setCustomTip] = useState("");
+
+  // Item action states
+  const [activeItem, setActiveItem] = useState<any>(null);
+  const [showItemCancelModal, setShowItemCancelModal] = useState(false);
+  const [showReturnModal, setShowReturnModal] = useState(false);
+  const [returnForm, setReturnForm] = useState({
+    reason: "",
+    description: "",
+  });
+
+  const returnReasons = [
+    "Product is damaged/defective",
+    "Missing items in the package",
+    "Product is different from what was ordered",
+    "Quality not as expected",
+    "Size/Fit issue",
+    "Other"
+  ];
 
   // Real-time delivery tracking via WebSocket
   const {
@@ -696,6 +715,70 @@ export default function OrderDetail() {
       console.error("Failed to save special requests:", error);
       alert("Failed to save special requests");
     }
+  };
+
+  const handleCancelItem = async () => {
+    if (!cancellationReason.trim()) {
+      alert("Please provide a cancellation reason");
+      return;
+    }
+    if (!id || !activeItem) return;
+
+    try {
+      await cancelOrderItem(id, activeItem._id, cancellationReason);
+      setShowItemCancelModal(false);
+      setCancellationReason("");
+      setActiveItem(null);
+      alert("Item cancelled successfully");
+      handleRefresh();
+    } catch (error) {
+      console.error("Error cancelling item:", error);
+      alert("Failed to cancel item");
+    }
+  };
+  const handleReturn = (item: any) => {
+    setActiveItem(item);
+    setShowReturnModal(true);
+  };
+
+  const submitReturn = async () => {
+    if (!returnForm.reason || !activeItem) return;
+    
+    setSubmitting(true);
+    try {
+      await requestReturn(order.id, activeItem._id, {
+        reason: returnForm.reason,
+        description: returnForm.description
+      });
+      setShowReturnModal(false);
+      setReturnForm({ reason: "", description: "" });
+      setActiveItem(null);
+      alert("Return request submitted successfully");
+      handleRefresh();
+    } catch (error: any) {
+      console.error("Error requesting return:", error);
+      const msg = error.response?.data?.message || "Failed to submit return request";
+      alert(msg);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const canReturnItem = (item: any) => {
+    if (item.status !== 'Delivered') return false;
+    
+    // For testing and if population is partial
+    const returnable = item.product?.isReturnable ?? item.isReturnable ?? true;
+    if (!returnable) return false;
+    
+    // Check window
+    const deliveredDate = order.deliveredAt ? new Date(order.deliveredAt) : new Date(order.updatedAt);
+    const returnDays = item.product?.maxReturnDays || item.maxReturnDays || 7;
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - (deliveredDate.getTime() || now.getTime()));
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    return diffDays <= returnDays;
   };
 
   if (loading && !order) {
@@ -962,6 +1045,7 @@ export default function OrderDetail() {
       {/* Scrollable Content */}
       <div className="px-4 py-4 space-y-4 pb-24">
         {/* Payment Pending */}
+        {order?.paymentStatus !== 'Completed' && !['Delivered', 'Cancelled', 'Returned'].includes(order?.status) && (
         <motion.div
           className="bg-white rounded-xl p-4 shadow-sm"
           initial={{ opacity: 0, y: 20 }}
@@ -981,12 +1065,13 @@ export default function OrderDetail() {
             </Button>
           </div>
         </motion.div>
+        )}
 
         {/* Promo Carousel */}
         <PromoCarousel />
 
         {/* Delivery Partner Assignment - Only show if no partner assigned yet */}
-        {!order?.deliveryPartner && (
+        {!order?.deliveryPartner && !['Delivered', 'Cancelled', 'Returned'].includes(order?.status) && (
           <motion.div
             className="bg-white rounded-xl p-4 shadow-sm"
             initial={{ opacity: 0, y: 20 }}
@@ -1006,9 +1091,12 @@ export default function OrderDetail() {
         )}
 
         {/* Tip Section */}
-        <TipSection />
+        {!['Delivered', 'Cancelled', 'Returned'].includes(order?.status) && (
+          <TipSection />
+        )}
 
         {/* Delivery Partner Safety */}
+        {!['Delivered', 'Cancelled', 'Returned'].includes(order?.status) && (
         <motion.button
           className="w-full bg-white rounded-xl p-4 shadow-sm flex items-center gap-3"
           initial={{ opacity: 0, y: 20 }}
@@ -1021,6 +1109,7 @@ export default function OrderDetail() {
           </span>
           <ChevronRightIcon className="w-5 h-5 text-gray-400" />
         </motion.button>
+        )}
 
         {/* Delivery Details Banner */}
         <motion.div
@@ -1054,12 +1143,14 @@ export default function OrderDetail() {
                 : "Add delivery address"
             }
           />
-          <SectionItem
-            icon={MessageSquareIcon}
-            title="Add delivery instructions"
-            subtitle=""
-            onClick={() => setShowInstructionsModal(true)}
-          />
+          {!['Delivered', 'Cancelled', 'Returned'].includes(order?.status) && (
+            <SectionItem
+              icon={MessageSquareIcon}
+              title="Add delivery instructions"
+              subtitle=""
+              onClick={() => setShowInstructionsModal(true)}
+            />
+          )}
         </motion.div>
 
         {/* Store Section */}
@@ -1097,18 +1188,83 @@ export default function OrderDetail() {
                 <p className="font-medium text-gray-900">
                   Order #{order.id.split("-").slice(-1)[0]}
                 </p>
-                <div className="mt-2 space-y-1">
+                <div className="mt-3 space-y-3">
                   {order.items?.map((item: any, index: number) => (
-                    <div
-                      key={index}
-                      className="flex items-center gap-2 text-sm text-gray-600">
-                      <span className="w-4 h-4 rounded border border-green-600 flex items-center justify-center">
-                        <span className="w-2 h-2 rounded-full bg-green-600" />
-                      </span>
-                      <span>
-                        {item.quantity} x{" "}
-                        {item.product?.name || item.productName || "Product"}
-                      </span>
+                    <div key={index} className="flex flex-col gap-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                          <span className="w-4 h-4 rounded border border-green-600 flex items-center justify-center flex-shrink-0">
+                            <span className="w-2 h-2 rounded-full bg-green-600" />
+                          </span>
+                          <span className="font-medium">
+                            {item.quantity} x{" "}
+                            {item.product?.name || item.productName || "Product"}
+                          </span>
+                        </div>
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                          item.status === 'Cancelled' ? 'bg-red-100 text-red-600' :
+                          item.status === 'Returned' ? 'bg-orange-100 text-orange-600' :
+                          item.status === 'Delivered' ? 'bg-green-100 text-green-600' :
+                          'bg-blue-100 text-blue-600'
+                        }`}>
+                          {item.status || 'Pending'}
+                        </span>
+                      </div>
+                      
+                      {/* Quick Actions in Summary */}
+                      <div className="flex flex-col gap-2 ml-6">
+                        <div className="flex gap-2">
+                          {['Pending', 'Processed', 'Accepted'].includes(item.status || 'Pending') && (
+                             <button 
+                               className="text-[11px] text-red-600 font-bold hover:underline"
+                               onClick={(e) => {
+                                 e.stopPropagation();
+                                 setActiveItem(item);
+                                 setShowItemCancelModal(true);
+                               }}
+                             >
+                               Cancel
+                             </button>
+                           )}
+                           {item.status === 'Delivered' && canReturnItem(item) && (
+                             <button 
+                               className="text-[11px] text-orange-600 font-bold hover:underline"
+                               onClick={(e) => {
+                                 e.stopPropagation();
+                                 setActiveItem(item);
+                                 setShowReturnModal(true);
+                               }}
+                             >
+                               Return Item
+                             </button>
+                           )}
+                        </div>
+
+                        {/* Return Progress Info */}
+                        {item.returnRequest && (
+                          <div className="bg-orange-50 p-2 rounded-lg border border-orange-100 mt-1">
+                            <p className="text-[10px] text-orange-800 font-semibold mb-1">
+                              Return {item.returnRequest.status}
+                            </p>
+                            {item.returnRequest.status === 'Approved' && item.returnRequest.pickupScheduled && (
+                              <div className="flex items-center gap-1.5 text-[9px] text-orange-700">
+                                <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
+                                <span>Pickup scheduled for: {new Date(item.returnRequest.pickupScheduled).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })}</span>
+                              </div>
+                            )}
+                            {item.returnRequest.status === 'Approved' && !item.returnRequest.pickupScheduled && (
+                              <p className="text-[9px] text-orange-600">
+                                Pickup will be scheduled shortly. Our delivery partner will contact you.
+                              </p>
+                            )}
+                            {item.returnRequest.status === 'Pending' && (
+                              <p className="text-[9px] text-orange-600 italic">
+                                Seller is reviewing your return request.
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -1117,12 +1273,14 @@ export default function OrderDetail() {
             </div>
           </div>
 
-          <SectionItem
-            icon={ChefHatIcon}
-            title="Add special requests"
-            subtitle=""
-            onClick={() => setShowSpecialRequestsModal(true)}
-          />
+          {!['Delivered', 'Cancelled', 'Returned'].includes(order?.status) && (
+            <SectionItem
+              icon={ChefHatIcon}
+              title="Add special requests"
+              subtitle=""
+              onClick={() => setShowSpecialRequestsModal(true)}
+            />
+          )}
         </motion.div>
 
         {/* Help Section */}
@@ -1146,12 +1304,22 @@ export default function OrderDetail() {
             </div>
             <ChevronRightIcon className="w-5 h-5 text-gray-400" />
           </div>
-          <SectionItem
-            icon={CircleSlashIcon}
-            title="Cancel order"
-            subtitle=""
-            onClick={() => setShowCancelModal(true)}
-          />
+          {(!['Delivered', 'Cancelled'].includes(order.status)) && (
+            <SectionItem
+              icon={CircleSlashIcon}
+              title="Cancel order"
+              subtitle=""
+              onClick={() => setShowCancelModal(true)}
+            />
+          )}
+          {order.status === 'Delivered' && (
+             <div className="p-4 border-t border-dashed border-gray-100 bg-green-50/50">
+               <p className="text-xs text-green-700 font-medium flex items-center gap-1">
+                 <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                 This order has been delivered. You can return items individually above.
+               </p>
+             </div>
+          )}
         </motion.div>
 
         {/* Quick Actions */}
@@ -1303,35 +1471,76 @@ export default function OrderDetail() {
                 {order?.items?.map((item: any, index: number) => (
                   <div
                     key={index}
-                    className="flex gap-3 border-b border-gray-200 pb-4 last:border-0">
-                    <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
-                      {item.product?.mainImage ? (
-                        <img
-                          src={item.product.mainImage}
-                          alt={
-                            item.product?.name || item.productName || "Product"
-                          }
-                          className="w-full h-full object-cover rounded-lg"
-                        />
-                      ) : (
-                        <span className="text-2xl">📦</span>
-                      )}
+                    className="flex flex-col gap-3 border-b border-gray-200 pb-4 last:border-0">
+                    <div className="flex gap-3">
+                      <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
+                        {item.product?.mainImage ? (
+                          <img
+                            src={item.product.mainImage}
+                            alt={
+                              item.product?.name || item.productName || "Product"
+                            }
+                            className="w-full h-full object-cover rounded-lg"
+                          />
+                        ) : (
+                          <span className="text-2xl">📦</span>
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex justify-between items-start">
+                          <p className="font-medium text-gray-900">
+                            {item.product?.name || item.productName}
+                          </p>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                            item.status === 'Cancelled' ? 'bg-red-100 text-red-600' :
+                            item.status === 'Returned' ? 'bg-orange-100 text-orange-600' :
+                            item.status === 'Delivered' ? 'bg-green-100 text-green-600' :
+                            'bg-blue-100 text-blue-600'
+                          }`}>
+                            {item.status || 'Pending'}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-500">
+                          Qty: {item.quantity}
+                        </p>
+                        {item.variant && (
+                          <p className="text-xs text-gray-500">{item.variant}</p>
+                        )}
+                        <p className="text-sm font-semibold text-gray-900 mt-1">
+                          ₹
+                          {item.total?.toFixed(0) ||
+                            (item.unitPrice * item.quantity).toFixed(0)}
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <p className="font-medium text-gray-900">
-                        {item.product?.name || item.productName}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        Qty: {item.quantity}
-                      </p>
-                      {item.variant && (
-                        <p className="text-xs text-gray-500">{item.variant}</p>
-                      )}
-                      <p className="text-sm font-semibold text-gray-900 mt-1">
-                        ₹
-                        {item.total?.toFixed(0) ||
-                          (item.unitPrice * item.quantity).toFixed(0)}
-                      </p>
+                    {/* Item Actions */}
+                    <div className="flex gap-2">
+                       {['Pending', 'Processed', 'Accepted'].includes(item.status || 'Pending') && (
+                         <Button 
+                           variant="outline" 
+                           size="sm" 
+                           className="text-xs text-red-600 border-red-200 hover:bg-red-50 py-1 h-8"
+                           onClick={() => {
+                             setActiveItem(item);
+                             setShowItemCancelModal(true);
+                           }}
+                         >
+                           Cancel Item
+                         </Button>
+                       )}
+                       {item.status === 'Delivered' && canReturnItem(item) && (
+                         <Button 
+                           variant="outline" 
+                           size="sm" 
+                           className="text-xs text-orange-600 border-orange-200 hover:bg-orange-50 py-1 h-8"
+                           onClick={() => {
+                             setActiveItem(item);
+                             setShowReturnModal(true);
+                           }}
+                         >
+                           Return Item
+                         </Button>
+                       )}
                     </div>
                   </div>
                 ))}
@@ -1390,6 +1599,119 @@ export default function OrderDetail() {
                   onClick={handleSaveSpecialRequests}>
                   Save
                 </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      {/* Item Cancellation Modal */}
+      <AnimatePresence>
+        {showItemCancelModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center p-4"
+            onClick={() => setShowItemCancelModal(false)}>
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-2xl p-6 max-w-md w-full">
+              <h2 className="text-xl font-bold text-gray-900 mb-2">
+                Cancel Item
+              </h2>
+              <p className="text-sm font-medium text-gray-800 mb-2">
+                {activeItem?.product?.name || activeItem?.productName}
+              </p>
+              <p className="text-sm text-gray-600 mb-4">
+                Are you sure you want to cancel this item?
+              </p>
+              <textarea
+                className="w-full border border-gray-300 rounded-lg p-3 mb-4 focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
+                rows={3}
+                placeholder="Enter cancellation reason..."
+                value={cancellationReason}
+                onChange={(e) => setCancellationReason(e.target.value)}
+              />
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setShowItemCancelModal(false)}>
+                  Close
+                </Button>
+                <Button
+                  className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                  onClick={handleCancelItem}>
+                  Confirm Cancel
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Return Item Modal */}
+      <AnimatePresence>
+        {showReturnModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center p-4"
+            onClick={() => setShowReturnModal(false)}>
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-2xl p-6 max-w-md w-full">
+              <h2 className="text-xl font-bold text-gray-900 mb-2">
+                Return Request
+              </h2>
+              <p className="text-sm font-medium text-gray-800 mb-2">
+                {activeItem?.product?.name || activeItem?.productName}
+              </p>
+              
+              <div className="space-y-4 mt-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Select Reason</label>
+                  <select 
+                    className="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-green-500 outline-none"
+                    value={returnForm.reason}
+                    onChange={(e) => setReturnForm({...returnForm, reason: e.target.value})}
+                  >
+                    <option value="">Choose a reason</option>
+                    {returnReasons.map((r: string) => <option key={r} value={r}>{r}</option>)}
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Description (Optional)</label>
+                  <textarea
+                    className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+                    rows={3}
+                    placeholder="Describe the issue..."
+                    value={returnForm.description}
+                    onChange={(e) => setReturnForm({...returnForm, description: e.target.value})}
+                  />
+                </div>
+                
+                <div className="flex gap-3 pt-2">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => setShowReturnModal(false)}>
+                    Cancel
+                  </Button>
+                  <Button
+                    className="flex-1 bg-orange-600 hover:bg-orange-700 text-white"
+                    onClick={submitReturn}>
+                    Submit Return
+                  </Button>
+                </div>
               </div>
             </motion.div>
           </motion.div>

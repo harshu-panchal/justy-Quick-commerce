@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import mongoose from "mongoose";
 import { asyncHandler } from "../../../utils/asyncHandler";
 import Return from "../../../models/Return";
 // import Order from "../../../models/Order";
@@ -131,13 +132,9 @@ export const getReturnRequestById = asyncHandler(
 export const updateReturnStatus = asyncHandler(
   async (req: Request, res: Response) => {
     const { id } = req.params;
-    const { status } = req.body;
+    const { status, rejectionReason, pickupScheduled } = req.body;
 
-    const returnRequest = await Return.findByIdAndUpdate(
-      id,
-      { status },
-      { new: true }
-    );
+    const returnRequest = await Return.findById(id);
 
     if (!returnRequest) {
       return res.status(404).json({
@@ -146,9 +143,28 @@ export const updateReturnStatus = asyncHandler(
       });
     }
 
+    const oldStatus = returnRequest.status;
+    returnRequest.status = status;
+    if (rejectionReason) returnRequest.rejectionReason = rejectionReason;
+    if (pickupScheduled) returnRequest.pickupScheduled = new Date(pickupScheduled);
+    returnRequest.processedAt = new Date();
+    returnRequest.processedBy = new mongoose.Types.ObjectId(req.user?.userId);
+
+    await returnRequest.save();
+
+    // Sync with OrderItem
+    if (status === 'Approved') {
+       await OrderItem.findByIdAndUpdate(returnRequest.orderItem, { status: 'Returned' });
+    } else if (status === 'Rejected' && oldStatus === 'Pending') {
+       // Optional: Revert to Delivered or keep as is? 
+       // For now, keep as Delivered but remove return request association if needed.
+       // Actually, we just keeps the item as 'Delivered' in OrderItem.
+       await OrderItem.findByIdAndUpdate(returnRequest.orderItem, { status: 'Delivered' });
+    }
+
     return res.status(200).json({
       success: true,
-      message: "Return status updated successfully",
+      message: `Return status updated to ${status} successfully`,
       data: returnRequest
     });
   }

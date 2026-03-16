@@ -65,24 +65,34 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const mapApiItemsToState = (apiItems: any[]): ExtendedCartItem[] => {
     return apiItems
       .filter((item: any) => item.product) // Safety filter
-      .map((item: any) => ({
-        id: item._id, // Store CartItem ID
-        product: {
-          id: item.product._id, // Map _id to id
-          name: item.product.productName || item.product.name,
-          price: item.product.price,
-          mrp: item.product.mrp,
-          discPrice: item.product.discPrice,
-          variations: item.product.variations,
-          imageUrl: item.product.mainImage || item.product.imageUrl,
-          pack: item.product.pack || '1 unit',
-          categoryId: item.product.category || '',
-          description: item.product.description,
-          variantId: item.variation // Preserving variation ID/value
-        },
-        quantity: item.quantity,
-        variant: item.variation // Also preserve it here for order placement
-      }));
+      .map((item: any) => {
+        const product = item.product;
+        // Determine delivery type using the same logic as backend
+        const isScheduled =
+          product.headerCategoryId?.deliveryType === 'scheduled' ||
+          product.category?.headerCategoryId?.deliveryType === 'scheduled' ||
+          product.subcategory?.headerCategoryId?.deliveryType === 'scheduled';
+
+        return {
+          id: item._id, // Store CartItem ID
+          product: {
+            id: product._id, // Map _id to id
+            name: product.productName || product.name,
+            price: product.price,
+            mrp: product.mrp,
+            discPrice: product.discPrice,
+            variations: product.variations,
+            imageUrl: product.mainImage || product.imageUrl,
+            pack: product.pack || '1 unit',
+            categoryId: product.category?._id || product.category || '',
+            description: product.description,
+            variantId: item.variation // Preserving variation ID/value
+          },
+          quantity: item.quantity,
+          variant: item.variation, // Also preserve it here for order placement
+          deliveryType: isScheduled ? 'scheduled' : 'quick' as 'quick' | 'scheduled'
+        };
+      });
   };
 
   // Sync to localStorage whenever items change

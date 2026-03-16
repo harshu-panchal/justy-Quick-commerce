@@ -98,6 +98,22 @@ export const cancelOrder = async (id: string, reason: string): Promise<OrderResp
 };
 
 /**
+ * Cancel a specific item in an order
+ */
+export const cancelOrderItem = async (id: string, itemId: string, reason: string): Promise<OrderResponse> => {
+    const response = await api.post<OrderResponse>(`/customer/orders/${id}/items/${itemId}/cancel`, { reason });
+    return response.data;
+};
+
+/**
+ * Request a return for a specific item in an order
+ */
+export const requestReturn = async (id: string, itemId: string, data: { reason: string; description?: string; images?: string[] }): Promise<OrderResponse> => {
+    const response = await api.post<OrderResponse>(`/customer/orders/${id}/items/${itemId}/return`, data);
+    return response.data;
+};
+
+/**
  * Update order notes (instructions/special requests)
  */
 export const updateOrderNotes = async (id: string, data: { deliveryInstructions?: string; specialRequests?: string }): Promise<OrderResponse> => {

@@ -1143,122 +1143,121 @@ export default function Checkout() {
         </div>
       )}
 
-      {/* Main Product Card */}
-      <div className="px-4 md:px-6 lg:px-8 py-2 md:py-3 bg-white border-b border-neutral-200">
-        <div className="bg-white rounded-lg border border-neutral-200 p-2.5">
-          {/* Delivery info */}
-          <div className="flex items-center gap-1.5 mb-2">
-            <div className="w-5 h-5 rounded-full bg-green-600 flex items-center justify-center flex-shrink-0">
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg">
-                <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="2" />
-                <path
-                  d="M12 6v6l4 2"
-                  stroke="white"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-              </svg>
+      {/* Shipment Sections */}
+      <div className="space-y-4 mb-4">
+        {/* Quick Delivery Shipment */}
+        {displayItems.filter(i => i.deliveryType !== 'scheduled').length > 0 && (
+          <div className="px-4 md:px-6 lg:px-8 py-4 bg-white border-b border-neutral-200">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-2xl bg-yellow-400/20 flex items-center justify-center text-xl shadow-sm border border-yellow-200">
+                ⚡
+              </div>
+              <div>
+                <h2 className="text-base font-black text-neutral-900 leading-none mb-1">Shipment 1: Quick Delivery</h2>
+                <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-wider">Arrival in 15-20 mins</p>
+              </div>
             </div>
-            <span className="text-xs font-semibold text-neutral-900">
-              Delivery in {appConfig.estimatedDeliveryTime}
-            </span>
-          </div>
-
-          <p className="text-[10px] text-neutral-600 mb-2.5">
-            Shipment of {displayCart.itemCount || 0}{" "}
-            {(displayCart.itemCount || 0) === 1 ? "item" : "items"}
-          </p>
-
-          {/* Cart Items */}
-          <div className="space-y-2.5">
-            {displayItems
-              .filter((item) => item.product)
-              .map((item) => (
-                <div
-                  key={item.product?.id || Math.random()}
-                  className="flex gap-2">
-                  {/* Product Image */}
-                  <div className="w-12 h-12 bg-neutral-100 rounded-lg flex-shrink-0 overflow-hidden">
-                    {item.product?.imageUrl ? (
-                      <img
-                        src={item.product?.imageUrl}
-                        alt={item.product?.name}
-                        className="w-full h-full object-contain"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-neutral-400">
-                        {(item.product?.name || "").charAt(0)}
+            
+            <div className="space-y-4">
+              {displayItems
+                .filter(i => i.deliveryType !== 'scheduled')
+                .map((item) => {
+                  const { displayPrice, mrp, hasDiscount } = calculateProductPrice(item.product, item.variant);
+                  return (
+                    <div key={item.product?.id || Math.random()} className="flex gap-4">
+                      <div className="w-16 h-16 bg-neutral-50 rounded-2xl overflow-hidden flex-shrink-0 border border-neutral-100 shadow-sm">
+                        <img src={item.product?.imageUrl} alt={item.product?.name} className="w-full h-full object-cover" />
                       </div>
-                    )}
-                  </div>
-
-                  {/* Product Info */}
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-xs font-semibold text-neutral-900 mb-0.5 line-clamp-2">
-                      {item.product?.name}
-                    </h3>
-                    <p className="text-[10px] text-neutral-600 mb-0.5">
-                      {item.quantity} × {item.product?.pack}
-                    </p>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleMoveToWishlist(item.product);
-                      }}
-                      className="text-[10px] text-green-600 font-medium mb-1.5 hover:text-green-700 transition-colors">
-                      Move to wishlist
-                    </button>
-
-                    {/* Quantity Selector */}
-                    <div className="flex items-center justify-between mt-1.5">
-                      <div className="flex items-center gap-1.5 bg-white border-2 border-green-600 rounded-full px-1.5 py-0.5">
-                        <button
-                          onClick={() =>
-                            updateQuantity(item.product?.id, item.quantity - 1)
-                          }
-                          className="w-5 h-5 flex items-center justify-center text-green-600 font-bold hover:bg-green-50 rounded-full transition-colors text-xs">
-                          −
-                        </button>
-                        <span className="text-xs font-bold text-green-600 min-w-[1.25rem] text-center">
-                          {item.quantity}
-                        </span>
-                        <button
-                          onClick={() =>
-                            updateQuantity(item.product?.id, item.quantity + 1)
-                          }
-                          className="w-5 h-5 flex items-center justify-center text-green-600 font-bold hover:bg-green-50 rounded-full transition-colors text-xs">
-                          +
-                        </button>
-                      </div>
-
-                      {/* Price */}
-                      {(() => {
-                        const { displayPrice, mrp, hasDiscount } =
-                          calculateProductPrice(item.product, item.variant);
-                        return (
-                          <div className="flex items-center gap-1.5">
-                            {hasDiscount && (
-                              <span className="text-[10px] text-neutral-500 line-through">
-                                ₹{mrp}
-                              </span>
-                            )}
-                            <span className="text-sm font-bold text-neutral-900">
-                              ₹{displayPrice}
-                            </span>
+                      <div className="flex-1 min-w-0 flex flex-col justify-center">
+                        <h3 className="text-sm font-bold text-neutral-900 line-clamp-1 mb-0.5">{item.product?.name}</h3>
+                        <div className="flex items-center gap-3 mb-2">
+                          <p className="text-[10px] text-neutral-500 font-bold">{item.product?.pack}</p>
+                          <div className="flex items-center gap-2 bg-green-50 rounded-lg p-0.5 border border-green-100">
+                            <button
+                              onClick={() => updateQuantity(item.product?.id, item.quantity - 1, item.variant)}
+                              className="w-5 h-5 flex items-center justify-center text-green-700 font-bold hover:bg-white rounded-md transition-colors text-xs"
+                            >
+                              −
+                            </button>
+                            <span className="text-[10px] font-bold text-green-900 min-w-[1rem] text-center">{item.quantity}</span>
+                            <button
+                              onClick={() => updateQuantity(item.product?.id, item.quantity + 1, item.variant)}
+                              className="w-5 h-5 flex items-center justify-center text-green-700 font-bold hover:bg-white rounded-md transition-colors text-xs"
+                            >
+                              +
+                            </button>
                           </div>
-                        );
-                      })()}
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-black text-neutral-900">₹{displayPrice}</span>
+                            {hasDiscount && <span className="text-[10px] text-neutral-400 line-through font-medium">₹{mrp}</span>}
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              ))}
+                  );
+                })}
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* Scheduled Delivery Shipment */}
+        {displayItems.filter(i => i.deliveryType === 'scheduled').length > 0 && (
+          <div className="px-4 md:px-6 lg:px-8 py-4 bg-white border-b border-neutral-200">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-2xl bg-blue-500/10 flex items-center justify-center text-xl shadow-sm border border-blue-100">
+                📅
+              </div>
+              <div>
+                <h2 className="text-base font-black text-neutral-900 leading-none mb-1">Shipment 2: Scheduled Delivery</h2>
+                <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-wider">Arrival in 1-2 days</p>
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              {displayItems
+                .filter(i => i.deliveryType === 'scheduled')
+                .map((item) => {
+                  const { displayPrice, mrp, hasDiscount } = calculateProductPrice(item.product, item.variant);
+                  return (
+                    <div key={item.product?.id || Math.random()} className="flex gap-4">
+                      <div className="w-16 h-16 bg-neutral-50 rounded-2xl overflow-hidden flex-shrink-0 border border-neutral-100 shadow-sm">
+                        <img src={item.product?.imageUrl} alt={item.product?.name} className="w-full h-full object-cover" />
+                      </div>
+                      <div className="flex-1 min-w-0 flex flex-col justify-center">
+                        <h3 className="text-sm font-bold text-neutral-900 line-clamp-1 mb-0.5">{item.product?.name}</h3>
+                        <div className="flex items-center gap-3 mb-2">
+                          <p className="text-[10px] text-neutral-500 font-bold">{item.product?.pack}</p>
+                          <div className="flex items-center gap-2 bg-green-50 rounded-lg p-0.5 border border-green-100">
+                            <button
+                              onClick={() => updateQuantity(item.product?.id, item.quantity - 1, item.variant)}
+                              className="w-5 h-5 flex items-center justify-center text-green-700 font-bold hover:bg-white rounded-md transition-colors text-xs"
+                            >
+                              −
+                            </button>
+                            <span className="text-[10px] font-bold text-green-900 min-w-[1rem] text-center">{item.quantity}</span>
+                            <button
+                              onClick={() => updateQuantity(item.product?.id, item.quantity + 1, item.variant)}
+                              className="w-5 h-5 flex items-center justify-center text-green-700 font-bold hover:bg-white rounded-md transition-colors text-xs"
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-black text-neutral-900">₹{displayPrice}</span>
+                            {hasDiscount && <span className="text-[10px] text-neutral-400 line-through font-medium">₹{mrp}</span>}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* You might also like */}

@@ -4,6 +4,7 @@ export interface CartItem {
   product: Product;
   quantity: number;
   variant?: any;
+  deliveryType?: 'quick' | 'scheduled';
 }
 
 export interface Cart {

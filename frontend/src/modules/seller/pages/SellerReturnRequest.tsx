@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getReturnRequests, ReturnRequest, GetReturnRequestsParams } from '../../../services/api/returnService';
+import { getReturnRequests, updateReturnStatus, ReturnRequest, GetReturnRequestsParams } from '../../../services/api/returnService';
 
 export default function SellerReturnRequest() {
     const [returnRequests, setReturnRequests] = useState<ReturnRequest[]>([]);
@@ -84,6 +84,44 @@ export default function SellerReturnRequest() {
     const handleClearDates = () => {
         setFromDate('');
         setToDate('');
+    };
+
+    const handleUpdateStatus = async (id: string, status: 'Approved' | 'Rejected' | 'Completed') => {
+        let pickupScheduled: string | undefined;
+        let rejectionReason: string | undefined;
+
+        if (status === 'Approved') {
+            if (!window.confirm(`Approve this return and schedule pickup for tomorrow?`)) return;
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            pickupScheduled = tomorrow.toISOString();
+        } else if (status === 'Rejected') {
+            rejectionReason = window.prompt("Please enter rejection reason:") || undefined;
+            if (!rejectionReason) return;
+        } else {
+            if (!window.confirm(`Mark this return as completed?`)) return;
+        }
+
+        try {
+            const response = await updateReturnStatus(id, { status, pickupScheduled, rejectionReason });
+            if (response.success) {
+                alert(`Return request ${status.toLowerCase()} successfully`);
+                // Refresh data
+                const params: GetReturnRequestsParams = {
+                    page: currentPage,
+                    limit: rowsPerPage,
+                    sortBy: sortColumn || 'returnDate',
+                    sortOrder: sortDirection,
+                };
+                if (statusFilter !== 'All Status') params.status = statusFilter;
+                const refreshResponse = await getReturnRequests(params);
+                if (refreshResponse.success) setReturnRequests(refreshResponse.data);
+            } else {
+                alert(response.message || 'Failed to update status');
+            }
+        } catch (err: any) {
+            alert(err.response?.data?.message || err.message || 'Failed to update status');
+        }
     };
 
     return (
@@ -361,22 +399,49 @@ export default function SellerReturnRequest() {
                                                 <td className="p-4 border border-neutral-200 text-sm text-neutral-900">{request.orderItemId}</td>
                                                 <td className="p-4 border border-neutral-200 text-sm text-neutral-900">{request.product}</td>
                                                 <td className="p-4 border border-neutral-200 text-sm text-neutral-900">{request.variant}</td>
-                                                <td className="p-4 border border-neutral-200 text-sm text-neutral-900">?{request.price.toFixed(2)}</td>
-                                                <td className="p-4 border border-neutral-200 text-sm text-neutral-900">?{request.discPrice.toFixed(2)}</td>
-                                                <td className="p-4 border border-neutral-200 text-sm text-neutral-900">{request.quantity}</td>
-                                                <td className="p-4 border border-neutral-200 text-sm text-neutral-900">?{request.total.toFixed(2)}</td>
+                                                 <td className="p-4 border border-neutral-200 text-sm text-neutral-900">₹{request.price.toFixed(2)}</td>
+                                                 <td className="p-4 border border-neutral-200 text-sm text-neutral-900">₹{request.discPrice.toFixed(2)}</td>
+                                                 <td className="p-4 border border-neutral-200 text-sm text-neutral-900">{request.quantity}</td>
+                                                 <td className="p-4 border border-neutral-200 text-sm text-neutral-900">₹{request.total.toFixed(2)}</td>
                                                 <td className="p-4 border border-neutral-200 text-sm text-neutral-900">{request.status}</td>
                                                 <td className="p-4 border border-neutral-200 text-sm text-neutral-900">{request.date}</td>
-                                                <td className="p-4 border border-neutral-200 text-sm text-neutral-900">
-                                                    <button
-                                                        onClick={() => {
-                                                            alert(`Return Request Details:\n\nOrder Item ID: ${request.orderItemId}\nProduct: ${request.product}\nVariant: ${request.variant}\nPrice: ?${request.price.toFixed(2)}\nDiscounted Price: ?${request.discPrice.toFixed(2)}\nQuantity: ${request.quantity}\nTotal: ?${request.total.toFixed(2)}\nStatus: ${request.status}\nDate: ${request.date}`);
-                                                        }}
-                                                        className="text-green-600 hover:text-green-700 text-xs font-medium transition-colors"
-                                                    >
-                                                        View
-                                                    </button>
-                                                </td>
+                                                 <td className="p-4 border border-neutral-200 text-sm text-neutral-900">
+                                                     <div className="flex flex-col gap-2">
+                                                        <button
+                                                            onClick={() => {
+                                                                alert(`Return Request Details:\n\nOrder Item ID: ${request.orderItemId}\nProduct: ${request.product}\nVariant: ${request.variant}\nPrice: ₹${request.price.toFixed(2)}\nDiscounted Price: ₹${request.discPrice.toFixed(2)}\nQuantity: ${request.quantity}\nTotal: ₹${request.total.toFixed(2)}\nStatus: ${request.status}\nDate: ${request.date}\nReason: ${request.returnReason || 'N/A'}`);
+                                                            }}
+                                                            className="text-blue-600 hover:text-blue-700 text-xs font-medium transition-colors text-left"
+                                                        >
+                                                            View Detail
+                                                        </button>
+                                                        {request.status === 'Pending' && (
+                                                            <div className="flex gap-2">
+                                                                 <button
+                                                                     onClick={() => handleUpdateStatus(request.id, 'Approved')}
+                                                                     className="bg-green-100 text-green-700 px-2 py-1 rounded text-[10px] font-bold hover:bg-green-200 transition-colors"
+                                                                     title="Approve and schedule pickup for tomorrow"
+                                                                 >
+                                                                     Approve & Schedule
+                                                                 </button>
+                                                                <button
+                                                                    onClick={() => handleUpdateStatus(request.id, 'Rejected')}
+                                                                    className="bg-red-100 text-red-700 px-2 py-1 rounded text-[10px] font-bold hover:bg-red-200 transition-colors"
+                                                                >
+                                                                    Reject
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                        {request.status === 'Approved' && (
+                                                            <button
+                                                                onClick={() => handleUpdateStatus(request.id, 'Completed')}
+                                                                className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-[10px] font-bold hover:bg-blue-200 transition-colors w-fit"
+                                                            >
+                                                                Mark Completed
+                                                            </button>
+                                                        )}
+                                                     </div>
+                                                 </td>
                                             </tr>
                                         ))
                                     )}

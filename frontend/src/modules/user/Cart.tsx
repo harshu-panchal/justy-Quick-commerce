@@ -55,89 +55,133 @@ export default function Cart() {
         <p className="text-xs md:text-sm text-neutral-600">Delivered in {appConfig.estimatedDeliveryTime}</p>
       </div>
 
-      {/* Cart Items */}
+      {/* Cart Content */}
       <div className="px-4 md:px-6 lg:px-8 space-y-4 md:space-y-6 mb-4 md:mb-6">
-        {cart.items.map((item) => {
-          const { displayPrice, mrp, hasDiscount } = calculateProductPrice(item.product, item.variant);
-          return (
-            <div
-              key={item.product.id}
-              className="bg-white rounded-lg border border-neutral-200 p-4 md:p-6 hover:shadow-md transition-shadow"
-            >
-              <div className="flex gap-4 md:gap-6">
-                {/* Product Image */}
-                <div className="w-20 h-20 md:w-24 md:h-24 bg-neutral-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  {item.product.imageUrl ? (
-                    <img
-                      src={item.product.imageUrl}
-                      alt={item.product.name}
-                      className="w-full h-full object-cover rounded-lg"
-                    />
-                  ) : (
-                    <span className="text-2xl text-neutral-400">
-                      {item.product.name.charAt(0).toUpperCase()}
-                    </span>
-                  )}
+        {/* Quick Delivery Section */}
+        {cart.items.filter(i => i.deliveryType !== 'scheduled').length > 0 && (
+          <div className="bg-white rounded-[28px] border border-neutral-100 shadow-sm overflow-hidden">
+            <div className="bg-yellow-50/50 px-5 py-3 border-b border-neutral-100 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">⚡</span>
+                <div>
+                  <h2 className="font-bold text-neutral-900 text-sm md:text-base">Quick Delivery</h2>
+                  <p className="text-[10px] md:text-xs text-neutral-500 font-medium">Delivery in 15-20 mins</p>
                 </div>
-
-                {/* Product Info */}
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-neutral-900 mb-1 md:mb-2 line-clamp-2 md:text-lg">
-                    {item.product.name}
-                  </h3>
-                  <p className="text-xs md:text-sm text-neutral-500 mb-2">{item.product.pack}</p>
-                  <div className="flex items-center gap-2 mb-3 md:mb-4">
-                    <span className="text-base md:text-lg font-bold text-neutral-900">
-                      ₹{displayPrice.toLocaleString('en-IN')}
-                    </span>
-                    {hasDiscount && (
-                      <span className="text-xs md:text-sm text-neutral-500 line-through">
-                        ₹{mrp.toLocaleString('en-IN')}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Quantity Controls */}
-                  <div className="flex items-center gap-3 md:gap-4">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.variant)}
-                      className="w-8 h-8 md:w-10 md:h-10 p-0 border-neutral-300 text-neutral-600 hover:border-green-600 hover:text-green-600 md:text-lg"
-                    >
-                      −
-                    </Button>
-                    <span className="text-base md:text-lg font-semibold text-neutral-900 min-w-[2rem] md:min-w-[2.5rem] text-center">
-                      {item.quantity}
-                    </span>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.variant)}
-                      className="w-8 h-8 md:w-10 md:h-10 p-0 border-neutral-300 text-neutral-600 hover:border-green-600 hover:text-green-600 md:text-lg"
-                    >
-                      +
-                    </Button>
-                    <div className="ml-auto text-right">
-                      <div className="text-sm md:text-base font-bold text-neutral-900">
-                        ₹{(displayPrice * item.quantity).toFixed(0)}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Remove Button */}
-                <button
-                  onClick={() => removeFromCart(item.product.id)}
-                  className="text-neutral-400 hover:text-red-600 transition-colors self-start"
-                  aria-label="Remove item"
-                >
-                  ✕
-                </button>
+              </div>
+              <div className="text-right">
+                <span className="text-xs font-bold text-neutral-900">
+                  ₹{cart.items
+                    .filter(i => i.deliveryType !== 'scheduled')
+                    .reduce((acc, i) => acc + calculateProductPrice(i.product, i.variant).displayPrice * i.quantity, 0)
+                    .toLocaleString('en-IN')}
+                </span>
               </div>
             </div>
-          );
-        })}
+            <div className="divide-y divide-neutral-50">
+              {cart.items
+                .filter(i => i.deliveryType !== 'scheduled')
+                .map((item) => {
+                  const { displayPrice, mrp, hasDiscount } = calculateProductPrice(item.product, item.variant);
+                  return (
+                    <div key={item.product.id} className="p-4 md:p-5 flex gap-4 hover:bg-neutral-50/30 transition-colors">
+                      <div className="w-16 h-16 bg-neutral-100 rounded-xl overflow-hidden flex-shrink-0">
+                        <img src={item.product.imageUrl} alt={item.product.name} className="w-full h-full object-cover" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-sm font-semibold text-neutral-900 line-clamp-1">{item.product.name}</h3>
+                        <p className="text-[10px] text-neutral-500 mb-2">{item.product.pack}</p>
+                        <div className="flex items-center justify-between mt-auto">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-bold text-neutral-900">₹{displayPrice}</span>
+                            {hasDiscount && <span className="text-[10px] text-neutral-400 line-through">₹{mrp}</span>}
+                          </div>
+                          {/* Quantity Controls */}
+                          <div className="flex items-center gap-2 bg-green-50 rounded-lg p-0.5 border border-green-100">
+                            <button
+                              onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.variant)}
+                              className="w-6 h-6 flex items-center justify-center text-green-700 font-bold hover:bg-white rounded-md transition-colors"
+                            >
+                              −
+                            </button>
+                            <span className="text-xs font-bold text-green-900 min-w-[1.25rem] text-center">{item.quantity}</span>
+                            <button
+                              onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.variant)}
+                              className="w-6 h-6 flex items-center justify-center text-green-700 font-bold hover:bg-white rounded-md transition-colors"
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+        )}
+
+        {/* Scheduled Delivery Section */}
+        {cart.items.filter(i => i.deliveryType === 'scheduled').length > 0 && (
+          <div className="bg-white rounded-[28px] border border-neutral-100 shadow-sm overflow-hidden">
+            <div className="bg-blue-50/50 px-5 py-3 border-b border-neutral-100 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">📅</span>
+                <div>
+                  <h2 className="font-bold text-neutral-900 text-sm md:text-base">Scheduled Delivery</h2>
+                  <p className="text-[10px] md:text-xs text-neutral-500 font-medium">Delivery in 1-2 days</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <span className="text-xs font-bold text-neutral-900">
+                  ₹{cart.items
+                    .filter(i => i.deliveryType === 'scheduled')
+                    .reduce((acc, i) => acc + calculateProductPrice(i.product, i.variant).displayPrice * i.quantity, 0)
+                    .toLocaleString('en-IN')}
+                </span>
+              </div>
+            </div>
+            <div className="divide-y divide-neutral-50">
+              {cart.items
+                .filter(i => i.deliveryType === 'scheduled')
+                .map((item) => {
+                  const { displayPrice, mrp, hasDiscount } = calculateProductPrice(item.product, item.variant);
+                  return (
+                    <div key={item.product.id} className="p-4 md:p-5 flex gap-4 hover:bg-neutral-50/30 transition-colors">
+                      <div className="w-16 h-16 bg-neutral-100 rounded-xl overflow-hidden flex-shrink-0">
+                        <img src={item.product.imageUrl} alt={item.product.name} className="w-full h-full object-cover" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-sm font-semibold text-neutral-900 line-clamp-1">{item.product.name}</h3>
+                        <p className="text-[10px] text-neutral-500 mb-2">{item.product.pack}</p>
+                        <div className="flex items-center justify-between mt-auto">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-bold text-neutral-900">₹{displayPrice}</span>
+                            {hasDiscount && <span className="text-[10px] text-neutral-400 line-through">₹{mrp}</span>}
+                          </div>
+                          {/* Quantity Controls */}
+                          <div className="flex items-center gap-2 bg-green-50 rounded-lg p-0.5 border border-green-100">
+                            <button
+                              onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.variant)}
+                              className="w-6 h-6 flex items-center justify-center text-green-700 font-bold hover:bg-white rounded-md transition-colors"
+                            >
+                              −
+                            </button>
+                            <span className="text-xs font-bold text-green-900 min-w-[1.25rem] text-center">{item.quantity}</span>
+                            <button
+                              onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.variant)}
+                              className="w-6 h-6 flex items-center justify-center text-green-700 font-bold hover:bg-white rounded-md transition-colors"
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Order Summary */}
@@ -186,4 +230,3 @@ export default function Cart() {
     </div>
   );
 }
-

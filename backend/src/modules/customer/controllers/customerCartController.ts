@@ -169,7 +169,7 @@ export const getCart = async (req: Request, res: Response) => {
 
         let nearbySellerIds: mongoose.Types.ObjectId[] = [];
         const hasLocation = userLat !== null && userLng !== null && !isNaN(userLat) && !isNaN(userLng);
-        
+
         if (hasLocation) {
             nearbySellerIds = await findSellersWithinRange(userLat!, userLng!);
         }
@@ -434,7 +434,7 @@ export const updateCartItem = async (req: Request, res: Response) => {
 
         let nearbySellerIds: mongoose.Types.ObjectId[] = [];
         const hasLocation = userLat !== null && userLng !== null && !isNaN(userLat) && !isNaN(userLng);
-        
+
         if (hasLocation) {
             nearbySellerIds = await findSellersWithinRange(userLat!, userLng!);
         }

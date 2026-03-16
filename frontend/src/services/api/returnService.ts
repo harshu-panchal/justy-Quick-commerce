@@ -20,6 +20,7 @@ export interface ReturnRequest {
   customerName?: string;
   customerPhone?: string;
   orderId?: string;
+  returnReason?: string;
 }
 
 export interface ReturnRequestDetail {
@@ -43,6 +44,8 @@ export interface ReturnRequestDetail {
 
 export interface UpdateReturnStatusData {
   status: 'Approved' | 'Rejected' | 'Completed';
+  rejectionReason?: string;
+  pickupScheduled?: string;
 }
 
 export interface GetReturnRequestsParams {

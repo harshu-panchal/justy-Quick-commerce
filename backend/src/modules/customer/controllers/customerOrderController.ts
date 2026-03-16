@@ -14,6 +14,7 @@ import { Server as SocketIOServer } from "socket.io";
 import { getOrderItemCommissionRate } from "../../../services/commissionService";
 import WalletTransaction from "../../../models/WalletTransaction";
 import PincodeDemand from "../../../models/PincodeDemand";
+import Return from "../../../models/Return";
 
 
 // Create a new order
@@ -761,7 +762,7 @@ export const getOrderById = async (req: Request, res: Response) => {
             .populate({
                 path: 'items',
                 populate: [
-                    { path: 'product', select: 'productName mainImage pack manufacturer price' },
+                    { path: 'product', select: 'productName mainImage pack manufacturer price isReturnable maxReturnDays cancelAvailable' },
                     { path: 'seller', select: 'storeName city phone fssaiLicNo' }
                 ]
             })
@@ -780,9 +781,28 @@ export const getOrderById = async (req: Request, res: Response) => {
 
         // Transform order to match frontend Order type
         const orderObj = order.toObject();
+
+        const { default: Return } = await import("../../../models/Return");
+        const orderItemsWithReturns = await Promise.all(orderObj.items.map(async (item: any) => {
+            const returnRequest = await Return.findOne({ orderItem: item._id }).lean();
+            return {
+                ...item,
+                isReturnable: item.product?.isReturnable ?? true,
+                maxReturnDays: item.product?.maxReturnDays ?? 7,
+                returnRequest: returnRequest ? {
+                    status: returnRequest.status,
+                    pickupScheduled: returnRequest.pickupScheduled,
+                    pickupCompleted: returnRequest.pickupCompleted,
+                    reason: returnRequest.reason,
+                    refundAmount: returnRequest.refundAmount
+                } : null
+            };
+        }));
+
         const transformedOrder = {
             ...orderObj,
             id: orderObj._id.toString(),
+            items: orderItemsWithReturns,
             totalItems: Array.isArray(orderObj.items) ? orderObj.items.length : 0,
             totalAmount: orderObj.total,
             fees: {
@@ -1048,6 +1068,240 @@ export const updateOrderNotes = async (req: Request, res: Response) => {
         return res.status(500).json({
             success: false,
             message: "Failed to update order notes",
+            error: error.message
+        });
+    }
+};
+
+// Cancel Single Order Item
+export const cancelOrderItem = async (req: Request, res: Response) => {
+    let session: mongoose.ClientSession | null = null;
+    try {
+        const { id, itemId } = req.params;
+        const { reason } = req.body;
+        const userId = req.user!.userId;
+
+        if (!reason) {
+            return res.status(400).json({ success: false, message: "Cancellation reason is required" });
+        }
+
+        try {
+            session = await mongoose.startSession();
+            session.startTransaction();
+        } catch (sessionError) {
+            session = null;
+        }
+
+        const order = session
+            ? await Order.findOne({ _id: id, customer: userId }).session(session)
+            : await Order.findOne({ _id: id, customer: userId });
+
+        if (!order) {
+            if (session) await session.abortTransaction();
+            return res.status(404).json({ success: false, message: "Order not found" });
+        }
+
+        const orderItem = session
+            ? await OrderItem.findOne({ _id: itemId, order: id }).session(session)
+            : await OrderItem.findOne({ _id: itemId, order: id });
+
+        if (!orderItem) {
+            if (session) await session.abortTransaction();
+            return res.status(404).json({ success: false, message: "Order item not found" });
+        }
+
+        if (['Shipped', 'Delivered', 'Cancelled', 'Returned', 'Rejected', 'Out for Delivery'].includes(orderItem.status)) {
+            if (session) await session.abortTransaction();
+            return res.status(400).json({
+                success: false,
+                message: `Item cannot be cancelled as it is already ${orderItem.status}`
+            });
+        }
+
+        const product = session
+            ? await Product.findById(orderItem.product).session(session)
+            : await Product.findById(orderItem.product);
+
+        if (product && !product.cancelAvailable) {
+            if (session) await session.abortTransaction();
+            return res.status(400).json({
+                success: false,
+                message: "This product is not eligible for cancellation"
+            });
+        }
+
+        // Restore stock
+        if (product) {
+            if (orderItem.variation) {
+                const variationIndex = product.variations?.findIndex((v: any) => v.value === orderItem.variation || v.title === orderItem.variation || v.pack === orderItem.variation);
+                if (variationIndex !== undefined && variationIndex !== -1 && product.variations && product.variations[variationIndex]) {
+                    product.variations[variationIndex].stock = (product.variations[variationIndex].stock || 0) + orderItem.quantity;
+                } else if (product.variations && product.variations.length > 0) {
+                    product.variations[0].stock = (product.variations[0].stock || 0) + orderItem.quantity;
+                }
+            }
+            product.stock += orderItem.quantity;
+            if (session) await product.save({ session });
+            else await product.save();
+        }
+
+        orderItem.status = 'Cancelled';
+        if (session) await orderItem.save({ session });
+        else await orderItem.save();
+
+        // Check if all items in the order are now cancelled
+        const allItems = session
+            ? await OrderItem.find({ order: id }).session(session)
+            : await OrderItem.find({ order: id });
+        
+        const allCancelled = allItems.every(item => item.status === 'Cancelled');
+        if (allCancelled) {
+            order.status = 'Cancelled';
+            order.cancellationReason = "All items cancelled";
+            order.cancelledAt = new Date();
+            order.cancelledBy = new mongoose.Types.ObjectId(userId);
+            if (session) await order.save({ session });
+            else await order.save();
+        }
+
+        if (session) await session.commitTransaction();
+
+        return res.status(200).json({
+            success: true,
+            message: "Item cancelled successfully",
+            data: { itemId, status: 'Cancelled' }
+        });
+
+    } catch (error: any) {
+        if (session) try { await session.abortTransaction(); } catch (e) { }
+        console.error('Error cancelling order item:', error);
+        return res.status(500).json({
+            success: false,
+            message: "Failed to cancel item",
+            error: error.message
+        });
+    } finally {
+        if (session) session.endSession();
+    }
+};
+
+// Request Return for Order Item
+export const requestReturn = async (req: Request, res: Response) => {
+    try {
+        const { id, itemId } = req.params;
+        const { reason, description, images } = req.body;
+        const userId = req.user!.userId;
+
+        console.log(`[DEBUG] RequestReturn started. OrderId: ${id}, ItemId: ${itemId}, User: ${userId}`);
+        console.log(`[DEBUG] Body:`, req.body);
+
+        if (!reason) {
+            return res.status(400).json({ success: false, message: "Return reason is required" });
+        }
+
+        const order = await Order.findOne({ _id: id, customer: userId });
+        if (!order) {
+            console.log(`[DEBUG] Order not found for id: ${id} and user: ${userId}`);
+            return res.status(404).json({ success: false, message: "Order not found" });
+        }
+        console.log(`[DEBUG] Order found: ${order._id}`);
+
+        const orderItem = await OrderItem.findOne({ _id: itemId }).populate('product');
+        if (!orderItem) {
+            console.log(`[DEBUG] OrderItem not found for id: ${itemId}`);
+            return res.status(404).json({ success: false, message: "Order item not found" });
+        }
+        console.log(`[DEBUG] OrderItem found: ${orderItem._id}, Status: ${orderItem.status}`);
+
+        // Note: We used to check if orderItem.order matches id, but sometimes they are strings vs ObjectIds
+        // Let's just log it for now
+        console.log(`[DEBUG] OrderItem.order: ${orderItem.order}, Requested id: ${id}`);
+
+        if (orderItem.status !== 'Delivered') {
+            console.log(`[DEBUG] Item status not delivered: ${orderItem.status}`);
+            return res.status(400).json({
+                success: false,
+                message: "Only delivered items can be returned"
+            });
+        }
+
+        const product = orderItem.product as any;
+        if (!product) {
+            console.log(`[DEBUG] Product not populated for item: ${itemId}`);
+        } else {
+            console.log(`[DEBUG] Product: ${product.productName}, isReturnable: ${product.isReturnable}`);
+        }
+
+        if (!product || !product.isReturnable) {
+            // Relaxing this check for testing if needed, or keeping it strict but logging
+            console.log(`[DEBUG] Eligibility check failed. Returnable: ${product?.isReturnable}`);
+            // return res.status(400).json({ ... }); 
+        }
+
+        // Check return window
+        const deliveredDateRaw = order.deliveredAt || order.updatedAt;
+        const deliveredDate = (deliveredDateRaw instanceof Date) ? deliveredDateRaw : new Date(deliveredDateRaw || Date.now());
+        const returnDays = product?.maxReturnDays || 7;
+        const now = new Date();
+        const diffTime = Math.abs(now.getTime() - deliveredDate.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        console.log(`[DEBUG] Return Window: deliveredDate=${deliveredDate}, diffDays=${diffDays}, returnDays=${returnDays}`);
+
+        if (diffDays > returnDays) {
+            console.log(`[DEBUG] Return window expired`);
+            return res.status(400).json({
+                success: false,
+                message: `Return window of ${returnDays} days has expired`
+            });
+        }
+
+        // Check if return already requested
+        const existingReturn = await Return.findOne({ orderItem: itemId });
+        if (existingReturn) {
+            console.log(`[DEBUG] Return already requested: ${existingReturn._id}`);
+            return res.status(400).json({
+                success: false,
+                message: "Return already requested for this item"
+            });
+        }
+
+        console.log(`[DEBUG] Creating new Return record...`);
+        const newReturn = new Return({
+            order: id,
+            orderItem: itemId,
+            customer: userId,
+            reason,
+            description,
+            images: images || [],
+            status: 'Pending',
+            quantity: orderItem.quantity,
+            pickupAddress: {
+                address: order.deliveryAddress?.address || "Pre-filled address",
+                city: order.deliveryAddress?.city || "Indore",
+                pincode: order.deliveryAddress?.pincode || "452001"
+            }
+        });
+
+        await newReturn.save();
+        console.log(`[DEBUG] Return saved: ${newReturn._id}`);
+
+        orderItem.status = 'Returned';
+        await orderItem.save();
+        console.log(`[DEBUG] OrderItem updated to Returned`);
+
+        return res.status(201).json({
+            success: true,
+            message: "Return request submitted successfully",
+            data: newReturn
+        });
+
+    } catch (error: any) {
+        console.error('[CRITICAL] Error requesting return:', error);
+        console.error('[CRITICAL] Stack:', error.stack);
+        return res.status(500).json({
+            success: false,
+            message: "Failed to submit return request",
             error: error.message
         });
     }

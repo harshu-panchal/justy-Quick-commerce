@@ -54,9 +54,10 @@ export interface IProduct extends Document {
   fssaiLicNo?: string;
   totalAllowedQuantity?: number;
 
-  // Return Policy
+  // Return & Cancellation Policy
   isReturnable: boolean;
   maxReturnDays?: number;
+  cancelAvailable: boolean;
 
   // SEO
   seoTitle?: string;
@@ -261,7 +262,7 @@ const ProductSchema = new Schema<IProduct>(
       min: [0, "Total allowed quantity cannot be negative"],
     },
 
-    // Return Policy
+    // Return & Cancellation Policy
     isReturnable: {
       type: Boolean,
       default: false,
@@ -269,6 +270,10 @@ const ProductSchema = new Schema<IProduct>(
     maxReturnDays: {
       type: Number,
       min: [0, "Max return days cannot be negative"],
+    },
+    cancelAvailable: {
+      type: Boolean,
+      default: true,
     },
 
     // SEO

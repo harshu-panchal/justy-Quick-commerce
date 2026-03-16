@@ -22,6 +22,29 @@ export const processOrderStatusTransition = async (
     clearOrderCache(orderId);
   }
 
+  // Sync items status with order status (unless item is already cancelled)
+  const OrderItemModel = (await import("../models/OrderItem")).default;
+  for (const item of order.items) {
+    const itemObj = item as any;
+    if (itemObj.status !== "Cancelled") {
+      // Some status names might differ between Order and OrderItem
+      // In OrderItem.ts status can be: "Pending" | "Shipped" | "Delivered" | "Cancelled" | "Returned"
+      let itemNewStatus = newStatus;
+      
+      // Map Order statuses to OrderItem statuses if needed
+      if (["Processed", "Accepted", "Received"].includes(newStatus)) {
+        itemNewStatus = "Pending";
+      } else if (newStatus === "Out for Delivery") {
+        itemNewStatus = "Shipped";
+      }
+
+      // Only update if it's a valid OrderItem status
+      if (["Pending", "Shipped", "Delivered", "Returned"].includes(itemNewStatus)) {
+        await OrderItemModel.findByIdAndUpdate(itemObj._id, { status: itemNewStatus });
+      }
+    }
+  }
+
   // Handle status-specific logic
   switch (newStatus) {
     case "Cancelled":

@@ -185,6 +185,89 @@ export async function uploadDocumentFromBuffer(
   });
 }
 
+export async function uploadProductImageAutoClean(
+  buffer: Buffer,
+  options: UploadOptions = {}
+): Promise<UploadResult> {
+  return new Promise((resolve, reject) => {
+    // Step 1: Upload the RAW image and trigger async Background Removal
+    // We do NOT apply transformations yet, because background removal works best on original first
+    const uploadOptions: any = {
+      folder: options.folder || CLOUDINARY_FOLDERS.PRODUCTS,
+      resource_type: "image",
+      background_removal: "cloudinary_ai", // Ask Cloudinary to process AI background removal
+      overwrite: options.overwrite || false,
+      invalidate: options.invalidate || true,
+    };
+
+    const uploadStream = cloudinary.uploader.upload_stream(
+      uploadOptions,
+      async (error: any, result: any) => {
+        if (error) {
+          return reject(new Error(`Cloudinary auto-clean upload failed: ${error.message}`));
+        } else if (result) {
+          
+          try {
+            // Step 2: Since Background Removal is Asynchronous, we poll the resource status
+            // to wait until the AI is completely done removing the background.
+            const publicId = result.public_id;
+            // Poll up to 10 times, waiting 2 seconds each time (Max ~20 seconds wait)
+            for (let i = 0; i < 10; i++) {
+              const details = await cloudinary.api.resource(publicId);
+              const bgStatus = details.info?.background_removal?.cloudinary_ai?.status;
+              
+              if (bgStatus === "complete") {
+                break;
+              } else if (bgStatus === "failed") {
+                console.warn(`[Cloudinary] AI Bg removal failed for ${publicId}.`);
+                break; // Continue but without background removed
+              }
+              // wait 2 seconds before polling again
+              await new Promise(res => setTimeout(res, 2000));
+            }
+
+            // Step 3: Now generate the final transformed Delivery URL
+            // We force it to be an 800x800 square, centered on the object, with a pure white padding.
+            const transformedSecureUrl = cloudinary.url(publicId, {
+              secure: true,
+              transformation: options.transformation || [
+                { width: 800, height: 800, crop: "pad", background: "white", gravity: "center" },
+                { fetch_format: "auto", quality: "auto" }
+              ]
+            });
+
+            resolve({
+              url: transformedSecureUrl,
+              publicId: publicId,
+              secureUrl: transformedSecureUrl,
+              width: 800,
+              height: 800,
+              format: result.format,
+              bytes: result.bytes,
+            });
+
+          } catch (pollError: any) {
+            console.error("Polling error:", pollError);
+            // Fallback: Just return the original URL if polling API fails
+            resolve({
+              url: result.url,
+              publicId: result.public_id,
+              secureUrl: result.secure_url,
+              format: result.format,
+              bytes: result.bytes,
+            });
+          }
+
+        } else {
+          reject(new Error("Cloudinary auto-clean upload returned no result"));
+        }
+      }
+    );
+
+    uploadStream.end(buffer);
+  });
+}
+
 /**
  * Delete an image from Cloudinary by public_id
  */

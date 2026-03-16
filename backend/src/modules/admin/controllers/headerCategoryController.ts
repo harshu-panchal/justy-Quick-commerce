@@ -46,6 +46,8 @@ export const createHeaderCategory = async (req: Request, res: Response) => {
       slug,
       relatedCategory,
       deliveryType,
+      scheduledTime,
+      assignedDeliveryBoy,
       status,
       order,
     } = req.body;
@@ -66,6 +68,8 @@ export const createHeaderCategory = async (req: Request, res: Response) => {
       slug,
       relatedCategory,
       deliveryType,
+      scheduledTime,
+      assignedDeliveryBoy: assignedDeliveryBoy || undefined,
       status,
       order,
     });
@@ -91,6 +95,8 @@ export const updateHeaderCategory = async (req: Request, res: Response) => {
       slug,
       relatedCategory,
       deliveryType,
+      scheduledTime,
+      assignedDeliveryBoy,
       status,
       order,
     } = req.body;
@@ -113,6 +119,15 @@ export const updateHeaderCategory = async (req: Request, res: Response) => {
       category.slug = slug || category.slug;
       category.relatedCategory = relatedCategory; // Allow clearing it (undefined or null or empty string)
       if (deliveryType) category.deliveryType = deliveryType;
+      
+      if (deliveryType === 'scheduled') {
+        category.scheduledTime = scheduledTime || undefined;
+        category.assignedDeliveryBoy = assignedDeliveryBoy || undefined;
+      } else {
+        category.scheduledTime = undefined;
+        category.assignedDeliveryBoy = undefined;
+      }
+
       category.status = status || category.status;
       category.order = order !== undefined ? order : category.order;
 

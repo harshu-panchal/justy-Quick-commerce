@@ -7,6 +7,8 @@ export interface IHeaderCategory extends Document {
     slug: string;
     relatedCategory?: string; // Links to a product category
     deliveryType: 'quick' | 'scheduled';
+    scheduledTime?: string;
+    assignedDeliveryBoy?: mongoose.Types.ObjectId;
     order: number;
     status: 'Published' | 'Unpublished';
     createdAt: Date;
@@ -21,6 +23,8 @@ const HeaderCategorySchema: Schema = new Schema(
         slug: { type: String, required: true, unique: true },
         relatedCategory: { type: String, required: false },
         deliveryType: { type: String, enum: ['quick', 'scheduled'], default: 'quick' },
+        scheduledTime: { type: String, required: false },
+        assignedDeliveryBoy: { type: Schema.Types.ObjectId, ref: 'Delivery', required: false },
         order: { type: Number, default: 0 },
         status: { type: String, enum: ['Published', 'Unpublished'], default: 'Published' },
     },

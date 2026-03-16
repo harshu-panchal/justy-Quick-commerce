@@ -11,6 +11,8 @@ export interface HeaderCategory {
     deliveryType: 'quick' | 'scheduled';
     status: 'Published' | 'Unpublished';
     order?: number;
+    scheduledTime?: string;
+    assignedDeliveryBoy?: string;
 }
 
 export const getHeaderCategoriesPublic = async (skipLoader = false): Promise<HeaderCategory[]> => {

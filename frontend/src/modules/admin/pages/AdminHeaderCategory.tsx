@@ -8,6 +8,7 @@ import {
 } from '../../../services/api/headerCategoryService';
 import { themes } from '../../../utils/themes';
 import { ICON_LIBRARY, getIconByName, IconDef } from '../../../utils/iconLibrary';
+import { getDeliveryBoys, DeliveryBoy } from '../../../services/api/admin/adminDeliveryService';
 
 export default function AdminHeaderCategory() {
   const [headerCategories, setHeaderCategories] = useState<HeaderCategory[]>([]);
@@ -19,8 +20,13 @@ export default function AdminHeaderCategory() {
   const [headerCategoryIcon, setHeaderCategoryIcon] = useState('');
   const [selectedTheme, setSelectedTheme] = useState('all'); // This maps to slug
   const [selectedDeliveryType, setSelectedDeliveryType] = useState<'quick' | 'scheduled'>('quick');
+  const [scheduledTime, setScheduledTime] = useState('');
+  const [assignedDeliveryBoy, setAssignedDeliveryBoy] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<'Published' | 'Unpublished'>('Published');
   const [editingId, setEditingId] = useState<string | null>(null);
+
+  // Delivery boys state
+  const [deliveryBoys, setDeliveryBoys] = useState<DeliveryBoy[]>([]);
 
   // Icon search state
   const [iconSearchTerm, setIconSearchTerm] = useState('');
@@ -36,7 +42,19 @@ export default function AdminHeaderCategory() {
 
   useEffect(() => {
     fetchCategories();
+    fetchDeliveryBoys();
   }, []);
+
+  const fetchDeliveryBoys = async () => {
+    try {
+      const response = await getDeliveryBoys({ limit: 100 });
+      if (response && response.data) {
+        setDeliveryBoys(response.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch delivery boys', error);
+    }
+  };
 
   const fetchCategories = async () => {
     try {
@@ -106,6 +124,8 @@ export default function AdminHeaderCategory() {
     setHeaderCategoryIcon('');
     setSelectedTheme('all');
     setSelectedDeliveryType('quick');
+    setScheduledTime('');
+    setAssignedDeliveryBoy('');
     setSelectedStatus('Published');
     setEditingId(null);
     setIconSearchTerm('');
@@ -123,6 +143,8 @@ export default function AdminHeaderCategory() {
         iconName: headerCategoryIcon,
         slug: selectedTheme, // Use theme as slug for color mapping
         deliveryType: selectedDeliveryType,
+        scheduledTime: selectedDeliveryType === 'scheduled' ? scheduledTime : undefined,
+        assignedDeliveryBoy: selectedDeliveryType === 'scheduled' ? assignedDeliveryBoy : undefined,
         status: selectedStatus,
       };
 
@@ -149,6 +171,8 @@ export default function AdminHeaderCategory() {
     setHeaderCategoryIcon(category.iconName);
     setSelectedTheme(category.slug);
     setSelectedDeliveryType(category.deliveryType || 'quick');
+    setScheduledTime(category.scheduledTime || '');
+    setAssignedDeliveryBoy(category.assignedDeliveryBoy || '');
     setSelectedStatus(category.status);
     setIconSearchTerm('');
   };
@@ -326,6 +350,44 @@ export default function AdminHeaderCategory() {
               </select>
             </div>
 
+            {/* Scheduled Fields Condition => Time and Delivery Boy Selection */}
+            {selectedDeliveryType === 'scheduled' && (
+              <div className="grid grid-cols-1 gap-4 p-4 border rounded bg-orange-50/50">
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Delivery Date & Time (Expected):
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={scheduledTime}
+                    onChange={(e) => setScheduledTime(e.target.value)}
+                    className="w-full px-3 py-2 border border-neutral-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-teal-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Assign Delivery Partner (Optional):
+                  </label>
+                  <select
+                    value={assignedDeliveryBoy}
+                    onChange={(e) => setAssignedDeliveryBoy(e.target.value)}
+                    className="w-full px-3 py-2 border border-neutral-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-teal-500"
+                  >
+                    <option value="">-- No Specific Delivery Boy --</option>
+                    {deliveryBoys.map((boy) => (
+                      <option key={boy._id} value={boy._id}>
+                        {boy.name} ({boy.mobile})
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-1 text-xs text-neutral-500">
+                    If assigned, this specific partner will manage deliveries for this scheduled category.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Status */}
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-2">
@@ -426,8 +488,21 @@ export default function AdminHeaderCategory() {
                           {category.slug}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-sm text-neutral-600 capitalize">
-                        {category.deliveryType || 'quick'}
+                      <td className="px-4 py-3 text-sm text-neutral-600">
+                        <span className="capitalize font-medium block">{category.deliveryType || 'quick'}</span>
+                        {category.deliveryType === 'scheduled' && category.scheduledTime && (
+                          <span className="text-xs text-orange-600 block mt-1">
+                            {new Date(category.scheduledTime).toLocaleString('en-US', {
+                                month: 'short', day: 'numeric',
+                                hour: 'numeric', minute: '2-digit'
+                            })}
+                          </span>
+                        )}
+                        {category.deliveryType === 'scheduled' && category.assignedDeliveryBoy && (
+                          <span className="text-xs bg-neutral-100 px-1.5 py-0.5 rounded text-neutral-500 block w-max mt-1 border">
+                            Partner Assigned
+                          </span>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-sm">
                         <span

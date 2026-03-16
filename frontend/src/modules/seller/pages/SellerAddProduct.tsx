@@ -55,6 +55,8 @@ export default function SellerAddProduct() {
     totalAllowedQuantity: "10",
     mainImageUrl: "",
     galleryImageUrls: [] as string[],
+    isShopByStoreOnly: "No",
+    shopId: "",
   });
 
   const [variations, setVariations] = useState<ProductVariation[]>([]);
@@ -118,8 +120,9 @@ export default function SellerAddProduct() {
 
           if (headerCatRes && Array.isArray(headerCatRes)) {
             // Filter only Published header categories
+            console.log("🔍 Header Categories:", headerCatRes);
             let published = headerCatRes.filter(
-              (hc: HeaderCategory) => hc.status === "Published"
+              (hc: HeaderCategory) => hc.status == "Published"
             );
 
             // Filter by seller's registered categories
@@ -130,14 +133,26 @@ export default function SellerAddProduct() {
               console.log("🔍 Seller Registered Categories:", sellerCategories);
               console.log("📦 All Published Categories:", published.map(p => p.name));
 
+              // We'll keep the categories list but maybe highlight or sort? 
+              // Actually, user wants to see all of them, so let's just log and keep them all.
+              // If you want to RESTRICT, uncomment the filter below:
+              /*
               published = published.filter((hc: HeaderCategory) =>
-                sellerCategories.includes(hc.name.toLowerCase().trim())
+                sellerCategories.some((sc) => hc.name.toLowerCase().trim() === sc) || 
+                sellerCategories.some((sc) => hc.slug.toLowerCase().trim() === sc) 
               );
+              */
 
               console.log("✅ Filtered Categories for Dropdown:", published.map(p => p.name));
             }
 
-            setHeaderCategories(published);
+            // Ensure unique names
+            const uniquePublished = published.filter(
+                (hc, index, self) =>
+                    index === self.findIndex((t) => t.name === hc.name)
+            );
+            
+            setHeaderCategories(uniquePublished);
           }
         }
 
@@ -510,7 +525,9 @@ export default function SellerAddProduct() {
               fssaiLicNo: "",
               totalAllowedQuantity: "10",
               mainImageUrl: "",
-              galleryImageUrls: [],
+              galleryImageUrls: [] as string[],
+              isShopByStoreOnly: "No",
+              shopId: "",
             });
             setVariations([]);
             setMainImageFile(null);

@@ -605,6 +605,29 @@ export const createOrder = async (req: Request, res: Response) => {
         newOrder.deliveryType = deliveryType;
         newOrder.sellerPincode = sellerPincode;
 
+        // --- Automatic Delivery Boy Assignment for Scheduled Orders ---
+        if (deliveryType === 'scheduled') {
+            // Find an assigned boy from any of the products' header categories
+            const prodWithAssignedBoy = productsInOrder.find(p => {
+                const directHc = p.headerCategoryId as any;
+                const indirectHc = (p.category as any)?.headerCategoryId;
+                return (directHc?.assignedDeliveryBoy) || (indirectHc?.assignedDeliveryBoy);
+            });
+
+            if (prodWithAssignedBoy) {
+                const hc = (prodWithAssignedBoy.headerCategoryId as any) || (prodWithAssignedBoy.category as any)?.headerCategoryId;
+                newOrder.deliveryBoy = hc.assignedDeliveryBoy;
+                newOrder.deliveryBoyStatus = 'Assigned';
+                newOrder.assignedAt = new Date();
+                
+                // If auto-assigned, we can also set the main status to 'Accepted' 
+                // to skip the manual approval step if desired by business logic
+                newOrder.status = 'Accepted';
+                
+                console.log(`DEBUG: Auto-assigned Delivery Boy ${hc.assignedDeliveryBoy} to Scheduled Order ${newOrder.orderNumber}`);
+            }
+        }
+
 
         if (session) {
             await newOrder.save({ session });

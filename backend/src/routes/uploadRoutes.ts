@@ -11,6 +11,7 @@ import {
   uploadImageFromBuffer,
   uploadDocumentFromBuffer,
   deleteImage,
+  uploadProductImageAutoClean,
 } from "../services/cloudinaryService";
 import { CLOUDINARY_FOLDERS } from "../config/cloudinary";
 import { asyncHandler } from "../utils/asyncHandler";
@@ -38,10 +39,20 @@ router.post(
     }
 
     const folder = (req.body.folder as string) || CLOUDINARY_FOLDERS.PRODUCTS;
-    const result = await uploadImageFromBuffer((req as any).file.buffer, {
-      folder,
-      resourceType: "image",
-    });
+
+    // Use Auto Clean function specifically for products
+    let result;
+    if (folder === CLOUDINARY_FOLDERS.PRODUCTS) {
+      result = await uploadProductImageAutoClean((req as any).file.buffer, {
+        folder,
+        resourceType: "image",
+      });
+    } else {
+      result = await uploadImageFromBuffer((req as any).file.buffer, {
+        folder,
+        resourceType: "image",
+      });
+    }
 
     return res.status(200).json({
       success: true,
@@ -70,12 +81,19 @@ router.post(
     const folder = (req.body.folder as string) || CLOUDINARY_FOLDERS.PRODUCTS;
     const files = (req as any).files as any[];
 
-    const uploadPromises = files.map((file) =>
-      uploadImageFromBuffer(file.buffer, {
-        folder,
-        resourceType: "image",
-      })
-    );
+    const uploadPromises = files.map((file) => {
+      if (folder === CLOUDINARY_FOLDERS.PRODUCTS) {
+        return uploadProductImageAutoClean(file.buffer, {
+          folder,
+          resourceType: "image",
+        });
+      } else {
+        return uploadImageFromBuffer(file.buffer, {
+          folder,
+          resourceType: "image",
+        });
+      }
+    });
 
     const results = await Promise.all(uploadPromises);
 

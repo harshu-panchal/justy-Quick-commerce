@@ -38,6 +38,11 @@ export interface ICustomer extends Document {
   // FCM Push Notification Tokens
   fcmTokens?: string[];        // Web push notification tokens
   fcmTokenMobile?: string[];   // Mobile push notification tokens
+  // Referral fields
+  referredBy?: mongoose.Types.ObjectId;
+  isReferralApplied?: boolean;
+  referralCount?: number;
+  referralEarnings?: number;
 }
 
 
@@ -160,6 +165,23 @@ const CustomerSchema = new Schema<ICustomer>(
     fcmTokenMobile: {
       type: [String],
       default: []
+    },
+    // Referral fields
+    referredBy: {
+      type: Schema.Types.ObjectId,
+      ref: 'Customer',
+    },
+    isReferralApplied: {
+      type: Boolean,
+      default: false,
+    },
+    referralCount: {
+      type: Number,
+      default: 0,
+    },
+    referralEarnings: {
+      type: Number,
+      default: 0,
     },
   },
 

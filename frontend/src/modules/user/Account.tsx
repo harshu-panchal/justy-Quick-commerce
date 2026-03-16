@@ -2,8 +2,9 @@ import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
-import { getProfile, CustomerProfile } from '../../services/api/customerService';
+import { getProfile, CustomerProfile, applyReferralCode, getReferralStats } from '../../services/api/customerService';
 import { useThemeContext } from '../../context/ThemeContext';
+import { useToast } from '../../context/ToastContext';
 
 export default function Account() {
   const navigate = useNavigate();
@@ -12,8 +13,19 @@ export default function Account() {
   const [profile, setProfile] = useState<CustomerProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [showGstModal, setShowGstModal] = useState(false);
   const [gstNumber, setGstNumber] = useState('');
+  const [showGstModal, setShowGstModal] = useState(false);
+  const { showToast } = useToast();
+  const [referralStats, setReferralStats] = useState<{
+    referralCode: string;
+    isReferralApplied: boolean;
+    appliedCode: string | null;
+    referralCount: number;
+    referralEarnings: number;
+    referredUsers: Array<{ name: string; date: string; isCompleted: boolean }>;
+  } | null>(null);
+  const [referralInput, setReferralInput] = useState('');
+  const [isApplyingReferral, setIsApplyingReferral] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -23,6 +35,14 @@ export default function Account() {
         const response = await getProfile();
         if (response.success) {
           setProfile(response.data);
+          // Fetch referral stats if profile loaded
+          fetchReferralStats();
+          
+          // Check for pending referral code from URL
+          const pendingCode = localStorage.getItem('pendingReferralCode');
+          if (pendingCode && !response.data.isReferralApplied) {
+            setReferralInput(pendingCode);
+          }
         } else {
           setError('Failed to load profile');
         }
@@ -33,6 +53,17 @@ export default function Account() {
         }
       } finally {
         setLoading(false);
+      }
+    };
+
+    const fetchReferralStats = async () => {
+      try {
+        const response = await getReferralStats();
+        if (response.success) {
+          setReferralStats(response.data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch referral stats', err);
       }
     };
 
@@ -58,6 +89,56 @@ export default function Account() {
   const handleGstSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setShowGstModal(false);
+  };
+
+  const handleApplyReferral = async () => {
+    if (!referralInput.trim()) {
+      showToast('Please enter a referral code', 'error');
+      return;
+    }
+
+    try {
+      setIsApplyingReferral(true);
+      const response = await applyReferralCode(referralInput.trim());
+      if (response.success) {
+        showToast(response.message || 'Referral code applied successfully!', 'success');
+        localStorage.removeItem('pendingReferralCode');
+        // Refresh profile and stats to update states
+        const [profileRes, statsRes] = await Promise.all([getProfile(), getReferralStats()]);
+        if (profileRes.success) setProfile(profileRes.data);
+        if (statsRes.success) setReferralStats(statsRes.data);
+      } else {
+        showToast(response.message || 'Failed to apply referral code', 'error');
+      }
+    } catch (err: any) {
+      showToast(err.response?.data?.message || 'Failed to apply referral code', 'error');
+    } finally {
+      setIsApplyingReferral(false);
+    }
+  };
+
+  const handleShareReferral = async () => {
+    const code = referralStats?.referralCode || profile?.refCode;
+    if (!code) return;
+
+    const shareUrl = `${window.location.origin}?ref=${code}`;
+    const shareText = `Use my referral code ${code} to get rewards on Quick Commerce! Download now: ${shareUrl}`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Quick Commerce Referral',
+          text: shareText,
+          url: shareUrl,
+        });
+      } catch (err) {
+        console.log('Error sharing', err);
+      }
+    } else {
+      // Fallback: Copy to clipboard
+      navigator.clipboard.writeText(shareText);
+      showToast('Link copied to clipboard!', 'info');
+    }
   };
 
   // Show login/signup prompt for unregistered users
@@ -250,6 +331,90 @@ export default function Account() {
                   Add Money
                 </motion.button>
                 <p className="text-[10px] md:text-xs text-white/50 font-medium">Safe & Secure Transactions</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Invite & Earn Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15 }}
+        className="px-4 md:px-6 lg:px-8 mb-6"
+      >
+        <div className="max-w-2xl md:mx-auto">
+          <div className="bg-white rounded-3xl p-6 shadow-xl border border-neutral-100 overflow-hidden relative">
+            {/* Background design */}
+            <div className="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 bg-teal-50 rounded-full blur-2xl opacity-60" />
+            <div className="absolute bottom-0 left-0 -ml-8 -mb-8 w-32 h-32 bg-blue-50 rounded-full blur-2xl opacity-60" />
+
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-teal-100 flex items-center justify-center text-teal-600">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="8.5" cy="7" r="4" /><line x1="20" y1="8" x2="20" y2="14" /><line x1="23" y1="11" x2="17" y2="11" /></svg>
+                </div>
+                <h2 className="text-xl font-bold text-neutral-900">Invite & Earn</h2>
+              </div>
+
+              {!(referralStats?.isReferralApplied || profile?.isReferralApplied) ? (
+                <div className="mb-6 p-4 bg-neutral-50 rounded-2xl border border-neutral-100">
+                  <p className="text-sm font-semibold text-neutral-800 mb-3">Got a Referral Code?</p>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Enter code"
+                      value={referralInput}
+                      onChange={(e) => setReferralInput(e.target.value.toUpperCase())}
+                      className="flex-1 px-4 py-2.5 rounded-xl border border-neutral-200 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 uppercase font-bold"
+                    />
+                    <button
+                      onClick={handleApplyReferral}
+                      disabled={isApplyingReferral}
+                      className="px-6 py-2.5 bg-teal-600 text-white rounded-xl text-sm font-bold shadow-sm hover:bg-teal-700 transition-colors disabled:opacity-50"
+                    >
+                      {isApplyingReferral ? '...' : 'Apply'}
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-neutral-500 mt-2 italic">Apply once to get bonus on your first delivery!</p>
+                </div>
+              ) : (
+                <div className="mb-6 p-4 bg-green-50 rounded-2xl border border-green-100 flex flex-col items-center text-center">
+                  <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 mb-2">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                  </div>
+                  <h3 className="text-sm font-bold text-green-800">Referral Applied Successfully</h3>
+                  <p className="text-xs text-green-600 mt-1">You used code: <span className="font-bold text-green-700 underline decoration-2 underline-offset-2">{referralStats?.appliedCode || 'Applied'}</span></p>
+                  <p className="text-[10px] text-green-700/70 mt-3 font-medium px-4 leading-relaxed">
+                    Your reward will be credited after your first successful order delivery.
+                  </p>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="bg-neutral-50 p-4 rounded-2xl border border-neutral-100 text-center">
+                  <p className="text-[10px] uppercase tracking-wider text-neutral-500 font-bold mb-1">Friends Joined</p>
+                  <p className="text-2xl font-black text-neutral-900">{referralStats?.referralCount || 0}</p>
+                </div>
+                <div className="bg-neutral-50 p-4 rounded-2xl border border-neutral-100 text-center">
+                  <p className="text-[10px] uppercase tracking-wider text-neutral-500 font-bold mb-1">Total Earnings</p>
+                  <p className="text-2xl font-black text-teal-600">₹{referralStats?.referralEarnings || 0}</p>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 bg-teal-50/50 rounded-2xl border border-teal-100/50">
+                <div className="text-center sm:text-left">
+                  <p className="text-[10px] uppercase tracking-wider text-teal-800/60 font-bold mb-1">Your Referral Code</p>
+                  <p className="text-xl font-black text-teal-700 tracking-widest">{referralStats?.referralCode || profile?.refCode || '...'}</p>
+                </div>
+                <button
+                  onClick={handleShareReferral}
+                  className="w-full sm:w-auto px-8 py-3 bg-teal-600 text-white rounded-xl text-sm font-bold shadow-md hover:bg-teal-700 transition-colors flex items-center justify-center gap-2"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" /><polyline points="16 6 12 2 8 6" /><line x1="12" y1="2" x2="12" y2="15" /></svg>
+                  Share Code
+                </button>
               </div>
             </div>
           </div>

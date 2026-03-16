@@ -112,6 +112,15 @@ export interface IAppSettings extends Document {
   // Updated By
   updatedBy?: mongoose.Types.ObjectId;
 
+  // Referral Settings
+  referralSettings: {
+    enabled: boolean;
+    rewardAmount: number;
+    rewardType: 'Wallet' | 'Points';
+    minOrderValue: number;
+    maxReferralsPerUser: number;
+  };
+
   // Withdrawal Settings
   minimumWithdrawalAmount?: number;
 
@@ -390,6 +399,14 @@ const AppSettingsSchema = new Schema<IAppSettings>(
     updatedBy: {
       type: Schema.Types.ObjectId,
       ref: "Admin",
+    },
+    // Referral Settings
+    referralSettings: {
+      enabled: { type: Boolean, default: false },
+      rewardAmount: { type: Number, default: 0 },
+      rewardType: { type: String, enum: ['Wallet', 'Points'], default: 'Wallet' },
+      minOrderValue: { type: Number, default: 0 },
+      maxReferralsPerUser: { type: Number, default: 10 },
     },
   },
   {

@@ -12,6 +12,10 @@ export interface CustomerProfile {
   walletAmount: number;
   totalOrders: number;
   totalSpent: number;
+  referredBy?: string;
+  isReferralApplied?: boolean;
+  referralCount?: number;
+  referralEarnings?: number;
 }
 
 export interface GetProfileResponse {
@@ -45,6 +49,32 @@ export const getProfile = async (): Promise<GetProfileResponse> => {
  */
 export const updateProfile = async (data: UpdateProfileData): Promise<UpdateProfileResponse> => {
   const response = await api.put<UpdateProfileResponse>('/customer/profile', data);
+  return response.data;
+};
+
+/**
+ * Apply a referral code
+ */
+export const applyReferralCode = async (referralCode: string): Promise<{ success: boolean; message: string }> => {
+  const response = await api.post('/customer/referral/apply', { referralCode });
+  return response.data;
+};
+
+/**
+ * Get referral statistics
+ */
+export const getReferralStats = async (): Promise<{ 
+  success: boolean; 
+  data: { 
+    referralCode: string; 
+    isReferralApplied: boolean;
+    appliedCode: string | null;
+    referralCount: number; 
+    referralEarnings: number;
+    referredUsers: Array<{ name: string; date: string; isCompleted: boolean }> 
+  } 
+}> => {
+  const response = await api.get('/customer/referral/stats');
   return response.data;
 };
 

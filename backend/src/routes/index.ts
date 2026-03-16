@@ -9,6 +9,7 @@ import deliveryAuthRoutes from "./deliveryAuthRoutes";
 // ... (other imports)
 import { authenticate, requireUserType } from "../middleware/auth";
 import customerRoutes from "./customerRoutes";
+import customerReferralRoutes from "./customerReferralRoutes";
 import sellerRoutes from "./sellerRoutes";
 import uploadRoutes from "./uploadRoutes";
 import productRoutes from "./productRoutes";
@@ -109,12 +110,14 @@ router.use(
 
 // Customer routes - Specific routes MUST be registered before general /customer route
 // to prevent Express from matching the broader route first
+router.use("/customer/referral", customerReferralRoutes);
 router.use("/customer/products", customerProductRoutes);
 router.use("/customer/categories", customerCategoryRoutes);
 
 // Tracking routes (must be after specific order routes)
 router.use("/customer", customerTrackingRoutes);
 
+// Customer specific sub-routes
 router.use("/customer/coupons", customerCouponRoutes);
 router.use("/customer/addresses", customerAddressRoutes);
 router.use("/customer/home", customerHomeRoutes);
@@ -122,7 +125,8 @@ router.use("/customer/quick-delivery", customerQuickDeliveryRoutes);
 router.use("/customer/cart", customerCartRoutes);
 router.use("/customer/wishlist", wishlistRoutes);
 router.use("/customer/reviews", productReviewRoutes);
-// General customer route (must be last to avoid intercepting specific routes)
+
+// General customer profile/location routes (catch-all for /customer)
 router.use("/customer", customerRoutes);
 
 // Seller dashboard routes

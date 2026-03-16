@@ -8,6 +8,7 @@ import mongoose from 'mongoose';
 import AppSettings from '../../../models/AppSettings';
 import { getRoadDistances } from '../../../services/mapService';
 import Seller from '../../../models/Seller';
+// import HeaderCategory from '../../../models/HeaderCategory'; // UNUSED
 
 // Helper to calculate item price matching frontend logic
 const calculateItemPrice = (product: any, variationSelector: any) => {
@@ -574,7 +575,7 @@ export const removeFromCart = async (req: Request, res: Response) => {
         let nearbySellerIds: mongoose.Types.ObjectId[] = [];
         const hasLocation = userLat !== null && userLng !== null && !isNaN(userLat) && !isNaN(userLng);
         if (hasLocation) {
-            nearbySellerIds = await findSellersWithinRange(userLat, userLng);
+            nearbySellerIds = await findSellersWithinRange(userLat!, userLng!);
         }
 
         cart.total = await calculateCartTotal(cart._id, nearbySellerIds);
@@ -632,23 +633,23 @@ export const clearCart = async (req: Request, res: Response) => {
         const userId = req.user?.userId;
         const cart = await Cart.findOne({ customer: userId });
 
-        if (cart) {
-            await CartItem.deleteMany({ cart: cart._id });
-            cart.items = [];
-            cart.total = 0;
-            await cart.save();
-        }
+            if (cart) {
+                await CartItem.deleteMany({ cart: cart._id });
+                cart.items = [];
+                cart.total = 0;
+                await cart.save();
+            }
 
-        return res.status(200).json({
-            success: true,
-            message: 'Cart cleared',
-            data: { items: [], total: 0 }
-        });
-    } catch (error: any) {
-        return res.status(500).json({
-            success: false,
-            message: 'Error clearing cart',
-            error: error.message
-        });
-    }
-};
+            return res.status(200).json({
+                success: true,
+                message: 'Cart cleared',
+                data: { items: [], total: 0 }
+            });
+        } catch (error: any) {
+            return res.status(500).json({
+                success: false,
+                message: 'Error clearing cart',
+                error: error.message
+            });
+        }
+    };

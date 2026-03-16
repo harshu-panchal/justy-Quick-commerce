@@ -97,6 +97,13 @@ export interface AppSettings {
     answer: string;
   }>;
   homeSections?: HomeSection[];
+  referralSettings?: {
+    enabled: boolean;
+    rewardAmount: number;
+    rewardType: 'Wallet' | 'Points';
+    minOrderValue: number;
+    maxReferralsPerUser: number;
+  };
   features: {
     sellerRegistration: boolean;
     productApproval: boolean;

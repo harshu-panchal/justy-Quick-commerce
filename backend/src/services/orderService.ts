@@ -1,7 +1,10 @@
 import Order from "../models/Order";
 import { IOrderItem } from "../models/OrderItem";
 import Inventory from "../models/Inventory";
+import AppSettings from "../models/AppSettings";
+import Customer from "../models/Customer";
 import { clearOrderCache } from "../socket/socketService";
+import { creditWallet } from "./walletManagementService";
 
 /**
  * Process order status transition
@@ -62,6 +65,8 @@ export const processOrderStatusTransition = async (
     case "Delivered":
       // Create commissions for sellers
       await createCommissions(order.items as any[]);
+      // Process referral rewards
+      await processReferralReward(orderId);
       break;
   }
 
@@ -132,6 +137,76 @@ const createCommissions = async (items: IOrderItem[]) => {
   } catch (err) {
     console.error("Error creating commissions in orderService:", err);
     throw err;
+  }
+};
+
+/**
+ * Process referral rewards when an order is delivered
+ */
+const processReferralReward = async (orderId: string) => {
+  try {
+    const order = await Order.findById(orderId);
+    if (!order) return;
+
+    const customer = await Customer.findById(order.customer);
+    if (!customer || !customer.referredBy || customer.totalOrders > 1) {
+      // Reward only for the first order
+      return;
+    }
+
+    const settings = await AppSettings.findOne();
+    const referralSettings = settings?.referralSettings;
+
+    if (!referralSettings || !referralSettings.enabled) {
+      return;
+    }
+
+    // Check minimum order value
+    if (order.total < (referralSettings.minOrderValue || 0)) {
+      console.log(`[Referral] Order total ${order.total} is less than min order value ${referralSettings.minOrderValue}`);
+      return;
+    }
+
+    const referrer = await Customer.findById(customer.referredBy);
+    if (!referrer) return;
+
+    // Check max referrals limit for referrer
+    const maxReferrals = referralSettings.maxReferralsPerUser || 10;
+    if ((referrer.referralCount || 0) >= maxReferrals) {
+      console.log(`[Referral] Referrer ${referrer.refCode} has reached max referrals limit`);
+      return;
+    }
+
+    const rewardAmount = referralSettings.rewardAmount || 0;
+    if (rewardAmount <= 0) return;
+
+    console.log(`[Referral] Crediting referral rewards: Referrer=${referrer.refCode}, NewUser=${customer.refCode}, Amount=${rewardAmount}`);
+
+    // Credit Referrer
+    await creditWallet(
+      referrer._id.toString(),
+      "CUSTOMER",
+      rewardAmount,
+      `Referral bonus for inviting ${customer.name}`,
+      orderId
+    );
+
+    // Update referrer stats
+    referrer.referralCount = (referrer.referralCount || 0) + 1;
+    referrer.referralEarnings = (referrer.referralEarnings || 0) + rewardAmount;
+    await referrer.save();
+
+    // Credit New User (Referee)
+    await creditWallet(
+      customer._id.toString(),
+      "CUSTOMER",
+      rewardAmount,
+      `Referral bonus for joining using ${referrer.refCode}'s code`,
+      orderId
+    );
+
+  } catch (error) {
+    console.error("Error processing referral reward:", error);
   }
 };
 

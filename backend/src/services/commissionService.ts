@@ -10,6 +10,8 @@ import Category from "../models/Category";
 import SubCategory from "../models/SubCategory";
 import Product from "../models/Product";
 import WalletTransaction from "../models/WalletTransaction";
+import SellerCategoryCommission from "../models/SellerCategoryCommission";
+import HeaderCategory from "../models/HeaderCategory";
 
 /**
  * Get the effective commission rate for a product/item
@@ -23,23 +25,20 @@ export const getOrderItemCommissionRate = async (
     const product = await Product.findById(productId);
     if (!product) return 10; // Default fallback
 
-    // 1. Check SubSubCategory
-    if (product.subSubCategory) {
-      const subSubCat = await Category.findById(product.subSubCategory);
-      if (subSubCat?.commissionRate && subSubCat.commissionRate > 0) {
-        return subSubCat.commissionRate;
+    const finalSellerId = sellerId || product.seller.toString();
+
+    // Step 1: SellerCategoryCommission (per-seller + per-headerCategory override)
+    if (product.headerCategoryId) {
+      const custom = await SellerCategoryCommission.findOne({
+        seller: finalSellerId,
+        headerCategory: product.headerCategoryId,
+      });
+      if (custom?.commissionRate != null) {
+        return custom.commissionRate;
       }
     }
 
-    // 2. Check SubCategory
-    if (product.subcategory) {
-      const subCat = await SubCategory.findById(product.subcategory);
-      if (subCat?.commissionRate && subCat.commissionRate > 0) {
-        return subCat.commissionRate;
-      }
-    }
-
-    // 3. Check Category
+    // Step 2: Category-level default commission
     if (product.category) {
       const cat = await Category.findById(product.category);
       if (cat?.commissionRate && cat.commissionRate > 0) {
@@ -47,14 +46,7 @@ export const getOrderItemCommissionRate = async (
       }
     }
 
-    // 4. Check Seller specific rate
-    const finalSellerId = sellerId || product.seller.toString();
-    const seller = await Seller.findById(finalSellerId);
-    if (seller?.commission && seller.commission > 0) {
-      return seller.commission;
-    }
-
-    // 5. Global Default
+    // Step 3: Global Default
     const settings = await AppSettings.findOne();
     return settings?.globalCommissionRate !== undefined
       ? settings.globalCommissionRate
@@ -693,9 +685,9 @@ export const getCommissionSummary = async (
       commissions: commissions.map((c) => ({
         id: c._id,
         orderId: c.order,
-        amount: c.commissionAmount,
-        rate: c.commissionRate,
+        platformFee: c.commissionAmount,
         orderAmount: c.orderAmount,
+        netEarning: c.orderAmount - c.commissionAmount,
         status: c.status,
         paidAt: c.paidAt,
         createdAt: c.createdAt,

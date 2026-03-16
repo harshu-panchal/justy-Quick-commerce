@@ -2,6 +2,7 @@ import WalletTransaction from "../models/WalletTransaction";
 import WithdrawRequest from "../models/WithdrawRequest";
 import Seller from "../models/Seller";
 import Delivery from "../models/Delivery";
+import Customer from "../models/Customer";
 import AppSettings from "../models/AppSettings";
 import mongoose from "mongoose";
 
@@ -10,7 +11,7 @@ import mongoose from "mongoose";
  */
 export const creditWallet = async (
   userId: string,
-  userType: "SELLER" | "DELIVERY_BOY",
+  userType: "SELLER" | "DELIVERY_BOY" | "CUSTOMER",
   amount: number,
   description: string,
   relatedOrderId?: string,
@@ -41,8 +42,19 @@ export const creditWallet = async (
     }
 
     // Update user balance
-    const Model: any = userType === "SELLER" ? Seller : Delivery;
-    const updateQuery = { $inc: { balance: amount } };
+    let Model: any;
+    let balanceField = "balance";
+
+    if (userType === "SELLER") {
+      Model = Seller;
+    } else if (userType === "DELIVERY_BOY") {
+      Model = Delivery;
+    } else if (userType === "CUSTOMER") {
+      Model = Customer;
+      balanceField = "walletAmount";
+    }
+
+    const updateQuery = { $inc: { [balanceField]: amount } };
 
     if (session) {
       await Model.findByIdAndUpdate(userId, updateQuery, { session });
@@ -72,7 +84,7 @@ export const creditWallet = async (
  */
 export const debitWallet = async (
   userId: string,
-  userType: "SELLER" | "DELIVERY_BOY",
+  userType: "SELLER" | "DELIVERY_BOY" | "CUSTOMER",
   amount: number,
   description: string,
   relatedOrderId?: string,
@@ -107,8 +119,19 @@ export const debitWallet = async (
     }
 
     // Update user balance
-    const Model: any = userType === "SELLER" ? Seller : Delivery;
-    const updateQuery = { $inc: { balance: -amount } };
+    let Model: any;
+    let balanceField = "balance";
+
+    if (userType === "SELLER") {
+      Model = Seller;
+    } else if (userType === "DELIVERY_BOY") {
+      Model = Delivery;
+    } else if (userType === "CUSTOMER") {
+      Model = Customer;
+      balanceField = "walletAmount";
+    }
+
+    const updateQuery = { $inc: { [balanceField]: -amount } };
 
     if (session) {
       await Model.findByIdAndUpdate(userId, updateQuery, { session });
@@ -138,17 +161,28 @@ export const debitWallet = async (
  */
 export const getWalletBalance = async (
   userId: string,
-  userType: "SELLER" | "DELIVERY_BOY",
+  userType: "SELLER" | "DELIVERY_BOY" | "CUSTOMER",
 ): Promise<number> => {
   try {
-    const Model: any = userType === "SELLER" ? Seller : Delivery;
+    let Model: any;
+    let balanceField = "balance";
+
+    if (userType === "SELLER") {
+      Model = Seller;
+    } else if (userType === "DELIVERY_BOY") {
+      Model = Delivery;
+    } else if (userType === "CUSTOMER") {
+      Model = Customer;
+      balanceField = "walletAmount";
+    }
+
     const user = await Model.findById(userId);
 
     if (!user) {
       throw new Error("User not found");
     }
 
-    return user.balance || 0;
+    return user[balanceField] || 0;
   } catch (error) {
     console.error("Error getting wallet balance:", error);
     return 0;
@@ -160,7 +194,7 @@ export const getWalletBalance = async (
  */
 export const getWalletTransactions = async (
   userId: string,
-  userType: "SELLER" | "DELIVERY_BOY",
+  userType: "SELLER" | "DELIVERY_BOY" | "CUSTOMER",
   page: number = 1,
   limit: number = 20,
 ) => {

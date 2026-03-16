@@ -46,6 +46,7 @@ import * as faqController from "../modules/admin/controllers/adminFAQController"
 import * as paymentController from "../modules/admin/controllers/adminPaymentController";
 import * as policyController from "../modules/admin/controllers/adminPolicyController";
 import * as sellerController from "../modules/admin/controllers/adminSellerController";
+import * as sellerCommissionController from "../modules/admin/controllers/adminSellerCommissionController";
 
 // Profile Controllers
 import * as profileController from "../modules/admin/controllers/adminProfileController";
@@ -310,6 +311,10 @@ router.delete("/policies/:id", policyController.deletePolicy);
 // ==================== Seller Routes ====================
 router.get("/sellers", sellerController.getAllSellers);
 router.post("/seller/penalty", sellerController.applySellerPenalty);
+
+// Seller Category Commissions
+router.get("/sellers/:sellerId/category-commissions", sellerCommissionController.getSellerCategoryCommissions);
+router.post("/sellers/:sellerId/category-commissions", sellerCommissionController.saveSellerCategoryCommissions);
 
 // ==================== Shop Management ====================
 // Legacy routes (keep for backward compatibility)

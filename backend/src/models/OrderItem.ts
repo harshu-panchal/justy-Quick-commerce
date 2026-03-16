@@ -19,6 +19,17 @@ export interface IOrderItem extends Document {
   variation?: string;
   variantTitle?: string;
 
+  // Combo Offer
+  comboOffer?: mongoose.Types.ObjectId;
+  comboProducts?: Array<{
+    productId: mongoose.Types.ObjectId;
+    productName: string;
+    productImage?: string;
+    quantity: number;
+    unitPrice: number;
+    sku?: string;
+  }>;
+
   // Status
   status: "Pending" | "Shipped" | "Delivered" | "Cancelled" | "Returned";
   subtotal: number;
@@ -89,6 +100,39 @@ const OrderItemSchema = new Schema<IOrderItem>(
       type: String,
       trim: true,
     },
+
+    // Combo Offer
+    comboOffer: {
+      type: Schema.Types.ObjectId,
+      ref: "ComboOffer",
+      required: false,
+    },
+    comboProducts: [
+      {
+        productId: {
+          type: Schema.Types.ObjectId,
+          ref: "Product",
+        },
+        productName: {
+          type: String,
+          required: true,
+        },
+        productImage: {
+          type: String,
+        },
+        quantity: {
+          type: Number,
+          required: true,
+        },
+        unitPrice: {
+          type: Number,
+          required: true,
+        },
+        sku: {
+          type: String,
+        },
+      },
+    ],
 
     // Status
     status: {

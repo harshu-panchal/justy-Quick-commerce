@@ -743,7 +743,7 @@ export default function OrderDetail() {
 
   const submitReturn = async () => {
     if (!returnForm.reason || !activeItem) return;
-    
+
     setSubmitting(true);
     try {
       await requestReturn(order.id, activeItem._id, {
@@ -766,18 +766,18 @@ export default function OrderDetail() {
 
   const canReturnItem = (item: any) => {
     if (item.status !== 'Delivered') return false;
-    
+
     // For testing and if population is partial
     const returnable = item.product?.isReturnable ?? item.isReturnable ?? true;
     if (!returnable) return false;
-    
+
     // Check window
     const deliveredDate = order.deliveredAt ? new Date(order.deliveredAt) : new Date(order.updatedAt);
     const returnDays = item.product?.maxReturnDays || item.maxReturnDays || 7;
     const now = new Date();
     const diffTime = Math.abs(now.getTime() - (deliveredDate.getTime() || now.getTime()));
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+
     return diffDays <= returnDays;
   };
 
@@ -1046,25 +1046,25 @@ export default function OrderDetail() {
       <div className="px-4 py-4 space-y-4 pb-24">
         {/* Payment Pending */}
         {order?.paymentStatus !== 'Completed' && !['Delivered', 'Cancelled', 'Returned'].includes(order?.status) && (
-        <motion.div
-          className="bg-white rounded-xl p-4 shadow-sm"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-semibold text-gray-900">
-                Payment of ₹{order.totalAmount?.toFixed(0) || "0"} pending
-              </p>
-              <p className="text-sm text-gray-500 mt-1">
-                Pay now, or pay to the delivery partner using Cash/UPI
-              </p>
+          <motion.div
+            className="bg-white rounded-xl p-4 shadow-sm"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-semibold text-gray-900">
+                  Payment of ₹{order.totalAmount?.toFixed(0) || "0"} pending
+                </p>
+                <p className="text-sm text-gray-500 mt-1">
+                  Pay now, or pay to the delivery partner using Cash/UPI
+                </p>
+              </div>
+              <Button className="bg-gray-900 hover:bg-gray-800 text-white rounded-full px-6">
+                Pay now <ChevronRightIcon className="w-4 h-4 ml-1" />
+              </Button>
             </div>
-            <Button className="bg-gray-900 hover:bg-gray-800 text-white rounded-full px-6">
-              Pay now <ChevronRightIcon className="w-4 h-4 ml-1" />
-            </Button>
-          </div>
-        </motion.div>
+          </motion.div>
         )}
 
         {/* Promo Carousel */}
@@ -1097,18 +1097,18 @@ export default function OrderDetail() {
 
         {/* Delivery Partner Safety */}
         {!['Delivered', 'Cancelled', 'Returned'].includes(order?.status) && (
-        <motion.button
-          className="w-full bg-white rounded-xl p-4 shadow-sm flex items-center gap-3"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-          whileTap={{ scale: 0.99 }}>
-          <ShieldIcon className="w-6 h-6 text-gray-600" />
-          <span className="flex-1 text-left font-medium text-gray-900">
-            Learn about delivery partner safety
-          </span>
-          <ChevronRightIcon className="w-5 h-5 text-gray-400" />
-        </motion.button>
+          <motion.button
+            className="w-full bg-white rounded-xl p-4 shadow-sm flex items-center gap-3"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            whileTap={{ scale: 0.99 }}>
+            <ShieldIcon className="w-6 h-6 text-gray-600" />
+            <span className="flex-1 text-left font-medium text-gray-900">
+              Learn about delivery partner safety
+            </span>
+            <ChevronRightIcon className="w-5 h-5 text-gray-400" />
+          </motion.button>
         )}
 
         {/* Delivery Details Banner */}
@@ -1178,6 +1178,7 @@ export default function OrderDetail() {
           </div>
 
           {/* Order Items */}
+          {/* Order Items */}
           <div
             className="p-4 border-b border-dashed border-gray-200"
             onClick={() => setShowItemsModal(true)}
@@ -1188,99 +1189,76 @@ export default function OrderDetail() {
                 <p className="font-medium text-gray-900">
                   Order #{order.id.split("-").slice(-1)[0]}
                 </p>
-                <div className="mt-3 space-y-3">
-                  {order.items?.map((item: any, index: number) => (
-                    <div key={index} className="flex flex-col gap-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <span className="w-4 h-4 rounded border border-green-600 flex items-center justify-center flex-shrink-0">
-                            <span className="w-2 h-2 rounded-full bg-green-600" />
+                <div className="mt-4 space-y-4">
+                  {order.items?.map((item: any, index: number) => {
+                    const isCombo = !!item.comboOffer;
+                    const name = isCombo ? item.comboOffer.name : (item.product?.name || item.productName || "Product");
+                    
+                    return (
+                      <div key={index} className="flex flex-col gap-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <span className="w-4 h-4 rounded border border-green-600 flex items-center justify-center flex-shrink-0">
+                              <span className="w-2 h-2 rounded-full bg-green-600" />
+                            </span>
+                            <span className="font-medium">
+                              {item.quantity} x {name}
+                            </span>
+                          </div>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                            item.status === 'Cancelled' ? 'bg-red-100 text-red-600' :
+                            item.status === 'Returned' ? 'bg-orange-100 text-orange-600' :
+                            item.status === 'Delivered' ? 'bg-green-100 text-green-600' :
+                            'bg-blue-100 text-blue-600'
+                          }`}>
+                            {item.status || 'Pending'}
                           </span>
-                          <span className="font-medium">
-                            {item.quantity} x{" "}
-                            {item.product?.name || item.productName || "Product"}
-                          </span>
-                        </div>
-                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                          item.status === 'Cancelled' ? 'bg-red-100 text-red-600' :
-                          item.status === 'Returned' ? 'bg-orange-100 text-orange-600' :
-                          item.status === 'Delivered' ? 'bg-green-100 text-green-600' :
-                          'bg-blue-100 text-blue-600'
-                        }`}>
-                          {item.status || 'Pending'}
-                        </span>
-                      </div>
-                      
-                      {/* Quick Actions in Summary */}
-                      <div className="flex flex-col gap-2 ml-6">
-                        <div className="flex gap-2">
-                          {['Pending', 'Processed', 'Accepted'].includes(item.status || 'Pending') && (
-                             <button 
-                               className="text-[11px] text-red-600 font-bold hover:underline"
-                               onClick={(e) => {
-                                 e.stopPropagation();
-                                 setActiveItem(item);
-                                 setShowItemCancelModal(true);
-                               }}
-                             >
-                               Cancel
-                             </button>
-                           )}
-                           {item.status === 'Delivered' && canReturnItem(item) && (
-                             <button 
-                               className="text-[11px] text-orange-600 font-bold hover:underline"
-                               onClick={(e) => {
-                                 e.stopPropagation();
-                                 setActiveItem(item);
-                                 setShowReturnModal(true);
-                               }}
-                             >
-                               Return Item
-                             </button>
-                           )}
                         </div>
 
-                        {/* Return Progress Info */}
+                        {/* Quick Actions */}
+                        <div className="flex items-center gap-3 ml-6">
+                          {['Pending', 'Processed', 'Accepted'].includes(item.status || 'Pending') && (
+                            <button
+                              className="text-[11px] text-red-600 font-bold hover:underline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveItem(item);
+                                setShowItemCancelModal(true);
+                              }}
+                            >
+                              Cancel
+                            </button>
+                          )}
+                          {item.status === 'Delivered' && canReturnItem(item) && (
+                            <button
+                              className="text-[11px] text-orange-600 font-bold hover:underline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveItem(item);
+                                setShowReturnModal(true);
+                              }}
+                            >
+                              Return Item
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Return Progress */}
                         {item.returnRequest && (
-                          <div className="bg-orange-50 p-2 rounded-lg border border-orange-100 mt-1">
-                            <p className="text-[10px] text-orange-800 font-semibold mb-1">
+                          <div className="ml-6 bg-orange-50 p-2 rounded-lg border border-orange-100 mt-1">
+                            <p className="text-[10px] text-orange-800 font-semibold">
                               Return {item.returnRequest.status}
                             </p>
-                            {item.returnRequest.status === 'Approved' && item.returnRequest.pickupScheduled && (
-                              <div className="flex items-center gap-1.5 text-[9px] text-orange-700">
-                                <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
-                                <span>Pickup scheduled for: {new Date(item.returnRequest.pickupScheduled).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })}</span>
-                              </div>
-                            )}
-                            {item.returnRequest.status === 'Approved' && !item.returnRequest.pickupScheduled && (
-                              <p className="text-[9px] text-orange-600">
-                                Pickup will be scheduled shortly. Our delivery partner will contact you.
-                              </p>
-                            )}
-                            {item.returnRequest.status === 'Pending' && (
-                              <p className="text-[9px] text-orange-600 italic">
-                                Seller is reviewing your return request.
-                              </p>
-                            )}
                           </div>
                         )}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
-              <ChevronRightIcon className="w-5 h-5 text-gray-400" />
+              <ChevronRightIcon className="w-5 h-5 text-gray-400 self-center" />
             </div>
           </div>
-
-          {!['Delivered', 'Cancelled', 'Returned'].includes(order?.status) && (
-            <SectionItem
-              icon={ChefHatIcon}
-              title="Add special requests"
-              subtitle=""
-              onClick={() => setShowSpecialRequestsModal(true)}
-            />
-          )}
         </motion.div>
 
         {/* Help Section */}
@@ -1313,12 +1291,12 @@ export default function OrderDetail() {
             />
           )}
           {order.status === 'Delivered' && (
-             <div className="p-4 border-t border-dashed border-gray-100 bg-green-50/50">
-               <p className="text-xs text-green-700 font-medium flex items-center gap-1">
-                 <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                 This order has been delivered. You can return items individually above.
-               </p>
-             </div>
+            <div className="p-4 border-t border-dashed border-gray-100 bg-green-50/50">
+              <p className="text-xs text-green-700 font-medium flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                This order has been delivered. You can return items individually above.
+              </p>
+            </div>
           )}
         </motion.div>
 
@@ -1468,85 +1446,96 @@ export default function OrderDetail() {
                 Order Items
               </h2>
               <div className="space-y-4">
-                {order?.items?.map((item: any, index: number) => (
-                  <div
-                    key={index}
-                    className="flex flex-col gap-3 border-b border-gray-200 pb-4 last:border-0">
-                    <div className="flex gap-3">
-                      <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
-                        {item.product?.mainImage ? (
-                          <img
-                            src={item.product.mainImage}
-                            alt={
-                              item.product?.name || item.productName || "Product"
-                            }
-                            className="w-full h-full object-cover rounded-lg"
-                          />
-                        ) : (
-                          <span className="text-2xl">📦</span>
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex justify-between items-start">
-                          <p className="font-medium text-gray-900">
-                            {item.product?.name || item.productName}
-                          </p>
-                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                            item.status === 'Cancelled' ? 'bg-red-100 text-red-600' :
-                            item.status === 'Returned' ? 'bg-orange-100 text-orange-600' :
-                            item.status === 'Delivered' ? 'bg-green-100 text-green-600' :
-                            'bg-blue-100 text-blue-600'
-                          }`}>
-                            {item.status || 'Pending'}
-                          </span>
+                {order?.items?.map((item: any, index: number) => {
+                  const isCombo = !!item.comboOffer;
+                  const name = isCombo ? item.comboOffer.name : (item.product?.name || item.productName || "Product");
+                  const image = isCombo ? item.comboOffer.image : item.product?.mainImage;
+
+                  return (
+                    <div
+                      key={index}
+                      className="flex flex-col gap-3 border-b border-gray-200 pb-4 last:border-0">
+                      <div className="flex gap-3">
+                        <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
+                          {image ? (
+                            <img
+                              src={image}
+                              alt={name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-2xl">{isCombo ? "🍱" : "📦"}</span>
+                          )}
                         </div>
-                        <p className="text-sm text-gray-500">
-                          Qty: {item.quantity}
-                        </p>
-                        {item.variant && (
-                          <p className="text-xs text-gray-500">{item.variant}</p>
+                        <div className="flex-1">
+                          <div className="flex justify-between items-start">
+                            <p className="font-medium text-gray-900 line-clamp-2">
+                              {name}
+                            </p>
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${
+                              item.status === 'Cancelled' ? 'bg-red-100 text-red-600' :
+                              item.status === 'Returned' ? 'bg-orange-100 text-orange-600' :
+                              item.status === 'Delivered' ? 'bg-green-100 text-green-600' :
+                              'bg-blue-100 text-blue-600'
+                            }`}>
+                              {item.status || 'Pending'}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-500">
+                            Qty: {item.quantity}
+                          </p>
+                          {isCombo && item.comboProducts && (
+                            <div className="mt-1 space-y-0.5">
+                              {item.comboProducts.map((cp: any, idx: number) => (
+                                <p key={idx} className="text-[10px] text-gray-500">
+                                  • {cp.name || cp.product?.name} (x{cp.quantity})
+                                </p>
+                              ))}
+                            </div>
+                          )}
+                          {!isCombo && item.variant && (
+                            <p className="text-xs text-gray-500">{item.variant}</p>
+                          )}
+                          <p className="text-sm font-semibold text-gray-900 mt-1">
+                            ₹{item.total?.toFixed(0) || (item.unitPrice * item.quantity).toFixed(0)}
+                          </p>
+                        </div>
+                      </div>
+                      {/* Item Actions */}
+                      <div className="flex gap-2">
+                        {['Pending', 'Processed', 'Accepted'].includes(item.status || 'Pending') && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-xs text-red-600 border-red-200 hover:bg-red-50 py-1 h-8"
+                            onClick={() => {
+                              setActiveItem(item);
+                              setShowItemCancelModal(true);
+                            }}
+                          >
+                            Cancel Item
+                          </Button>
                         )}
-                        <p className="text-sm font-semibold text-gray-900 mt-1">
-                          ₹
-                          {item.total?.toFixed(0) ||
-                            (item.unitPrice * item.quantity).toFixed(0)}
-                        </p>
+                        {item.status === 'Delivered' && canReturnItem(item) && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-xs text-orange-600 border-orange-200 hover:bg-orange-50 py-1 h-8"
+                            onClick={() => {
+                              setActiveItem(item);
+                              setShowReturnModal(true);
+                            }}
+                          >
+                            Return Item
+                          </Button>
+                        )}
                       </div>
                     </div>
-                    {/* Item Actions */}
-                    <div className="flex gap-2">
-                       {['Pending', 'Processed', 'Accepted'].includes(item.status || 'Pending') && (
-                         <Button 
-                           variant="outline" 
-                           size="sm" 
-                           className="text-xs text-red-600 border-red-200 hover:bg-red-50 py-1 h-8"
-                           onClick={() => {
-                             setActiveItem(item);
-                             setShowItemCancelModal(true);
-                           }}
-                         >
-                           Cancel Item
-                         </Button>
-                       )}
-                       {item.status === 'Delivered' && canReturnItem(item) && (
-                         <Button 
-                           variant="outline" 
-                           size="sm" 
-                           className="text-xs text-orange-600 border-orange-200 hover:bg-orange-50 py-1 h-8"
-                           onClick={() => {
-                             setActiveItem(item);
-                             setShowReturnModal(true);
-                           }}
-                         >
-                           Return Item
-                         </Button>
-                       )}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
               <Button
-                className="w-full mt-4 bg-green-600 hover:bg-green-700 text-white"
+                className="w-full mt-6 bg-green-600 hover:bg-green-700 text-white"
                 onClick={() => setShowItemsModal(false)}>
                 Close
               </Button>
@@ -1674,20 +1663,20 @@ export default function OrderDetail() {
               <p className="text-sm font-medium text-gray-800 mb-2">
                 {activeItem?.product?.name || activeItem?.productName}
               </p>
-              
+
               <div className="space-y-4 mt-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Select Reason</label>
-                  <select 
+                  <select
                     className="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-green-500 outline-none"
                     value={returnForm.reason}
-                    onChange={(e) => setReturnForm({...returnForm, reason: e.target.value})}
+                    onChange={(e) => setReturnForm({ ...returnForm, reason: e.target.value })}
                   >
                     <option value="">Choose a reason</option>
                     {returnReasons.map((r: string) => <option key={r} value={r}>{r}</option>)}
                   </select>
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Description (Optional)</label>
                   <textarea
@@ -1695,10 +1684,10 @@ export default function OrderDetail() {
                     rows={3}
                     placeholder="Describe the issue..."
                     value={returnForm.description}
-                    onChange={(e) => setReturnForm({...returnForm, description: e.target.value})}
+                    onChange={(e) => setReturnForm({ ...returnForm, description: e.target.value })}
                   />
                 </div>
-                
+
                 <div className="flex gap-3 pt-2">
                   <Button
                     variant="outline"

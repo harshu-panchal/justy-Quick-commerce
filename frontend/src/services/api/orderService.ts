@@ -28,6 +28,18 @@ export interface OrderItem {
   taxPercent: number;
   qty: number;
   subtotal: number;
+  comboOffer?: {
+    id: string;
+    _id: string;
+    name: string;
+    image: string;
+  };
+  comboProducts?: Array<{
+    productId: string;
+    name: string;
+    quantity: number;
+    price: number;
+  }>;
 }
 
 export interface DeliveryAddress {

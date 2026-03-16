@@ -493,19 +493,41 @@ export default function SellerOrderDetail() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-neutral-200">
-                {orderDetail.items.map((item) => (
-                  <tr key={item.srNo}>
-                    <td className="px-4 py-3 text-sm text-neutral-900">{item.srNo}</td>
-                    <td className="px-4 py-3 text-sm text-neutral-900">{item.product}</td>
-                    <td className="px-4 py-3 text-sm text-neutral-900">{formatUnit(item.unit, item.qty)}</td>
-                    <td className="px-4 py-3 text-sm text-neutral-900">?{item.price.toFixed(2)}</td>
-                    <td className="px-4 py-3 text-sm text-neutral-600">
-                      {item.tax.toFixed(2)} ({item.taxPercent.toFixed(2)}%)
-                    </td>
-                    <td className="px-4 py-3 text-sm text-neutral-900">{item.qty}</td>
-                    <td className="px-4 py-3 text-sm text-neutral-900 font-medium">?{item.subtotal.toFixed(2)}</td>
-                  </tr>
-                ))}
+                {orderDetail.items.map((item) => {
+                  const isCombo = !!item.comboOffer;
+                  const productName = isCombo ? item.comboOffer?.name : item.product;
+                  return (
+                    <tr key={item.srNo}>
+                      <td className="px-4 py-3 text-sm text-neutral-900">{item.srNo}</td>
+                      <td className="px-4 py-3 text-sm text-neutral-900">
+                        <div className="flex flex-col">
+                          <div className="font-medium flex items-center gap-2">
+                            {productName}
+                            {isCombo && (
+                              <span className="text-[10px] bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded font-bold uppercase">
+                                Combo
+                              </span>
+                            )}
+                          </div>
+                          {isCombo && item.comboProducts && (
+                            <div className="text-[10px] text-neutral-500 mt-1 space-y-0.5">
+                              {item.comboProducts.map((cp: any, idx: number) => (
+                                <div key={idx}>• {cp.name} (x{cp.quantity})</div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-neutral-900">{formatUnit(item.unit, item.qty)}</td>
+                      <td className="px-4 py-3 text-sm text-neutral-900">₹{item.price.toFixed(2)}</td>
+                      <td className="px-4 py-3 text-sm text-neutral-600">
+                        {item.tax.toFixed(2)} ({item.taxPercent.toFixed(2)}%)
+                      </td>
+                      <td className="px-4 py-3 text-sm text-neutral-900">{item.qty}</td>
+                      <td className="px-4 py-3 text-sm text-neutral-900 font-medium">₹{item.subtotal.toFixed(2)}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

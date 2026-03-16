@@ -111,9 +111,10 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
         paymentMethod: order.paymentMethod || "COD",
         useWallet: order.useWallet,
         items: order.items.map((item) => ({
-          product: {
-            id: item.product.id || (item.product as { _id?: string })._id || '',
-          },
+          product: item.product ? {
+            id: item.product.id || (item.product as any)._id || '',
+          } : undefined,
+          comboOffer: item.comboOffer ? (item.comboOffer.id || item.comboOffer._id) : undefined,
           quantity: item.quantity,
           variant: item.variant, // Pass variant if available
         })),

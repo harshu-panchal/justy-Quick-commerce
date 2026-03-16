@@ -71,11 +71,22 @@ export default function AddToCartAnimation({
     // Find removed product by comparing previous and current items
     if (prevItems.length > currentItems.length) {
       const removed = prevItems.find(
-        (prevItem) => !currentItems.some((currItem) => currItem.product.id === prevItem.product.id)
+        (prevItem) => !currentItems.some((currItem) => {
+          const prevId = prevItem.product?.id || prevItem.product?._id || prevItem.comboOffer?.id || prevItem.comboOffer?._id;
+          const currId = currItem.product?.id || currItem.product?._id || currItem.comboOffer?.id || currItem.comboOffer?._id;
+          return prevId === currId;
+        })
       );
 
       if (removed) {
-        setRemovedProduct(removed.product);
+        // Resolve product info for animation regardless of item type
+        const removedInfo = removed.product || {
+            imageUrl: removed.comboOffer?.image,
+            mainImage: removed.comboOffer?.image,
+            name: removed.comboOffer?.name,
+            productName: removed.comboOffer?.name
+        };
+        setRemovedProduct(removedInfo as any);
 
         // Animate the removed thumbnail bouncing out
         setTimeout(() => {
@@ -334,32 +345,43 @@ export default function AddToCartAnimation({
             >
               {/* Left: Product thumbnails */}
               <div className="flex items-center -space-x-4">
-                {thumbnailItems.map((item, idx) => (
-                  <motion.div
-                    key={item.product._id || item.product.id || `item-${idx}`}
-                    initial={{ scale: 0, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{
-                      delay: idx * 0.1,
-                      type: 'spring',
-                      stiffness: 500,
-                      damping: 25,
-                    }}
-                    className="w-7 h-7 rounded-full border-2 border-white/90 overflow-hidden bg-white flex-shrink-0 shadow-md"
-                  >
-                    {item.product.imageUrl || item.product.mainImage ? (
-                      <img
-                        src={item.product.imageUrl || item.product.mainImage}
-                        alt={item.product.name || item.product.productName || 'Product'}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-neutral-200 text-neutral-400 text-xs font-semibold">
-                        {(item.product.name || item.product.productName || 'P').charAt(0).toUpperCase()}
-                      </div>
-                    )}
-                  </motion.div>
-                ))}
+                {thumbnailItems.map((item, idx) => {
+                  const isCombo = !!item.comboOffer;
+                  const itemProduct = item.product || {
+                      _id: item.comboOffer?._id || item.comboOffer?.id,
+                      id: item.comboOffer?._id || item.comboOffer?.id,
+                      imageUrl: item.comboOffer?.image,
+                      mainImage: item.comboOffer?.image,
+                      name: item.comboOffer?.name
+                  };
+                  const finalKey = item.id || item._id || idx;
+                  return (
+                    <motion.div
+                      key={finalKey}
+                      initial={{ scale: 0, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{
+                        delay: idx * 0.1,
+                        type: 'spring',
+                        stiffness: 500,
+                        damping: 25,
+                      }}
+                      className="w-7 h-7 rounded-full border-2 border-white/90 overflow-hidden bg-white flex-shrink-0 shadow-md"
+                    >
+                      {itemProduct.imageUrl || itemProduct.mainImage ? (
+                        <img
+                          src={itemProduct.imageUrl || itemProduct.mainImage}
+                          alt={itemProduct.name || (itemProduct as any).productName || 'Product'}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-neutral-200 text-neutral-400 text-xs font-semibold">
+                          {(itemProduct.name || (itemProduct as any).productName || 'P').charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                    </motion.div>
+                  );
+                })}
               </div>
 
               {/* Middle: Text */}

@@ -16,4 +16,14 @@ router.post("/location", authenticate, customerController.updateLocation);
 // Get customer location (protected route)
 router.get("/location", authenticate, customerController.getLocation);
 
+// ==================== Combo Offers Routes ====================
+import * as customerComboController from "../modules/customer/controllers/customerComboController";
+
+// Public read routes
+router.get("/combo-offers", customerComboController.getActiveComboOffers);
+router.get("/combo-offers/:id", customerComboController.getComboOfferDetails);
+
+// Note: standard cart routes are probably in cartRoutes.ts.
+// I will check the actual cart routing file.
+
 export default router;

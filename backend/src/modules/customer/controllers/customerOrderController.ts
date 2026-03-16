@@ -15,6 +15,7 @@ import { getOrderItemCommissionRate } from "../../../services/commissionService"
 import WalletTransaction from "../../../models/WalletTransaction";
 import PincodeDemand from "../../../models/PincodeDemand";
 import Return from "../../../models/Return";
+import ComboOffer from "../../../models/ComboOffer";
 
 
 // Create a new order
@@ -159,162 +160,199 @@ export const createOrder = async (req: Request, res: Response) => {
         const sellerIds = new Set<string>(); // Track unique sellers
 
         for (const item of items) {
-            if (!item.product || !item.product.id) {
-                throw new Error("Invalid item structure: product.id is missing");
-            }
-
+            const isCombo = !!item.comboOffer;
             const qty = Number(item.quantity) || 0;
+
             if (qty <= 0) {
                 throw new Error("Invalid item quantity");
             }
 
-            // Atomically check stock and decrement to prevent race conditions
-            let product;
-            // The frontend sends variation info as 'variant' or 'variation'
-            // In the product model, it's stored in 'variations' array
-            const variationValue = item.variant || item.variation;
+            if (isCombo) {
+                // --- COMBO OFFER PROCESSING ---
+                const comboId = item.comboOffer;
+                const combo = await ComboOffer.findById(comboId).populate('comboProducts.product');
 
-            if (variationValue) {
-                // Try to decrement stock for the specific variation first
-                // We check variations._id, variations.value, variations.title, or variations.pack
-                product = session
-                    ? await Product.findOneAndUpdate(
-                        {
-                            _id: item.product.id,
-                            $or: [
-                                { "variations._id": mongoose.isValidObjectId(variationValue) ? variationValue : new mongoose.Types.ObjectId() },
-                                { "variations.value": variationValue },
-                                { "variations.title": variationValue },
-                                { "variations.pack": variationValue }
-                            ],
-                            "variations.stock": { $gte: qty }
-                        },
-                        { $inc: { "variations.$.stock": -qty, stock: -qty } },
-                        { session, new: true }
-                    )
-                    : await Product.findOneAndUpdate(
-                        {
-                            _id: item.product.id,
-                            $or: [
-                                { "variations._id": mongoose.isValidObjectId(variationValue) ? variationValue : new mongoose.Types.ObjectId() },
-                                { "variations.value": variationValue },
-                                { "variations.title": variationValue },
-                                { "variations.pack": variationValue }
-                            ],
-                            "variations.stock": { $gte: qty }
-                        },
-                        { $inc: { "variations.$.stock": -qty, stock: -qty } },
-                        { new: true }
-                    );
-            }
+                if (!combo || !combo.isActive) {
+                    throw new Error("Combo offer not found or inactive");
+                }
 
-            if (!product) {
-                // If we are here, either variationValue wasn't provided, or it didn't match any variation with enough stock.
-                // We'll try to find the product first to see if it has variations.
-                const checkProduct = await Product.findById(item.product.id);
-
-                if (checkProduct && checkProduct.variations && checkProduct.variations.length > 0) {
-                    // Product has variations, but we didn't match one.
-                    // If a variation was provided, it means that specific variation is out of stock.
-                    if (variationValue) {
-                        throw new Error(`Insufficient stock for variation: ${variationValue}`);
+                // 1. Check stock for all products in combo
+                for (const cp of combo.comboProducts) {
+                    const totalRequired = cp.quantity * qty;
+                    const productForStock = await Product.findById(cp.product);
+                    if (!productForStock || productForStock.stock < totalRequired) {
+                        throw new Error(`Insufficient stock for product ${cp.productName} in combo: ${combo.name}`);
                     }
+                }
 
-                    // No variation was provided, but the product has them.
-                    // To maintain data consistency, we'll try to decrement from the first variation.
+                // 2. Deduct stock for all products in combo
+                for (const cp of combo.comboProducts) {
+                    const totalRequired = cp.quantity * qty;
+                    await Product.findByIdAndUpdate(cp.product, {
+                        $inc: { stock: -totalRequired }
+                    }, { session });
+                }
+
+                const itemTotal = combo.comboPrice * qty;
+                calculatedSubtotal += itemTotal;
+
+                // Commission for combos - for now, using a default or main product's rate
+                // Ideally combos should have their own commission system, but we'll use 5% or main product's
+                const mainProduct = combo.mainProduct;
+                const commRate = await getOrderItemCommissionRate(mainProduct.toString(), combo.sellerId.toString());
+                const commAmount = (itemTotal * commRate) / 100;
+
+                // Create OrderItem with combo snapshot
+                const newOrderItem = new OrderItem({
+                    order: newOrder._id,
+                    seller: combo.sellerId,
+                    comboOffer: combo._id,
+                    productName: combo.name,
+                    productImage: combo.image,
+                    unitPrice: combo.comboPrice,
+                    quantity: qty,
+                    total: itemTotal,
+                    commissionRate: commRate,
+                    commissionAmount: commAmount,
+                    status: 'Pending',
+                    comboProducts: combo.comboProducts.map((cp: any) => ({
+                        productId: cp.product._id || cp.product,
+                        productName: cp.productName,
+                        productImage: cp.product?.mainImage,
+                        quantity: cp.quantity
+                    }))
+                });
+
+                if (session) await newOrderItem.save({ session });
+                else await newOrderItem.save();
+
+                orderItemIds.push(newOrderItem._id as mongoose.Types.ObjectId);
+                sellerIds.add(combo.sellerId.toString());
+
+            } else {
+                // --- REGULAR PRODUCT PROCESSING ---
+                if (!item.product || !item.product.id) {
+                    throw new Error("Invalid item structure: product.id is missing");
+                }
+
+                // Atomically check stock and decrement to prevent race conditions
+                let product;
+                const variationValue = item.variant || item.variation;
+
+                if (variationValue) {
                     product = session
                         ? await Product.findOneAndUpdate(
                             {
                                 _id: item.product.id,
-                                "variations.0.stock": { $gte: qty }
+                                $or: [
+                                    { "variations._id": mongoose.isValidObjectId(variationValue) ? variationValue : new mongoose.Types.ObjectId() },
+                                    { "variations.value": variationValue },
+                                    { "variations.title": variationValue },
+                                    { "variations.pack": variationValue }
+                                ],
+                                "variations.stock": { $gte: qty }
                             },
-                            { $inc: { "variations.0.stock": -qty, stock: -qty } },
+                            { $inc: { "variations.$.stock": -qty, stock: -qty } },
                             { session, new: true }
                         )
                         : await Product.findOneAndUpdate(
                             {
                                 _id: item.product.id,
-                                "variations.0.stock": { $gte: qty }
+                                $or: [
+                                    { "variations._id": mongoose.isValidObjectId(variationValue) ? variationValue : new mongoose.Types.ObjectId() },
+                                    { "variations.value": variationValue },
+                                    { "variations.title": variationValue },
+                                    { "variations.pack": variationValue }
+                                ],
+                                "variations.stock": { $gte: qty }
                             },
-                            { $inc: { "variations.0.stock": -qty, stock: -qty } },
-                            { new: true }
-                        );
-                } else {
-                    // No variations, just decrement top-level stock
-                    product = session
-                        ? await Product.findOneAndUpdate(
-                            { _id: item.product.id, stock: { $gte: qty } },
-                            { $inc: { stock: -qty } },
-                            { session, new: true }
-                        )
-                        : await Product.findOneAndUpdate(
-                            { _id: item.product.id, stock: { $gte: qty } },
-                            { $inc: { stock: -qty } },
+                            { $inc: { "variations.$.stock": -qty, stock: -qty } },
                             { new: true }
                         );
                 }
+
+                if (!product) {
+                    const checkProduct = await Product.findById(item.product.id);
+                    if (checkProduct && checkProduct.variations && checkProduct.variations.length > 0) {
+                        if (variationValue) throw new Error(`Insufficient stock for variation: ${variationValue}`);
+
+                        product = session
+                            ? await Product.findOneAndUpdate(
+                                { _id: item.product.id, "variations.0.stock": { $gte: qty } },
+                                { $inc: { "variations.0.stock": -qty, stock: -qty } },
+                                { session, new: true }
+                            )
+                            : await Product.findOneAndUpdate(
+                                { _id: item.product.id, "variations.0.stock": { $gte: qty } },
+                                { $inc: { "variations.0.stock": -qty, stock: -qty } },
+                                { new: true }
+                            );
+                    } else {
+                        product = session
+                            ? await Product.findOneAndUpdate(
+                                { _id: item.product.id, stock: { $gte: qty } },
+                                { $inc: { stock: -qty } },
+                                { session, new: true }
+                            )
+                            : await Product.findOneAndUpdate(
+                                { _id: item.product.id, stock: { $gte: qty } },
+                                { $inc: { stock: -qty } },
+                                { new: true }
+                            );
+                    }
+                }
+
+                if (!product) {
+                    throw new Error(`Insufficient stock or product not found: ${item.product.name || 'ID: ' + item.product.id}${variationValue ? ' (' + variationValue + ')' : ''}`);
+                }
+
+                if (product.seller) sellerIds.add(product.seller.toString());
+
+                let selectedVariation;
+                if (variationValue && product.variations) {
+                    selectedVariation = product.variations.find((v: any) =>
+                        (v._id && v._id.toString() === variationValue) ||
+                        v.value === variationValue ||
+                        v.title === variationValue ||
+                        v.pack === variationValue
+                    );
+                }
+                if (!selectedVariation && product.variations && product.variations.length > 0) {
+                    selectedVariation = product.variations[0];
+                }
+
+                const itemPrice = (selectedVariation?.discPrice && selectedVariation.discPrice > 0)
+                    ? selectedVariation.discPrice
+                    : (product.discPrice && product.discPrice > 0)
+                        ? product.discPrice
+                        : (selectedVariation?.price || product.price || 0);
+                const itemTotal = itemPrice * qty;
+                calculatedSubtotal += itemTotal;
+
+                const commRate = await getOrderItemCommissionRate(product._id.toString(), product.seller.toString());
+                const commAmount = (itemTotal * commRate) / 100;
+
+                const newOrderItem = new OrderItem({
+                    order: newOrder._id,
+                    product: product._id,
+                    seller: product.seller,
+                    productName: product.productName,
+                    productImage: product.mainImage,
+                    sku: product.sku,
+                    unitPrice: itemPrice,
+                    quantity: qty,
+                    total: itemTotal,
+                    commissionRate: commRate,
+                    commissionAmount: commAmount,
+                    variation: variationValue,
+                    status: 'Pending'
+                });
+
+                if (session) await newOrderItem.save({ session });
+                else await newOrderItem.save();
+
+                orderItemIds.push(newOrderItem._id as mongoose.Types.ObjectId);
             }
-
-            if (!product) {
-                throw new Error(`Insufficient stock or product not found: ${item.product.name || 'ID: ' + item.product.id}${variationValue ? ' (' + variationValue + ')' : ''}`);
-            }
-
-            // Track seller IDs to validate location
-            if (product.seller) {
-                sellerIds.add(product.seller.toString());
-            }
-
-            // Determine the price based on variation and discounts
-            let selectedVariation;
-            if (variationValue && product.variations) {
-                selectedVariation = product.variations.find((v: any) =>
-                    (v._id && v._id.toString() === variationValue) ||
-                    v.value === variationValue ||
-                    v.title === variationValue ||
-                    v.pack === variationValue
-                );
-            }
-            if (!selectedVariation && product.variations && product.variations.length > 0) {
-                // Fallback to first if no variation spec or not found (consistent with stock fallback)
-                selectedVariation = product.variations[0];
-            }
-
-            const itemPrice = (selectedVariation?.discPrice && selectedVariation.discPrice > 0)
-                ? selectedVariation.discPrice
-                : (product.discPrice && product.discPrice > 0)
-                    ? product.discPrice
-                    : (selectedVariation?.price || product.price || 0);
-            const itemTotal = itemPrice * qty;
-            calculatedSubtotal += itemTotal;
-
-            // Calculate commission rate snapshot
-            const commRate = await getOrderItemCommissionRate(product._id.toString(), product.seller.toString());
-            const commAmount = (itemTotal * commRate) / 100;
-
-            // Create OrderItem
-            const newOrderItemData = {
-                order: newOrder._id,
-                product: product._id,
-                seller: product.seller,
-                productName: product.productName,
-                productImage: product.mainImage,
-                sku: product.sku,
-                unitPrice: itemPrice,
-                quantity: qty,
-                total: itemTotal,
-                commissionRate: commRate,
-                commissionAmount: commAmount,
-                variation: variationValue,
-                status: 'Pending'
-            };
-
-            const newOrderItem = new OrderItem(newOrderItemData);
-            if (session) {
-                await newOrderItem.save({ session });
-            } else {
-                await newOrderItem.save();
-            }
-            orderItemIds.push(newOrderItem._id as mongoose.Types.ObjectId);
         }
 
         // --- Determine Delivery Type and Validate Location ---
@@ -331,10 +369,10 @@ export const createOrder = async (req: Request, res: Response) => {
         const sellersRequiringLocation = new Set<string>();
 
         for (const prod of productsInOrder) {
-            const isProdScheduled = 
+            const isProdScheduled =
                 (prod.headerCategoryId as any)?.deliveryType === "scheduled" ||
                 (prod.category as any)?.headerCategoryId?.deliveryType === "scheduled";
-                
+
             if (isProdScheduled) {
                 hasScheduled = true;
             } else {
@@ -1153,7 +1191,7 @@ export const cancelOrderItem = async (req: Request, res: Response) => {
         const allItems = session
             ? await OrderItem.find({ order: id }).session(session)
             : await OrderItem.find({ order: id });
-        
+
         const allCancelled = allItems.every(item => item.status === 'Cancelled');
         if (allCancelled) {
             order.status = 'Cancelled';

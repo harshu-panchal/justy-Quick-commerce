@@ -1,35 +1,21 @@
 import { useState, useEffect } from "react";
 import { getProducts, type Product } from "../../../services/api/admin/adminProductService";
-
-interface ComboOffer {
-  id: string;
-  productId: string;
-  productName: string;
-  comboProducts: string[];
-  comboProductNames: string[];
-  comboPrice: number;
-}
-
-const STORAGE_KEY = "comboOffers";
-
-function loadCombos(): ComboOffer[] {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-  } catch {
-    return [];
-  }
-}
-
-function saveCombos(combos: ComboOffer[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(combos));
-}
+import { 
+  getAllComboOffers, 
+  createComboOffer, 
+  updateComboOffer, 
+  deleteComboOffer, 
+  ComboOffer 
+} from "../../../services/api/admin/adminComboService";
 
 export default function AdminComboOffers() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
-  const [combos, setCombos] = useState<ComboOffer[]>(loadCombos);
+  const [combos, setCombos] = useState<ComboOffer[]>([]);
+  const [loadingCombos, setLoadingCombos] = useState(true);
 
   // Form state
+  const [comboName, setComboName] = useState("");
   const [selectedMainProduct, setSelectedMainProduct] = useState("");
   const [selectedComboProducts, setSelectedComboProducts] = useState<string[]>([]);
   const [comboPrice, setComboPrice] = useState("");
@@ -38,7 +24,7 @@ export default function AdminComboOffers() {
   const [searchMain, setSearchMain] = useState("");
   const [searchCombo, setSearchCombo] = useState("");
 
-  // Fetch products
+  // Fetch products and combos
   useEffect(() => {
     (async () => {
       try {
@@ -52,15 +38,39 @@ export default function AdminComboOffers() {
       } finally {
         setLoadingProducts(false);
       }
+      
+      fetchCombos();
     })();
   }, []);
 
-  const getProductName = (id: string) => {
+  const fetchCombos = async () => {
+    try {
+      setLoadingCombos(true);
+      const res = await getAllComboOffers();
+      if (res.success && res.data) {
+        setCombos(res.data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch combo offers", err);
+    } finally {
+      setLoadingCombos(false);
+    }
+  };
+
+  const getProductName = (id: string | any) => {
+    // If it's a populated object from backend
+    if (typeof id === 'object' && id !== null && id.productName) return id.productName;
+    
+    // Otherwise it's just an ID string, find it in our local state
     const p = products.find((pr: Product) => pr._id === id);
     return p?.productName || id;
   };
 
-  const getProductPrice = (id: string) => {
+  const getProductPrice = (id: string | any) => {
+    if (typeof id === 'object' && id !== null && id.price !== undefined) {
+       return id.price;
+    }
+
     const p = products.find((pr: Product) => pr._id === id);
     if (!p) return 0;
     if (p.variations && p.variations.length > 0) {
@@ -75,7 +85,7 @@ export default function AdminComboOffers() {
     );
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError("");
 
@@ -92,28 +102,43 @@ export default function AdminComboOffers() {
       return;
     }
 
-    const newCombo: ComboOffer = {
-      id: editingId || Date.now().toString(),
-      productId: selectedMainProduct,
-      productName: getProductName(selectedMainProduct),
-      comboProducts: selectedComboProducts,
-      comboProductNames: selectedComboProducts.map(getProductName),
-      comboPrice: Number(comboPrice),
-    };
+    // Attempt to calculate original price so that backend validation passes
+    const mainPrice = getProductPrice(selectedMainProduct);
+    const comboPrices = selectedComboProducts.reduce((sum, id) => sum + getProductPrice(id), 0);
+    const originalPrice = mainPrice + comboPrices;
 
-    let updated: ComboOffer[];
-    if (editingId) {
-      updated = combos.map((c: ComboOffer) => (c.id === editingId ? newCombo : c));
-    } else {
-      updated = [...combos, newCombo];
+    if (Number(comboPrice) >= originalPrice) {
+      setFormError("Combo price must be strictly less than the original price of the combined items.");
+      return;
     }
 
-    saveCombos(updated);
-    setCombos(updated);
-    resetForm();
+    // Auto-generate name if user didn't provide one
+    const generatedName = comboName.trim() || `Combo: ${getProductName(selectedMainProduct)} + ${selectedComboProducts.length} more`;
+
+    const payload: Partial<ComboOffer> = {
+      name: generatedName,
+      mainProduct: selectedMainProduct,
+      comboProducts: selectedComboProducts,
+      comboPrice: Number(comboPrice),
+      isActive: true,
+    };
+
+    try {
+      if (editingId) {
+        await updateComboOffer(editingId, payload);
+      } else {
+        await createComboOffer(payload);
+      }
+      
+      resetForm();
+      fetchCombos(); // Refresh list from backend
+    } catch (err: any) {
+       setFormError(err.message || "Failed to save combo offer.");
+    }
   };
 
   const resetForm = () => {
+    setComboName("");
     setSelectedMainProduct("");
     setSelectedComboProducts([]);
     setComboPrice("");
@@ -124,19 +149,27 @@ export default function AdminComboOffers() {
   };
 
   const handleEdit = (combo: ComboOffer) => {
-    setEditingId(combo.id);
-    setSelectedMainProduct(combo.productId);
-    setSelectedComboProducts(combo.comboProducts);
+    setEditingId(combo._id || null);
+    setComboName(combo.name || "");
+    // Extract ID if it's an object from DB population
+    setSelectedMainProduct(typeof combo.mainProduct === 'object' ? combo.mainProduct._id : combo.mainProduct);
+    setSelectedComboProducts(combo.comboProducts.map((p: any) => typeof p === 'object' ? p._id : p));
     setComboPrice(combo.comboPrice.toString());
     setFormError("");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleDelete = (id: string) => {
-    const updated = combos.filter((c: ComboOffer) => c.id !== id);
-    saveCombos(updated);
-    setCombos(updated);
-    if (editingId === id) resetForm();
+  const handleDelete = async (id: string | undefined) => {
+    if (!id) return;
+    if (confirm("Are you sure you want to delete this combo offer?")) {
+      try {
+        await deleteComboOffer(id);
+        if (editingId === id) resetForm();
+        fetchCombos();
+      } catch (err) {
+        alert("Failed to delete combo offer.");
+      }
+    }
   };
 
   // Calculate original total for display
@@ -395,27 +428,30 @@ export default function AdminComboOffers() {
                 ) : (
                   combos.map((combo: ComboOffer, i: number) => (
                     <tr
-                      key={combo.id}
-                      className="hover:bg-neutral-50 transition-colors text-sm text-neutral-700 border-b border-neutral-200"
+                      key={combo._id}
+                      className={`hover:bg-neutral-50 transition-colors text-sm text-neutral-700 border-b border-neutral-200 ${!combo.isActive ? "opacity-50" : ""}`}
                     >
                       <td className="p-4 align-middle">{i + 1}</td>
                       <td className="p-4 align-middle font-medium">
-                        {combo.productName}
+                        {getProductName(combo.mainProduct)}
+                        <br/>
+                        <span className="text-xs text-neutral-400">{combo.name}</span>
                       </td>
                       <td className="p-4 align-middle">
                         <div className="flex flex-wrap gap-1">
-                          {combo.comboProductNames.map((name: string, idx: number) => (
+                          {combo.comboProducts.map((p: any, idx: number) => (
                             <span
                               key={idx}
                               className="inline-block bg-teal-50 text-teal-700 text-xs px-2 py-0.5 rounded-full"
                             >
-                              {name}
+                              {getProductName(p)}
                             </span>
                           ))}
                         </div>
                       </td>
                       <td className="p-4 align-middle font-semibold text-teal-700">
                         ₹{combo.comboPrice}
+                        <div className="text-xs text-neutral-400 line-through">₹{combo.originalPrice}</div>
                       </td>
                       <td className="p-4 align-middle">
                         <div className="flex items-center gap-2">
@@ -430,7 +466,7 @@ export default function AdminComboOffers() {
                             </svg>
                           </button>
                           <button
-                            onClick={() => handleDelete(combo.id)}
+                            onClick={() => handleDelete(combo._id)}
                             className="p-2 bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
                             title="Delete"
                           >

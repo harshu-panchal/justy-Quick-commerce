@@ -81,6 +81,9 @@ import * as pincodeDemandController from "../modules/admin/controllers/pincodeDe
 // Banner Controllers
 import * as bannerController from "../controllers/bannerController";
 
+// Combo Offers Controllers
+import * as comboController from "../modules/admin/controllers/adminComboController";
+
 const router = Router();
 
 // All routes require admin authentication
@@ -372,9 +375,16 @@ router.delete("/promo-strips/:id", promoStripController.deletePromoStrip);
 // ==================== Pincode Demand Routes ====================
 router.get("/pincode-demands", pincodeDemandController.getPincodeDemands);
 
-// ==================== Banner Routes ====================
+// ==================== Banners Routes ====================
 router.post('/banners', bannerController.createBanner);
 router.get('/banners', bannerController.getAllBanners);
 router.delete('/banners/:id', bannerController.deleteBanner);
+
+// ==================== Combo Offers Routes ====================
+router.get("/combo-offers", comboController.getAllComboOffers);
+router.get("/combo-offers/:id", comboController.getComboOfferById);
+router.post("/combo-offers", comboController.createComboOffer);
+router.put("/combo-offers/:id", comboController.updateComboOffer);
+router.delete("/combo-offers/:id", comboController.deleteComboOffer);
 
 export default router;

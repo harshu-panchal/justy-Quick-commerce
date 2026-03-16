@@ -13,10 +13,11 @@ export interface OrderItem {
 
 export interface CreateOrderData {
     items: {
-        product: {
+        product?: {
             id: string;
             name?: string;
         };
+        comboOffer?: string;
         quantity: number;
         variant?: string;
     }[];

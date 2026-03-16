@@ -149,11 +149,12 @@ export default function Checkout() {
           const defaultAddr =
             addressResponse.data.find((a: any) => a.isDefault) ||
             addressResponse.data[0];
+          const parts = (defaultAddr.address || "").split(", ");
           const mappedAddress: OrderAddress = {
             name: defaultAddr.fullName,
             phone: defaultAddr.phone,
-            flat: "",
-            street: defaultAddr.address,
+            flat: parts[0] || "",
+            street: parts.slice(1).join(", ") || parts[0] || "",
             city: defaultAddr.city,
             state: defaultAddr.state,
             pincode: defaultAddr.pincode,

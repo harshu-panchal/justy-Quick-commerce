@@ -22,6 +22,13 @@ export default function AdminBillingSettings() {
     const [deliveryBoyKmRate, setDeliveryBoyKmRate] = useState<number>(0);
     const [googleMapsKey, setGoogleMapsKey] = useState<string>('');
 
+    // Referral Settings State
+    const [referralEnabled, setReferralEnabled] = useState(false);
+    const [rewardAmount, setRewardAmount] = useState<number>(0);
+    const [rewardType, setRewardType] = useState<'Wallet' | 'Points'>('Wallet');
+    const [minOrderValue, setMinOrderValue] = useState<number>(0);
+    const [maxReferrals, setMaxReferrals] = useState<number>(10);
+
     useEffect(() => {
         fetchSettings();
     }, []);
@@ -47,8 +54,15 @@ export default function AdminBillingSettings() {
                     setDeliveryBoyKmRate(data.deliveryConfig.deliveryBoyKmRate || 0);
                     setGoogleMapsKey(data.deliveryConfig.googleMapsKey || import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '');
                 } else {
-                    // If no config exists, try to pre-fill from env
                     setGoogleMapsKey(import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '');
+                }
+
+                if (data.referralSettings) {
+                    setReferralEnabled(data.referralSettings.enabled ?? false);
+                    setRewardAmount(data.referralSettings.rewardAmount ?? 0);
+                    setRewardType(data.referralSettings.rewardType ?? 'Wallet');
+                    setMinOrderValue(data.referralSettings.minOrderValue ?? 0);
+                    setMaxReferrals(data.referralSettings.maxReferralsPerUser ?? 10);
                 }
             }
         } catch (error: any) {
@@ -74,13 +88,43 @@ export default function AdminBillingSettings() {
                     kmRate,
                     deliveryBoyKmRate,
                     googleMapsKey
+                },
+                referralSettings: {
+                    enabled: referralEnabled,
+                    rewardAmount,
+                    rewardType,
+                    minOrderValue,
+                    maxReferralsPerUser: maxReferrals
                 }
             };
 
             const response = await updateAppSettings(updatePayload);
-            if (response.success) {
+            if (response.success && response.data) {
+                const data = response.data;
                 showToast('Billing settings updated successfully');
-                setSettings(response.data);
+                setSettings(data);
+                
+                // Sync all states to be sure
+                setPlatformFee(data.platformFee || 0);
+                setFreeDeliveryThreshold(data.freeDeliveryThreshold || 0);
+                setDeliveryCharges(data.deliveryCharges || 0);
+
+                if (data.deliveryConfig) {
+                    setIsDistanceBased(data.deliveryConfig.isDistanceBased || false);
+                    setBaseCharge(data.deliveryConfig.baseCharge || 0);
+                    setBaseDistance(data.deliveryConfig.baseDistance || 0);
+                    setKmRate(data.deliveryConfig.kmRate || 0);
+                    setDeliveryBoyKmRate(data.deliveryConfig.deliveryBoyKmRate || 0);
+                    setGoogleMapsKey(data.deliveryConfig.googleMapsKey || import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '');
+                }
+
+                if (data.referralSettings) {
+                    setReferralEnabled(data.referralSettings.enabled ?? false);
+                    setRewardAmount(data.referralSettings.rewardAmount ?? 0);
+                    setRewardType(data.referralSettings.rewardType ?? 'Wallet');
+                    setMinOrderValue(data.referralSettings.minOrderValue ?? 0);
+                    setMaxReferrals(data.referralSettings.maxReferralsPerUser ?? 10);
+                }
             } else {
                 showToast('Failed to update settings', 'error');
             }
@@ -312,6 +356,140 @@ export default function AdminBillingSettings() {
                             </div>
                         </motion.div>
                     )}
+                </div>
+
+                {/* Referral Program Section */}
+                <div className="bg-white rounded-xl shadow-sm border border-neutral-200 p-6">
+                    <div className="flex justify-between items-center mb-6 pb-2 border-b">
+                        <div>
+                            <h2 className="text-lg font-semibold text-gray-900">Referral Program</h2>
+                            <p className="text-sm text-gray-500">Manage user referral rewards and limits</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className={`text-xs font-bold uppercase tracking-wider ${referralEnabled ? 'text-green-600' : 'text-gray-400'}`}>
+                                {referralEnabled ? 'Enabled' : 'Disabled'}
+                            </span>
+                            <button
+                                onClick={async () => {
+                                    const newValue = !referralEnabled;
+                                    setReferralEnabled(newValue);
+                                    // Instant save
+                                    try {
+                                        const updatePayload: any = {
+                                            referralSettings: {
+                                                enabled: newValue,
+                                                rewardAmount,
+                                                minOrderValue,
+                                                maxReferralsPerUser: maxReferrals,
+                                                rewardType
+                                            }
+                                        };
+                                        const response = await updateAppSettings(updatePayload);
+                                        if (response.success && response.data?.referralSettings) {
+                                            // Sync state with server response to be sure
+                                            setReferralEnabled(response.data.referralSettings.enabled);
+                                        }
+                                    } catch (error) {
+                                        console.error('Failed to auto-save referral status', error);
+                                        // Revert on failure
+                                        setReferralEnabled(!newValue);
+                                    }
+                                }}
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${referralEnabled ? 'bg-green-600' : 'bg-gray-200'
+                                    }`}
+                            >
+                                <span
+                                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${referralEnabled ? 'translate-x-6' : 'translate-x-1'
+                                        }`}
+                                />
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 transition-opacity duration-300 ${referralEnabled ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Reward Amount (₹)
+                            </label>
+                            <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">₹</span>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    value={rewardAmount || ''}
+                                    onChange={(e) => setRewardAmount(e.target.value === '' ? 0 : Number(e.target.value))}
+                                    className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500"
+                                    placeholder="e.g. 50"
+                                />
+                            </div>
+                            <p className="mt-1 text-xs text-gray-500">Amount credited to both referrer and referee.</p>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Min Order Value for Reward (₹)
+                            </label>
+                            <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">₹</span>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    value={minOrderValue || ''}
+                                    onChange={(e) => setMinOrderValue(e.target.value === '' ? 0 : Number(e.target.value))}
+                                    className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500"
+                                    placeholder="e.g. 299"
+                                />
+                            </div>
+                            <p className="mt-1 text-xs text-gray-500">Referred user's first order must exceed this.</p>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Reward Type
+                            </label>
+                            <div className="flex gap-4">
+                                <button
+                                    onClick={() => setRewardType('Wallet')}
+                                    className={`flex-1 py-2 px-4 rounded-lg border text-sm font-medium transition-all ${rewardType === 'Wallet' 
+                                        ? 'bg-green-50 border-green-200 text-green-700' 
+                                        : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+                                >
+                                    Wallet Money
+                                </button>
+                                <button
+                                    onClick={() => setRewardType('Points')}
+                                    className={`flex-1 py-2 px-4 rounded-lg border text-sm font-medium transition-all ${rewardType === 'Points' 
+                                        ? 'bg-blue-50 border-blue-200 text-blue-700' 
+                                        : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+                                >
+                                    Reward Points
+                                </button>
+                            </div>
+                            <p className="mt-1 text-xs text-gray-500">How users receive their bonus.</p>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Max Referrals per User
+                            </label>
+                            <input
+                                type="number"
+                                min="1"
+                                value={maxReferrals || ''}
+                                onChange={(e) => setMaxReferrals(e.target.value === '' ? 0 : Number(e.target.value))}
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500"
+                                placeholder="e.g. 10"
+                            />
+                            <p className="mt-1 text-xs text-gray-500">Max number of friends a user can invite.</p>
+                        </div>
+
+                        <div className="p-3 bg-amber-50 border border-amber-100 rounded-lg self-end">
+                            <p className="text-xs text-amber-800 leading-relaxed font-medium">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="inline mr-1 mb-0.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                                Rewards are only given after <strong>successful delivery</strong> of the first order.
+                            </p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </motion.div>

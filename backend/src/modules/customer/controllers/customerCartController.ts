@@ -8,7 +8,7 @@ import mongoose from 'mongoose';
 import AppSettings from '../../../models/AppSettings';
 import { getRoadDistances } from '../../../services/mapService';
 import Seller from '../../../models/Seller';
-import HeaderCategory from '../../../models/HeaderCategory';
+// import HeaderCategory from '../../../models/HeaderCategory'; // UNUSED
 
 // Helper to calculate item price matching frontend logic
 const calculateItemPrice = (product: any, variationSelector: any) => {
@@ -573,8 +573,10 @@ export const removeFromCart = async (req: Request, res: Response) => {
 
         // Calculate total with location if provided
         let nearbySellerIds: mongoose.Types.ObjectId[] = [];
-        if (userLat !== null && userLng !== null && !isNaN(userLat) && !isNaN(userLng)) {
-            nearbySellerIds = await findSellersWithinRange(userLat, userLng);
+        const hasLocation = userLat !== null && userLng !== null && !isNaN(userLat) && !isNaN(userLng);
+        
+        if (hasLocation) {
+            nearbySellerIds = await findSellersWithinRange(userLat!, userLng!);
         }
 
         cart.total = await calculateCartTotal(cart._id, nearbySellerIds);

@@ -255,13 +255,16 @@ export default function SellerWallet() {
                   <div key={comm.id} className="p-3 bg-gray-50 rounded-lg">
                     <div className="flex justify-between items-start mb-2">
                       <div>
-                        <p className="font-medium text-gray-900">Order Commission</p>
-                        <p className="text-xs text-gray-600">Rate: {comm.rate}%</p>
+                        <p className="font-medium text-gray-900">Sale Proceeds</p>
+                        <p className="text-xs text-gray-600">Platform Fee: ₹{(comm.platformFee || 0).toFixed(2)}</p>
                       </div>
-                      <p className="font-bold text-green-600">₹{comm.amount.toFixed(2)}</p>
+                      <div className="text-right">
+                        <p className="font-bold text-green-600">₹{(comm.netEarning || 0).toFixed(2)}</p>
+                        <p className="text-[10px] text-gray-500">Your Earning</p>
+                      </div>
                     </div>
                     <div className="flex justify-between text-xs text-gray-500">
-                      <span>Order Amount: ₹{comm.orderAmount.toFixed(2)}</span>
+                      <span>Order Amount: ₹{(comm.orderAmount || 0).toFixed(2)}</span>
                       <span>{new Date(comm.createdAt).toLocaleDateString('en-IN')}</span>
                     </div>
                   </div>

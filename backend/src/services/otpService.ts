@@ -241,6 +241,7 @@ export async function sendSmsOtp(
     // Mock mode
     if (isMockMode()) {
       await saveOtpToDb(mobile, otp, userType);
+      console.log(`[DEV] Mock OTP for ${mobile} (${userType}): ${otp}`);
       return {
         success: true,
         sessionId: 'MOCK_SESSION_' + mobile,
@@ -349,6 +350,7 @@ export async function sendOTP(
     // Mock mode
     if (isMockMode()) {
       await saveOtpToDb(mobile, otp, userType);
+      console.log(`[DEV] Mock OTP for ${mobile} (${userType}): ${otp}`);
       return {
         success: true,
         message: 'OTP sent successfully',

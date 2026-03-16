@@ -63,12 +63,12 @@ export default function CheckoutAddress() {
             if (!editAddress) {
               const homeAddr = response.data.find(a => a.type === 'Home');
               if (homeAddr) {
-                const parts = homeAddr.address.split(', ');
+                const parts = (homeAddr.address || "").split(', ');
                 setAddress({
                   name: homeAddr.fullName,
                   phone: homeAddr.phone,
                   flat: parts[0] || '',
-                  street: parts[1] || '',
+                  street: parts.slice(1).join(', ') || parts[0] || '',
                   city: homeAddr.city,
                   state: homeAddr.state || '',
                   pincode: homeAddr.pincode,
@@ -93,12 +93,12 @@ export default function CheckoutAddress() {
       const existingAddr = savedAddresses.find(a => a.type === typeLabel);
 
       if (existingAddr) {
-        const parts = existingAddr.address.split(', ');
+        const parts = (existingAddr.address || "").split(', ');
         setAddress({
           name: existingAddr.fullName,
           phone: existingAddr.phone,
           flat: parts[0] || '',
-          street: parts[1] || '',
+          street: parts.slice(1).join(', ') || parts[0] || '',
           city: existingAddr.city,
           state: existingAddr.state || '',
           pincode: existingAddr.pincode,
@@ -142,6 +142,12 @@ export default function CheckoutAddress() {
       }
     }
   }, [editAddress]);
+  // Trigger validation immediately when editing to show which fields are missing (e.g. state/flat)
+  useEffect(() => {
+    if (editAddress && isAuthenticated) {
+      validateForm();
+    }
+  }, [editAddress, isAuthenticated]);
 
   const platformFee = appConfig.platformFee;
   const deliveryFee = cart.total >= appConfig.freeDeliveryThreshold ? 0 : appConfig.deliveryFee;

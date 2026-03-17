@@ -124,6 +124,13 @@ export interface IAppSettings extends Document {
   // Withdrawal Settings
   minimumWithdrawalAmount?: number;
 
+  // Seller Product Limits Configuration
+  sellerProductConfig?: {
+    isEnabled: boolean;
+    maxFreeProducts: number;
+    chargePerSlot: number;
+  };
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -407,6 +414,13 @@ const AppSettingsSchema = new Schema<IAppSettings>(
       rewardType: { type: String, enum: ['Wallet', 'Points'], default: 'Wallet' },
       minOrderValue: { type: Number, default: 0 },
       maxReferralsPerUser: { type: Number, default: 10 },
+    },
+
+    // Seller Product Limits Configuration
+    sellerProductConfig: {
+      isEnabled: { type: Boolean, default: false },
+      maxFreeProducts: { type: Number, default: 5 },
+      chargePerSlot: { type: Number, default: 99 },
     },
   },
   {

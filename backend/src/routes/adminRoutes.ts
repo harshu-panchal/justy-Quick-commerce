@@ -75,6 +75,9 @@ import * as lowestPricesController from "../modules/admin/controllers/adminLowes
 // PromoStrip Controllers
 import * as promoStripController from "../modules/admin/controllers/adminPromoStripController";
 
+// Product Slot Controllers
+import * as productSlotController from "../modules/admin/controllers/adminProductSlotController";
+
 // Pincode Demand Controllers
 import * as pincodeDemandController from "../modules/admin/controllers/pincodeDemandController";
 
@@ -396,5 +399,10 @@ router.get("/subscription-plans", subscriptionPlanController.getSubscriptionPlan
 router.put("/subscription-plans/:id", subscriptionPlanController.updateSubscriptionPlan);
 router.delete("/subscription-plans/:id", subscriptionPlanController.deleteSubscriptionPlan);
 router.patch("/subscription-plans/:id/status", subscriptionPlanController.toggleSubscriptionPlanStatus);
+
+// ==================== Product Slot Routes ====================
+router.get("/product-slot-config", productSlotController.getProductSlotConfig);
+router.put("/product-slot-config", productSlotController.updateProductSlotConfig);
+router.get("/product-slot-earnings", productSlotController.getSlotEarnings);
 
 export default router;

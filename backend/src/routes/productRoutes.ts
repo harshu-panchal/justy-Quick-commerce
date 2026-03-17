@@ -10,6 +10,7 @@ import {
   bulkUpdateStock,
   getShops,
 } from "../modules/seller/controllers/productController";
+import * as productSlotController from "../modules/seller/controllers/sellerProductSlotController";
 import { getBrands } from "../modules/admin/controllers/adminProductController";
 import { authenticate, requireUserType } from "../middleware/auth";
 
@@ -24,6 +25,11 @@ router.get("/brands", getBrands);
 
 // Get all active shops - sellers need this for shop-by-store-only products
 router.get("/shops", getShops);
+
+// Product Slot & Limit routes
+router.get("/slot-status", productSlotController.getMyProductStatus);
+router.post("/slot-order", productSlotController.createSlotOrder);
+router.post("/slot-verify", productSlotController.verifySlotPayment);
 
 // Create product
 router.post("/", createProduct);

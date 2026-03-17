@@ -26,6 +26,7 @@ import {
   getHeaderCategoriesPublic,
   HeaderCategory,
 } from "../../../services/api/headerCategoryService";
+import * as slotService from "../../../services/api/sellerProductSlotService";
 
 export default function SellerAddProduct() {
   const navigate = useNavigate();
@@ -86,6 +87,10 @@ export default function SellerAddProduct() {
     []
   );
   const [shops, setShops] = useState<Shop[]>([]);
+  const [slotStatus, setSlotStatus] = useState<slotService.SellerProductStatus | null>(null);
+  const [showSlotModal, setShowSlotModal] = useState(false);
+  const [slotsToBuy, setSlotsToBuy] = useState(1);
+  const [processingPurchase, setProcessingPurchase] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -154,7 +159,16 @@ export default function SellerAddProduct() {
         console.error("Error fetching form data:", err);
       }
     };
+    const fetchSlotStatus = async () => {
+      try {
+        const res = await slotService.getMyProductStatus();
+        if (res.success) setSlotStatus(res.data);
+      } catch (err) {
+        console.error("Error fetching slot status:", err);
+      }
+    };
     fetchData();
+    fetchSlotStatus();
   }, []);
 
   useEffect(() => {
@@ -380,6 +394,75 @@ export default function SellerAddProduct() {
     setVariations((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
+  const handleBuySlots = async () => {
+    if (slotsToBuy < 1) return;
+    setProcessingPurchase(true);
+    try {
+      const orderRes = await slotService.createSlotOrder(slotsToBuy);
+      if (orderRes.success && orderRes.data) {
+        const { razorpayOrderId, razorpayKey, amount, currency } = orderRes.data;
+        
+        // Load Razorpay script
+        const scriptLoaded = await loadRazorpayScript();
+        if (!scriptLoaded) {
+          setUploadError("Failed to load Razorpay SDK. Please check your internet connection.");
+          return;
+        }
+
+        const options = {
+          key: razorpayKey,
+          amount,
+          currency,
+          name: "QuickCommerce",
+          description: `Purchase ${slotsToBuy} Extra Product Slots`,
+          order_id: razorpayOrderId,
+          handler: async (response: any) => {
+            try {
+              const verifyRes = await slotService.verifySlotPayment({
+                razorpayOrderId,
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpaySignature: response.razorpay_signature
+              });
+              
+              if (verifyRes.success) {
+                // Refresh status
+                const statusRes = await slotService.getMyProductStatus();
+                if (statusRes.success) setSlotStatus(statusRes.data);
+                setShowSlotModal(false);
+                setSuccessMessage("Slots purchased successfully!");
+                setTimeout(() => setSuccessMessage(""), 3000);
+              }
+            } catch (err) {
+              setUploadError("Payment verification failed");
+            }
+          },
+          prefill: {
+            name: user?.sellerName || "",
+            email: user?.email || "",
+          },
+          theme: { color: "#0d9488" }
+        };
+        
+        const rzp = new (window as any).Razorpay(options);
+        rzp.open();
+      }
+    } catch (err) {
+      setUploadError("Failed to initiate purchase");
+    } finally {
+      setProcessingPurchase(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setUploadError("");
@@ -544,6 +627,46 @@ export default function SellerAddProduct() {
     <div className="flex flex-col h-full">
       {/* Main Content */}
       <div className="flex-1">
+        {slotStatus?.isEnabled && slotStatus.isLimitReached && !id && (
+          <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 flex flex-col sm:flex-row items-center justify-between gap-4 animate-pulse">
+            <div className="flex items-center gap-3">
+              <div className="bg-red-100 p-2 rounded-full">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-red-600">
+                  <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-red-800 font-bold">Product Limit Reached!</h3>
+                <p className="text-red-600 text-sm">
+                  You have used all {slotStatus.totalAllowed} slots ({slotStatus.maxFreeProducts} free + {slotStatus.paidSlotsTotal} paid).
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowSlotModal(true)}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 transition-colors whitespace-nowrap"
+            >
+              Buy Extra Slots
+            </button>
+          </div>
+        )}
+
+        {slotStatus?.isEnabled && !slotStatus.isLimitReached && !id && (
+          <div className="mb-6 bg-teal-50 border border-teal-100 rounded-lg p-3 text-sm flex justify-between items-center text-teal-800">
+            <p>
+              Product Usage: <strong>{slotStatus.currentProductCount} / {slotStatus.totalAllowed}</strong> slots used.
+            </p>
+            <button 
+              type="button" 
+              onClick={() => setShowSlotModal(true)}
+              className="text-teal-600 font-bold hover:underline"
+            >
+              Buy More
+            </button>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Product Section */}
           <div className="bg-white rounded-lg shadow-sm border border-neutral-200 overflow-hidden">
@@ -1223,22 +1346,98 @@ export default function SellerAddProduct() {
 
           {/* Submit Button */}
           <div className="flex justify-end pb-6">
-            <button
-              type="submit"
-              disabled={uploading}
-              className={`px-8 py-3 rounded-lg font-medium text-lg transition-colors shadow-sm ${uploading
-                ? "bg-neutral-400 cursor-not-allowed text-white"
-                : "bg-teal-600 hover:bg-teal-700 text-white"
-                }`}>
-              {uploading
-                ? "Processing..."
-                : id
-                  ? "Update Product"
-                  : "Add Product"}
-            </button>
+                  {successMessage && (
+                    <p className="text-green-600 font-medium animate-bounce">
+                      {successMessage}
+                    </p>
+                  )}
+                  <button
+                    type="submit"
+                    disabled={uploading || (slotStatus?.isEnabled && slotStatus.isLimitReached && !id)}
+                    className="flex-1 sm:flex-none px-8 py-3 bg-teal-600 text-white rounded-lg font-bold hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    {uploading
+                      ? "Processing..."
+                      : id
+                        ? "Update Product"
+                        : "Create Product"}
+                  </button>
           </div>
         </form>
       </div>
+
+      {/* Buy Slots Modal */}
+      {showSlotModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden transform transition-all scale-100">
+            <div className="bg-teal-600 p-6 text-white text-center">
+              <div className="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <rect x="3" y="3" width="7" height="7"></rect>
+                  <rect x="14" y="3" width="7" height="7"></rect>
+                  <rect x="14" y="14" width="7" height="7"></rect>
+                  <rect x="3" y="14" width="7" height="7"></rect>
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold">Purchase Slots</h2>
+              <p className="text-teal-100 mt-1">Add more products to your store</p>
+            </div>
+            
+            <div className="p-8 space-y-6">
+              <div className="flex flex-col items-center">
+                <label className="text-sm font-medium text-neutral-500 mb-2 uppercase tracking-wider">Number of Slots</label>
+                <div className="flex items-center gap-4">
+                  <button 
+                    onClick={() => setSlotsToBuy(s => Math.max(1, s - 1))}
+                    className="w-10 h-10 rounded-full border border-neutral-200 flex items-center justify-center hover:bg-neutral-50 transition-colors"
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14" /></svg>
+                  </button>
+                  <span className="text-4xl font-black text-neutral-900 w-12 text-center">{slotsToBuy}</span>
+                  <button 
+                    onClick={() => setSlotsToBuy(s => s + 1)}
+                    className="w-10 h-10 rounded-full border border-neutral-200 flex items-center justify-center hover:bg-neutral-50 transition-colors"
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14" /></svg>
+                  </button>
+                </div>
+              </div>
+              
+              <div className="bg-neutral-50 rounded-xl p-4 flex justify-between items-center">
+                <div>
+                  <p className="text-xs text-neutral-500 font-bold uppercase">Price per slot</p>
+                  <p className="text-lg font-bold text-neutral-900">₹{slotStatus?.chargePerSlot || 99}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-neutral-500 font-bold uppercase">Total Amount</p>
+                  <p className="text-2xl font-black text-teal-600">₹{(slotsToBuy * (slotStatus?.chargePerSlot || 99)).toLocaleString()}</p>
+                </div>
+              </div>
+              
+              <div className="flex gap-4 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowSlotModal(false)}
+                  className="flex-1 px-4 py-3 border border-neutral-300 rounded-xl font-bold text-neutral-600 hover:bg-neutral-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleBuySlots}
+                  disabled={processingPurchase}
+                  className="flex-1 px-4 py-3 bg-teal-600 text-white rounded-xl font-bold hover:bg-teal-700 transition-colors shadow-lg shadow-teal-100 disabled:opacity-50"
+                >
+                  {processingPurchase ? "Processing..." : "Pay Now"}
+                </button>
+              </div>
+              
+              <p className="text-center text-xs text-neutral-400">
+                Secure payment powered by Razorpay
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -150,6 +150,7 @@ const AdminWallet = lazy(() => import("./modules/admin/pages/AdminWallet"));
 const AdminBillingSettings = lazy(() => import("./modules/admin/pages/AdminBillingSettings"));
 const AdminComboOffers = lazy(() => import("./modules/admin/pages/AdminComboOffers"));
 const AdminBanners = lazy(() => import("./modules/admin/pages/AdminBanners"));
+const AdminSubscriptionPlan = lazy(() => import("./modules/admin/pages/AdminSubscriptionPlan"));
 
 import { DeliveryModeProvider } from "./context/DeliveryModeContext";
 
@@ -387,6 +388,7 @@ function App() {
                                         <Route path="billing-settings" element={<AdminBillingSettings />} />
                                         <Route path="combo-offers" element={<AdminComboOffers />} />
                                         <Route path="banners" element={<AdminBanners />} />
+                                        <Route path="subscription-plans" element={<AdminSubscriptionPlan />} />
                                       </Routes>
                                     </AdminLayout>
                                   </Suspense>

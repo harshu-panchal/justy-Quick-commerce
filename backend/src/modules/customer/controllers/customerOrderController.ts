@@ -618,6 +618,14 @@ export const createOrder = async (req: Request, res: Response) => {
         newOrder.deliveryDistanceKm = deliveryDistanceKm; // Store distance for commission calc
         newOrder.walletAmountUsed = walletAmountUsed;
 
+        // --- Partial COD Logic ---
+        if (newOrder.paymentMethod === 'COD') {
+            const totalToPay = Number(finalTotal.toFixed(2));
+            newOrder.advanceAmount = Number((totalToPay * 0.25).toFixed(2));
+            newOrder.remainingCODAmount = Number((totalToPay * 0.75).toFixed(2));
+            console.log(`DEBUG: Partial COD Calculation: Total=${totalToPay}, Advance(25%)=${newOrder.advanceAmount}, Remaining(75%)=${newOrder.remainingCODAmount}`);
+        }
+
         // Delivery Type already determined above
 
         // Get Seller Pincode (from the first seller for now)

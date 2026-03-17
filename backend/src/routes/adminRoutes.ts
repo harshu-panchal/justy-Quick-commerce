@@ -84,6 +84,9 @@ import * as bannerController from "../controllers/bannerController";
 // Combo Offers Controllers
 import * as comboController from "../modules/admin/controllers/adminComboController";
 
+// Subscription Plan Controllers
+import * as subscriptionPlanController from "../modules/admin/controllers/adminSubscriptionPlanController";
+
 const router = Router();
 
 // All routes require admin authentication
@@ -386,5 +389,12 @@ router.get("/combo-offers/:id", comboController.getComboOfferById);
 router.post("/combo-offers", comboController.createComboOffer);
 router.put("/combo-offers/:id", comboController.updateComboOffer);
 router.delete("/combo-offers/:id", comboController.deleteComboOffer);
+
+// ==================== Subscription Plan Routes ====================
+router.post("/subscription-plans", subscriptionPlanController.createSubscriptionPlan);
+router.get("/subscription-plans", subscriptionPlanController.getSubscriptionPlans);
+router.put("/subscription-plans/:id", subscriptionPlanController.updateSubscriptionPlan);
+router.delete("/subscription-plans/:id", subscriptionPlanController.deleteSubscriptionPlan);
+router.patch("/subscription-plans/:id/status", subscriptionPlanController.toggleSubscriptionPlanStatus);
 
 export default router;

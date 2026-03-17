@@ -39,8 +39,11 @@ export interface IOrder extends Document {
 
   // Payment
   paymentMethod: string;
-  paymentStatus: "Pending" | "Paid" | "Failed" | "Refunded";
+  paymentStatus: "Pending" | "Paid" | "Failed" | "Refunded" | "PARTIAL_PAID";
   paymentId?: string;
+  advanceAmount?: number;
+  remainingCODAmount?: number;
+  advancePaymentId?: string;
   walletAmountUsed?: number;
 
   // Order Status
@@ -240,10 +243,22 @@ const OrderSchema = new Schema<IOrder>(
     },
     paymentStatus: {
       type: String,
-      enum: ["Pending", "Paid", "Failed", "Refunded"],
+      enum: ["Pending", "Paid", "Failed", "Refunded", "PARTIAL_PAID"],
       default: "Pending",
     },
     paymentId: {
+      type: String,
+      trim: true,
+    },
+    advanceAmount: {
+      type: Number,
+      default: 0,
+    },
+    remainingCODAmount: {
+      type: Number,
+      default: 0,
+    },
+    advancePaymentId: {
       type: String,
       trim: true,
     },

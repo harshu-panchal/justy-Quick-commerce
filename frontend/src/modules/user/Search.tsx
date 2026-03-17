@@ -5,6 +5,7 @@ import { getProducts } from '../../services/api/customerProductService';
 import { getHomeContent } from '../../services/api/customerHomeService';
 import { Product } from '../../types/domain';
 import { useLocation } from '../../hooks/useLocation';
+import EmptyState from '../../components/EmptyState';
 
 export default function Search() {
   const navigate = useNavigate();
@@ -98,9 +99,13 @@ export default function Search() {
               ))}
             </div>
           ) : (
-            <div className="text-center py-12 md:py-16 text-neutral-500">
-              <p className="text-lg md:text-xl mb-2">No products found</p>
-              <p className="text-sm md:text-base">Try a different search term</p>
+            <div className="flex items-center justify-center py-12">
+              <EmptyState 
+                title="No products found"
+                description={`We couldn't find any products matching "${searchQuery}". Please try a different search term or browse our categories.`}
+                buttonText="Browse Categories"
+                onButtonClick={() => navigate("/category/all")}
+              />
             </div>
           )}
         </div>

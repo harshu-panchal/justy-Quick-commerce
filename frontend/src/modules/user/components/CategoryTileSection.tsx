@@ -31,12 +31,23 @@ export default function CategoryTileSection({
 }: CategoryTileSectionProps) {
   const navigate = useNavigate();
 
+  const getCategorySlug = (tile: CategoryTile): string => {
+    if (tile.slug) return tile.slug;
+    if (tile.categoryId) {
+      if (typeof tile.categoryId === 'string') return tile.categoryId;
+      if (typeof tile.categoryId === 'object' && (tile.categoryId as any)._id) return (tile.categoryId as any)._id;
+      if (typeof tile.categoryId === 'object' && (tile.categoryId as any).id) return (tile.categoryId as any).id;
+    }
+    return tile.id;
+  };
+
   const handleTileClick = (tile: CategoryTile) => {
+    const categoryId = getCategorySlug(tile);
     if (tile.subcategoryId || tile.type === "subcategory") {
       // Navigate to subcategory page or category with subcategory filter
       if (tile.categoryId) {
         navigate(
-          `/category/${tile.categoryId}?subcategory=${tile.subcategoryId || tile.id
+          `/category/${categoryId}?subcategory=${tile.subcategoryId || tile.id
           }`
         );
       } else if (tile.slug) {
@@ -47,11 +58,7 @@ export default function CategoryTileSection({
       return;
     }
     if (tile.type === "category" || (!tile.subcategoryId && tile.categoryId)) {
-      if (tile.slug) {
-        navigate(`/category/${tile.slug}`);
-      } else if (tile.categoryId) {
-        navigate(`/category/${tile.categoryId}`);
-      }
+      navigate(`/category/${categoryId}`);
       return;
     }
     if (tile.productId) {
@@ -112,28 +119,14 @@ export default function CategoryTileSection({
                 <Link
                   to={
                     tile.subcategoryId || tile.type === "subcategory"
-                      ? tile.categoryId
-                        ? `/category/${tile.categoryId}?subcategory=${tile.subcategoryId || tile.id
-                        }`
-                        : tile.slug
-                          ? `/category/${tile.slug}`
-                          : `/category/subcategory/${tile.subcategoryId || tile.id
-                          }`
+                      ? `/category/${getCategorySlug(tile)}?subcategory=${tile.subcategoryId || tile.id}`
                       : tile.productId
                         ? `/product/${tile.productId}`
-                        : tile.type === "category"
-                          ? tile.slug
-                            ? `/category/${tile.slug}`
-                            : tile.categoryId
-                              ? `/category/${tile.categoryId}`
-                              : "#"
-                          : tile.slug
-                            ? `/category/${tile.slug}`
-                            : tile.categoryId
-                              ? `/category/${tile.categoryId}`
-                              : (tile as any).sellerId
-                                ? `/seller/${(tile as any).sellerId}`
-                                : "#"
+                        : (tile.type === "category" || tile.categoryId)
+                          ? `/category/${getCategorySlug(tile)}`
+                          : (tile as any).sellerId
+                            ? `/seller/${(tile as any).sellerId}`
+                            : "#"
                   }
                   onClick={(e) => {
                     if (

@@ -4,6 +4,7 @@ import Button from '../../components/ui/button';
 import { appConfig } from '../../services/configService';
 import { calculateProductPrice } from '../../utils/priceUtils';
 import { useAuth } from '../../context/AuthContext';
+import EmptyState from '../../components/EmptyState';
 
 export default function Cart() {
   const { cart, updateQuantity, removeFromCart, clearCart } = useCart();
@@ -24,15 +25,13 @@ export default function Cart() {
 
   if (cart.items.length === 0) {
     return (
-      <div className="px-4 py-8 md:py-16 text-center">
-        <div className="text-6xl md:text-8xl mb-4">🛒</div>
-        <h2 className="text-xl md:text-2xl font-bold text-neutral-900 mb-2">Your cart is empty</h2>
-        <p className="text-neutral-600 mb-6 md:mb-8 md:text-lg">Add some items to get started!</p>
-        <Link to="/">
-          <Button variant="default" size="lg" className="md:px-8 md:py-3 md:text-lg">
-            Start Shopping
-          </Button>
-        </Link>
+      <div className="flex items-start justify-center min-h-[60vh] bg-white pt-8">
+        <EmptyState 
+            title="Your cart is empty"
+            description="Add some items to get started! We have amazing deals waiting for you."
+            buttonText="Start Shopping"
+            onButtonClick={() => navigate("/")}
+        />
       </div>
     );
   }

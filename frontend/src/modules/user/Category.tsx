@@ -8,6 +8,7 @@ import {
   Category as ApiCategory,
 } from "../../services/api/customerProductService";
 import { useLocation as useLocationContext } from "../../hooks/useLocation";
+import EmptyState from "../../components/EmptyState";
 
 export default function CategoryPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -73,8 +74,11 @@ export default function CategoryPage() {
       }
     };
 
-    if (slug) {
+    if (slug && slug !== '[object Object]') {
       fetchCategoryDetails();
+    } else if (slug === '[object Object]') {
+      setError("Invalid category link.");
+      setCategoryLoading(false);
     }
   }, [slug, searchParams]);
 
@@ -496,10 +500,13 @@ export default function CategoryPage() {
               </div>
             </div>
           ) : (
-            <div className="px-4 md:px-6 lg:px-8 py-8 md:py-12 text-center">
-              <p className="text-neutral-500 md:text-lg">
-                No products found in this category.
-              </p>
+            <div className="flex-1 flex items-start justify-center pt-4">
+              <EmptyState 
+                title="No products found"
+                description="There are currently no products available in this category. Please check back later or explore other sections."
+                buttonText="Explore Home"
+                onButtonClick={() => navigate("/")}
+              />
             </div>
           )}
         </div>

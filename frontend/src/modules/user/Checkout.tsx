@@ -558,7 +558,7 @@ export default function Checkout() {
       // Create the order
       const placedId = await addOrder(order);
       if (placedId) {
-        if (paymentMethod === "COD" || payableAmount === 0) {
+        if (payableAmount === 0) {
           // For COD or Full Wallet Payment, proceed directly to success
           setPlacedOrderId(placedId);
           clearCart();
@@ -1789,7 +1789,7 @@ export default function Checkout() {
                 </div>
                 <span className="text-xs font-bold">Cash on Delivery</span>
                 <p className="text-[8px] mt-0.5 opacity-70">
-                  (Pay when you receive)
+                  (75% at delivery)
                 </p>
               </button>
             </div>
@@ -2481,7 +2481,7 @@ export default function Checkout() {
                 ? "bg-green-600 text-white hover:bg-green-700"
                 : "bg-neutral-300 text-neutral-500 cursor-not-allowed"
                 }`}>
-              Place Order
+              {paymentMethod === "COD" && payableAmount > 0 ? "Pay ₹" + (payableAmount * 0.25).toLocaleString("en-IN") + " & Confirm Order" : "Place Order"}
             </button>
           ) : (
             <button
@@ -2589,7 +2589,7 @@ export default function Checkout() {
         {showRazorpayCheckout && pendingOrderId && user && (
           <RazorpayCheckout
             orderId={pendingOrderId}
-            amount={payableAmount}
+            amount={paymentMethod === "COD" ? (payableAmount * 0.25) : payableAmount}
             customerDetails={{
               name: user.name || "Customer",
               email: user.email || "",

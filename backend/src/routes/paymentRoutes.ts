@@ -36,7 +36,17 @@ router.post('/create-order', authenticate, requireUserType('Customer'), async (r
             });
         }
 
-        const result = await createRazorpayOrder(orderId, order.total);
+        // For COD orders, only pay the advance amount (25%)
+        const paymentAmount = order.paymentMethod === 'COD' ? (order.advanceAmount || 0) : order.total;
+        
+        if (paymentAmount <= 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid payment amount',
+            });
+        }
+
+        const result = await createRazorpayOrder(orderId, paymentAmount);
 
         if (!result.success) {
             return res.status(400).json(result);

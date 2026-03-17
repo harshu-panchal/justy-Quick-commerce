@@ -14,6 +14,7 @@ import PageLoader from "../../components/PageLoader";
 import ComingSoon from "../../components/ComingSoon";
 import { isCategoryAvailable } from "../../config/pincodeService";
 import { getStoredPincode } from "../../components/PincodeSelector";
+import LuckySpin from "../../components/LuckySpin";
 
 import { useThemeContext } from "../../context/ThemeContext";
 import { useDeliveryMode } from "../../hooks/useDeliveryMode";
@@ -47,6 +48,8 @@ export default function Home() {
   const [headerCategories, setHeaderCategories] = useState<any[]>([]);
 
   const [products, setProducts] = useState<any[]>([]);
+
+  const [showLuckySpin, setShowLuckySpin] = useState(false);
 
   const saveScrollPosition = () => {
     const mainElement = document.querySelector('main');
@@ -112,6 +115,14 @@ export default function Home() {
 
     fetchData();
   }, [userLocation?.latitude, userLocation?.longitude, activeTab]);
+
+  useEffect(() => {
+    // Lucky Spin auto-popup logic - ALWAYS show on refresh for testing
+    const timer = setTimeout(() => {
+      setShowLuckySpin(true);
+    }, 2000); // 2 second delay after load
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     const preloadHeaderCategories = async () => {
@@ -352,6 +363,11 @@ export default function Home() {
           )}
         </div>
       )}
+      <LuckySpin 
+        isOpen={showLuckySpin} 
+        onClose={() => setShowLuckySpin(false)} 
+        autoOpened={true}
+      />
     </div>
   );
 }

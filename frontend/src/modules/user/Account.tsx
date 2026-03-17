@@ -6,6 +6,7 @@ import { useCart } from '../../context/CartContext';
 import { getProfile, CustomerProfile, applyReferralCode, getReferralStats } from '../../services/api/customerService';
 import { useThemeContext } from '../../context/ThemeContext';
 import { useToast } from '../../context/ToastContext';
+import LuckySpin from '../../components/LuckySpin';
 
 export default function Account() {
   const navigate = useNavigate();
@@ -28,6 +29,7 @@ export default function Account() {
   const [referralInput, setReferralInput] = useState('');
   const [isApplyingReferral, setIsApplyingReferral] = useState(false);
   const [showCartPreview, setShowCartPreview] = useState(false);
+  const [showLuckySpin, setShowLuckySpin] = useState(false);
   const { cart, clearCart } = useCart();
   useEffect(() => {
     const fetchProfile = async () => {
@@ -555,6 +557,7 @@ export default function Account() {
               }
             }, color: 'text-red-500', isCritical: true },
             { id: 'about', label: 'About Us', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" /><line x1="12" y1="16" x2="12" y2="12" stroke="currentColor" strokeWidth="2" /><line x1="12" y1="8" x2="12.01" y2="8" stroke="currentColor" strokeWidth="2" /></svg>, action: () => window.location.href = 'https://about.dhakadsnazzy.com', color: 'text-sky-500' },
+            { id: 'lucky-spin', label: 'Spin & Win', icon: <span className="text-lg">🎁</span>, action: () => setShowLuckySpin(true), color: 'text-purple-500 font-bold' },
             { id: 'logout', label: 'Log Out', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><polyline points="16 17 21 12 16 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><line x1="21" y1="12" x2="9" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>, action: handleLogout, color: 'text-red-500', isCritical: true },
           ].map((item, idx) => (
             <motion.button
@@ -597,6 +600,10 @@ export default function Account() {
           </div>
         </>
       )}
+      <LuckySpin 
+        isOpen={showLuckySpin} 
+        onClose={() => setShowLuckySpin(false)} 
+      />
     </div>
   );
 }

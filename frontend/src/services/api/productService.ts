@@ -149,30 +149,6 @@ export const getProducts = async (
   const response = await api.get<ApiResponse<Product[]>>("/products", {
     params,
   });
-
-  // Mock augmentation for development/testing
-  const mockProducts = JSON.parse(localStorage.getItem("products") || "[]");
-  if (mockProducts.length > 0 && response.data.success) {
-    // Basic filtering to simulate API behavior if search or category is provided
-    let filteredMock = [...mockProducts];
-    if (params?.search) {
-      const search = params.search.toLowerCase();
-      filteredMock = filteredMock.filter(p =>
-        p.productName.toLowerCase().includes(search) ||
-        p.category?.name.toLowerCase().includes(search)
-      );
-    }
-    if (params?.category) {
-      filteredMock = filteredMock.filter(p => p.category?.name === params.category || p.category?.slug === params.category);
-    }
-
-    // Merge with API results
-    response.data.data = [...response.data.data, ...filteredMock];
-    if (response.data.pagination) {
-      response.data.pagination.total += filteredMock.length;
-    }
-  }
-
   return response.data;
 };
 

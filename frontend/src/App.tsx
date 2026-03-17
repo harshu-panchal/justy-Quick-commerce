@@ -95,6 +95,7 @@ const SellerWallet = lazy(() => import("./modules/seller/pages/SellerWallet"));
 const SellerSalesReport = lazy(() => import("./modules/seller/pages/SellerSalesReport"));
 const SellerReturnRequest = lazy(() => import("./modules/seller/pages/SellerReturnRequest"));
 const SellerAccountSettings = lazy(() => import("./modules/seller/pages/SellerAccountSettings"));
+const SellerComboOffers = lazy(() => import("./modules/seller/pages/SellerComboOffers"));
 const SellerLogin = lazy(() => import("./modules/seller/pages/SellerLogin"));
 const SellerSignUp = lazy(() => import("./modules/seller/pages/SellerSignUp"));
 
@@ -319,6 +320,7 @@ function App() {
                                                 <Route path="return-order" element={<SellerReturnRequest />} />
                                                 <Route path="wallet" element={<SellerWallet />} />
                                                 <Route path="reports/sales" element={<SellerSalesReport />} />
+                                                <Route path="combo-offers" element={<SellerComboOffers />} />
                                                 <Route path="account-settings" element={<SellerAccountSettings />} />
                                               </Routes>
                                             </SellerLayout>

@@ -670,7 +670,7 @@ export const addToCart = async (req: Request, res: Response) => {
                     populate: [
                         {
                             path: 'mainProduct',
-                            select: 'seller status publish productName headerCategoryId category subcategory',
+                            select: 'seller status publish productName mainImage headerCategoryId category subcategory',
                             populate: [
                                 { path: 'headerCategoryId', select: 'deliveryType' },
                                 {

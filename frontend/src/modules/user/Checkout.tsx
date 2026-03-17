@@ -1195,7 +1195,7 @@ export default function Checkout() {
                 ⚡
               </div>
               <div>
-                <h2 className="text-base font-black text-neutral-900 leading-none mb-1">Shipment 1: Quick Delivery</h2>
+                <h2 className="text-base font-black text-neutral-900 leading-none mb-1">Quick Delivery</h2>
                 <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-wider">Arrival in 15-20 mins</p>
               </div>
             </div>
@@ -1207,7 +1207,9 @@ export default function Checkout() {
                   const isCombo = !!item.comboOffer;
                   const itemProduct = item.comboOffer ? item.comboOffer : item.product;
                   const targetName = isCombo ? item.comboOffer.name : item.product?.name;
-                  const targetImage = isCombo ? item.comboOffer.image : item.product?.imageUrl;
+                  const targetImage = isCombo 
+                    ? (item.comboOffer.image || item.comboOffer.mainProduct?.mainImage || item.comboOffer.comboProducts?.[0]?.product?.mainImage) 
+                    : item.product?.imageUrl;
                   const targetPack = isCombo ? 'Combo Bundle' : item.product?.pack;
                   const targetId = isCombo ? item.comboOffer._id || item.comboOffer.id : item.product?.id || item.product?._id;
                   
@@ -1226,7 +1228,7 @@ export default function Checkout() {
                   return (
                     <div key={targetId || Math.random()} className="flex gap-4">
                       <div className="w-16 h-16 bg-neutral-50 rounded-2xl overflow-hidden flex-shrink-0 border border-neutral-100 shadow-sm">
-                        <img src={targetImage} alt={targetName} className="w-full h-full object-cover" />
+                        <img src={targetImage} alt={targetName} className="w-full h-full object-contain" />
                       </div>
                       <div className="flex-1 min-w-0 flex flex-col justify-center">
                         <h3 className="text-sm font-bold text-neutral-900 line-clamp-1 mb-0.5">{targetName}</h3>
@@ -1270,7 +1272,7 @@ export default function Checkout() {
                 📅
               </div>
               <div>
-                <h2 className="text-base font-black text-neutral-900 leading-none mb-1">Shipment 2: Scheduled Delivery</h2>
+                <h2 className="text-base font-black text-neutral-900 leading-none mb-1">Scheduled Delivery</h2>
                 <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-wider">Arrival in 1-2 days</p>
               </div>
             </div>
@@ -1282,7 +1284,9 @@ export default function Checkout() {
                   const isCombo = !!item.comboOffer;
                   const itemProduct = item.comboOffer ? item.comboOffer : item.product;
                   const targetName = isCombo ? item.comboOffer.name : item.product?.name;
-                  const targetImage = isCombo ? item.comboOffer.image : item.product?.imageUrl;
+                  const targetImage = isCombo 
+                    ? (item.comboOffer.image || item.comboOffer.mainProduct?.mainImage || item.comboOffer.comboProducts?.[0]?.product?.mainImage) 
+                    : item.product?.imageUrl;
                   const targetPack = isCombo ? 'Combo Bundle' : item.product?.pack;
                   const targetId = isCombo ? item.comboOffer._id || item.comboOffer.id : item.product?.id || item.product?._id;
                   
@@ -1301,7 +1305,7 @@ export default function Checkout() {
                   return (
                     <div key={targetId || Math.random()} className="flex gap-4">
                       <div className="w-16 h-16 bg-neutral-50 rounded-2xl overflow-hidden flex-shrink-0 border border-neutral-100 shadow-sm">
-                        <img src={targetImage} alt={targetName} className="w-full h-full object-cover" />
+                        <img src={targetImage} alt={targetName} className="w-full h-full object-contain" />
                       </div>
                       <div className="flex-1 min-w-0 flex flex-col justify-center">
                         <h3 className="text-sm font-bold text-neutral-900 line-clamp-1 mb-0.5">{targetName}</h3>
@@ -1337,12 +1341,13 @@ export default function Checkout() {
           </div>
         )}
       </div>
-        {/* You might also like */}
-        <div className="px-4 md:px-6 lg:px-8 py-2.5 md:py-3 border-b border-neutral-200">
-          <h2 className="text-sm font-semibold text-neutral-900 mb-2">
-            You might also like
-          </h2>
-          <div
+
+      {/* You might also like */}
+      <div className="px-4 md:px-6 lg:px-8 py-2.5 md:py-3 border-b border-neutral-200">
+        <h2 className="text-sm font-semibold text-neutral-900 mb-2">
+          You might also like
+        </h2>
+        <div
             className="flex gap-2 overflow-x-auto scrollbar-hide pb-3"
             style={{ scrollSnapType: "x mandatory" }}>
             {similarProducts.map((product) => {

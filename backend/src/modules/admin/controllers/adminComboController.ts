@@ -6,15 +6,25 @@ export const getAllComboOffers = async (req: Request, res: Response) => {
   try {
     const userType = req.user?.userType;
     const sellerId = req.user?.sellerId; // Extracted from auth middleware if seller
+    const { status } = req.query; // live, pending, rejected, all
 
     const query: any = {};
     if (userType === "Seller" && sellerId) {
       query.sellerId = sellerId;
     }
 
+    if (status === "pending") {
+      query.isApproved = false;
+      query.isActive = true;
+    } else if (status === "live") {
+      query.isApproved = true;
+      query.isActive = true;
+    }
+
     const combos = await ComboOffer.find(query)
       .populate("mainProduct", "productName price mainImage")
       .populate("comboProducts", "productName price mainImage")
+      .populate("sellerId", "storeName sellerName")
       .sort({ createdAt: -1 });
 
     return res.status(200).json({
@@ -30,13 +40,87 @@ export const getAllComboOffers = async (req: Request, res: Response) => {
   }
 };
 
+// GET all pending seller combos for admin review
+export const getPendingSellerCombos = async (req: Request, res: Response) => {
+  try {
+    const combos = await ComboOffer.find({ creatorType: "seller", isApproved: false })
+      .populate("mainProduct", "productName price mainImage")
+      .populate("comboProducts", "productName price mainImage")
+      .populate("sellerId", "storeName sellerName")
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      success: true,
+      data: combos,
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: "Error fetching pending combos",
+      error: error.message,
+    });
+  }
+};
+
+// Admin approves a combo
+export const approveSellerCombo = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const combo = await ComboOffer.findByIdAndUpdate(id, { isApproved: true }, { new: true });
+
+    if (!combo) {
+      return res.status(404).json({ success: false, message: "Combo Offer not found" });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Combo offer approved successfully",
+      data: combo,
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: "Error approving combo",
+      error: error.message,
+    });
+  }
+};
+
+// Admin rejects a combo
+export const rejectSellerCombo = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    // We can either delete it or mark it as rejected/inactive.
+    // The requirement says "Approve / Reject". Let's just delete it for now or set isActive=false.
+    // Deleting is cleaner if it's rejected.
+    const combo = await ComboOffer.findByIdAndDelete(id);
+
+    if (!combo) {
+      return res.status(404).json({ success: false, message: "Combo Offer not found" });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Combo offer rejected and removed",
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: "Error rejecting combo",
+      error: error.message,
+    });
+  }
+};
+
 // GET single combo offer
 export const getComboOfferById = async (req: Request, res: Response) => {
+// ... (rest of the functions)
   try {
     const { id } = req.params;
     const combo = await ComboOffer.findById(id)
       .populate("mainProduct", "productName price mainImage")
-      .populate("comboProducts", "productName price mainImage");
+      .populate("comboProducts", "productName price mainImage")
+      .populate("sellerId", "storeName sellerName");
 
     if (!combo) {
       return res.status(404).json({ success: false, message: "Combo Offer not found" });
@@ -105,6 +189,9 @@ export const createComboOffer = async (req: Request, res: Response) => {
       originalPrice,
       image,
       sellerId,
+      createdBy: req.user?.userId,
+      creatorType: "admin",
+      isApproved: true,
       isActive: isActive !== undefined ? isActive : true,
       startDate,
       endDate,

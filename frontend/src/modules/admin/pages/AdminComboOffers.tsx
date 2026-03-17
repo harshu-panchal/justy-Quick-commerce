@@ -5,13 +5,18 @@ import {
   createComboOffer, 
   updateComboOffer, 
   deleteComboOffer, 
+  getPendingSellerCombos,
+  approveSellerCombo,
+  rejectSellerCombo,
   ComboOffer 
 } from "../../../services/api/admin/adminComboService";
 
 export default function AdminComboOffers() {
+  const [activeTab, setActiveTab] = useState<"admin" | "seller">("admin");
   const [products, setProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [combos, setCombos] = useState<ComboOffer[]>([]);
+  const [pendingCombos, setPendingCombos] = useState<ComboOffer[]>([]);
   const [loadingCombos, setLoadingCombos] = useState(true);
 
   // Form state
@@ -52,6 +57,11 @@ export default function AdminComboOffers() {
       if (res.success && res.data) {
         setCombos(res.data);
       }
+      
+      const pendingRes = await getPendingSellerCombos();
+      if (pendingRes.success && pendingRes.data) {
+        setPendingCombos(pendingRes.data);
+      }
     } catch (err) {
       console.error("Failed to fetch combo offers", err);
     } finally {
@@ -60,10 +70,7 @@ export default function AdminComboOffers() {
   };
 
   const getProductName = (id: string | any) => {
-    // If it's a populated object from backend
     if (typeof id === 'object' && id !== null && id.productName) return id.productName;
-    
-    // Otherwise it's just an ID string, find it in our local state
     const p = products.find((pr: Product) => pr._id === id);
     return p?.productName || id;
   };
@@ -72,7 +79,6 @@ export default function AdminComboOffers() {
     if (typeof id === 'object' && id !== null && id.price !== undefined) {
        return id.price;
     }
-
     const p = products.find((pr: Product) => pr._id === id);
     if (!p) return 0;
     if (p.variations && p.variations.length > 0) {
@@ -104,7 +110,6 @@ export default function AdminComboOffers() {
       return;
     }
 
-    // Attempt to calculate original price so that backend validation passes
     const mainPrice = getProductPrice(selectedMainProduct);
     const comboPrices = selectedComboProducts.reduce((sum, id) => sum + getProductPrice(id), 0);
     const originalPrice = mainPrice + comboPrices;
@@ -114,7 +119,6 @@ export default function AdminComboOffers() {
       return;
     }
 
-    // Auto-generate name if user didn't provide one
     const generatedName = comboName.trim() || `Combo: ${getProductName(selectedMainProduct)} + ${selectedComboProducts.length} more`;
 
     const payload: Partial<ComboOffer> = {
@@ -133,9 +137,8 @@ export default function AdminComboOffers() {
       } else {
         await createComboOffer(payload);
       }
-      
       resetForm();
-      fetchCombos(); // Refresh list from backend
+      fetchCombos();
     } catch (err: any) {
        setFormError(err.message || "Failed to save combo offer.");
     }
@@ -155,12 +158,10 @@ export default function AdminComboOffers() {
   };
 
   const handleEdit = (combo: any) => {
-    console.log("Editing combo:", combo);
     setEditingId(combo._id || null);
     setComboName(combo.name || "");
     setDescription(combo.description || "");
     setImage(combo.image || "");
-    // Extract ID if it's an object from DB population
     setSelectedMainProduct(typeof combo.mainProduct === 'object' ? combo.mainProduct._id : combo.mainProduct);
     setSelectedComboProducts(combo.comboProducts.map((p: any) => typeof p === 'object' ? p._id : p));
     setComboPrice(combo.comboPrice.toString());
@@ -181,7 +182,30 @@ export default function AdminComboOffers() {
     }
   };
 
-  // Calculate original total for display
+  const handleApprove = async (id: string) => {
+    if (confirm("Are you sure you want to approve this combo?")) {
+      try {
+        await approveSellerCombo(id);
+        fetchCombos();
+        alert("Combo approved successfully!");
+      } catch (err) {
+        alert("Failed to approve combo.");
+      }
+    }
+  };
+
+  const handleReject = async (id: string) => {
+    if (confirm("Are you sure you want to reject this combo?")) {
+      try {
+        await rejectSellerCombo(id);
+        fetchCombos();
+        alert("Combo rejected and removed.");
+      } catch (err) {
+        alert("Failed to reject combo.");
+      }
+    }
+  };
+
   const calculateOriginalTotal = () => {
     const mainPrice = selectedMainProduct ? getProductPrice(selectedMainProduct) : 0;
     const comboPrices = selectedComboProducts.reduce((s: number, id: string) => s + getProductPrice(id), 0);
@@ -191,7 +215,6 @@ export default function AdminComboOffers() {
   const originalTotal = calculateOriginalTotal();
   const savings = comboPrice ? originalTotal - Number(comboPrice) : 0;
 
-  // Filter products for search
   const filteredMainProducts = products.filter((p: Product) =>
     p.productName.toLowerCase().includes(searchMain.toLowerCase())
   );
@@ -202,9 +225,8 @@ export default function AdminComboOffers() {
   );
 
   return (
-    <div className="flex flex-col h-full bg-gray-50">
+    <div className="flex flex-col min-h-screen bg-gray-50">
       <div className="flex-1 p-6">
-        {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
           <h1 className="text-2xl font-semibold text-neutral-800">
             Combo Offer Management
@@ -216,330 +238,163 @@ export default function AdminComboOffers() {
           </div>
         </div>
 
-        {/* Add / Edit Combo Section */}
-        <div className="bg-white rounded-lg shadow-sm border border-neutral-200 mb-6">
-          <div className="bg-teal-600 text-white px-6 py-4 rounded-t-lg flex items-center justify-between">
-            <h2 className="text-lg font-semibold">
-              {editingId ? "Edit Combo Offer" : "Add Combo Offer"}
-            </h2>
-            {editingId && (
-              <button
-                onClick={resetForm}
-                className="text-sm bg-white/20 hover:bg-white/30 px-3 py-1 rounded transition-colors"
-              >
-                Cancel Edit
-              </button>
-            )}
-          </div>
-
-          <form onSubmit={handleSubmit} className="p-6">
-            {formError && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
-                {formError}
-              </div>
-            )}
-
-            {loadingProducts ? (
-              <div className="text-center py-8 text-neutral-500">Loading products...</div>
-            ) : (
-              <>
-                {/* Main Product Selection */}
-                <div className="mb-5">
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Main Product <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Search main product..."
-                    value={searchMain}
-                    onChange={(e) => setSearchMain(e.target.value)}
-                    className="w-full px-3 py-2 border border-neutral-300 rounded focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none mb-2"
-                  />
-                  <div className="max-h-48 overflow-y-auto border border-neutral-200 rounded">
-                    {filteredMainProducts.length === 0 ? (
-                      <div className="p-3 text-sm text-neutral-400">No products found</div>
-                    ) : (
-                      filteredMainProducts.map((p) => (
-                        <label
-                          key={p._id}
-                          className={`flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-teal-50 transition-colors border-b border-neutral-100 last:border-b-0 ${selectedMainProduct === p._id ? "bg-teal-50" : ""
-                            }`}
-                        >
-                          <input
-                            type="radio"
-                            name="mainProduct"
-                            value={p._id}
-                            checked={selectedMainProduct === p._id}
-                            onChange={() => {
-                              setSelectedMainProduct(p._id);
-                              // Remove from combo if selected as main
-                              setSelectedComboProducts((prev: string[]) =>
-                                prev.filter((id: string) => id !== p._id)
-                              );
-                            }}
-                            className="accent-teal-600"
-                          />
-                          {p.mainImage && (
-                            <img
-                              src={p.mainImage}
-                              alt={p.productName}
-                              className="w-8 h-8 rounded object-cover"
-                              referrerPolicy="no-referrer"
-                            />
-                          )}
-                          <span className="text-sm text-neutral-700">{p.productName}</span>
-                          <span className="text-xs text-neutral-400 ml-auto">
-                            ₹{getProductPrice(p._id)}
-                          </span>
-                        </label>
-                      ))
-                    )}
-                  </div>
-                  {selectedMainProduct && (
-                    <div className="mt-2 text-sm text-teal-700 font-medium">
-                      ✓ Selected: {getProductName(selectedMainProduct)}
-                    </div>
-                  )}
-                </div>
-
-                {/* Combo Products Selection */}
-                <div className="mb-5">
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Combo Products <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Search combo products..."
-                    value={searchCombo}
-                    onChange={(e) => setSearchCombo(e.target.value)}
-                    className="w-full px-3 py-2 border border-neutral-300 rounded focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none mb-2"
-                  />
-                  <div className="max-h-48 overflow-y-auto border border-neutral-200 rounded">
-                    {filteredComboProducts.length === 0 ? (
-                      <div className="p-3 text-sm text-neutral-400">
-                        {selectedMainProduct
-                          ? "No other products found"
-                          : "Select a main product first"}
-                      </div>
-                    ) : (
-                      filteredComboProducts.map((p) => (
-                        <label
-                          key={p._id}
-                          className={`flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-teal-50 transition-colors border-b border-neutral-100 last:border-b-0 ${selectedComboProducts.includes(p._id) ? "bg-teal-50" : ""
-                            }`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={selectedComboProducts.includes(p._id)}
-                            onChange={() => handleToggleComboProduct(p._id)}
-                            className="accent-teal-600"
-                          />
-                          {p.mainImage && (
-                            <img
-                              src={p.mainImage}
-                              alt={p.productName}
-                              className="w-8 h-8 rounded object-cover"
-                              referrerPolicy="no-referrer"
-                            />
-                          )}
-                          <span className="text-sm text-neutral-700">{p.productName}</span>
-                          <span className="text-xs text-neutral-400 ml-auto">
-                            ₹{getProductPrice(p._id)}
-                          </span>
-                        </label>
-                      ))
-                    )}
-                  </div>
-                  {selectedComboProducts.length > 0 && (
-                    <div className="mt-2 text-sm text-teal-700">
-                      ✓ {selectedComboProducts.length} product(s) selected
-                    </div>
-                  )}
-                </div>
-
-                {/* Combo Price + Preview */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-5">
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">
-                      Combo Offer Price (₹) <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      step="1"
-                      value={comboPrice}
-                      onChange={(e) => setComboPrice(e.target.value)}
-                      placeholder="Enter combo price"
-                      className="w-full px-3 py-2 border border-neutral-300 rounded focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">
-                      Combo Name (Optional)
-                    </label>
-                    <input
-                      type="text"
-                      value={comboName}
-                      onChange={(e) => setComboName(e.target.value)}
-                      placeholder="Custom name (otherwise auto-generated)"
-                      className="w-full px-3 py-2 border border-neutral-300 rounded focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-5">
-                   <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">
-                       Combo Image URL (Optional)
-                    </label>
-                    <input
-                      type="text"
-                      value={image}
-                      onChange={(e) => setImage(e.target.value)}
-                      placeholder="https://example.com/image.jpg"
-                      className="w-full px-3 py-2 border border-neutral-300 rounded focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none"
-                    />
-                  </div>
-                   <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">
-                       Description (Optional)
-                    </label>
-                    <textarea
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      placeholder="Enter combo details..."
-                      rows={1}
-                      className="w-full px-3 py-2 border border-neutral-300 rounded focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none"
-                    />
-                  </div>
-                </div>
-
-                {selectedMainProduct && selectedComboProducts.length > 0 && comboPrice && (
-                  <div className="mb-5 bg-teal-50 border border-teal-200 rounded-lg p-4">
-                      <div className="text-sm font-medium text-neutral-700 mb-1">Preview</div>
-                      <div className="text-xs text-neutral-600 mb-2">
-                        {getProductName(selectedMainProduct)} +{" "}
-                        {selectedComboProducts.map(getProductName).join(" + ")}
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className="text-lg font-bold text-teal-700">₹{comboPrice}</span>
-                        {originalTotal > 0 && (
-                          <span className="text-sm text-neutral-500 line-through">
-                            ₹{originalTotal}
-                          </span>
-                        )}
-                        {savings > 0 && (
-                          <span className="text-sm font-semibold text-green-600">
-                            Save ₹{savings}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                <button
-                  type="submit"
-                  className="w-full px-6 py-3 rounded font-medium transition-colors bg-green-600 hover:bg-green-700 text-white"
-                >
-                  {editingId ? "Update Combo Offer" : "Save Combo Offer"}
-                </button>
-              </>
-            )}
-          </form>
+        <div className="flex gap-4 mb-6">
+          <button
+            onClick={() => setActiveTab("admin")}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${activeTab === "admin" ? "bg-teal-600 text-white shadow-sm" : "bg-white text-neutral-600 border border-neutral-200 hover:bg-neutral-50"}`}
+          >
+            Admin Combos
+          </button>
+          <button
+            onClick={() => setActiveTab("seller")}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${activeTab === "seller" ? "bg-teal-600 text-white shadow-sm" : "bg-white text-neutral-600 border border-neutral-200 hover:bg-neutral-50"}`}
+          >
+            Seller Requests ({pendingCombos.length})
+          </button>
         </div>
 
-        {/* Existing Combos List */}
-        <div className="bg-white rounded-lg shadow-sm border border-neutral-200">
-          <div className="px-6 py-4 border-b border-neutral-200">
-            <h2 className="text-lg font-semibold text-neutral-800">
-              Existing Combo Offers ({combos.length})
-            </h2>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-neutral-50 text-xs font-bold text-neutral-800 border-b border-neutral-200">
-                  <th className="p-4">Sr No.</th>
-                  <th className="p-4">Main Product</th>
-                  <th className="p-4">Combo Products</th>
-                  <th className="p-4">Combo Price</th>
-                  <th className="p-4">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {combos.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="p-8 text-center text-neutral-400">
-                      No combo offers yet. Create one above.
-                    </td>
-                  </tr>
-                ) : (
-                  combos.map((combo: ComboOffer, i: number) => (
-                    <tr
-                      key={combo._id}
-                      className={`hover:bg-neutral-50 transition-colors text-sm text-neutral-700 border-b border-neutral-200 ${!combo.isActive ? "opacity-50" : ""}`}
-                    >
-                      <td className="p-4 align-middle">{i + 1}</td>
-                      <td className="p-4 align-middle font-medium">
-                        {getProductName(combo.mainProduct)}
-                        <br/>
-                        <span className="text-xs text-neutral-400">{combo.name}</span>
-                      </td>
-                      <td className="p-4 align-middle">
-                        <div className="flex flex-wrap gap-1">
-                          {combo.comboProducts.map((p: any, idx: number) => (
-                            <span
-                              key={idx}
-                              className="inline-block bg-teal-50 text-teal-700 text-xs px-2 py-0.5 rounded-full"
-                            >
-                              {getProductName(p)}
-                            </span>
-                          ))}
-                        </div>
-                      </td>
-                      <td className="p-4 align-middle font-semibold text-teal-700">
-                        ₹{combo.comboPrice}
-                        <div className="text-xs text-neutral-400 line-through">₹{combo.originalPrice}</div>
-                      </td>
-                      <td className="p-4 align-middle">
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => handleEdit(combo)}
-                            className="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
-                            title="Edit"
-                          >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                            </svg>
-                          </button>
-                          <button
-                            onClick={() => handleDelete(combo._id)}
-                            className="p-2 bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
-                            title="Delete"
-                          >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <line x1="18" y1="6" x2="6" y2="18" />
-                              <line x1="6" y1="6" x2="18" y2="18" />
-                            </svg>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
+        {activeTab === "admin" ? (
+          <>
+            <div className="bg-white rounded-lg shadow-sm border border-neutral-200 mb-6">
+              <div className="bg-teal-600 text-white px-6 py-4 rounded-t-lg flex items-center justify-between">
+                <h2 className="text-lg font-semibold">
+                  {editingId ? "Edit Combo Offer" : "Add Combo Offer"}
+                </h2>
+                {editingId && (
+                  <button onClick={resetForm} className="text-sm bg-white/20 hover:bg-white/30 px-3 py-1 rounded transition-colors">
+                    Cancel Edit
+                  </button>
                 )}
-              </tbody>
-            </table>
+              </div>
+              <form onSubmit={handleSubmit} className="p-6">
+                {formError && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">{formError}</div>}
+                
+                {loadingProducts ? <div className="text-center py-8 text-neutral-500">Loading products...</div> : (
+                  <>
+                    <div className="mb-5">
+                      <label className="block text-sm font-medium text-neutral-700 mb-2">Main Product <span className="text-red-500">*</span></label>
+                      <input type="text" placeholder="Search main product..." value={searchMain} onChange={(e) => setSearchMain(e.target.value)}
+                        className="w-full px-3 py-2 border border-neutral-300 rounded focus:ring-2 focus:ring-teal-500 outline-none mb-2" />
+                      <div className="max-h-48 overflow-y-auto border border-neutral-200 rounded">
+                        {filteredMainProducts.map((p) => (
+                          <label key={p._id} className={`flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-teal-50 border-b last:border-0 ${selectedMainProduct === p._id ? "bg-teal-50" : ""}`}>
+                            <input type="radio" checked={selectedMainProduct === p._id} onChange={() => setSelectedMainProduct(p._id)} className="accent-teal-600" />
+                            {p.mainImage && <img src={p.mainImage} alt="" className="w-8 h-8 rounded object-cover" />}
+                            <span className="text-sm text-neutral-700">{p.productName}</span>
+                            <span className="text-xs text-neutral-400 ml-auto">₹{getProductPrice(p._id)}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="mb-5">
+                      <label className="block text-sm font-medium text-neutral-700 mb-2">Combo Products <span className="text-red-500">*</span></label>
+                      <input type="text" placeholder="Search combo products..." value={searchCombo} onChange={(e) => setSearchCombo(e.target.value)}
+                        className="w-full px-3 py-2 border border-neutral-300 rounded focus:ring-2 focus:ring-teal-500 outline-none mb-2" />
+                      <div className="max-h-48 overflow-y-auto border border-neutral-200 rounded">
+                        {filteredComboProducts.map((p) => (
+                          <label key={p._id} className={`flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-teal-50 border-b last:border-0 ${selectedComboProducts.includes(p._id) ? "bg-teal-50" : ""}`}>
+                            <input type="checkbox" checked={selectedComboProducts.includes(p._id)} onChange={() => handleToggleComboProduct(p._id)} className="accent-teal-600" />
+                            {p.mainImage && <img src={p.mainImage} alt="" className="w-8 h-8 rounded object-cover" />}
+                            <span className="text-sm text-neutral-700">{p.productName}</span>
+                            <span className="text-xs text-neutral-400 ml-auto">₹{getProductPrice(p._id)}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-5">
+                      <input type="number" value={comboPrice} onChange={(e) => setComboPrice(e.target.value)} placeholder="Combo Price (₹)"
+                        className="w-full px-3 py-2 border border-neutral-300 rounded focus:ring-2 focus:ring-teal-500 outline-none" />
+                      <input type="text" value={comboName} onChange={(e) => setComboName(e.target.value)} placeholder="Combo Name (Optional)"
+                        className="w-full px-3 py-2 border border-neutral-300 rounded focus:ring-2 focus:ring-teal-500 outline-none" />
+                    </div>
+
+                    {selectedMainProduct && selectedComboProducts.length > 0 && comboPrice && (
+                      <div className="mb-5 bg-teal-50 border border-teal-200 rounded-lg p-4">
+                        <div className="flex items-center gap-3">
+                          <span className="text-lg font-bold text-teal-700">₹{comboPrice}</span>
+                          <span className="text-sm text-neutral-500 line-through">₹{originalTotal}</span>
+                          <span className="text-sm font-semibold text-green-600">Save ₹{savings}</span>
+                        </div>
+                      </div>
+                    )}
+                    <button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 rounded transition-colors">
+                      {editingId ? "Update Combo Offer" : "Save Combo Offer"}
+                    </button>
+                  </>
+                )}
+              </form>
+            </div>
+
+            <div className="bg-white rounded-lg shadow-sm border border-neutral-200">
+              <div className="px-6 py-4 border-b border-neutral-200 bg-neutral-50">
+                <h2 className="text-lg font-semibold text-neutral-800">Existing Combo Offers ({combos.length})</h2>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead className="bg-neutral-50 text-xs font-bold uppercase text-neutral-500 border-b">
+                    <tr><th className="p-4">Sr.</th><th className="p-4">Products</th><th className="p-4">Price</th><th className="p-4">Action</th></tr>
+                  </thead>
+                  <tbody>
+                    {combos.map((combo, i) => (
+                      <tr key={combo._id} className="text-sm border-b last:border-0 hover:bg-neutral-50">
+                        <td className="p-4">{i + 1}</td>
+                        <td className="p-4 capitalize">
+                          <div className="font-bold">{combo.name}</div>
+                          <div className="text-xs text-neutral-400">
+                            {getProductName(combo.mainProduct)} + {combo.comboProducts.map(getProductName).join(", ")}
+                          </div>
+                          <span className="text-[10px] text-teal-600 font-semibold">{combo.creatorType === "seller" ? `Seller: ${combo.sellerId?.storeName || combo.sellerId?.sellerName || 'Unknown'}` : 'Admin'}</span>
+                        </td>
+                        <td className="p-4 font-bold text-teal-700">₹{combo.comboPrice}</td>
+                        <td className="p-4 flex gap-2">
+                           <button onClick={() => handleEdit(combo)} className="p-2 bg-blue-100 text-blue-700 rounded hover:bg-blue-200">Edit</button>
+                           <button onClick={() => handleDelete(combo._id)} className="p-2 bg-red-100 text-red-700 rounded hover:bg-red-200">Delete</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="bg-white rounded-lg shadow-sm border border-neutral-200">
+            <div className="px-6 py-4 border-b border-neutral-200 bg-neutral-50">
+              <h2 className="text-lg font-semibold text-neutral-800">Pending Seller Requests ({pendingCombos.length})</h2>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead className="bg-neutral-50 text-xs font-bold uppercase text-neutral-500 border-b">
+                  <tr><th className="p-4">Seller</th><th className="p-4">Combo</th><th className="p-4">Price</th><th className="p-4 text-right">Action</th></tr>
+                </thead>
+                <tbody className="divide-y">
+                  {pendingCombos.length === 0 ? <tr><td colSpan={4} className="p-8 text-center text-neutral-400">No pending requests.</td></tr> : (
+                    pendingCombos.map((combo) => (
+                      <tr key={combo._id} className="text-sm hover:bg-neutral-50">
+                        <td className="p-4 font-medium">{combo.sellerId?.storeName || combo.sellerId?.sellerName || "Unknown"}</td>
+                        <td className="p-4">
+                          <div className="font-bold">{combo.name}</div>
+                          <div className="text-xs text-neutral-500">{getProductName(combo.mainProduct)} + {combo.comboProducts.length} items</div>
+                        </td>
+                        <td className="p-4 font-bold text-teal-700">₹{combo.comboPrice}</td>
+                        <td className="p-4 text-right space-x-2">
+                          <button onClick={() => handleApprove(combo._id!)} className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700">Approve</button>
+                          <button onClick={() => handleReject(combo._id!)} className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700">Reject</button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
-      {/* Footer */}
-      <footer className="text-center py-4 text-sm text-neutral-600 border-t border-neutral-200 bg-white">
-        Copyright © 2025. Developed By{" "}
-        <a href="#" className="text-blue-600 hover:underline">
-          Jasti - 10 Minute App
-        </a>
+      <footer className="text-center py-6 text-sm text-neutral-500 border-t bg-white">
+        Copyright © 2025. Developed By <a href="#" className="text-blue-600 font-medium">Jasti - 10 Minute App</a>
       </footer>
     </div>
   );

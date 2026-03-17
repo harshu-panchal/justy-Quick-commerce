@@ -38,6 +38,7 @@ import sellerWalletRoutes from "./sellerWalletRoutes";
 import deliveryWalletRoutes from "./deliveryWalletRoutes";
 import adminWithdrawalRoutes from "./adminWithdrawalRoutes";
 import * as bannerController from "../controllers/bannerController";
+import sellerComboRoutes from "./sellerComboRoutes";
 
 import {
   createOrder,
@@ -164,6 +165,9 @@ router.use("/seller/reports", reportRoutes);
 
 // Wallet routes (protected, seller only)
 router.use("/seller/wallet", walletRoutes);
+
+// Seller Combo Offer routes
+router.use("/seller/combo-offers", sellerComboRoutes);
 
 // Tax routes (protected, seller/admin)
 router.use("/seller/taxes", taxRoutes);

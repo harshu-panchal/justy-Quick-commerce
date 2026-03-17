@@ -935,7 +935,7 @@ export default function ProductDetail() {
                         Customer Care Details:
                       </span>
                       <span className="text-xs text-neutral-600">
-                        Email: help@dhakadsnazzy.com
+                        Email: help@justi.com
                       </span>
                     </div>
                     <div className="flex items-start">

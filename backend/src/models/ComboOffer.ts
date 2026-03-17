@@ -9,6 +9,9 @@ export interface IComboOffer extends Document {
   originalPrice: number;
   image?: string;
   sellerId: mongoose.Types.ObjectId;
+  createdBy?: mongoose.Types.ObjectId;
+  creatorType: "admin" | "seller";
+  isApproved: boolean;
   isActive: boolean;
   startDate?: Date;
   endDate?: Date;
@@ -57,6 +60,19 @@ const ComboOfferSchema = new Schema<IComboOffer>(
       type: Schema.Types.ObjectId,
       ref: "Seller",
       required: [true, "Seller ID is required"],
+    },
+    createdBy: {
+      type: Schema.Types.ObjectId,
+      required: false,
+    },
+    creatorType: {
+      type: String,
+      enum: ["admin", "seller"],
+      default: "admin",
+    },
+    isApproved: {
+      type: Boolean,
+      default: true,
     },
     isActive: {
       type: Boolean,

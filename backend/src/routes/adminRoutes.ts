@@ -388,10 +388,13 @@ router.delete('/banners/:id', bannerController.deleteBanner);
 
 // ==================== Combo Offers Routes ====================
 router.get("/combo-offers", comboController.getAllComboOffers);
+router.get("/combo-offers/pending", comboController.getPendingSellerCombos);
 router.get("/combo-offers/:id", comboController.getComboOfferById);
 router.post("/combo-offers", comboController.createComboOffer);
 router.put("/combo-offers/:id", comboController.updateComboOffer);
 router.delete("/combo-offers/:id", comboController.deleteComboOffer);
+router.post("/combo-offers/:id/approve", comboController.approveSellerCombo);
+router.post("/combo-offers/:id/reject", comboController.rejectSellerCombo);
 
 // ==================== Subscription Plan Routes ====================
 router.post("/subscription-plans", subscriptionPlanController.createSubscriptionPlan);

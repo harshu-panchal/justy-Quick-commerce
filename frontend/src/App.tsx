@@ -8,6 +8,7 @@ import { LocationProvider } from "./context/LocationContext";
 import { ToastProvider } from "./context/ToastContext";
 
 import { LoadingProvider } from "./context/LoadingContext";
+import { CoinProvider } from "./context/CoinContext";
 import { AxiosLoadingInterceptor } from "./context/AxiosLoadingInterceptor";
 import IconLoader from "./components/loaders/IconLoader";
 import RouteLoaderTrigger from "./components/loaders/RouteLoaderTrigger";
@@ -33,6 +34,7 @@ const Orders = lazy(() => import("./modules/user/Orders"));
 const OrderDetail = lazy(() => import("./modules/user/OrderDetail"));
 const OrderAgain = lazy(() => import("./modules/user/OrderAgain"));
 const Account = lazy(() => import("./modules/user/Account"));
+const CoinsPage = lazy(() => import("./modules/user/pages/CoinsPage"));
 const Categories = lazy(() => import("./modules/user/Categories"));
 const Category = lazy(() => import("./modules/user/Category"));
 const SubCategoryPage = lazy(() => import("./modules/user/SubCategoryPage"));
@@ -179,7 +181,8 @@ function App() {
         <AxiosLoadingInterceptor>
           <IconLoader />
           <AuthProvider>
-            <ThemeProvider>
+            <CoinProvider>
+              <ThemeProvider>
               <DeliveryModeProvider>
                 <LocationProvider>
                   <ToastProvider>
@@ -408,6 +411,7 @@ function App() {
                                       <Route path="/orders/:id" element={<OrderDetail />} />
                                       <Route path="/order-again" element={<OrderAgain />} />
                                       <Route path="/account" element={<Account />} />
+                                      <Route path="/coins" element={<CoinsPage />} />
                                       <Route path="/about-us" element={<AboutUs />} />
                                       <Route path="/faq" element={<FAQ />} />
                                       <Route path="/wishlist" element={<Wishlist />} />
@@ -444,8 +448,9 @@ function App() {
                   </ToastProvider>
                 </LocationProvider>
               </DeliveryModeProvider>
-            </ThemeProvider>
-          </AuthProvider>
+                </ThemeProvider>
+              </CoinProvider>
+            </AuthProvider>
         </AxiosLoadingInterceptor>
       </LoadingProvider>
     </ErrorBoundary>

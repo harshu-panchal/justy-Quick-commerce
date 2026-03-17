@@ -77,6 +77,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
         };
 
         if (item.comboOffer) {
+          const mainProduct = item.comboOffer.mainProduct;
+          const isScheduled =
+            mainProduct?.headerCategoryId?.deliveryType === 'scheduled' ||
+            mainProduct?.category?.headerCategoryId?.deliveryType === 'scheduled' ||
+            mainProduct?.subcategory?.headerCategoryId?.deliveryType === 'scheduled';
+
           return {
             ...base,
             comboOffer: {
@@ -91,7 +97,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
                   name: cp.product.productName || cp.product.name
                 } : null
               }))
-            }
+            },
+            deliveryType: isScheduled ? 'scheduled' : 'quick' as 'quick' | 'scheduled'
           };
         }
 

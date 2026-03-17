@@ -646,34 +646,76 @@ export const addToCart = async (req: Request, res: Response) => {
         // Return updated cart with filtering
         const updatedCart = await Cart.findById(cart._id).populate({
             path: 'items',
-            populate: {
-                path: 'product',
-                select: 'productName price mainImage stock pack mrp category seller status publish discPrice variations headerCategoryId',
-                populate: [
-                    {
-                        path: 'headerCategoryId',
-                        select: 'deliveryType'
-                    },
-                    {
-                        path: 'category',
-                        select: 'headerCategoryId',
-                        populate: {
-                            path: 'headerCategoryId',
-                            select: 'deliveryType'
+            populate: [
+                {
+                    path: 'product',
+                    select: 'productName price mainImage stock pack mrp category seller status publish discPrice variations headerCategoryId',
+                    populate: [
+                        { path: 'headerCategoryId', select: 'deliveryType' },
+                        {
+                            path: 'category',
+                            select: 'headerCategoryId',
+                            populate: { path: 'headerCategoryId', select: 'deliveryType' }
+                        },
+                        {
+                            path: 'subcategory',
+                            select: 'headerCategoryId',
+                            populate: { path: 'headerCategoryId', select: 'deliveryType' }
                         }
-                    }
-                ]
-            }
+                    ]
+                },
+                {
+                    path: 'comboOffer',
+                    select: 'comboPrice isActive sellerId mainProduct comboProducts name description',
+                    populate: [
+                        {
+                            path: 'mainProduct',
+                            select: 'seller status publish productName headerCategoryId category subcategory',
+                            populate: [
+                                { path: 'headerCategoryId', select: 'deliveryType' },
+                                {
+                                    path: 'category',
+                                    select: 'headerCategoryId',
+                                    populate: { path: 'headerCategoryId', select: 'deliveryType' }
+                                },
+                                {
+                                    path: 'subcategory',
+                                    select: 'headerCategoryId',
+                                    populate: { path: 'headerCategoryId', select: 'deliveryType' }
+                                }
+                            ]
+                        },
+                        {
+                            path: 'comboProducts.product',
+                            select: 'productName mainImage price discPrice variations stock pack mrp sku'
+                        }
+                    ]
+                }
+            ]
         });
 
         const filteredItems = (updatedCart?.items as any[] || []).filter(item => {
-            const prod = item.product;
-            if (!prod) return false;
-            const isProdScheduled =
-                prod.headerCategoryId?.deliveryType === 'scheduled' ||
-                (prod.category as any)?.headerCategoryId?.deliveryType === 'scheduled';
-            const isProdNearby = nearbySellerIds.some(id => id.toString() === prod.seller.toString());
-            return isProdScheduled || isProdNearby;
+            if (item.comboOffer) {
+                const combo = item.comboOffer;
+                if (!combo.isActive) return false;
+                const prod = combo.mainProduct;
+                if (!prod) return false;
+                const isProdScheduled =
+                    prod.headerCategoryId?.deliveryType === 'scheduled' ||
+                    (prod.category as any)?.headerCategoryId?.deliveryType === 'scheduled' ||
+                    (prod.subcategory as any)?.headerCategoryId?.deliveryType === 'scheduled';
+                const isProdNearby = nearbySellerIds.some(id => id.toString() === prod.seller?.toString());
+                return isProdScheduled || isProdNearby;
+            } else if (item.product) {
+                const prod = item.product;
+                const isProdScheduled =
+                    prod.headerCategoryId?.deliveryType === 'scheduled' ||
+                    (prod.category as any)?.headerCategoryId?.deliveryType === 'scheduled' ||
+                    (prod.subcategory as any)?.headerCategoryId?.deliveryType === 'scheduled';
+                const isProdNearby = nearbySellerIds.some(id => id.toString() === prod.seller?.toString());
+                return isProdScheduled || isProdNearby;
+            }
+            return false;
         });
 
         // Calculate fees
@@ -812,44 +854,52 @@ export const updateCartItem = async (req: Request, res: Response) => {
         const updatedCart = await Cart.findById(cart._id)
             .populate({
                 path: 'items',
-                populate: {
-                    path: 'product',
-                    select: 'productName price mainImage stock pack mrp category seller status publish discPrice variations headerCategoryId',
-                    populate: [
-                        { path: 'headerCategoryId', select: 'deliveryType' },
-                        {
-                            path: 'category',
-                            select: 'headerCategoryId',
-                            populate: { path: 'headerCategoryId', select: 'deliveryType' }
-                        },
-                        {
-                            path: 'subcategory',
-                            select: 'headerCategoryId',
-                            populate: { path: 'headerCategoryId', select: 'deliveryType' }
-                        }
-                    ]
-                }
-            })
-            .populate({
-                path: 'items.comboOffer',
-                select: 'comboPrice isActive sellerId mainProduct',
-                populate: {
-                    path: 'mainProduct',
-                    select: 'seller status publish productName headerCategoryId category subcategory',
-                    populate: [
-                        { path: 'headerCategoryId', select: 'deliveryType' },
-                        {
-                            path: 'category',
-                            select: 'headerCategoryId',
-                            populate: { path: 'headerCategoryId', select: 'deliveryType' }
-                        },
-                        {
-                            path: 'subcategory',
-                            select: 'headerCategoryId',
-                            populate: { path: 'headerCategoryId', select: 'deliveryType' }
-                        }
-                    ]
-                }
+                populate: [
+                    {
+                        path: 'product',
+                        select: 'productName price mainImage stock pack mrp category seller status publish discPrice variations headerCategoryId',
+                        populate: [
+                            { path: 'headerCategoryId', select: 'deliveryType' },
+                            {
+                                path: 'category',
+                                select: 'headerCategoryId',
+                                populate: { path: 'headerCategoryId', select: 'deliveryType' }
+                            },
+                            {
+                                path: 'subcategory',
+                                select: 'headerCategoryId',
+                                populate: { path: 'headerCategoryId', select: 'deliveryType' }
+                            }
+                        ]
+                    },
+                    {
+                        path: 'comboOffer',
+                        select: 'comboPrice isActive sellerId mainProduct comboProducts name description',
+                        populate: [
+                            {
+                                path: 'mainProduct',
+                                select: 'seller status publish productName headerCategoryId category subcategory',
+                                populate: [
+                                    { path: 'headerCategoryId', select: 'deliveryType' },
+                                    {
+                                        path: 'category',
+                                        select: 'headerCategoryId',
+                                        populate: { path: 'headerCategoryId', select: 'deliveryType' }
+                                    },
+                                    {
+                                        path: 'subcategory',
+                                        select: 'headerCategoryId',
+                                        populate: { path: 'headerCategoryId', select: 'deliveryType' }
+                                    }
+                                ]
+                            },
+                            {
+                                path: 'comboProducts.product',
+                                select: 'productName mainImage price discPrice variations stock pack mrp sku'
+                            }
+                        ]
+                    }
+                ]
             });
 
         const filteredItems = (updatedCart?.items as any[] || []).filter(item => {
@@ -932,23 +982,52 @@ export const removeFromCart = async (req: Request, res: Response) => {
         const updatedCart = await Cart.findById(cart._id)
             .populate({
                 path: 'items',
-                populate: {
-                    path: 'product',
-                    select: 'productName price mainImage stock pack mrp category seller status publish discPrice variations headerCategoryId',
-                    populate: {
-                        path: 'headerCategoryId',
-                        select: 'deliveryType'
+                populate: [
+                    {
+                        path: 'product',
+                        select: 'productName price mainImage stock pack mrp category seller status publish discPrice variations headerCategoryId',
+                        populate: [
+                            { path: 'headerCategoryId', select: 'deliveryType' },
+                            {
+                                path: 'category',
+                                select: 'headerCategoryId',
+                                populate: { path: 'headerCategoryId', select: 'deliveryType' }
+                            },
+                            {
+                                path: 'subcategory',
+                                select: 'headerCategoryId',
+                                populate: { path: 'headerCategoryId', select: 'deliveryType' }
+                            }
+                        ]
+                    },
+                    {
+                        path: 'comboOffer',
+                        select: 'comboPrice isActive sellerId mainProduct comboProducts name description',
+                        populate: [
+                            {
+                                path: 'mainProduct',
+                                select: 'seller status publish productName headerCategoryId category subcategory',
+                                populate: [
+                                    { path: 'headerCategoryId', select: 'deliveryType' },
+                                    {
+                                        path: 'category',
+                                        select: 'headerCategoryId',
+                                        populate: { path: 'headerCategoryId', select: 'deliveryType' }
+                                    },
+                                    {
+                                        path: 'subcategory',
+                                        select: 'headerCategoryId',
+                                        populate: { path: 'headerCategoryId', select: 'deliveryType' }
+                                    }
+                                ]
+                            },
+                            {
+                                path: 'comboProducts.product',
+                                select: 'productName mainImage price discPrice variations stock pack mrp sku'
+                            }
+                        ]
                     }
-                }
-            })
-            .populate({
-                path: 'items.comboOffer',
-                select: 'comboPrice isActive sellerId mainProduct',
-                populate: {
-                    path: 'mainProduct',
-                    select: 'seller status publish productName headerCategoryId category subcategory',
-                    populate: { path: 'headerCategoryId', select: 'deliveryType' }
-                }
+                ]
             });
 
         const filteredItems = (updatedCart?.items as any[] || []).filter(item => {

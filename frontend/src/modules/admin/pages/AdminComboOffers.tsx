@@ -19,6 +19,8 @@ export default function AdminComboOffers() {
   const [selectedMainProduct, setSelectedMainProduct] = useState("");
   const [selectedComboProducts, setSelectedComboProducts] = useState<string[]>([]);
   const [comboPrice, setComboPrice] = useState("");
+  const [description, setDescription] = useState("");
+  const [image, setImage] = useState("");
   const [formError, setFormError] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [searchMain, setSearchMain] = useState("");
@@ -117,9 +119,11 @@ export default function AdminComboOffers() {
 
     const payload: Partial<ComboOffer> = {
       name: generatedName,
+      description,
       mainProduct: selectedMainProduct,
       comboProducts: selectedComboProducts,
       comboPrice: Number(comboPrice),
+      image,
       isActive: true,
     };
 
@@ -142,15 +146,20 @@ export default function AdminComboOffers() {
     setSelectedMainProduct("");
     setSelectedComboProducts([]);
     setComboPrice("");
+    setDescription("");
+    setImage("");
     setFormError("");
     setEditingId(null);
     setSearchMain("");
     setSearchCombo("");
   };
 
-  const handleEdit = (combo: ComboOffer) => {
+  const handleEdit = (combo: any) => {
+    console.log("Editing combo:", combo);
     setEditingId(combo._id || null);
     setComboName(combo.name || "");
+    setDescription(combo.description || "");
+    setImage(combo.image || "");
     // Extract ID if it's an object from DB population
     setSelectedMainProduct(typeof combo.mainProduct === 'object' ? combo.mainProduct._id : combo.mainProduct);
     setSelectedComboProducts(combo.comboProducts.map((p: any) => typeof p === 'object' ? p._id : p));
@@ -364,8 +373,49 @@ export default function AdminComboOffers() {
                       className="w-full px-3 py-2 border border-neutral-300 rounded focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none"
                     />
                   </div>
-                  {selectedMainProduct && selectedComboProducts.length > 0 && comboPrice && (
-                    <div className="bg-teal-50 border border-teal-200 rounded-lg p-4">
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      Combo Name (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={comboName}
+                      onChange={(e) => setComboName(e.target.value)}
+                      placeholder="Custom name (otherwise auto-generated)"
+                      className="w-full px-3 py-2 border border-neutral-300 rounded focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-5">
+                   <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                       Combo Image URL (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={image}
+                      onChange={(e) => setImage(e.target.value)}
+                      placeholder="https://example.com/image.jpg"
+                      className="w-full px-3 py-2 border border-neutral-300 rounded focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none"
+                    />
+                  </div>
+                   <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                       Description (Optional)
+                    </label>
+                    <textarea
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      placeholder="Enter combo details..."
+                      rows={1}
+                      className="w-full px-3 py-2 border border-neutral-300 rounded focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none"
+                    />
+                  </div>
+                </div>
+
+                {selectedMainProduct && selectedComboProducts.length > 0 && comboPrice && (
+                  <div className="mb-5 bg-teal-50 border border-teal-200 rounded-lg p-4">
                       <div className="text-sm font-medium text-neutral-700 mb-1">Preview</div>
                       <div className="text-xs text-neutral-600 mb-2">
                         {getProductName(selectedMainProduct)} +{" "}
@@ -386,8 +436,6 @@ export default function AdminComboOffers() {
                       </div>
                     </div>
                   )}
-                </div>
-
                 <button
                   type="submit"
                   className="w-full px-6 py-3 rounded font-medium transition-colors bg-green-600 hover:bg-green-700 text-white"

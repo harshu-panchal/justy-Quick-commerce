@@ -285,14 +285,29 @@ export default function Checkout() {
     fetchSimilar();
   }, [cart?.items?.length]);
 
-  if (cartLoading || ((cart?.items?.length || 0) === 0 && !showOrderSuccess)) {
+    if (cartLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="flex flex-col items-center">
           <div className="w-12 h-12 border-4 border-green-600 border-t-transparent rounded-full animate-spin mb-4"></div>
           <p className="text-sm font-medium text-neutral-600">
-            {cartLoading ? "Loading checkout..." : "Redirecting..."}
+            Loading checkout...
           </p>
+        </div>
+      </div>
+    );
+  }
+
+  if ((cart?.items?.length || 0) === 0 && !showOrderSuccess) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="flex flex-col items-center">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center text-red-500 mb-4">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+          </div>
+          <h2 className="text-xl font-bold text-neutral-900 mb-2">Cart is empty</h2>
+          <p className="text-sm text-neutral-600 mb-6 flex text-center px-4">You have no items in your cart. Add some items to checkout.</p>
+          <button onClick={() => window.location.href = "/"} className="px-6 py-2.5 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition">Go to Home</button>
         </div>
       </div>
     );
@@ -1173,7 +1188,7 @@ export default function Checkout() {
       {/* Shipment Sections */}
       <div className="space-y-4 mb-4">
         {/* Quick Delivery Shipment */}
-        {displayItems.filter(i => i.deliveryType !== 'scheduled').length > 0 && (
+        {displayItems.filter(i => i.deliveryType !== "scheduled").length > 0 && (
           <div className="px-4 md:px-6 lg:px-8 py-4 bg-white border-b border-neutral-200">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-2xl bg-yellow-400/20 flex items-center justify-center text-xl shadow-sm border border-yellow-200">
@@ -1187,28 +1202,46 @@ export default function Checkout() {
 
             <div className="space-y-4">
               {displayItems
-                .filter(i => i.deliveryType !== 'scheduled')
+                .filter(i => i.deliveryType !== "scheduled")
                 .map((item) => {
-                  const { displayPrice, mrp, hasDiscount } = calculateProductPrice(item.product, item.variant);
+                  const isCombo = !!item.comboOffer;
+                  const itemProduct = item.comboOffer ? item.comboOffer : item.product;
+                  const targetName = isCombo ? item.comboOffer.name : item.product?.name;
+                  const targetImage = isCombo ? item.comboOffer.image : item.product?.imageUrl;
+                  const targetPack = isCombo ? 'Combo Bundle' : item.product?.pack;
+                  const targetId = isCombo ? item.comboOffer._id || item.comboOffer.id : item.product?.id || item.product?._id;
+                  
+                  let displayPrice = 0, mrp = 0, hasDiscount = false;
+                  if (isCombo) {
+                      displayPrice = item.comboOffer.comboPrice;
+                      mrp = item.comboOffer.originalPrice || item.comboOffer.comboPrice;
+                      hasDiscount = mrp > displayPrice;
+                  } else if (item.product) {
+                      const pd = calculateProductPrice(item.product, item.variant);
+                      displayPrice = pd.displayPrice;
+                      mrp = pd.mrp;
+                      hasDiscount = pd.hasDiscount;
+                  }
+                  
                   return (
-                    <div key={item.product?.id || Math.random()} className="flex gap-4">
+                    <div key={targetId || Math.random()} className="flex gap-4">
                       <div className="w-16 h-16 bg-neutral-50 rounded-2xl overflow-hidden flex-shrink-0 border border-neutral-100 shadow-sm">
-                        <img src={item.product?.imageUrl} alt={item.product?.name} className="w-full h-full object-cover" />
+                        <img src={targetImage} alt={targetName} className="w-full h-full object-cover" />
                       </div>
                       <div className="flex-1 min-w-0 flex flex-col justify-center">
-                        <h3 className="text-sm font-bold text-neutral-900 line-clamp-1 mb-0.5">{item.product?.name}</h3>
+                        <h3 className="text-sm font-bold text-neutral-900 line-clamp-1 mb-0.5">{targetName}</h3>
                         <div className="flex items-center gap-3 mb-2">
-                          <p className="text-[10px] text-neutral-500 font-bold">{item.product?.pack}</p>
+                          <p className="text-[10px] text-neutral-500 font-bold">{targetPack}</p>
                           <div className="flex items-center gap-2 bg-green-50 rounded-lg p-0.5 border border-green-100">
                             <button
-                              onClick={() => updateQuantity(item.product?.id || "", item.quantity - 1, item.variant)}
+                              onClick={(e) => { e.stopPropagation(); updateQuantity(targetId || "", item.quantity - 1, item.variant); }}
                               className="w-5 h-5 flex items-center justify-center text-green-700 font-bold hover:bg-white rounded-md transition-colors text-xs"
                             >
                               −
                             </button>
                             <span className="text-[10px] font-bold text-green-900 min-w-[1rem] text-center">{item.quantity}</span>
                             <button
-                              onClick={() => updateQuantity(item.product?.id || "", item.quantity + 1, item.variant)}
+                              onClick={(e) => { e.stopPropagation(); updateQuantity(targetId || "", item.quantity + 1, item.variant); }}
                               className="w-5 h-5 flex items-center justify-center text-green-700 font-bold hover:bg-white rounded-md transition-colors text-xs"
                             >
                               +
@@ -1230,7 +1263,7 @@ export default function Checkout() {
         )}
 
         {/* Scheduled Delivery Shipment */}
-        {displayItems.filter(i => i.deliveryType === 'scheduled').length > 0 && (
+        {displayItems.filter(i => i.deliveryType === "scheduled").length > 0 && (
           <div className="px-4 md:px-6 lg:px-8 py-4 bg-white border-b border-neutral-200">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-2xl bg-blue-500/10 flex items-center justify-center text-xl shadow-sm border border-blue-100">
@@ -1244,28 +1277,46 @@ export default function Checkout() {
 
             <div className="space-y-4">
               {displayItems
-                .filter(i => i.deliveryType === 'scheduled')
+                .filter(i => i.deliveryType === "scheduled")
                 .map((item) => {
-                  const { displayPrice, mrp, hasDiscount } = calculateProductPrice(item.product, item.variant);
+                  const isCombo = !!item.comboOffer;
+                  const itemProduct = item.comboOffer ? item.comboOffer : item.product;
+                  const targetName = isCombo ? item.comboOffer.name : item.product?.name;
+                  const targetImage = isCombo ? item.comboOffer.image : item.product?.imageUrl;
+                  const targetPack = isCombo ? 'Combo Bundle' : item.product?.pack;
+                  const targetId = isCombo ? item.comboOffer._id || item.comboOffer.id : item.product?.id || item.product?._id;
+                  
+                  let displayPrice = 0, mrp = 0, hasDiscount = false;
+                  if (isCombo) {
+                      displayPrice = item.comboOffer.comboPrice;
+                      mrp = item.comboOffer.originalPrice || item.comboOffer.comboPrice;
+                      hasDiscount = mrp > displayPrice;
+                  } else if (item.product) {
+                      const pd = calculateProductPrice(item.product, item.variant);
+                      displayPrice = pd.displayPrice;
+                      mrp = pd.mrp;
+                      hasDiscount = pd.hasDiscount;
+                  }
+                  
                   return (
-                    <div key={item.product?.id || Math.random()} className="flex gap-4">
+                    <div key={targetId || Math.random()} className="flex gap-4">
                       <div className="w-16 h-16 bg-neutral-50 rounded-2xl overflow-hidden flex-shrink-0 border border-neutral-100 shadow-sm">
-                        <img src={item.product?.imageUrl} alt={item.product?.name} className="w-full h-full object-cover" />
+                        <img src={targetImage} alt={targetName} className="w-full h-full object-cover" />
                       </div>
                       <div className="flex-1 min-w-0 flex flex-col justify-center">
-                        <h3 className="text-sm font-bold text-neutral-900 line-clamp-1 mb-0.5">{item.product?.name}</h3>
+                        <h3 className="text-sm font-bold text-neutral-900 line-clamp-1 mb-0.5">{targetName}</h3>
                         <div className="flex items-center gap-3 mb-2">
-                          <p className="text-[10px] text-neutral-500 font-bold">{item.product?.pack}</p>
+                          <p className="text-[10px] text-neutral-500 font-bold">{targetPack}</p>
                           <div className="flex items-center gap-2 bg-green-50 rounded-lg p-0.5 border border-green-100">
                             <button
-                              onClick={() => updateQuantity(item.product?.id || "", item.quantity - 1, item.variant)}
+                              onClick={(e) => { e.stopPropagation(); updateQuantity(targetId || "", item.quantity - 1, item.variant); }}
                               className="w-5 h-5 flex items-center justify-center text-green-700 font-bold hover:bg-white rounded-md transition-colors text-xs"
                             >
                               −
                             </button>
                             <span className="text-[10px] font-bold text-green-900 min-w-[1rem] text-center">{item.quantity}</span>
                             <button
-                              onClick={() => updateQuantity(item.product?.id || "", item.quantity + 1, item.variant)}
+                              onClick={(e) => { e.stopPropagation(); updateQuantity(targetId || "", item.quantity + 1, item.variant); }}
                               className="w-5 h-5 flex items-center justify-center text-green-700 font-bold hover:bg-white rounded-md transition-colors text-xs"
                             >
                               +
@@ -1286,176 +1337,6 @@ export default function Checkout() {
           </div>
         )}
       </div>
-        {/* Main Product Card */}
-        <div className="px-4 md:px-6 lg:px-8 py-2 md:py-3 bg-white border-b border-neutral-200">
-          <div className="bg-white rounded-lg border border-neutral-200 p-2.5">
-            {/* Delivery info */}
-            <div className="flex items-center gap-1.5 mb-2">
-              <div className="w-5 h-5 rounded-full bg-green-600 flex items-center justify-center flex-shrink-0">
-                <svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="2" />
-                  <path
-                    d="M12 6v6l4 2"
-                    stroke="white"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </div>
-              <span className="text-xs font-semibold text-neutral-900">
-                Delivery in {appConfig.estimatedDeliveryTime}
-              </span>
-            </div>
-
-            <p className="text-[10px] text-neutral-600 mb-2.5">
-              Shipment of {displayCart.itemCount || 0}{" "}
-              {(displayCart.itemCount || 0) === 1 ? "item" : "items"}
-            </p>
-
-            {/* Cart Items */}
-            <div className="space-y-2.5">
-              {displayItems.map((item, idx) => {
-                const isCombo = !!item.comboOffer;
-                const name = isCombo ? item.comboOffer.name : item.product?.name;
-                const image = isCombo ? item.comboOffer.image : item.product?.imageUrl;
-                const pack = isCombo ? 'Combo Bundle' : item.product?.pack;
-
-                let displayPrice = 0;
-                if (isCombo) {
-                  displayPrice = item.comboOffer.comboPrice;
-                } else if (item.product) {
-                  const priceData = calculateProductPrice(item.product, item.variant);
-                  displayPrice = priceData.displayPrice;
-                }
-
-                const itemId = item.id || (item as any)._id || (isCombo ? item.comboOffer?._id : item.product?.id) || `item-${idx}`;
-
-                return (
-                  <div
-                    key={itemId}
-                    className="flex gap-2 relative group">
-                    {/* Remove Button */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        removeFromCart(itemId);
-                      }}
-                      className="absolute -top-1 -right-1 w-5 h-5 bg-white border border-neutral-200 rounded-full flex items-center justify-center text-neutral-400 hover:text-red-500 hover:border-red-200 shadow-sm transition-all z-10"
-                      title="Remove item"
-                    >
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="18" y1="6" x2="6" y2="18" />
-                        <line x1="6" y1="6" x2="18" y2="18" />
-                      </svg>
-                    </button>
-
-                    {/* Product Image */}
-                    <div className="w-12 h-12 bg-neutral-100 rounded-lg flex-shrink-0 overflow-hidden border border-neutral-100">
-                      {image ? (
-                        <img
-                          src={image}
-                          alt={name}
-                          className="w-full h-full object-cover rounded"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-xs text-neutral-400 capitalize bg-neutral-50 font-bold">
-                          {name?.charAt(0)}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Product Info */}
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-xs font-semibold text-neutral-900 mb-0.5 line-clamp-2 pr-4">
-                        {name}
-                      </h3>
-                      <p className="text-[10px] text-neutral-600 mb-0.5">
-                        {item.quantity} × {pack}
-                      </p>
-
-                      {isCombo && item.comboOffer.comboProducts && (
-                        <div className="mt-1 mb-2 px-2 py-1.5 bg-neutral-50 rounded-lg border border-neutral-100">
-                          <p className="text-[8px] font-bold text-neutral-400 uppercase tracking-wider mb-1">Bundle Includes:</p>
-                          <ul className="space-y-1">
-                            {item.comboOffer.comboProducts.map((cp: any, idx: number) => {
-                              const cpProduct = cp.product;
-                              const cpName = cpProduct?.productName || cpProduct?.name || 'Product';
-                              const cpImage = cpProduct?.mainImage || cpProduct?.imageUrl;
-
-                              return (
-                                <li key={idx} className="flex items-center gap-2">
-                                  <div className="w-6 h-6 rounded bg-white border border-neutral-200 flex-shrink-0 overflow-hidden">
-                                    {cpImage ? (
-                                      <img src={cpImage} alt={cpName} className="w-full h-full object-contain" />
-                                    ) : (
-                                      <div className="w-full h-full flex items-center justify-center text-[10px] text-neutral-300">
-                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M9 3v18m6-18v18" /></svg>
-                                      </div>
-                                    )}
-                                  </div>
-                                  <span className="text-[9px] text-neutral-700 font-medium truncate">
-                                    {cpName} <span className="text-neutral-400 font-normal">x{cp.quantity || 1}</span>
-                                  </span>
-                                </li>
-                              );
-                            })}
-                          </ul>
-                        </div>
-                      )}
-
-                      {!isCombo && item.product && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleMoveToWishlist(item.product);
-                          }}
-                          className="text-[10px] text-green-600 font-medium mb-1.5 hover:text-green-700 transition-colors">
-                          Move to wishlist
-                        </button>
-                      )}
-
-                      {/* Quantity Selector */}
-                      <div className="flex items-center justify-between mt-1.5">
-                        <div className="flex items-center gap-1.5 bg-white border-[1.5px] border-green-600/30 rounded-full px-1 py-0.5">
-                          <button
-                            onClick={() =>
-                              updateQuantity(itemId, item.quantity - 1)
-                            }
-                            className="w-5 h-5 flex items-center justify-center text-green-600 font-bold hover:bg-green-50 rounded-full transition-colors text-xs">
-                            −
-                          </button>
-                          <span className="text-xs font-bold text-green-600 min-w-[1.25rem] text-center">
-                            {item.quantity}
-                          </span>
-                          <button
-                            onClick={() =>
-                              updateQuantity(itemId, item.quantity + 1)
-                            }
-                            className="w-5 h-5 flex items-center justify-center text-green-600 font-bold hover:bg-green-50 rounded-full transition-colors text-xs">
-                            +
-                          </button>
-                        </div>
-
-                        {/* Price */}
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-sm font-bold text-neutral-900">
-                            ₹{(displayPrice * item.quantity).toLocaleString('en-IN')}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-
         {/* You might also like */}
         <div className="px-4 md:px-6 lg:px-8 py-2.5 md:py-3 border-b border-neutral-200">
           <h2 className="text-sm font-semibold text-neutral-900 mb-2">

@@ -158,6 +158,7 @@ export const createOrder = async (req: Request, res: Response) => {
         let calculatedSubtotal = 0;
         const orderItemIds: mongoose.Types.ObjectId[] = [];
         const sellerIds = new Set<string>(); // Track unique sellers
+        const allProductIds = new Set<string>(); // Collect all product IDs for delivery validation
 
         for (const item of items) {
             const isCombo = !!item.comboOffer;
@@ -170,41 +171,53 @@ export const createOrder = async (req: Request, res: Response) => {
             if (isCombo) {
                 // --- COMBO OFFER PROCESSING ---
                 const comboId = item.comboOffer;
-                const combo = await ComboOffer.findById(comboId).populate('comboProducts.product');
+                const combo = await ComboOffer.findById(comboId)
+                    .populate('mainProduct')
+                    .populate('comboProducts');
 
                 if (!combo || !combo.isActive) {
                     throw new Error("Combo offer not found or inactive");
                 }
 
-                // 1. Check stock for all products in combo
-                for (const cp of combo.comboProducts) {
-                    const totalRequired = cp.quantity * qty;
-                    const productForStock = await Product.findById(cp.product);
-                    if (!productForStock || productForStock.stock < totalRequired) {
-                        throw new Error(`Insufficient stock for product ${cp.productName} in combo: ${combo.name}`);
+                // Add all involved product IDs for delivery validation later
+                if (combo.mainProduct) allProductIds.add(combo.mainProduct._id.toString());
+                combo.comboProducts.forEach((p: any) => {
+                    if (p && p._id) allProductIds.add(p._id.toString());
+                });
+
+                // 1. Check stock for ALL products in combo (main + supplemental)
+                const itemsToValidate = [combo.mainProduct, ...combo.comboProducts].filter(Boolean);
+                
+                for (const p of itemsToValidate as any[]) {
+                    const totalRequired = qty; // For combos, usually it's 1 of each product per combo qty
+                    // Note: If comboProducts schema actually held quantities, we would use: (qty * (p.quantity || 1))
+                    // But currently it's just a ref array to Products.
+                    
+                    if (p.stock < totalRequired) {
+                        throw new Error(`Insufficient stock for product ${p.productName} in combo: ${combo.name}`);
                     }
                 }
 
-                // 2. Deduct stock for all products in combo
-                for (const cp of combo.comboProducts) {
-                    const totalRequired = cp.quantity * qty;
-                    await Product.findByIdAndUpdate(cp.product, {
-                        $inc: { stock: -totalRequired }
+                // 2. Deduct stock for ALL products in combo
+                for (const p of itemsToValidate as any[]) {
+                    await Product.findByIdAndUpdate(p._id, {
+                        $inc: { stock: -qty }
                     }, { session });
                 }
 
                 const itemTotal = combo.comboPrice * qty;
                 calculatedSubtotal += itemTotal;
 
-                // Commission for combos - for now, using a default or main product's rate
-                // Ideally combos should have their own commission system, but we'll use 5% or main product's
-                const mainProduct = combo.mainProduct;
-                const commRate = await getOrderItemCommissionRate(mainProduct.toString(), combo.sellerId.toString());
+                // Commission for combos
+                const mainProduct = combo.mainProduct as any;
+                const sellerId = combo.sellerId.toString();
+                const commRate = await getOrderItemCommissionRate(mainProduct._id.toString(), sellerId);
                 const commAmount = (itemTotal * commRate) / 100;
 
                 // Create OrderItem with combo snapshot
                 const newOrderItem = new OrderItem({
                     order: newOrder._id,
+                    product: mainProduct._id, // Required field
                     seller: combo.sellerId,
                     comboOffer: combo._id,
                     productName: combo.name,
@@ -215,12 +228,22 @@ export const createOrder = async (req: Request, res: Response) => {
                     commissionRate: commRate,
                     commissionAmount: commAmount,
                     status: 'Pending',
-                    comboProducts: combo.comboProducts.map((cp: any) => ({
-                        productId: cp.product._id || cp.product,
-                        productName: cp.productName,
-                        productImage: cp.product?.mainImage,
-                        quantity: cp.quantity
-                    }))
+                    comboProducts: [
+                        {
+                            productId: mainProduct._id,
+                            productName: mainProduct.productName,
+                            productImage: mainProduct.mainImage,
+                            unitPrice: mainProduct.price || 0,
+                            quantity: 1
+                        },
+                        ...combo.comboProducts.map((p: any) => ({
+                            productId: p._id,
+                            productName: p.productName,
+                            productImage: p.mainImage,
+                            unitPrice: p.price || 0,
+                            quantity: 1
+                        }))
+                    ]
                 });
 
                 if (session) await newOrderItem.save({ session });
@@ -234,6 +257,8 @@ export const createOrder = async (req: Request, res: Response) => {
                 if (!item.product || !item.product.id) {
                     throw new Error("Invalid item structure: product.id is missing");
                 }
+
+                allProductIds.add(item.product.id);
 
                 // Atomically check stock and decrement to prevent race conditions
                 let product;
@@ -357,7 +382,7 @@ export const createOrder = async (req: Request, res: Response) => {
 
         // --- Determine Delivery Type and Validate Location ---
         // Dynamically get from HeaderCategory deliveryType field
-        const productsInOrder = await Product.find({ _id: { $in: items.map((i: any) => i.product.id) } })
+        const productsInOrder = await Product.find({ _id: { $in: Array.from(allProductIds) } })
             .populate('headerCategoryId')
             .populate({
                 path: 'category',

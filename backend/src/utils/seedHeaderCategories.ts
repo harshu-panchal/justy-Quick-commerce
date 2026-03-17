@@ -6,6 +6,7 @@ const DEFAULT_CATEGORIES = [
         iconLibrary: 'Custom', // Using 'Custom' to indicate it maps to internal SVGs
         iconName: 'wedding',
         slug: 'wedding',
+        deliveryType: 'scheduled',
         status: 'Published',
         order: 1
     },
@@ -14,6 +15,7 @@ const DEFAULT_CATEGORIES = [
         iconLibrary: 'Custom',
         iconName: 'winter',
         slug: 'winter',
+        deliveryType: 'scheduled',
         status: 'Published',
         order: 2
     },
@@ -22,6 +24,7 @@ const DEFAULT_CATEGORIES = [
         iconLibrary: 'Custom',
         iconName: 'electronics',
         slug: 'electronics',
+        deliveryType: 'scheduled',
         status: 'Published',
         order: 3
     },
@@ -30,6 +33,7 @@ const DEFAULT_CATEGORIES = [
         iconLibrary: 'Custom',
         iconName: 'beauty',
         slug: 'beauty',
+        deliveryType: 'scheduled',
         status: 'Published',
         order: 4
     },
@@ -38,6 +42,7 @@ const DEFAULT_CATEGORIES = [
         iconLibrary: 'Custom',
         iconName: 'grocery',
         slug: 'grocery',
+        deliveryType: 'quick',
         status: 'Published',
         order: 5
     },
@@ -46,6 +51,7 @@ const DEFAULT_CATEGORIES = [
         iconLibrary: 'Custom',
         iconName: 'fashion',
         slug: 'fashion',
+        deliveryType: 'scheduled',
         status: 'Published',
         order: 6
     },
@@ -54,6 +60,7 @@ const DEFAULT_CATEGORIES = [
         iconLibrary: 'Custom',
         iconName: 'sports',
         slug: 'sports',
+        deliveryType: 'scheduled',
         status: 'Published',
         order: 7
     }
@@ -62,13 +69,20 @@ const DEFAULT_CATEGORIES = [
 export async function seedHeaderCategories() {
     try {
         const count = await HeaderCategory.countDocuments();
-        if (count > 0) {
-            console.log('Header categories already exist. Skipping seed.');
-            return;
+        
+        if (count === 0) {
+            await HeaderCategory.insertMany(DEFAULT_CATEGORIES);
+            console.log('Default header categories seeded successfully.');
+        } else {
+            // Update existing categories' deliveryType based on defaults
+            for (const cat of DEFAULT_CATEGORIES) {
+                await HeaderCategory.updateOne(
+                    { slug: cat.slug },
+                    { $set: { deliveryType: cat.deliveryType } }
+                );
+            }
+            console.log('Header categories delivery types synchronized.');
         }
-
-        await HeaderCategory.insertMany(DEFAULT_CATEGORIES);
-        console.log('Default header categories seeded successfully.');
     } catch (error) {
         console.error('Error seeding header categories:', error);
     }

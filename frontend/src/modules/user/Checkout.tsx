@@ -593,16 +593,17 @@ export default function Checkout() {
           // Note: For Online payment, the cart will be cleared and success shown only after successful payment
           // See the RazorpayCheckout onSuccess handler (lines 1840-1846)
         }
-      } catch (error: any) {
-        console.error("Order placement failed", error);
-        // Show user-friendly error message
-        const errorMessage =
-          error.message ||
-          error.response?.data?.message ||
-          "Failed to place order. Please try again.";
-        alert(errorMessage);
       }
-    };
+    } catch (error: any) {
+      console.error("Order placement failed", error);
+      // Show user-friendly error message
+      const errorMessage =
+        error.message ||
+        error.response?.data?.message ||
+        "Failed to place order. Please try again.";
+      alert(errorMessage);
+    }
+  };
 
     const handleGoToOrders = () => {
       if (placedOrderId) {

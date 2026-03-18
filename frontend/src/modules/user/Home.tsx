@@ -381,14 +381,12 @@ export default function Home() {
           )}
         </div>
       )}
-<<<<<<< Updated upstream
       <LuckySpin 
         isOpen={showLuckySpin} 
         onClose={() => setShowLuckySpin(false)} 
         autoOpened={true}
         config={spinnerConfig}
       />
-=======
 
       <button
         type="button"
@@ -416,7 +414,6 @@ export default function Home() {
         </span>
         <span className="text-sm font-semibold leading-none">Spin &amp; Win</span>
       </button>
->>>>>>> Stashed changes
     </div>
   );
 }

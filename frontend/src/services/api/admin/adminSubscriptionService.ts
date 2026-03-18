@@ -1,6 +1,34 @@
 import api from "../config";
 import { ApiResponse } from "./types";
 
+export type SubscriptionType = "Seller" | "Customer" | "DeliveryPartner";
+
+export interface AdminSubscriptionRow {
+  _id: string;
+  userId: string;
+  subType: SubscriptionType;
+  planId: string;
+  planName?: string;
+  status: "active" | "cancelled" | "expired" | "pending";
+  startDate?: string;
+  endDate?: string;
+  startsAt?: string;
+  endsAt?: string;
+  razorpaySubscriptionId?: string;
+  razorpayPlanId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const getAdminSubscriptions = async (params?: {
+  type?: SubscriptionType | "all";
+  page?: number;
+  limit?: number;
+}): Promise<ApiResponse<AdminSubscriptionRow[]>> => {
+  const response = await api.get<ApiResponse<AdminSubscriptionRow[]>>("/admin/subscriptions", { params });
+  return response.data;
+};
+
 export interface SubscriptionPlan {
   _id: string;
   name: string;

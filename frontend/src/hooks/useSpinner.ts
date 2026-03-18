@@ -25,6 +25,14 @@ export const useSpinner = (initialSettings?: SpinnerConfig | null) => {
         } catch (err) {
           console.error('Failed to parse spinner configuration', err);
         }
+      } else {
+        // Fallback default for development/first run
+        setConfig({
+          enabled: true,
+          trigger: 'onLogin',
+          frequency: 'always',
+          rewards: []
+        });
       }
     }
   }, [initialSettings]);

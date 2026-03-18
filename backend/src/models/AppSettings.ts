@@ -477,7 +477,34 @@ AppSettingsSchema.statics.getSettings = async function () {
       appName: "Dhakad Snazzy",
       contactEmail: "contact@dhakadsnazzy.com",
       contactPhone: "1234567890",
+      spinnerSettings: {
+        enabled: true,
+        trigger: 'onLogin',
+        frequency: 'always',
+        rewards: [
+          { id: '1', label: '50 Coins', value: 50, icon: '💰', color: '#FEF3C7', type: 'coin' },
+          { id: '2', label: '10 Coins', value: 10, icon: '🪙', color: '#FDE68A', type: 'coin' },
+          { id: '3', label: '20 Coins', value: 20, icon: '🪙', color: '#FEF3C7', type: 'coin' },
+          { id: '4', label: '5 Coins', value: 5, icon: '🪙', color: '#FDE68A', type: 'coin' },
+          { id: '5', label: '30 Coins', value: 30, icon: '💰', color: '#FEF3C7', type: 'coin' },
+        ]
+      }
     });
+  } else if (!settings.spinnerSettings) {
+    // Migration: Add default spinner settings if they don't exist
+    settings.spinnerSettings = {
+      enabled: true,
+      trigger: 'onLogin',
+      frequency: 'always',
+      rewards: [
+        { id: '1', label: '50 Coins', value: 50, icon: '💰', color: '#FEF3C7', type: 'coin' },
+        { id: '2', label: '10 Coins', value: 10, icon: '🪙', color: '#FDE68A', type: 'coin' },
+        { id: '3', label: '20 Coins', value: 20, icon: '🪙', color: '#FEF3C7', type: 'coin' },
+        { id: '4', label: '5 Coins', value: 5, icon: '🪙', color: '#FDE68A', type: 'coin' },
+        { id: '5', label: '30 Coins', value: 30, icon: '💰', color: '#FEF3C7', type: 'coin' },
+      ]
+    };
+    await settings.save();
   }
   return settings;
 };

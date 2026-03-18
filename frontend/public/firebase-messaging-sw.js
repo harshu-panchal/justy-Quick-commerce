@@ -4,13 +4,13 @@ importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-comp
 
 // Firebase configuration (Production credentials)
 const firebaseConfig = {
-    apiKey: 'AIzaSyDAq14dAZ5KrUHOi_EOvWvOtrUt7cvo7a4',
-    authDomain: 'jasti-1e15d.firebaseapp.com',
-    projectId: 'jasti-1e15d',
-    storageBucket: 'jasti-1e15d.firebasestorage.app',
-    messagingSenderId: '942555808745',
-    appId: '1:942555808745:web:f19a4a11f167fb462f8178',
-    measurementId: 'G-JTTWZF314G'
+    apiKey: 'VITE_FIREBASE_API_KEY',
+    authDomain: 'VITE_FIREBASE_AUTH_DOMAIN',
+    projectId: 'VITE_FIREBASE_PROJECT_ID',
+    storageBucket: 'VITE_FIREBASE_STORAGE_BUCKET',
+    messagingSenderId: 'VITE_FIREBASE_MESSAGING_SENDER_ID',
+    appId: 'VITE_FIREBASE_APP_ID',
+    measurementId: 'VITE_FIREBASE_MEASUREMENT_ID'
 };
 
 // Initialize Firebase in service worker

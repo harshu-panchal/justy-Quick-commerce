@@ -23,6 +23,23 @@ export interface SMSGatewaySettings {
   enabled: boolean;
 }
 
+export interface SpinnerReward {
+  id: string;
+  label: string;
+  value: number;
+  icon?: string;
+  color: string;
+  type: 'coin' | 'discount';
+  probability?: number;
+}
+
+export interface SpinnerSettings {
+  enabled: boolean;
+  trigger: 'onLogin' | 'afterOrder' | 'manual';
+  frequency: 'once' | 'daily' | 'always';
+  rewards: SpinnerReward[];
+}
+
 export interface PaymentMethods {
   cod: boolean;
   online: boolean;
@@ -113,6 +130,7 @@ export interface AppSettings {
   };
   maintenanceMode: boolean;
   maintenanceMessage?: string;
+  spinnerSettings?: SpinnerSettings;
   updatedBy?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -126,6 +144,10 @@ export interface UpdatePaymentMethodsData {
 
 export interface UpdateSMSGatewaySettingsData {
   smsGateway: SMSGatewaySettings;
+}
+
+export interface UpdateSpinnerSettingsData {
+  spinnerSettings: SpinnerSettings;
 }
 
 /**
@@ -194,6 +216,31 @@ export const updateSMSGatewaySettings = async (
 ): Promise<ApiResponse<SMSGatewaySettings>> => {
   const response = await api.put<ApiResponse<SMSGatewaySettings>>(
     "/admin/settings/sms-gateway",
+    data
+  );
+  return response.data;
+};
+
+/**
+ * Get spinner settings
+ */
+export const getSpinnerSettings = async (): Promise<
+  ApiResponse<SpinnerSettings | null>
+> => {
+  const response = await api.get<ApiResponse<SpinnerSettings | null>>(
+    "/admin/settings/spinner"
+  );
+  return response.data;
+};
+
+/**
+ * Update spinner settings
+ */
+export const updateSpinnerSettings = async (
+  data: UpdateSpinnerSettingsData
+): Promise<ApiResponse<SpinnerSettings>> => {
+  const response = await api.put<ApiResponse<SpinnerSettings>>(
+    "/admin/settings/spinner",
     data
   );
   return response.data;

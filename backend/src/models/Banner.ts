@@ -5,6 +5,8 @@ export interface IBanner extends Document {
     imageUrl: string;
     type: 'quick' | 'scheduled';
     isActive: boolean;
+    linkType?: 'category' | 'product' | 'external' | 'none';
+    linkValue?: string;
     createdAt: Date;
 }
 
@@ -14,6 +16,8 @@ const BannerSchema: Schema = new Schema(
         imageUrl: { type: String, required: true },
         type: { type: String, enum: ['quick', 'scheduled'], required: true },
         isActive: { type: Boolean, default: true },
+        linkType: { type: String, enum: ['category', 'product', 'external', 'none'], default: 'none' },
+        linkValue: { type: String, default: '' },
     },
     { timestamps: true }
 );

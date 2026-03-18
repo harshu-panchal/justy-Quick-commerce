@@ -6,6 +6,8 @@ export interface Banner {
     imageUrl: string;
     type: BannerMode;
     isActive: boolean;
+    linkType?: 'category' | 'product' | 'external' | 'none';
+    linkValue?: string;
     createdAt: string;
     updatedAt?: string;
 }
@@ -15,6 +17,8 @@ export interface CreateBannerInput {
     imageUrl: string;
     type: BannerMode;
     isActive: boolean;
+    linkType?: 'category' | 'product' | 'external' | 'none';
+    linkValue?: string;
 }
 
 export interface UpdateBannerInput extends Partial<CreateBannerInput> {

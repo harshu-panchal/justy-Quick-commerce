@@ -841,7 +841,10 @@ export default function DeliveryOrderDetail() {
             {order.status === 'Out for Delivery' && (
                 <div className="fixed bottom-24 left-6 right-6 z-30">
                     <div className="bg-white rounded-2xl p-4 shadow-2xl border border-neutral-200">
-                        <p className="text-sm font-semibold text-neutral-900 mb-3">Customer Delivery OTP</p>
+                        <div className="flex items-center gap-2 mb-3">
+                            <Icons.CheckCircle className="text-blue-500" size={18} />
+                            <p className="text-sm font-bold text-neutral-900 uppercase tracking-tight">Delivery Verification</p>
+                        </div>
 
                         {/* Distance indicator */}
                         {customerProximity && (

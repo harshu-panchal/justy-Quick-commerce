@@ -228,6 +228,8 @@ router.put(
   "/settings/sms-gateway",
   settingsController.updateSMSGatewaySettings
 );
+router.get("/settings/spinner", settingsController.getSpinnerSettings);
+router.put("/settings/spinner", settingsController.updateSpinnerSettings);
 
 // ==================== Coupon Routes ====================
 router.post("/coupons", couponController.createCoupon);

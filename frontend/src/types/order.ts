@@ -1,6 +1,6 @@
 import { CartItem } from './cart';
 
-export type OrderStatus = 'Received' | 'Accepted' | 'On the way' | 'Delivered' | 'Pending';
+export type OrderStatus = 'Received' | 'Accepted' | 'Preparing in Warehouse' | 'On the way' | 'Delivered' | 'Pending' | 'Cancelled' | 'Returned';
 
 export interface OrderAddress {
   name: string;

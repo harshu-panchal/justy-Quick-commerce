@@ -7,6 +7,7 @@ import { OrderStatus } from "../../types/order";
 import GoogleMapsTracking from "../../components/GoogleMapsTracking";
 import { useDeliveryTracking } from "../../hooks/useDeliveryTracking";
 import DeliveryPartnerCard from "../../components/DeliveryPartnerCard";
+import { useWarehouse } from "../../hooks/useWarehouse";
 import { cancelOrder, updateOrderNotes, getSellerLocationsForOrder, refreshDeliveryOtp, cancelOrderItem, requestReturn } from "../../services/api/customerOrderService";
 
 // Icon Components
@@ -443,6 +444,7 @@ export default function OrderDetail() {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const confirmed = searchParams.get("confirmed") === "true";
+  const { isWarehouseEnabled } = useWarehouse();
   const { getOrderById, fetchOrderById, loading: contextLoading } = useOrders();
   const [order, setOrder] = useState<any>(id ? getOrderById(id) : undefined);
   const [loading, setLoading] = useState(!order);
@@ -817,7 +819,12 @@ export default function OrderDetail() {
       color: "bg-green-700",
     },
     Accepted: {
-      title: "Preparing your order",
+      title: isWarehouseEnabled ? "Preparing in Warehouse" : "Seller Processing",
+      subtitle: `Arriving in ${estimatedTime} mins`,
+      color: "bg-green-700",
+    },
+    "Preparing in Warehouse": {
+      title: "Preparing in Warehouse",
       subtitle: `Arriving in ${estimatedTime} mins`,
       color: "bg-green-700",
     },

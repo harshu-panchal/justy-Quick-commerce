@@ -6,14 +6,16 @@ import { asyncHandler } from '../utils/asyncHandler';
  * Create a new banner (Admin)
  */
 export const createBanner = asyncHandler(async (req: Request, res: Response) => {
-    const { title, imageUrl, type, isActive } = req.body;
-
-    const banner = await Banner.create({
-        title,
-        imageUrl,
-        type,
-        isActive: isActive !== undefined ? isActive : true,
-    });
+    const { title, imageUrl, type, isActive, linkType, linkValue } = req.body;
+ 
+     const banner = await Banner.create({
+         title,
+         imageUrl,
+         type,
+         isActive: isActive !== undefined ? isActive : true,
+         linkType: linkType || 'none',
+         linkValue: linkValue || '',
+     });
 
     res.status(201).json({
         success: true,

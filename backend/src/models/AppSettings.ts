@@ -131,6 +131,23 @@ export interface IAppSettings extends Document {
     chargePerSlot: number;
   };
 
+
+  // Spinner Settings
+  spinnerSettings?: {
+    enabled: boolean;
+    trigger: 'onLogin' | 'afterOrder' | 'manual';
+    frequency: 'once' | 'daily' | 'always';
+    rewards: Array<{
+      id: string;
+      label: string;
+      value: number;
+      icon?: string;
+      color: string;
+      type: 'coin' | 'discount';
+      probability?: number;
+    }>;
+  };
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -421,6 +438,30 @@ const AppSettingsSchema = new Schema<IAppSettings>(
       isEnabled: { type: Boolean, default: false },
       maxFreeProducts: { type: Number, default: 5 },
       chargePerSlot: { type: Number, default: 99 },
+    },
+
+    // Spinner Settings
+    spinnerSettings: {
+      enabled: { type: Boolean, default: false },
+      trigger: {
+        type: String,
+        enum: ['onLogin', 'afterOrder', 'manual'],
+        default: 'manual'
+      },
+      frequency: {
+        type: String,
+        enum: ['once', 'daily', 'always'],
+        default: 'daily'
+      },
+      rewards: [{
+        id: String,
+        label: String,
+        value: Number,
+        icon: String,
+        color: String,
+        type: { type: String, enum: ['coin', 'discount'] },
+        probability: Number
+      }]
     },
   },
   {

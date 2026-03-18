@@ -35,6 +35,9 @@ import { addToWishlist } from "../../services/api/customerWishlistService";
 import { updateProfile, getProfile } from "../../services/api/customerService";
 import { calculateProductPrice } from "../../utils/priceUtils";
 import RazorpayCheckout from "../../components/RazorpayCheckout";
+import { getPublicSpinnerSettings } from "../../services/api/customerHomeService";
+import { useSpinner } from "../../hooks/useSpinner";
+import LuckySpin from "../../components/LuckySpin";
 
 // const STORAGE_KEY = 'saved_address'; // Removed
 
@@ -67,6 +70,8 @@ export default function Checkout() {
   const [showPartyPopper, setShowPartyPopper] = useState(false);
   const [hasAppliedCouponBefore, setHasAppliedCouponBefore] = useState(false);
   const [showOrderSuccess, setShowOrderSuccess] = useState(false);
+  const [spinnerSettings, setSpinnerSettings] = useState<any>(null);
+  const { showLuckySpin, setShowLuckySpin, triggerSpinner, config: spinnerConfig } = useSpinner(spinnerSettings);
 
   // Refresh cart delivery fee when selected address changes
   useEffect(() => {
@@ -192,7 +197,19 @@ export default function Checkout() {
         console.error("Error loading checkout data:", error);
       }
     };
+    const fetchSpinnerSettings = async () => {
+      try {
+        const response = await getPublicSpinnerSettings();
+        if (response.success) {
+          setSpinnerSettings(response.data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch spinner settings", err);
+      }
+    };
+
     fetchInitialData();
+    fetchSpinnerSettings();
   }, []);
 
   // Fetch user profile to get latest wallet balance
@@ -285,7 +302,7 @@ export default function Checkout() {
     fetchSimilar();
   }, [cart?.items?.length]);
 
-    if (cartLoading) {
+  if (cartLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="flex flex-col items-center">
@@ -559,795 +576,799 @@ export default function Checkout() {
       const placedId = await addOrder(order);
       if (placedId) {
         if (payableAmount === 0) {
-          // For COD or Full Wallet Payment, proceed directly to success
-          setPlacedOrderId(placedId);
-          clearCart();
-          setShowOrderSuccess(true);
-          showGlobalToast("Order placed successfully!", "success");
-        } else {
-          // For Online, trigger Razorpay payment
-          setPendingOrderId(placedId);
-          setShowRazorpayCheckout(true);
+          // Trigger generic afterOrder spinner if enabled
+          triggerSpinner('afterOrder', 2000);
+
+          if (paymentMethod === "COD" || payableAmount === 0) {
+            // For COD or Full Wallet Payment, proceed directly to success
+            setPlacedOrderId(placedId);
+            clearCart();
+            setShowOrderSuccess(true);
+            showGlobalToast("Order placed successfully!", "success");
+          } else {
+            // For Online, trigger Razorpay payment
+            setPendingOrderId(placedId);
+            setShowRazorpayCheckout(true);
+          }
+          // Note: For Online payment, the cart will be cleared and success shown only after successful payment
+          // See the RazorpayCheckout onSuccess handler (lines 1840-1846)
         }
-        // Note: For Online payment, the cart will be cleared and success shown only after successful payment
-        // See the RazorpayCheckout onSuccess handler (lines 1840-1846)
+      } catch (error: any) {
+        console.error("Order placement failed", error);
+        // Show user-friendly error message
+        const errorMessage =
+          error.message ||
+          error.response?.data?.message ||
+          "Failed to place order. Please try again.";
+        alert(errorMessage);
       }
-    } catch (error: any) {
-      console.error("Order placement failed", error);
-      // Show user-friendly error message
-      const errorMessage =
-        error.message ||
-        error.response?.data?.message ||
-        "Failed to place order. Please try again.";
-      alert(errorMessage);
-    }
-  };
+    };
 
-  const handleGoToOrders = () => {
-    if (placedOrderId) {
-      navigate(`/orders/${placedOrderId}`);
-    } else {
-      navigate("/orders");
-    }
-  };
+    const handleGoToOrders = () => {
+      if (placedOrderId) {
+        navigate(`/orders/${placedOrderId}`);
+      } else {
+        navigate("/orders");
+      }
+    };
 
-  const handleUpdateLocation = async () => {
-    if (!selectedAddress?.id || !mapLocation) return;
-    setIsUpdatingLocation(true);
-    try {
-      // Prepare update payload
-      const updatePayload: any = {
-        latitude: mapLocation.lat,
-        longitude: mapLocation.lng,
-      };
+    const handleUpdateLocation = async () => {
+      if (!selectedAddress?.id || !mapLocation) return;
+      setIsUpdatingLocation(true);
+      try {
+        // Prepare update payload
+        const updatePayload: any = {
+          latitude: mapLocation.lat,
+          longitude: mapLocation.lng,
+        };
 
-      // If address details are available from map, update them too
-      if (mapLocation.address) {
-        if (mapLocation.address.street)
-          updatePayload.address = mapLocation.address.street;
-        if (mapLocation.address.city)
-          updatePayload.city = mapLocation.address.city;
-        if (mapLocation.address.state)
-          updatePayload.state = mapLocation.address.state;
-        if (mapLocation.address.pincode)
-          updatePayload.pincode = mapLocation.address.pincode;
-        if (mapLocation.address.landmark)
-          updatePayload.landmark = mapLocation.address.landmark;
+        // If address details are available from map, update them too
+        if (mapLocation.address) {
+          if (mapLocation.address.street)
+            updatePayload.address = mapLocation.address.street;
+          if (mapLocation.address.city)
+            updatePayload.city = mapLocation.address.city;
+          if (mapLocation.address.state)
+            updatePayload.state = mapLocation.address.state;
+          if (mapLocation.address.pincode)
+            updatePayload.pincode = mapLocation.address.pincode;
+          if (mapLocation.address.landmark)
+            updatePayload.landmark = mapLocation.address.landmark;
+        }
+
+        // Update the address in backend
+        await updateAddress(selectedAddress.id, updatePayload);
+
+        // Update local state
+        const updated = {
+          ...selectedAddress,
+          latitude: mapLocation.lat,
+          longitude: mapLocation.lng,
+          street: mapLocation.address?.street || selectedAddress.street,
+          city: mapLocation.address?.city || selectedAddress.city,
+          state: mapLocation.address?.state || selectedAddress.state,
+          pincode: mapLocation.address?.pincode || selectedAddress.pincode,
+          landmark: mapLocation.address?.landmark || selectedAddress.landmark,
+        };
+        setSelectedAddress(updated);
+        setSavedAddress(updated); // Sync
+        setShowMapPicker(false);
+        setIsMapSelected(true); // Mark map as selected
+        showGlobalToast("Location and address updated successfully!");
+      } catch (err) {
+        console.error(err);
+        // showGlobalToast('Failed to update location');
+      } finally {
+        setIsUpdatingLocation(false);
+      }
+    };
+
+    // Handle profile completion submission
+    const handleProfileSubmit = async () => {
+      if (!profileFormData.name.trim() || !profileFormData.email.trim()) {
+        setProfileError("Please enter both name and email");
+        return;
       }
 
-      // Update the address in backend
-      await updateAddress(selectedAddress.id, updatePayload);
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(profileFormData.email)) {
+        setProfileError("Please enter a valid email address");
+        return;
+      }
 
-      // Update local state
-      const updated = {
-        ...selectedAddress,
-        latitude: mapLocation.lat,
-        longitude: mapLocation.lng,
-        street: mapLocation.address?.street || selectedAddress.street,
-        city: mapLocation.address?.city || selectedAddress.city,
-        state: mapLocation.address?.state || selectedAddress.state,
-        pincode: mapLocation.address?.pincode || selectedAddress.pincode,
-        landmark: mapLocation.address?.landmark || selectedAddress.landmark,
-      };
-      setSelectedAddress(updated);
-      setSavedAddress(updated); // Sync
-      setShowMapPicker(false);
-      setIsMapSelected(true); // Mark map as selected
-      showGlobalToast("Location and address updated successfully!");
-    } catch (err) {
-      console.error(err);
-      // showGlobalToast('Failed to update location');
-    } finally {
-      setIsUpdatingLocation(false);
-    }
-  };
+      setIsUpdatingProfile(true);
+      setProfileError(null);
 
-  // Handle profile completion submission
-  const handleProfileSubmit = async () => {
-    if (!profileFormData.name.trim() || !profileFormData.email.trim()) {
-      setProfileError("Please enter both name and email");
-      return;
-    }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(profileFormData.email)) {
-      setProfileError("Please enter a valid email address");
-      return;
-    }
-
-    setIsUpdatingProfile(true);
-    setProfileError(null);
-
-    try {
-      const response = await updateProfile({
-        name: profileFormData.name.trim(),
-        email: profileFormData.email.trim(),
-      });
-
-      if (response.success) {
-        // Update local user data
-        updateUser({
-          ...user,
-          id: user?.id || "",
-          name: response.data.name,
-          email: response.data.email,
+      try {
+        const response = await updateProfile({
+          name: profileFormData.name.trim(),
+          email: profileFormData.email.trim(),
         });
 
-        setShowProfileModal(false);
-        showGlobalToast("Profile updated successfully!");
+        if (response.success) {
+          // Update local user data
+          updateUser({
+            ...user,
+            id: user?.id || "",
+            name: response.data.name,
+            email: response.data.email,
+          });
 
-        // Directly trigger order placement, bypassing the profile check
-        handlePlaceOrder(true);
+          setShowProfileModal(false);
+          showGlobalToast("Profile updated successfully!");
+
+          // Directly trigger order placement, bypassing the profile check
+          handlePlaceOrder(true);
+        }
+      } catch (error: any) {
+        setProfileError(
+          error.response?.data?.message ||
+          "Failed to update profile. Please try again.",
+        );
+      } finally {
+        setIsUpdatingProfile(false);
       }
-    } catch (error: any) {
-      setProfileError(
-        error.response?.data?.message ||
-        "Failed to update profile. Please try again.",
-      );
-    } finally {
-      setIsUpdatingProfile(false);
-    }
-  };
+    };
 
-  return (
-    <div
-      className="bg-white min-h-screen flex flex-col opacity-100"
-      style={{ opacity: 1, height: "1250px" }}>
-      {/* Party Popper Animation */}
-      <PartyPopper
-        show={showPartyPopper}
-        onComplete={() => setShowPartyPopper(false)}
-      />
+    return (
+      <div
+        className="bg-white min-h-screen flex flex-col opacity-100"
+        style={{ opacity: 1, height: "1250px" }}>
+        {/* Party Popper Animation */}
+        <PartyPopper
+          show={showPartyPopper}
+          onComplete={() => setShowPartyPopper(false)}
+        />
 
-      {/* Profile Completion Modal */}
-      <AnimatePresence>
-        {showProfileModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[80] bg-black/50 flex items-center justify-center p-4"
-            onClick={() => setShowProfileModal(false)}>
+        {/* Profile Completion Modal */}
+        <AnimatePresence>
+          {showProfileModal && (
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl"
-              onClick={(e) => e.stopPropagation()}>
-              <h2 className="text-lg font-bold text-neutral-900 mb-2">
-                Complete Your Profile
-              </h2>
-              <p className="text-sm text-neutral-600 mb-4">
-                Please provide your name and email to continue with your order.
-              </p>
-
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-xs font-medium text-neutral-700 mb-1">
-                    Full Name
-                  </label>
-                  <input
-                    type="text"
-                    value={profileFormData.name}
-                    onChange={(e) =>
-                      setProfileFormData((prev) => ({
-                        ...prev,
-                        name: e.target.value,
-                      }))
-                    }
-                    placeholder="Enter your full name"
-                    className="w-full px-3 py-2.5 text-sm border border-neutral-300 rounded-lg focus:outline-none focus:border-green-500 transition-colors"
-                    disabled={isUpdatingProfile}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-neutral-700 mb-1">
-                    Email Address
-                  </label>
-                  <input
-                    type="email"
-                    value={profileFormData.email}
-                    onChange={(e) =>
-                      setProfileFormData((prev) => ({
-                        ...prev,
-                        email: e.target.value,
-                      }))
-                    }
-                    placeholder="Enter your email"
-                    className="w-full px-3 py-2.5 text-sm border border-neutral-300 rounded-lg focus:outline-none focus:border-green-500 transition-colors"
-                    disabled={isUpdatingProfile}
-                  />
-                </div>
-
-                {profileError && (
-                  <p className="text-xs text-red-600 bg-red-50 p-2 rounded">
-                    {profileError}
-                  </p>
-                )}
-
-                <div className="flex gap-3 pt-2">
-                  <button
-                    onClick={() => setShowProfileModal(false)}
-                    className="flex-1 py-2.5 text-sm font-medium text-neutral-700 bg-neutral-100 rounded-lg hover:bg-neutral-200 transition-colors"
-                    disabled={isUpdatingProfile}>
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleProfileSubmit}
-                    disabled={
-                      isUpdatingProfile ||
-                      !profileFormData.name.trim() ||
-                      !profileFormData.email.trim()
-                    }
-                    className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-colors ${isUpdatingProfile ||
-                      !profileFormData.name.trim() ||
-                      !profileFormData.email.trim()
-                      ? "bg-neutral-300 text-neutral-500 cursor-not-allowed"
-                      : "bg-green-600 text-white hover:bg-green-700"
-                      }`}>
-                    {isUpdatingProfile ? "Saving..." : "Save & Continue"}
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Map Picker Modal */}
-      <AnimatePresence>
-        {showMapPicker && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-black/50 flex items-center justify-center p-4"
-            onClick={() => setShowMapPicker(false)}>
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-xl overflow-hidden w-full max-w-lg shadow-xl"
-              onClick={(e) => e.stopPropagation()}>
-              <div className="p-4 border-b flex justify-between items-center">
-                <h3 className="font-bold text-neutral-900">
-                  Pin Delivery Location
-                </h3>
-                <button onClick={() => setShowMapPicker(false)}>
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2">
-                    <path d="M18 6L6 18M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-
-              <GoogleMapsLocationPicker
-                initialLat={
-                  mapLocation?.lat ||
-                  userLocation?.latitude ||
-                  selectedAddress?.latitude ||
-                  0
-                }
-                initialLng={
-                  mapLocation?.lng ||
-                  userLocation?.longitude ||
-                  selectedAddress?.longitude ||
-                  0
-                }
-                onLocationSelect={(lat, lng, address) =>
-                  setMapLocation({ lat, lng, address })
-                }
-                height="300px"
-              />
-
-              <div className="p-4 bg-white border-t">
-                <p className="text-xs text-neutral-500 mb-3 text-center">
-                  Move the map to set your exact delivery location
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[80] bg-black/50 flex items-center justify-center p-4"
+              onClick={() => setShowProfileModal(false)}>
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl"
+                onClick={(e) => e.stopPropagation()}>
+                <h2 className="text-lg font-bold text-neutral-900 mb-2">
+                  Complete Your Profile
+                </h2>
+                <p className="text-sm text-neutral-600 mb-4">
+                  Please provide your name and email to continue with your order.
                 </p>
-                <button
-                  onClick={handleUpdateLocation}
-                  disabled={isUpdatingLocation}
-                  className="w-full py-3 bg-neutral-900 text-white font-bold rounded-lg hover:bg-neutral-800 transition-colors disabled:opacity-70 flex justify-center items-center gap-2">
-                  {isUpdatingLocation ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                      Updating...
-                    </>
-                  ) : (
-                    "Confirm Location"
+
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-medium text-neutral-700 mb-1">
+                      Full Name
+                    </label>
+                    <input
+                      type="text"
+                      value={profileFormData.name}
+                      onChange={(e) =>
+                        setProfileFormData((prev) => ({
+                          ...prev,
+                          name: e.target.value,
+                        }))
+                      }
+                      placeholder="Enter your full name"
+                      className="w-full px-3 py-2.5 text-sm border border-neutral-300 rounded-lg focus:outline-none focus:border-green-500 transition-colors"
+                      disabled={isUpdatingProfile}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-neutral-700 mb-1">
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      value={profileFormData.email}
+                      onChange={(e) =>
+                        setProfileFormData((prev) => ({
+                          ...prev,
+                          email: e.target.value,
+                        }))
+                      }
+                      placeholder="Enter your email"
+                      className="w-full px-3 py-2.5 text-sm border border-neutral-300 rounded-lg focus:outline-none focus:border-green-500 transition-colors"
+                      disabled={isUpdatingProfile}
+                    />
+                  </div>
+
+                  {profileError && (
+                    <p className="text-xs text-red-600 bg-red-50 p-2 rounded">
+                      {profileError}
+                    </p>
                   )}
-                </button>
-              </div>
+
+                  <div className="flex gap-3 pt-2">
+                    <button
+                      onClick={() => setShowProfileModal(false)}
+                      className="flex-1 py-2.5 text-sm font-medium text-neutral-700 bg-neutral-100 rounded-lg hover:bg-neutral-200 transition-colors"
+                      disabled={isUpdatingProfile}>
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleProfileSubmit}
+                      disabled={
+                        isUpdatingProfile ||
+                        !profileFormData.name.trim() ||
+                        !profileFormData.email.trim()
+                      }
+                      className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-colors ${isUpdatingProfile ||
+                        !profileFormData.name.trim() ||
+                        !profileFormData.email.trim()
+                        ? "bg-neutral-300 text-neutral-500 cursor-not-allowed"
+                        : "bg-green-600 text-white hover:bg-green-700"
+                        }`}>
+                      {isUpdatingProfile ? "Saving..." : "Save & Continue"}
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>
 
-      {/* Order Success Celebration Page */}
-      {showOrderSuccess && (
-        <div
-          className="fixed inset-0 z-[70] bg-white flex flex-col items-center justify-center h-screen w-screen overflow-hidden"
-          style={{ animation: "fadeIn 0.3s ease-out" }}>
-          {/* Confetti Background */}
-          <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            {/* Animated confetti pieces */}
-            {[...Array(50)].map((_, i) => (
-              <div
-                key={i}
-                className="absolute w-3 h-3 rounded-sm"
-                style={{
-                  left: `${Math.random() * 100}%`,
-                  top: `-10%`,
-                  backgroundColor: [
-                    "#22c55e",
-                    "#3b82f6",
-                    "#f59e0b",
-                    "#ef4444",
-                    "#8b5cf6",
-                    "#ec4899",
-                  ][Math.floor(Math.random() * 6)],
-                  animation: `confettiFall ${2 + Math.random() * 2}s linear ${Math.random() * 2}s infinite`,
-                  transform: `rotate(${Math.random() * 360}deg)`,
-                }}
-              />
-            ))}
-          </div>
+        {/* Map Picker Modal */}
+        <AnimatePresence>
+          {showMapPicker && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[100] bg-black/50 flex items-center justify-center p-4"
+              onClick={() => setShowMapPicker(false)}>
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                className="bg-white rounded-xl overflow-hidden w-full max-w-lg shadow-xl"
+                onClick={(e) => e.stopPropagation()}>
+                <div className="p-4 border-b flex justify-between items-center">
+                  <h3 className="font-bold text-neutral-900">
+                    Pin Delivery Location
+                  </h3>
+                  <button onClick={() => setShowMapPicker(false)}>
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2">
+                      <path d="M18 6L6 18M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
 
-          {/* Success Content */}
-          <div className="relative z-10 flex flex-col items-center px-6">
-            {/* Success Tick Circle */}
-            <div
-              className="relative mb-8"
-              style={{
-                animation:
-                  "scaleIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both",
-              }}>
-              {/* Outer ring animation */}
-              <div
-                className="absolute inset-0 w-32 h-32 rounded-full border-4 border-green-500"
-                style={{
-                  animation: "ringPulse 1.5s ease-out infinite",
-                  opacity: 0.3,
-                }}
-              />
-              {/* Main circle */}
-              <div className="w-32 h-32 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center shadow-2xl">
-                <svg
-                  className="w-16 h-16 text-white"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  style={{ animation: "checkDraw 0.5s ease-out 0.5s both" }}>
-                  <path d="M5 12l5 5L19 7" className="check-path" />
-                </svg>
-              </div>
-              {/* Sparkles */}
-              {[...Array(6)].map((_, i) => (
+                <GoogleMapsLocationPicker
+                  initialLat={
+                    mapLocation?.lat ||
+                    userLocation?.latitude ||
+                    selectedAddress?.latitude ||
+                    0
+                  }
+                  initialLng={
+                    mapLocation?.lng ||
+                    userLocation?.longitude ||
+                    selectedAddress?.longitude ||
+                    0
+                  }
+                  onLocationSelect={(lat, lng, address) =>
+                    setMapLocation({ lat, lng, address })
+                  }
+                  height="300px"
+                />
+
+                <div className="p-4 bg-white border-t">
+                  <p className="text-xs text-neutral-500 mb-3 text-center">
+                    Move the map to set your exact delivery location
+                  </p>
+                  <button
+                    onClick={handleUpdateLocation}
+                    disabled={isUpdatingLocation}
+                    className="w-full py-3 bg-neutral-900 text-white font-bold rounded-lg hover:bg-neutral-800 transition-colors disabled:opacity-70 flex justify-center items-center gap-2">
+                    {isUpdatingLocation ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                        Updating...
+                      </>
+                    ) : (
+                      "Confirm Location"
+                    )}
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Order Success Celebration Page */}
+        {showOrderSuccess && (
+          <div
+            className="fixed inset-0 z-[70] bg-white flex flex-col items-center justify-center h-screen w-screen overflow-hidden"
+            style={{ animation: "fadeIn 0.3s ease-out" }}>
+            {/* Confetti Background */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+              {/* Animated confetti pieces */}
+              {[...Array(50)].map((_, i) => (
                 <div
                   key={i}
-                  className="absolute w-2 h-2 bg-yellow-400 rounded-full"
+                  className="absolute w-3 h-3 rounded-sm"
                   style={{
-                    top: "50%",
-                    left: "50%",
-                    animation: `sparkle 0.6s ease-out ${0.3 + i * 0.1}s both`,
-                    transform: `rotate(${i * 60}deg) translateY(-80px)`,
+                    left: `${Math.random() * 100}%`,
+                    top: `-10%`,
+                    backgroundColor: [
+                      "#22c55e",
+                      "#3b82f6",
+                      "#f59e0b",
+                      "#ef4444",
+                      "#8b5cf6",
+                      "#ec4899",
+                    ][Math.floor(Math.random() * 6)],
+                    animation: `confettiFall ${2 + Math.random() * 2}s linear ${Math.random() * 2}s infinite`,
+                    transform: `rotate(${Math.random() * 360}deg)`,
                   }}
                 />
               ))}
             </div>
 
-            {/* Location Info */}
-            <div
-              className="text-center"
-              style={{ animation: "slideUp 0.5s ease-out 0.6s both" }}>
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <div className="w-5 h-5 text-red-500">
-                  <svg viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
+            {/* Success Content */}
+            <div className="relative z-10 flex flex-col items-center px-6">
+              {/* Success Tick Circle */}
+              <div
+                className="relative mb-8"
+                style={{
+                  animation:
+                    "scaleIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both",
+                }}>
+                {/* Outer ring animation */}
+                <div
+                  className="absolute inset-0 w-32 h-32 rounded-full border-4 border-green-500"
+                  style={{
+                    animation: "ringPulse 1.5s ease-out infinite",
+                    opacity: 0.3,
+                  }}
+                />
+                {/* Main circle */}
+                <div className="w-32 h-32 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center shadow-2xl">
+                  <svg
+                    className="w-16 h-16 text-white"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    style={{ animation: "checkDraw 0.5s ease-out 0.5s both" }}>
+                    <path d="M5 12l5 5L19 7" className="check-path" />
                   </svg>
                 </div>
-                <h2 className="text-2xl font-bold text-gray-900">
-                  {selectedAddress?.city || "Your Location"}
-                </h2>
-              </div>
-              <p className="text-gray-500 text-base">
-                {selectedAddress
-                  ? `${selectedAddress.street}, ${selectedAddress.city}`
-                  : "Delivery Address"}
-              </p>
-            </div>
-
-            {/* Order Placed Message */}
-            <div
-              className="mt-12 text-center"
-              style={{ animation: "slideUp 0.5s ease-out 0.8s both" }}>
-              <h3 className="text-3xl font-bold text-green-600 mb-2">
-                Order Placed!
-              </h3>
-              <p className="text-gray-600">Your order is on the way</p>
-            </div>
-
-            {/* Action Button */}
-            <button
-              onClick={handleGoToOrders}
-              className="mt-10 bg-green-600 hover:bg-green-700 text-white font-semibold py-4 px-12 rounded-xl shadow-lg transition-all hover:shadow-xl hover:scale-105"
-              style={{ animation: "slideUp 0.5s ease-out 1s both" }}>
-              Track Your Order
-            </button>
-          </div>
-        </div>
-      )}
-      {/* Header */}
-      <div className="sticky top-0 z-50 bg-white border-b border-neutral-200">
-        <div className="px-4 md:px-6 lg:px-8 py-2 md:py-3 flex items-center justify-between">
-          {/* Back Arrow */}
-          <button
-            onClick={() => navigate(-1)}
-            className="w-7 h-7 flex items-center justify-center text-neutral-700 hover:bg-neutral-100 rounded-full transition-colors"
-            aria-label="Go back">
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg">
-              <path
-                d="M15 18L9 12L15 6"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </button>
-
-          {/* Title */}
-          <h1 className="text-base font-bold text-neutral-900">Checkout</h1>
-
-          {/* Spacer to maintain layout */}
-          <div className="w-7 h-7"></div>
-        </div>
-      </div>
-
-      {/* Ordering for someone else */}
-      <div className="px-4 md:px-6 lg:px-8 py-2 md:py-3 bg-neutral-50 border-b border-neutral-200">
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-neutral-700">
-            Ordering for someone else?
-          </span>
-          <button
-            onClick={() =>
-              navigate("/checkout/address", {
-                state: {
-                  editAddress: savedAddress,
-                },
-              })
-            }
-            className="text-xs text-green-600 font-medium hover:text-green-700 transition-colors">
-            Add details
-          </button>
-        </div>
-      </div>
-
-      {/* Saved Address Section */}
-      {savedAddress && (
-        <div className="px-4 md:px-6 lg:px-8 py-2 md:py-3 border-b border-neutral-200">
-          <div className="mb-2">
-            <h3 className="text-xs font-semibold text-neutral-900 mb-0.5">
-              Delivery Address
-            </h3>
-            <p className="text-[10px] text-neutral-600">
-              Select or edit your saved address
-            </p>
-          </div>
-
-          <div
-            className={`border rounded-lg p-2.5 cursor-pointer transition-all ${selectedAddress && !isMapSelected
-              ? "border-green-600 bg-green-50"
-              : "border-neutral-300 bg-white"
-              }`}
-            onClick={() => {
-              setSelectedAddress(savedAddress);
-              setIsMapSelected(false);
-            }}>
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <div className="flex items-center gap-1.5 mb-1">
+                {/* Sparkles */}
+                {[...Array(6)].map((_, i) => (
                   <div
-                    className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${selectedAddress && !isMapSelected
-                      ? "border-green-600 bg-green-600"
-                      : "border-neutral-400"
-                      }`}>
-                    {selectedAddress && !isMapSelected && (
-                      <svg
-                        width="10"
-                        height="10"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg">
-                        <path
-                          d="M20 6L9 17l-5-5"
-                          stroke="white"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    )}
+                    key={i}
+                    className="absolute w-2 h-2 bg-yellow-400 rounded-full"
+                    style={{
+                      top: "50%",
+                      left: "50%",
+                      animation: `sparkle 0.6s ease-out ${0.3 + i * 0.1}s both`,
+                      transform: `rotate(${i * 60}deg) translateY(-80px)`,
+                    }}
+                  />
+                ))}
+              </div>
+
+              {/* Location Info */}
+              <div
+                className="text-center"
+                style={{ animation: "slideUp 0.5s ease-out 0.6s both" }}>
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <div className="w-5 h-5 text-red-500">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
+                    </svg>
                   </div>
-                  <span className="text-xs font-semibold text-neutral-900">
-                    {savedAddress.name}
-                  </span>
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    {selectedAddress?.city || "Your Location"}
+                  </h2>
                 </div>
-                <p className="text-[10px] text-neutral-600 mb-0.5">
-                  {savedAddress.phone}
-                </p>
-                <p className="text-[10px] text-neutral-600">
-                  {savedAddress.flat ? `${savedAddress.flat}, ` : ""}
-                  {savedAddress.street}
-                  {savedAddress.landmark ? (
-                    <>
-                      ,{" "}
-                      <span className="font-medium text-green-700">
-                        Near {savedAddress.landmark}
-                      </span>
-                    </>
-                  ) : (
-                    ""
-                  )}
-                  , {savedAddress.city} - {savedAddress.pincode}
+                <p className="text-gray-500 text-base">
+                  {selectedAddress
+                    ? `${selectedAddress.street}, ${selectedAddress.city}`
+                    : "Delivery Address"}
                 </p>
               </div>
+
+              {/* Order Placed Message */}
+              <div
+                className="mt-12 text-center"
+                style={{ animation: "slideUp 0.5s ease-out 0.8s both" }}>
+                <h3 className="text-3xl font-bold text-green-600 mb-2">
+                  Order Placed!
+                </h3>
+                <p className="text-gray-600">Your order is on the way</p>
+              </div>
+
+              {/* Action Button */}
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate("/checkout/address", {
-                    state: {
-                      editAddress: savedAddress,
-                    },
-                  });
-                }}
-                className="text-xs text-green-600 font-medium ml-2">
-                Edit
+                onClick={handleGoToOrders}
+                className="mt-10 bg-green-600 hover:bg-green-700 text-white font-semibold py-4 px-12 rounded-xl shadow-lg transition-all hover:shadow-xl hover:scale-105"
+                style={{ animation: "slideUp 0.5s ease-out 1s both" }}>
+                Track Your Order
               </button>
             </div>
           </div>
-          {/* Set Location on Map Button */}
-          <div className="mt-2.5">
+        )}
+        {/* Header */}
+        <div className="sticky top-0 z-50 bg-white border-b border-neutral-200">
+          <div className="px-4 md:px-6 lg:px-8 py-2 md:py-3 flex items-center justify-between">
+            {/* Back Arrow */}
             <button
-              onClick={() => {
-                // Prioritize current GPS location (matches homepage header), then saved address
-                setMapLocation({
-                  lat: userLocation?.latitude || selectedAddress?.latitude || 0,
-                  lng:
-                    userLocation?.longitude || selectedAddress?.longitude || 0,
-                });
-                setShowMapPicker(true);
-              }}
-              className={`flex items-center gap-3 text-base font-bold px-5 py-4 rounded-xl w-full justify-center transition-colors ${isMapSelected
-                ? "text-green-700 bg-green-100 border-2 border-green-500 ring-2 ring-green-600"
-                : "text-green-600 hover:text-green-700 bg-green-50 border-2 border-green-300 hover:bg-green-100 hover:border-green-400"
-                }`}>
-              {isMapSelected ? (
-                <svg
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
+              onClick={() => navigate(-1)}
+              className="w-7 h-7 flex items-center justify-center text-neutral-700 hover:bg-neutral-100 rounded-full transition-colors"
+              aria-label="Go back">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg">
+                <path
+                  d="M15 18L9 12L15 6"
                   stroke="currentColor"
-                  strokeWidth="3"
+                  strokeWidth="2"
                   strokeLinecap="round"
-                  strokeLinejoin="round">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-              ) : (
-                <svg
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg">
-                  <path
-                    d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <circle
-                    cx="12"
-                    cy="10"
-                    r="3"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              )}
-              {isMapSelected
-                ? "Precise Location Selected"
-                : selectedAddress?.latitude
-                  ? "Update Precise Location on Map"
-                  : "Set Exact Location on Map"}
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+
+            {/* Title */}
+            <h1 className="text-base font-bold text-neutral-900">Checkout</h1>
+
+            {/* Spacer to maintain layout */}
+            <div className="w-7 h-7"></div>
+          </div>
+        </div>
+
+        {/* Ordering for someone else */}
+        <div className="px-4 md:px-6 lg:px-8 py-2 md:py-3 bg-neutral-50 border-b border-neutral-200">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-neutral-700">
+              Ordering for someone else?
+            </span>
+            <button
+              onClick={() =>
+                navigate("/checkout/address", {
+                  state: {
+                    editAddress: savedAddress,
+                  },
+                })
+              }
+              className="text-xs text-green-600 font-medium hover:text-green-700 transition-colors">
+              Add details
             </button>
           </div>
         </div>
-      )}
 
-      {/* Shipment Sections */}
-      <div className="space-y-4 mb-4">
-        {/* Quick Delivery Shipment */}
-        {displayItems.filter(i => i.deliveryType !== "scheduled").length > 0 && (
-          <div className="px-4 md:px-6 lg:px-8 py-4 bg-white border-b border-neutral-200">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-2xl bg-yellow-400/20 flex items-center justify-center text-xl shadow-sm border border-yellow-200">
-                ⚡
-              </div>
-              <div>
-                <h2 className="text-base font-black text-neutral-900 leading-none mb-1">Quick Delivery</h2>
-                <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-wider">Arrival in 15-20 mins</p>
-              </div>
+        {/* Saved Address Section */}
+        {savedAddress && (
+          <div className="px-4 md:px-6 lg:px-8 py-2 md:py-3 border-b border-neutral-200">
+            <div className="mb-2">
+              <h3 className="text-xs font-semibold text-neutral-900 mb-0.5">
+                Delivery Address
+              </h3>
+              <p className="text-[10px] text-neutral-600">
+                Select or edit your saved address
+              </p>
             </div>
 
-            <div className="space-y-4">
-              {displayItems
-                .filter(i => i.deliveryType !== "scheduled")
-                .map((item) => {
-                  const isCombo = !!item.comboOffer;
-                  const itemProduct = item.comboOffer ? item.comboOffer : item.product;
-                  const targetName = isCombo ? item.comboOffer.name : item.product?.name;
-                  const targetImage = isCombo 
-                    ? (item.comboOffer.image || item.comboOffer.mainProduct?.mainImage || item.comboOffer.comboProducts?.[0]?.product?.mainImage) 
-                    : item.product?.imageUrl;
-                  const targetPack = isCombo ? 'Combo Bundle' : item.product?.pack;
-                  const targetId = isCombo ? item.comboOffer._id || item.comboOffer.id : item.product?.id || item.product?._id;
-                  
-                  let displayPrice = 0, mrp = 0, hasDiscount = false;
-                  if (isCombo) {
-                      displayPrice = item.comboOffer.comboPrice;
-                      mrp = item.comboOffer.originalPrice || item.comboOffer.comboPrice;
-                      hasDiscount = mrp > displayPrice;
-                  } else if (item.product) {
-                      const pd = calculateProductPrice(item.product, item.variant);
-                      displayPrice = pd.displayPrice;
-                      mrp = pd.mrp;
-                      hasDiscount = pd.hasDiscount;
-                  }
-                  
-                  return (
-                    <div key={targetId || Math.random()} className="flex gap-4">
-                      <div className="w-16 h-16 bg-neutral-50 rounded-2xl overflow-hidden flex-shrink-0 border border-neutral-100 shadow-sm">
-                        <img src={targetImage} alt={targetName} className="w-full h-full object-contain" />
-                      </div>
-                      <div className="flex-1 min-w-0 flex flex-col justify-center">
-                        <h3 className="text-sm font-bold text-neutral-900 line-clamp-1 mb-0.5">{targetName}</h3>
-                        <div className="flex items-center gap-3 mb-2">
-                          <p className="text-[10px] text-neutral-500 font-bold">{targetPack}</p>
-                          <div className="flex items-center gap-2 bg-green-50 rounded-lg p-0.5 border border-green-100">
-                            <button
-                              onClick={(e) => { e.stopPropagation(); updateQuantity(targetId || "", item.quantity - 1, item.variant); }}
-                              className="w-5 h-5 flex items-center justify-center text-green-700 font-bold hover:bg-white rounded-md transition-colors text-xs"
-                            >
-                              −
-                            </button>
-                            <span className="text-[10px] font-bold text-green-900 min-w-[1rem] text-center">{item.quantity}</span>
-                            <button
-                              onClick={(e) => { e.stopPropagation(); updateQuantity(targetId || "", item.quantity + 1, item.variant); }}
-                              className="w-5 h-5 flex items-center justify-center text-green-700 font-bold hover:bg-white rounded-md transition-colors text-xs"
-                            >
-                              +
-                            </button>
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-black text-neutral-900">₹{displayPrice}</span>
-                            {hasDiscount && <span className="text-[10px] text-neutral-400 line-through font-medium">₹{mrp}</span>}
-                          </div>
-                        </div>
-                      </div>
+            <div
+              className={`border rounded-lg p-2.5 cursor-pointer transition-all ${selectedAddress && !isMapSelected
+                ? "border-green-600 bg-green-50"
+                : "border-neutral-300 bg-white"
+                }`}
+              onClick={() => {
+                setSelectedAddress(savedAddress);
+                setIsMapSelected(false);
+              }}>
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <div
+                      className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${selectedAddress && !isMapSelected
+                        ? "border-green-600 bg-green-600"
+                        : "border-neutral-400"
+                        }`}>
+                      {selectedAddress && !isMapSelected && (
+                        <svg
+                          width="10"
+                          height="10"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg">
+                          <path
+                            d="M20 6L9 17l-5-5"
+                            stroke="white"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      )}
                     </div>
-                  );
-                })}
+                    <span className="text-xs font-semibold text-neutral-900">
+                      {savedAddress.name}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-neutral-600 mb-0.5">
+                    {savedAddress.phone}
+                  </p>
+                  <p className="text-[10px] text-neutral-600">
+                    {savedAddress.flat ? `${savedAddress.flat}, ` : ""}
+                    {savedAddress.street}
+                    {savedAddress.landmark ? (
+                      <>
+                        ,{" "}
+                        <span className="font-medium text-green-700">
+                          Near {savedAddress.landmark}
+                        </span>
+                      </>
+                    ) : (
+                      ""
+                    )}
+                    , {savedAddress.city} - {savedAddress.pincode}
+                  </p>
+                </div>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate("/checkout/address", {
+                      state: {
+                        editAddress: savedAddress,
+                      },
+                    });
+                  }}
+                  className="text-xs text-green-600 font-medium ml-2">
+                  Edit
+                </button>
+              </div>
+            </div>
+            {/* Set Location on Map Button */}
+            <div className="mt-2.5">
+              <button
+                onClick={() => {
+                  // Prioritize current GPS location (matches homepage header), then saved address
+                  setMapLocation({
+                    lat: userLocation?.latitude || selectedAddress?.latitude || 0,
+                    lng:
+                      userLocation?.longitude || selectedAddress?.longitude || 0,
+                  });
+                  setShowMapPicker(true);
+                }}
+                className={`flex items-center gap-3 text-base font-bold px-5 py-4 rounded-xl w-full justify-center transition-colors ${isMapSelected
+                  ? "text-green-700 bg-green-100 border-2 border-green-500 ring-2 ring-green-600"
+                  : "text-green-600 hover:text-green-700 bg-green-50 border-2 border-green-300 hover:bg-green-100 hover:border-green-400"
+                  }`}>
+                {isMapSelected ? (
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                ) : (
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path
+                      d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <circle
+                      cx="12"
+                      cy="10"
+                      r="3"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                )}
+                {isMapSelected
+                  ? "Precise Location Selected"
+                  : selectedAddress?.latitude
+                    ? "Update Precise Location on Map"
+                    : "Set Exact Location on Map"}
+              </button>
             </div>
           </div>
         )}
 
-        {/* Scheduled Delivery Shipment */}
-        {displayItems.filter(i => i.deliveryType === "scheduled").length > 0 && (
-          <div className="px-4 md:px-6 lg:px-8 py-4 bg-white border-b border-neutral-200">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-2xl bg-blue-500/10 flex items-center justify-center text-xl shadow-sm border border-blue-100">
-                📅
+        {/* Shipment Sections */}
+        <div className="space-y-4 mb-4">
+          {/* Quick Delivery Shipment */}
+          {displayItems.filter(i => i.deliveryType !== "scheduled").length > 0 && (
+            <div className="px-4 md:px-6 lg:px-8 py-4 bg-white border-b border-neutral-200">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-2xl bg-yellow-400/20 flex items-center justify-center text-xl shadow-sm border border-yellow-200">
+                  ⚡
+                </div>
+                <div>
+                  <h2 className="text-base font-black text-neutral-900 leading-none mb-1">Quick Delivery</h2>
+                  <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-wider">Arrival in 15-20 mins</p>
+                </div>
               </div>
-              <div>
-                <h2 className="text-base font-black text-neutral-900 leading-none mb-1">Scheduled Delivery</h2>
-                <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-wider">Arrival in 1-2 days</p>
-              </div>
-            </div>
 
-            <div className="space-y-4">
-              {displayItems
-                .filter(i => i.deliveryType === "scheduled")
-                .map((item) => {
-                  const isCombo = !!item.comboOffer;
-                  const itemProduct = item.comboOffer ? item.comboOffer : item.product;
-                  const targetName = isCombo ? item.comboOffer.name : item.product?.name;
-                  const targetImage = isCombo 
-                    ? (item.comboOffer.image || item.comboOffer.mainProduct?.mainImage || item.comboOffer.comboProducts?.[0]?.product?.mainImage) 
-                    : item.product?.imageUrl;
-                  const targetPack = isCombo ? 'Combo Bundle' : item.product?.pack;
-                  const targetId = isCombo ? item.comboOffer._id || item.comboOffer.id : item.product?.id || item.product?._id;
-                  
-                  let displayPrice = 0, mrp = 0, hasDiscount = false;
-                  if (isCombo) {
+              <div className="space-y-4">
+                {displayItems
+                  .filter(i => i.deliveryType !== "scheduled")
+                  .map((item) => {
+                    const isCombo = !!item.comboOffer;
+                    const itemProduct = item.comboOffer ? item.comboOffer : item.product;
+                    const targetName = isCombo ? item.comboOffer.name : item.product?.name;
+                    const targetImage = isCombo
+                      ? (item.comboOffer.image || item.comboOffer.mainProduct?.mainImage || item.comboOffer.comboProducts?.[0]?.product?.mainImage)
+                      : item.product?.imageUrl;
+                    const targetPack = isCombo ? 'Combo Bundle' : item.product?.pack;
+                    const targetId = isCombo ? item.comboOffer._id || item.comboOffer.id : item.product?.id || item.product?._id;
+
+                    let displayPrice = 0, mrp = 0, hasDiscount = false;
+                    if (isCombo) {
                       displayPrice = item.comboOffer.comboPrice;
                       mrp = item.comboOffer.originalPrice || item.comboOffer.comboPrice;
                       hasDiscount = mrp > displayPrice;
-                  } else if (item.product) {
+                    } else if (item.product) {
                       const pd = calculateProductPrice(item.product, item.variant);
                       displayPrice = pd.displayPrice;
                       mrp = pd.mrp;
                       hasDiscount = pd.hasDiscount;
-                  }
-                  
-                  return (
-                    <div key={targetId || Math.random()} className="flex gap-4">
-                      <div className="w-16 h-16 bg-neutral-50 rounded-2xl overflow-hidden flex-shrink-0 border border-neutral-100 shadow-sm">
-                        <img src={targetImage} alt={targetName} className="w-full h-full object-contain" />
-                      </div>
-                      <div className="flex-1 min-w-0 flex flex-col justify-center">
-                        <h3 className="text-sm font-bold text-neutral-900 line-clamp-1 mb-0.5">{targetName}</h3>
-                        <div className="flex items-center gap-3 mb-2">
-                          <p className="text-[10px] text-neutral-500 font-bold">{targetPack}</p>
-                          <div className="flex items-center gap-2 bg-green-50 rounded-lg p-0.5 border border-green-100">
-                            <button
-                              onClick={(e) => { e.stopPropagation(); updateQuantity(targetId || "", item.quantity - 1, item.variant); }}
-                              className="w-5 h-5 flex items-center justify-center text-green-700 font-bold hover:bg-white rounded-md transition-colors text-xs"
-                            >
-                              −
-                            </button>
-                            <span className="text-[10px] font-bold text-green-900 min-w-[1rem] text-center">{item.quantity}</span>
-                            <button
-                              onClick={(e) => { e.stopPropagation(); updateQuantity(targetId || "", item.quantity + 1, item.variant); }}
-                              className="w-5 h-5 flex items-center justify-center text-green-700 font-bold hover:bg-white rounded-md transition-colors text-xs"
-                            >
-                              +
-                            </button>
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-black text-neutral-900">₹{displayPrice}</span>
-                            {hasDiscount && <span className="text-[10px] text-neutral-400 line-through font-medium">₹{mrp}</span>}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-            </div>
-          </div>
-        )}
-      </div>
+                    }
 
-      {/* You might also like */}
-      <div className="px-4 md:px-6 lg:px-8 py-2.5 md:py-3 border-b border-neutral-200">
-        <h2 className="text-sm font-semibold text-neutral-900 mb-2">
-          You might also like
-        </h2>
-        <div
+                    return (
+                      <div key={targetId || Math.random()} className="flex gap-4">
+                        <div className="w-16 h-16 bg-neutral-50 rounded-2xl overflow-hidden flex-shrink-0 border border-neutral-100 shadow-sm">
+                          <img src={targetImage} alt={targetName} className="w-full h-full object-contain" />
+                        </div>
+                        <div className="flex-1 min-w-0 flex flex-col justify-center">
+                          <h3 className="text-sm font-bold text-neutral-900 line-clamp-1 mb-0.5">{targetName}</h3>
+                          <div className="flex items-center gap-3 mb-2">
+                            <p className="text-[10px] text-neutral-500 font-bold">{targetPack}</p>
+                            <div className="flex items-center gap-2 bg-green-50 rounded-lg p-0.5 border border-green-100">
+                              <button
+                                onClick={(e) => { e.stopPropagation(); updateQuantity(targetId || "", item.quantity - 1, item.variant); }}
+                                className="w-5 h-5 flex items-center justify-center text-green-700 font-bold hover:bg-white rounded-md transition-colors text-xs"
+                              >
+                                −
+                              </button>
+                              <span className="text-[10px] font-bold text-green-900 min-w-[1rem] text-center">{item.quantity}</span>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); updateQuantity(targetId || "", item.quantity + 1, item.variant); }}
+                                className="w-5 h-5 flex items-center justify-center text-green-700 font-bold hover:bg-white rounded-md transition-colors text-xs"
+                              >
+                                +
+                              </button>
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-black text-neutral-900">₹{displayPrice}</span>
+                              {hasDiscount && <span className="text-[10px] text-neutral-400 line-through font-medium">₹{mrp}</span>}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+          )}
+
+          {/* Scheduled Delivery Shipment */}
+          {displayItems.filter(i => i.deliveryType === "scheduled").length > 0 && (
+            <div className="px-4 md:px-6 lg:px-8 py-4 bg-white border-b border-neutral-200">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-2xl bg-blue-500/10 flex items-center justify-center text-xl shadow-sm border border-blue-100">
+                  📅
+                </div>
+                <div>
+                  <h2 className="text-base font-black text-neutral-900 leading-none mb-1">Scheduled Delivery</h2>
+                  <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-wider">Arrival in 1-2 days</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {displayItems
+                  .filter(i => i.deliveryType === "scheduled")
+                  .map((item) => {
+                    const isCombo = !!item.comboOffer;
+                    const itemProduct = item.comboOffer ? item.comboOffer : item.product;
+                    const targetName = isCombo ? item.comboOffer.name : item.product?.name;
+                    const targetImage = isCombo
+                      ? (item.comboOffer.image || item.comboOffer.mainProduct?.mainImage || item.comboOffer.comboProducts?.[0]?.product?.mainImage)
+                      : item.product?.imageUrl;
+                    const targetPack = isCombo ? 'Combo Bundle' : item.product?.pack;
+                    const targetId = isCombo ? item.comboOffer._id || item.comboOffer.id : item.product?.id || item.product?._id;
+
+                    let displayPrice = 0, mrp = 0, hasDiscount = false;
+                    if (isCombo) {
+                      displayPrice = item.comboOffer.comboPrice;
+                      mrp = item.comboOffer.originalPrice || item.comboOffer.comboPrice;
+                      hasDiscount = mrp > displayPrice;
+                    } else if (item.product) {
+                      const pd = calculateProductPrice(item.product, item.variant);
+                      displayPrice = pd.displayPrice;
+                      mrp = pd.mrp;
+                      hasDiscount = pd.hasDiscount;
+                    }
+
+                    return (
+                      <div key={targetId || Math.random()} className="flex gap-4">
+                        <div className="w-16 h-16 bg-neutral-50 rounded-2xl overflow-hidden flex-shrink-0 border border-neutral-100 shadow-sm">
+                          <img src={targetImage} alt={targetName} className="w-full h-full object-contain" />
+                        </div>
+                        <div className="flex-1 min-w-0 flex flex-col justify-center">
+                          <h3 className="text-sm font-bold text-neutral-900 line-clamp-1 mb-0.5">{targetName}</h3>
+                          <div className="flex items-center gap-3 mb-2">
+                            <p className="text-[10px] text-neutral-500 font-bold">{targetPack}</p>
+                            <div className="flex items-center gap-2 bg-green-50 rounded-lg p-0.5 border border-green-100">
+                              <button
+                                onClick={(e) => { e.stopPropagation(); updateQuantity(targetId || "", item.quantity - 1, item.variant); }}
+                                className="w-5 h-5 flex items-center justify-center text-green-700 font-bold hover:bg-white rounded-md transition-colors text-xs"
+                              >
+                                −
+                              </button>
+                              <span className="text-[10px] font-bold text-green-900 min-w-[1rem] text-center">{item.quantity}</span>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); updateQuantity(targetId || "", item.quantity + 1, item.variant); }}
+                                className="w-5 h-5 flex items-center justify-center text-green-700 font-bold hover:bg-white rounded-md transition-colors text-xs"
+                              >
+                                +
+                              </button>
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-black text-neutral-900">₹{displayPrice}</span>
+                              {hasDiscount && <span className="text-[10px] text-neutral-400 line-through font-medium">₹{mrp}</span>}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* You might also like */}
+        <div className="px-4 md:px-6 lg:px-8 py-2.5 md:py-3 border-b border-neutral-200">
+          <h2 className="text-sm font-semibold text-neutral-900 mb-2">
+            You might also like
+          </h2>
+          <div
             className="flex gap-2 overflow-x-auto scrollbar-hide pb-3"
             style={{ scrollSnapType: "x mandatory" }}>
             {similarProducts.map((product) => {
@@ -2618,6 +2639,12 @@ export default function Checkout() {
             }}
           />
         )}
+
+        <LuckySpin
+          isOpen={showLuckySpin}
+          onClose={() => setShowLuckySpin(false)}
+          config={spinnerConfig}
+        />
       </div>
     );
   }

@@ -152,3 +152,47 @@ export const updateSMSGatewaySettings = asyncHandler(
     });
   }
 );
+
+/**
+ * Get spinner settings
+ */
+export const getSpinnerSettings = asyncHandler(
+  async (_req: Request, res: Response) => {
+    const settings = await AppSettings.findOne().select("spinnerSettings");
+
+    return res.status(200).json({
+      success: true,
+      message: "Spinner settings fetched successfully",
+      data: settings?.spinnerSettings || null,
+    });
+  }
+);
+
+/**
+ * Update spinner settings
+ */
+export const updateSpinnerSettings = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { spinnerSettings } = req.body;
+
+    let settings = await AppSettings.findOne();
+
+    if (!settings) {
+      settings = await AppSettings.create({
+        contactEmail: "contact@dhakadsnazzy.com",
+        contactPhone: "1234567890",
+        spinnerSettings,
+      });
+    } else {
+      settings.spinnerSettings = spinnerSettings;
+      settings.updatedBy = req.user?.userId as any;
+      await settings.save();
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Spinner settings updated successfully",
+      data: settings.spinnerSettings,
+    });
+  }
+);

@@ -14,6 +14,7 @@ export interface HomeContentResponse {
     cookingIdeas: any[];
     promoCards?: any[];
     promoStrip?: any; // PromoStrip data from backend
+    spinnerSettings?: any;
   };
 }
 
@@ -105,5 +106,13 @@ export const getHeaderCategorySections = async (
     `/customer/home/header-category/${slug}`,
     { params }
   );
+  return response.data;
+};
+
+/**
+ * Get public spinner settings
+ */
+export const getPublicSpinnerSettings = async (): Promise<{ success: boolean; data: any }> => {
+  const response = await api.get<{ success: boolean; data: any }>("/customer/home/spinner-settings");
   return response.data;
 };

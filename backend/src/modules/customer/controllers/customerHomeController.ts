@@ -12,6 +12,7 @@ import mongoose from "mongoose";
 import { cache } from "../../../utils/cache";
 import { findSellersWithinRange } from "../../../utils/locationHelper";
 import Seller from "../../../models/Seller";
+import AppSettings from "../../../models/AppSettings";
 
 // Helper function to fetch data for a home section based on its configuration
 async function fetchSectionData(
@@ -753,6 +754,7 @@ export const getHomeContent = async (req: Request, res: Response) => {
         cookingIdeas,
         promoCards: finalPromoCards, // Return dynamic or fallback cards
         promoStrip: promoStrip || null, // PromoStrip data for the current header category
+        spinnerSettings: (await AppSettings.findOne().select("spinnerSettings"))?.spinnerSettings || null,
       },
     });
   } catch (error: any) {
@@ -1176,6 +1178,23 @@ export const getHeaderCategorySections = async (req: Request, res: Response) => 
     return res.status(500).json({
       success: false,
       message: "Error fetching header category sections",
+      error: error.message,
+    });
+  }
+};
+
+// Get Public Spinner Settings
+export const getPublicSpinnerSettings = async (_req: Request, res: Response) => {
+  try {
+    const settings = await AppSettings.findOne().select("spinnerSettings");
+    return res.status(200).json({
+      success: true,
+      data: settings?.spinnerSettings || null,
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: "Error fetching spinner settings",
       error: error.message,
     });
   }

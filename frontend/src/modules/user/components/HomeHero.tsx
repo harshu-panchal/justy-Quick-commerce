@@ -316,7 +316,7 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
     <div ref={heroRef} className="pb-0 mb-0">
       {/* Top Header Section */}
       <div
-        className="px-4 md:px-6 lg:px-8 pt-3 pb-3 transition-colors duration-500"
+        className="px-4 md:px-6 lg:px-8 pt-6 pb-3 transition-colors duration-500"
         style={{ backgroundColor: (activeTab === 'all' && deliveryMode === 'scheduled') ? '#00796B' : (theme.headerBg || '#007fb1') }}
       >
         {/* 1. Full-width Mode Toggle */}

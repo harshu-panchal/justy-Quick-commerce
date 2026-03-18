@@ -18,6 +18,7 @@ import LuckySpin from "../../components/LuckySpin";
 
 import { useThemeContext } from "../../context/ThemeContext";
 import { useDeliveryMode } from "../../hooks/useDeliveryMode";
+import { useSpinner } from "../../hooks/useSpinner";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -49,7 +50,6 @@ export default function Home() {
 
   const [products, setProducts] = useState<any[]>([]);
 
-  const [showLuckySpin, setShowLuckySpin] = useState(false);
 
   const saveScrollPosition = () => {
     const mainElement = document.querySelector('main');
@@ -116,13 +116,11 @@ export default function Home() {
     fetchData();
   }, [userLocation?.latitude, userLocation?.longitude, activeTab]);
 
+  const { showLuckySpin, setShowLuckySpin, triggerSpinner, config: spinnerConfig } = useSpinner(homeData.spinnerSettings);
+
   useEffect(() => {
-    // Lucky Spin auto-popup logic - ALWAYS show on refresh for testing
-    const timer = setTimeout(() => {
-      setShowLuckySpin(true);
-    }, 2000); // 2 second delay after load
-    return () => clearTimeout(timer);
-  }, []);
+    triggerSpinner('onLogin', 3000);
+  }, [triggerSpinner]);
 
   useEffect(() => {
     const preloadHeaderCategories = async () => {
@@ -367,6 +365,7 @@ export default function Home() {
         isOpen={showLuckySpin} 
         onClose={() => setShowLuckySpin(false)} 
         autoOpened={true}
+        config={spinnerConfig}
       />
     </div>
   );

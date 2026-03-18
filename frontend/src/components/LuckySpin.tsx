@@ -4,34 +4,77 @@ import FlyingCoins from './FlyingCoins';
 import { useCoins } from '../context/CoinContext';
 
 interface Reward {
+  id: string;
   label: string;
   value: number;
-  icon: string; // Emoji representing the coin stack size
+  icon?: string; 
+  color: string;
+  type: 'coin' | 'discount';
+  probability?: number;
 }
 
-const REWARDS: Reward[] = [
-  { label: '50 Coins', value: 50, icon: '💰' },
-  { label: '10 Coins', value: 10, icon: '🪙' },
-  { label: '20 Coins', value: 20, icon: '🪙' },
-  { label: '5 Coins', value: 5, icon: '🪙' },
-  { label: '30 Coins', value: 30, icon: '💰' },
-  { label: '10 Coins', value: 10, icon: '🪙' },
-  { label: '20 Coins', value: 20, icon: '🪙' },
-  { label: '5 Coins', value: 5, icon: '🪙' },
+const DEFAULT_REWARDS: Reward[] = [
+  { id: '1', label: '50 Coins', value: 50, icon: '💰', color: '#FEF3C7', type: 'coin' },
+  { id: '2', label: '10 Coins', value: 10, icon: '🪙', color: '#FDE68A', type: 'coin' },
+  { id: '3', label: '20 Coins', value: 20, icon: '🪙', color: '#FEF3C7', type: 'coin' },
+  { id: '4', label: '5 Coins', value: 5, icon: '🪙', color: '#FDE68A', type: 'coin' },
+  { id: '5', label: '30 Coins', value: 30, icon: '💰', color: '#FEF3C7', type: 'coin' },
+  { id: '6', label: '10 Coins', value: 10, icon: '🪙', color: '#FDE68A', type: 'coin' },
+  { id: '7', label: '20 Coins', value: 20, icon: '🪙', color: '#FEF3C7', type: 'coin' },
+  { id: '8', label: '5 Coins', value: 5, icon: '🪙', color: '#FDE68A', type: 'coin' },
 ];
 
 interface LuckySpinProps {
   isOpen: boolean;
   onClose: () => void;
   autoOpened?: boolean;
+  config?: {
+    enabled: boolean;
+    trigger: string;
+    frequency: string;
+    rewards: Reward[];
+  } | null;
 }
 
-const LuckySpin: React.FC<LuckySpinProps> = ({ isOpen, onClose, autoOpened }) => {
+const LuckySpin: React.FC<LuckySpinProps> = ({ isOpen, onClose, autoOpened, config: externalConfig }) => {
   const { addCoins } = useCoins();
   const [spinning, setSpinning] = useState(false);
   const [rotation, setRotation] = useState(0);
+  const [rewards, setRewards] = useState<Reward[]>(DEFAULT_REWARDS);
+  const [config, setConfig] = useState<any>(externalConfig || null);
   const [result, setResult] = useState<Reward | null>(null);
   const [showResultModal, setShowResultModal] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      if (externalConfig) {
+        setConfig(externalConfig);
+        if (externalConfig.rewards && externalConfig.rewards.length > 0) {
+          setRewards(externalConfig.rewards);
+        } else {
+          setRewards(DEFAULT_REWARDS);
+        }
+      } else {
+        const savedConfig = localStorage.getItem('spinnerConfig');
+        if (savedConfig) {
+          try {
+            const parsed = JSON.parse(savedConfig);
+            setConfig(parsed);
+            if (parsed.rewards && parsed.rewards.length > 0) {
+              setRewards(parsed.rewards);
+            } else {
+              setRewards(DEFAULT_REWARDS);
+            }
+          } catch (err) {
+            console.error('Failed to parse spinner configuration', err);
+            setRewards(DEFAULT_REWARDS);
+          }
+        } else {
+          setRewards(DEFAULT_REWARDS);
+        }
+      }
+    }
+  }, [isOpen, externalConfig]);
   
   // Animation state
   const [showCoinAnimation, setShowCoinAnimation] = useState(false);
@@ -88,18 +131,18 @@ const LuckySpin: React.FC<LuckySpinProps> = ({ isOpen, onClose, autoOpened }) =>
     setSpinning(true);
     setResult(null);
     
-    const segmentDegree = 360 / REWARDS.length;
-    const randomExtra = Math.floor(Math.random() * REWARDS.length);
+    const segmentDegree = 360 / rewards.length;
+    const randomExtra = Math.floor(Math.random() * rewards.length);
     const totalRotation = rotation + (360 * 6) + (randomExtra * segmentDegree);
     
     setRotation(totalRotation);
 
     const actualRotation = totalRotation % 360;
-    const winningIndex = (REWARDS.length - Math.floor(actualRotation / segmentDegree)) % REWARDS.length;
+    const winningIndex = (rewards.length - Math.floor(actualRotation / segmentDegree)) % rewards.length;
 
     setTimeout(() => {
       setSpinning(false);
-      const wonReward = REWARDS[winningIndex];
+      const wonReward = rewards[winningIndex];
       setResult(wonReward);
       setShowResultModal(true);
       
@@ -124,42 +167,47 @@ const LuckySpin: React.FC<LuckySpinProps> = ({ isOpen, onClose, autoOpened }) =>
           initial={{ scale: 0.8, opacity: 0, y: 50 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.8, opacity: 0, y: 50 }}
-          className="relative w-full max-w-sm flex flex-col items-center"
+          className="relative w-full max-w-sm bg-[#FEF3C7] border-[8px] border-[#8B4513] rounded-[40px] p-8 shadow-[0_30px_60px_rgba(0,0,0,0.5)] flex flex-col items-center overflow-hidden"
         >
-          {/* Close Button */}
+          {/* Decorative inner border */}
+          <div className="absolute inset-2 border-2 border-[#8B4513]/20 rounded-[30px] pointer-events-none"></div>
+
+          {/* Close Button - Moved inside the card corner or kept above */}
           {!spinning && (
             <button
               onClick={onClose}
-              className="absolute -top-12 right-0 w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-colors border border-white/20"
+              className="absolute top-4 right-4 w-8 h-8 bg-[#8B4513]/10 hover:bg-[#8B4513]/20 rounded-full flex items-center justify-center text-[#8B4513] transition-colors border border-[#8B4513]/20 z-40"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           )}
 
-          {/* Wooden Outer Rim with Lights */}
-          <div className="relative w-full aspect-square rounded-full border-[14px] border-[#8B4513] shadow-[0_0_50px_rgba(0,0,0,0.5),inset_0_0_20px_rgba(0,0,0,0.5)] bg-[#5D2E0A] p-1 flex items-center justify-center">
+          <h2 className="text-2xl font-black text-[#5D2E0A] mb-6 uppercase tracking-tight text-center relative z-10">
+            Spin & Win!
+          </h2>
+
+          {/* Wooden Outer Rim with Lights (Smaller Size) */}
+          <div className="relative w-64 h-64 rounded-full border-[10px] border-[#8B4513] shadow-[0_0_30px_rgba(0,0,0,0.3),inset_0_0_15px_rgba(0,0,0,0.5)] bg-[#5D2E0A] p-1 flex items-center justify-center relative z-10">
             
             {/* Lights on Rim */}
             {[...Array(12)].map((_, i) => (
               <div
                 key={i}
-                className={`absolute w-3 h-3 rounded-full shadow-[0_0_10px_white] ${i % 2 === 0 ? 'bg-yellow-100' : 'bg-yellow-300'}`}
+                className={`absolute w-2 h-2 rounded-full shadow-[0_0_8px_white] ${i % 2 === 0 ? 'bg-yellow-100' : 'bg-yellow-300'}`}
                 style={{
                   top: '50%',
                   left: '50%',
-                  transform: `rotate(${i * 30}deg) translateY(-165px) translateX(-50%)`,
+                  transform: `rotate(${i * 30}deg) translateY(-118px) translateX(-50%)`,
                 }}
               />
             ))}
 
             {/* Pointer (3D Yellow Arrow) */}
-            <div className="absolute -top-10 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center">
-              <div className="relative w-12 h-16 filter drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]">
-                {/* 3D Arrow Shape using SVG */}
+            <div className="absolute -top-7 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center">
+              <div className="relative w-10 h-14 filter drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]">
                 <svg viewBox="0 0 100 130" className="w-full h-full drop-shadow-xl">
-                  {/* Outer Glow/Shadow */}
                   <defs>
                     <linearGradient id="arrowGradient" x1="0%" y1="0%" x2="0%" y2="100%">
                       <stop offset="0%" stopColor="#FFF176" />
@@ -175,16 +223,12 @@ const LuckySpin: React.FC<LuckySpinProps> = ({ isOpen, onClose, autoOpened }) =>
                       <feComposite operator="over" in="shadow" in2="SourceGraphic" />
                     </filter>
                   </defs>
-                  
-                  {/* Main Arrow Body */}
                   <path 
                     d="M10 40 C10 15 90 15 90 40 L90 60 L50 115 L10 60 Z" 
                     fill="url(#arrowGradient)" 
                     stroke="#FF8F00" 
                     strokeWidth="3"
                   />
-                  
-                  {/* 3D Glassy Bulb/Button at top */}
                   <circle cx="50" cy="40" r="12" fill="#FFE082" filter="url(#innerShadow)" />
                   <circle cx="50" cy="38" r="8" fill="white" fillOpacity="0.4" />
                 </svg>
@@ -195,13 +239,13 @@ const LuckySpin: React.FC<LuckySpinProps> = ({ isOpen, onClose, autoOpened }) =>
             <motion.div
               animate={{ rotate: rotation }}
               transition={{ duration: 4, ease: [0.3, 0, 0.2, 1] }}
-              className="w-full h-full rounded-full border-4 border-[#3D1E07] relative overflow-hidden shadow-2xl"
-              style={{ background: '#F5DEB3' }} // Wheat color for cream segments
+              className="w-full h-full rounded-full border-2 border-[#3D1E07] relative overflow-hidden shadow-2xl"
+              style={{ background: '#F5DEB3' }}
             >
               <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
-                {REWARDS.map((reward, i) => {
-                  const angle = (360 / REWARDS.length) * i;
-                  const endAngle = (360 / REWARDS.length) * (i + 1);
+                {rewards.map((reward, i) => {
+                  const angle = (360 / rewards.length) * i;
+                  const endAngle = (360 / rewards.length) * (i + 1);
                   const x1 = 50 + 50 * Math.cos((Math.PI * angle) / 180);
                   const y1 = 50 + 50 * Math.sin((Math.PI * angle) / 180);
                   const x2 = 50 + 50 * Math.cos((Math.PI * endAngle) / 180);
@@ -211,13 +255,12 @@ const LuckySpin: React.FC<LuckySpinProps> = ({ isOpen, onClose, autoOpened }) =>
                     <g key={i}>
                       <path
                         d={`M 50 50 L ${x1} ${y1} A 50 50 0 0 1 ${x2} ${y2} Z`}
-                        fill={i % 2 === 0 ? '#FEF3C7' : '#FDE68A'} // Alternating beige shades
+                        fill={reward.color || (i % 2 === 0 ? '#FEF3C7' : '#FDE68A')}
                         stroke="#8B4513"
                         strokeWidth="0.8"
                       />
-                      <g transform={`rotate(${angle + 360 / REWARDS.length / 2}, 50, 50)`}>
-                         {/* Value - Closer to center */}
-                         <text
+                      <g transform={`rotate(${angle + 360 / rewards.length / 2}, 50, 50)`}>
+                          <text
                             x="68"
                             y="50"
                             fill="#5D2E0A"
@@ -229,7 +272,6 @@ const LuckySpin: React.FC<LuckySpinProps> = ({ isOpen, onClose, autoOpened }) =>
                           >
                             {reward.value}
                           </text>
-                          {/* Icon - Closer to edge */}
                           <text
                             x="84"
                             y="50"
@@ -238,7 +280,7 @@ const LuckySpin: React.FC<LuckySpinProps> = ({ isOpen, onClose, autoOpened }) =>
                             dominantBaseline="middle"
                             transform={`rotate(90, 84, 50)`}
                           >
-                            {reward.icon}
+                            {reward.icon || (reward.type === 'discount' ? '🎟️' : '🪙')}
                           </text>
                       </g>
                     </g>
@@ -250,38 +292,36 @@ const LuckySpin: React.FC<LuckySpinProps> = ({ isOpen, onClose, autoOpened }) =>
               <button 
                 onClick={spinWheel}
                 disabled={spinning}
-                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 bg-[#8B4513] rounded-full border-4 border-[#3D1E07] shadow-xl flex items-center justify-center z-10 group/hub transition-transform active:scale-95 disabled:scale-100"
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-14 h-14 bg-[#8B4513] rounded-full border-2 border-[#3D1E07] shadow-xl flex items-center justify-center z-10 group/hub transition-transform active:scale-95 disabled:scale-100"
               >
-                 <div className="w-14 h-14 bg-gradient-to-tr from-[#5D2E0A] to-[#8B4513] rounded-full flex items-center justify-center border-2 border-orange-200/20 group-hover/hub:brightness-110 transition-all">
-                    <span className="text-xs font-black text-white/90 uppercase tracking-tighter drop-shadow-md">SPIN</span>
+                 <div className="w-10 h-10 bg-gradient-to-tr from-[#5D2E0A] to-[#8B4513] rounded-full flex items-center justify-center border border-orange-200/20 group-hover/hub:brightness-110 transition-all">
+                    <span className="text-[10px] font-black text-white/90 uppercase tracking-tighter drop-shadow-md">SPIN</span>
                  </div>
               </button>
             </motion.div>
           </div>
 
-          {/* Green "SPIN!" Button style from image (used as Spin trigger) */}
-          <div className="mt-12 w-full px-8">
+          {/* Green "SPIN!" Button (Adjusted) */}
+          <div className="mt-8 w-full px-4 relative z-10">
             <motion.button
               whileHover={{ scale: 1.05, filter: 'brightness(1.1)' }}
               whileTap={{ scale: 0.95 }}
               disabled={spinning}
               onClick={spinWheel}
-              className={`w-full py-4 rounded-full font-black text-2xl uppercase tracking-tighter shadow-[0_8px_0_#166534,0_15px_30px_rgba(0,0,0,0.3)] border-4 border-white transition-all overflow-hidden relative group ${
+              className={`w-full py-4 rounded-2xl font-black text-xl uppercase tracking-tighter shadow-[0_6px_0_#166534,0_10px_20px_rgba(0,0,0,0.2)] border-4 border-white transition-all overflow-hidden relative group ${
                 spinning 
-                ? 'bg-gray-400 shadow-[0_5px_0_#4a5568] cursor-not-allowed opacity-80' 
+                ? 'bg-gray-400 shadow-[0_4px_0_#4a5568] cursor-not-allowed opacity-80' 
                 : 'bg-gradient-to-b from-[#4ADE80] to-[#16A34A] text-white'
               }`}
             >
-              {/* Glossy Reflection */}
               <div className="absolute top-0 left-0 w-full h-1/2 bg-white/20 skew-x-[-20deg] transform -translate-x-4"></div>
-              
               <span className="relative z-10 drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]">
                 {spinning ? 'Good Luck!' : 'SPIN!'}
               </span>
             </motion.button>
           </div>
           
-          <p className="mt-6 text-white/60 font-medium text-sm tracking-wide bg-white/5 py-1 px-4 rounded-full border border-white/10 uppercase">
+          <p className="mt-6 text-[#8B4513]/60 font-bold text-xs tracking-wide uppercase relative z-10">
              Spin the lucky wheel
           </p>
         </motion.div>

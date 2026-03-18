@@ -62,6 +62,22 @@ export const addToCart = async (productId: string, quantity: number = 1, variati
 };
 
 /**
+ * Add combo to cart
+ */
+export const addComboToCart = async (comboId: string, quantity: number = 1, latitude?: number, longitude?: number): Promise<CartResponse> => {
+    const params: any = {};
+    if (latitude !== undefined && longitude !== undefined) {
+        params.latitude = latitude;
+        params.longitude = longitude;
+    }
+    const response = await api.post<CartResponse>('/customer/cart/add-combo', {
+        comboId,
+        quantity
+    }, { params });
+    return response.data;
+};
+
+/**
  * Update cart item quantity
  */
 export const updateCartItem = async (itemId: string, quantity: number, latitude?: number, longitude?: number): Promise<CartResponse> => {

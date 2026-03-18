@@ -3,6 +3,7 @@ import { bannerService } from "../../../services/bannerService";
 import { Banner, CreateBannerInput } from "../../../components/banners/banner.types";
 import { uploadImage } from "../../../services/api/uploadService";
 import { validateImageFile, createImagePreview } from "../../../utils/imageUpload";
+import { getCategories, Category } from "../../../services/api/categoryService";
 
 const AdminBanners: React.FC = () => {
     const [banners, setBanners] = useState<Banner[]>([]);
@@ -11,13 +12,15 @@ const AdminBanners: React.FC = () => {
     const [uploading, setUploading] = useState(false);
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string>("");
+    const [categories, setCategories] = useState<Category[]>([]);
     
-    // Initializing state to match CreateBannerInput exactly
     const [formData, setFormData] = useState<CreateBannerInput>({
         title: "",
         imageUrl: "",
         type: "quick",
         isActive: true,
+        linkType: "none",
+        linkValue: "",
     });
 
     const fetchBanners = async () => {
@@ -31,8 +34,20 @@ const AdminBanners: React.FC = () => {
         setLoading(false);
     };
 
+    const fetchCategories = async () => {
+        try {
+            const response = await getCategories();
+            if (response.success) {
+                setCategories(response.data);
+            }
+        } catch (error) {
+            console.error("Failed to fetch categories:", error);
+        }
+    };
+
     useEffect(() => {
         fetchBanners();
+        fetchCategories();
     }, []);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -83,6 +98,8 @@ const AdminBanners: React.FC = () => {
                 imageUrl: "",
                 type: "quick",
                 isActive: true,
+                linkType: "none",
+                linkValue: "",
             });
             fetchBanners();
             window.dispatchEvent(new CustomEvent("bannersUpdated"));
@@ -159,6 +176,57 @@ const AdminBanners: React.FC = () => {
                                         <option value="scheduled">Scheduled (Same/Next Day)</option>
                                     </select>
                                 </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-sm font-semibold text-neutral-700 ml-1">Redirect To (Link Type)</label>
+                                    <select
+                                        name="linkType"
+                                        value={formData.linkType}
+                                        onChange={handleInputChange}
+                                        className="w-full px-4 py-3 rounded-xl border border-neutral-200 focus:ring-2 focus:ring-green-500 outline-none transition-all appearance-none bg-white"
+                                    >
+                                        <option value="none">None (No Redirection)</option>
+                                        <option value="category">Category (Offer Page)</option>
+                                        <option value="product">Specific Product</option>
+                                        <option value="external">External URL</option>
+                                    </select>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-sm font-semibold text-neutral-700 ml-1">Redirect Value</label>
+                                    {formData.linkType === 'category' ? (
+                                        <select
+                                            name="linkValue"
+                                            value={formData.linkValue}
+                                            onChange={handleInputChange}
+                                            className="w-full px-4 py-3 rounded-xl border border-neutral-200 focus:ring-2 focus:ring-green-500 outline-none transition-all appearance-none bg-white"
+                                            required
+                                        >
+                                            <option value="">Select a Category</option>
+                                            {categories.map(cat => (
+                                                <option key={cat._id} value={cat._id}>{cat.name}</option>
+                                            ))}
+                                        </select>
+                                    ) : (
+                                        <input
+                                            type="text"
+                                            name="linkValue"
+                                            value={formData.linkValue}
+                                            onChange={handleInputChange}
+                                            placeholder={
+                                                formData.linkType === 'external' 
+                                                ? "https://example.com" 
+                                                : formData.linkType === 'product'
+                                                ? "Product ID"
+                                                : "No redirection"
+                                            }
+                                            className="w-full px-4 py-3 rounded-xl border border-neutral-200 focus:ring-2 focus:ring-green-500 outline-none transition-all placeholder:text-neutral-400"
+                                            disabled={formData.linkType === 'none'}
+                                            required={formData.linkType !== 'none'}
+                                        />
+                                    )}
+                                </div>
+
                                 <div className="md:col-span-2 space-y-2">
                                     <label className="text-sm font-semibold text-neutral-700 ml-1">Banner Image</label>
                                     <label className="block border-2 border-dashed border-neutral-200 rounded-2xl p-6 text-center cursor-pointer hover:border-green-500 hover:bg-green-50/30 transition-all group relative overflow-hidden">
@@ -212,17 +280,12 @@ const AdminBanners: React.FC = () => {
                                             </div>
                                         )}
                                     </label>
-                                    <div className="flex gap-2 items-center mt-2 px-1">
-                                        <div className="h-px bg-neutral-100 flex-1"></div>
-                                        <span className="text-[10px] font-bold text-neutral-300 uppercase letter tracking-widest">or use URL</span>
-                                        <div className="h-px bg-neutral-100 flex-1"></div>
-                                    </div>
                                     <input
                                         type="url"
                                         name="imageUrl"
                                         value={formData.imageUrl}
                                         onChange={handleInputChange}
-                                        placeholder="https://example.com/banner.jpg"
+                                        placeholder="Or paste image URL here..."
                                         className="w-full px-4 py-2 text-sm rounded-xl border border-neutral-200 focus:ring-2 focus:ring-green-500 outline-none transition-all placeholder:text-neutral-400"
                                     />
                                 </div>
@@ -304,12 +367,21 @@ const AdminBanners: React.FC = () => {
                                 </div>
                             </div>
                             <div className="p-6 flex-1 flex flex-col justify-between">
-                                <div>
+                                <div className="space-y-2">
                                     <h3 className="text-lg font-bold text-neutral-900 group-hover:text-green-600 transition-colors line-clamp-1">{banner.title}</h3>
+                                    {banner.linkType !== 'none' && (
+                                        <div className="flex items-center gap-1.5 text-xs font-semibold text-neutral-400 uppercase tracking-wider">
+                                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101" />
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.172 13.828a4 4 0 015.656 0l4 4a4 4 0 01-5.656 5.656l-1.102-1.101" />
+                                            </svg>
+                                            Links to {banner.linkType}
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="mt-6 flex items-center justify-between pt-4 border-t border-neutral-50">
                                     <div className="text-[10px] text-neutral-400 font-medium">
-                                        Created: {new Date(banner.createdAt).toLocaleDateString()}
+                                        {new Date(banner.createdAt).toLocaleDateString()}
                                     </div>
                                     <div
                                         className={`text-xs font-bold uppercase tracking-widest ${banner.isActive ? "text-green-600" : "text-neutral-400"}`}

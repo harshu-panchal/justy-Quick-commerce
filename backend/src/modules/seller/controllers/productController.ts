@@ -4,6 +4,8 @@ import SubCategory from "../../../models/SubCategory";
 import Shop from "../../../models/Shop";
 import { asyncHandler } from "../../../utils/asyncHandler";
 import { cache } from "../../../utils/cache";
+import AppSettings from "../../../models/AppSettings";
+import Seller from "../../../models/Seller";
 
 /**
  * Create a new product
@@ -13,6 +15,40 @@ export const createProduct = asyncHandler(
     const sellerId = (req as any).user.userId;
     const productData = req.body;
     console.log("DEBUG: createProduct received body:", JSON.stringify(productData, null, 2));
+
+    // 1. Check product limits
+    const settings = await AppSettings.getSettings();
+    if (settings.sellerProductConfig?.isEnabled) {
+      const seller = await Seller.findById(sellerId).select("freeProductsAdded paidSlotsTotal");
+      if (!seller) {
+        return res.status(404).json({
+          success: false,
+          message: "Seller not found",
+        });
+      }
+
+      const maxFree = settings.sellerProductConfig.maxFreeProducts || 0;
+      const paidSlots = seller.paidSlotsTotal || 0;
+      const totalAllowed = maxFree + paidSlots;
+      const currentCount = await Product.countDocuments({ seller: sellerId });
+
+      if (currentCount >= totalAllowed) {
+        return res.status(402).json({
+          success: false,
+          limitReached: true,
+          message: "Product limit reached. Please purchase extra slots to add more products.",
+          currentCount,
+          maxFree,
+          paidSlots,
+          totalAllowed,
+        });
+      }
+
+      // Track if we should increment freeProductsAdded
+      if (currentCount < maxFree) {
+        (req as any).shouldIncrementFree = true;
+      }
+    }
 
     // Ensure sellerId matches authenticated seller
     if (productData.sellerId && productData.sellerId !== sellerId) {
@@ -140,6 +176,11 @@ export const createProduct = asyncHandler(
     }
 
     const product = await Product.create(newProductData);
+
+    // 7. Update seller counter if it was a free slot
+    if ((req as any).shouldIncrementFree) {
+      await Seller.findByIdAndUpdate(sellerId, { $inc: { freeProductsAdded: 1 } });
+    }
 
     // Invalidate home page cache
     cache.invalidatePattern(/home-content/);

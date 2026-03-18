@@ -63,12 +63,12 @@ export default function CheckoutAddress() {
             if (!editAddress) {
               const homeAddr = response.data.find(a => a.type === 'Home');
               if (homeAddr) {
-                const parts = homeAddr.address.split(', ');
+                const parts = (homeAddr.address || "").split(', ');
                 setAddress({
                   name: homeAddr.fullName,
                   phone: homeAddr.phone,
                   flat: parts[0] || '',
-                  street: parts[1] || '',
+                  street: parts.slice(1).join(', ') || parts[0] || '',
                   city: homeAddr.city,
                   state: homeAddr.state || '',
                   pincode: homeAddr.pincode,
@@ -93,12 +93,12 @@ export default function CheckoutAddress() {
       const existingAddr = savedAddresses.find(a => a.type === typeLabel);
 
       if (existingAddr) {
-        const parts = existingAddr.address.split(', ');
+        const parts = (existingAddr.address || "").split(', ');
         setAddress({
           name: existingAddr.fullName,
           phone: existingAddr.phone,
           flat: parts[0] || '',
-          street: parts[1] || '',
+          street: parts.slice(1).join(', ') || parts[0] || '',
           city: existingAddr.city,
           state: existingAddr.state || '',
           pincode: existingAddr.pincode,
@@ -142,6 +142,12 @@ export default function CheckoutAddress() {
       }
     }
   }, [editAddress]);
+  // Trigger validation immediately when editing to show which fields are missing (e.g. state/flat)
+  useEffect(() => {
+    if (editAddress && isAuthenticated) {
+      validateForm();
+    }
+  }, [editAddress, isAuthenticated]);
 
   const platformFee = appConfig.platformFee;
   const deliveryFee = cart.total >= appConfig.freeDeliveryThreshold ? 0 : appConfig.deliveryFee;
@@ -499,13 +505,23 @@ export default function CheckoutAddress() {
           {/* Cart Items */}
           <div className="space-y-2 mb-3">
             {cart.items.map((item) => {
-              const { displayPrice } = calculateProductPrice(item.product);
+              const isCombo = !!item.comboOffer;
+              const name = isCombo ? item.comboOffer.name : item.product?.name;
+              const pack = isCombo ? 'Combo' : item.product?.pack;
+              let displayPrice = 0;
+              if (isCombo) {
+                displayPrice = item.comboOffer.comboPrice;
+              } else if (item.product) {
+                const priceData = calculateProductPrice(item.product);
+                displayPrice = priceData.displayPrice;
+              }
+              const itemId = item.id || item._id || (isCombo ? item.comboOffer._id : item.product?.id);
               return (
-                <div key={item.product.id} className="flex items-center justify-between text-xs">
+                <div key={itemId} className="flex items-center justify-between text-xs">
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-neutral-900 truncate">{item.product.name}</div>
+                    <div className="font-medium text-neutral-900 truncate">{name}</div>
                     <div className="text-[10px] text-neutral-500">
-                      {item.product.pack} × {item.quantity}
+                      {pack} × {item.quantity}
                     </div>
                   </div>
                   <div className="font-semibold text-neutral-900 ml-2 flex-shrink-0">

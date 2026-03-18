@@ -88,6 +88,10 @@ export interface ISeller extends Document {
   averageRating: number;
   totalOrders: number;
 
+  // Product Limits Tracking
+  freeProductsAdded: number;
+  paidSlotsTotal: number;
+
   createdAt: Date;
   updatedAt: Date;
   // FCM Push Notification Tokens
@@ -380,6 +384,18 @@ const SellerSchema = new Schema<ISeller>(
     totalOrders: {
       type: Number,
       default: 0,
+    },
+
+    // Product Limits Tracking
+    freeProductsAdded: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    paidSlotsTotal: {
+      type: Number,
+      default: 0,
+      min: 0,
     },
   },
   {

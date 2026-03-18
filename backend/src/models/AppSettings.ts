@@ -112,8 +112,41 @@ export interface IAppSettings extends Document {
   // Updated By
   updatedBy?: mongoose.Types.ObjectId;
 
+  // Referral Settings
+  referralSettings: {
+    enabled: boolean;
+    rewardAmount: number;
+    rewardType: 'Wallet' | 'Points';
+    minOrderValue: number;
+    maxReferralsPerUser: number;
+  };
+
   // Withdrawal Settings
   minimumWithdrawalAmount?: number;
+
+  // Seller Product Limits Configuration
+  sellerProductConfig?: {
+    isEnabled: boolean;
+    maxFreeProducts: number;
+    chargePerSlot: number;
+  };
+
+
+  // Spinner Settings
+  spinnerSettings?: {
+    enabled: boolean;
+    trigger: 'onLogin' | 'afterOrder' | 'manual';
+    frequency: 'once' | 'daily' | 'always';
+    rewards: Array<{
+      id: string;
+      label: string;
+      value: number;
+      icon?: string;
+      color: string;
+      type: 'coin' | 'discount';
+      probability?: number;
+    }>;
+  };
 
   createdAt: Date;
   updatedAt: Date;
@@ -391,6 +424,45 @@ const AppSettingsSchema = new Schema<IAppSettings>(
       type: Schema.Types.ObjectId,
       ref: "Admin",
     },
+    // Referral Settings
+    referralSettings: {
+      enabled: { type: Boolean, default: false },
+      rewardAmount: { type: Number, default: 0 },
+      rewardType: { type: String, enum: ['Wallet', 'Points'], default: 'Wallet' },
+      minOrderValue: { type: Number, default: 0 },
+      maxReferralsPerUser: { type: Number, default: 10 },
+    },
+
+    // Seller Product Limits Configuration
+    sellerProductConfig: {
+      isEnabled: { type: Boolean, default: false },
+      maxFreeProducts: { type: Number, default: 5 },
+      chargePerSlot: { type: Number, default: 99 },
+    },
+
+    // Spinner Settings
+    spinnerSettings: {
+      enabled: { type: Boolean, default: false },
+      trigger: {
+        type: String,
+        enum: ['onLogin', 'afterOrder', 'manual'],
+        default: 'manual'
+      },
+      frequency: {
+        type: String,
+        enum: ['once', 'daily', 'always'],
+        default: 'daily'
+      },
+      rewards: [{
+        id: String,
+        label: String,
+        value: Number,
+        icon: String,
+        color: String,
+        type: { type: String, enum: ['coin', 'discount'] },
+        probability: Number
+      }]
+    },
   },
   {
     timestamps: true,
@@ -405,7 +477,34 @@ AppSettingsSchema.statics.getSettings = async function () {
       appName: "Dhakad Snazzy",
       contactEmail: "contact@dhakadsnazzy.com",
       contactPhone: "1234567890",
+      spinnerSettings: {
+        enabled: true,
+        trigger: 'onLogin',
+        frequency: 'always',
+        rewards: [
+          { id: '1', label: '50 Coins', value: 50, icon: '💰', color: '#FEF3C7', type: 'coin' },
+          { id: '2', label: '10 Coins', value: 10, icon: '🪙', color: '#FDE68A', type: 'coin' },
+          { id: '3', label: '20 Coins', value: 20, icon: '🪙', color: '#FEF3C7', type: 'coin' },
+          { id: '4', label: '5 Coins', value: 5, icon: '🪙', color: '#FDE68A', type: 'coin' },
+          { id: '5', label: '30 Coins', value: 30, icon: '💰', color: '#FEF3C7', type: 'coin' },
+        ]
+      }
     });
+  } else if (!settings.spinnerSettings) {
+    // Migration: Add default spinner settings if they don't exist
+    settings.spinnerSettings = {
+      enabled: true,
+      trigger: 'onLogin',
+      frequency: 'always',
+      rewards: [
+        { id: '1', label: '50 Coins', value: 50, icon: '💰', color: '#FEF3C7', type: 'coin' },
+        { id: '2', label: '10 Coins', value: 10, icon: '🪙', color: '#FDE68A', type: 'coin' },
+        { id: '3', label: '20 Coins', value: 20, icon: '🪙', color: '#FEF3C7', type: 'coin' },
+        { id: '4', label: '5 Coins', value: 5, icon: '🪙', color: '#FDE68A', type: 'coin' },
+        { id: '5', label: '30 Coins', value: 30, icon: '💰', color: '#FEF3C7', type: 'coin' },
+      ]
+    };
+    await settings.save();
   }
   return settings;
 };

@@ -13,6 +13,7 @@ import PincodeSelector from '../../../components/PincodeSelector';
 import DeliveryToggle from '../../../components/header/DeliveryToggle';
 import { useDeliveryMode } from '../../../hooks/useDeliveryMode';
 import { useCart } from '../../../context/CartContext'; // Assuming CartContext exists
+import { useCoins } from '../../../context/CoinContext';
 import LocationModal from '../../../components/header/LocationModal';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -92,6 +93,19 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
   }, [deliveryMode]);
 
   const navigate = useNavigate();
+  const { totalCoins } = useCoins();
+  const [prevCoins, setPrevCoins] = useState(totalCoins);
+  const [animateBalance, setAnimateBalance] = useState(false);
+
+  useEffect(() => {
+    if (totalCoins > prevCoins) {
+      setAnimateBalance(true);
+      const timer = setTimeout(() => setAnimateBalance(false), 2000);
+      setPrevCoins(totalCoins);
+      return () => clearTimeout(timer);
+    }
+  }, [totalCoins, prevCoins]);
+
   const { location: userLocation } = useLocation();
   const { cart } = useCart();
   const cartCount = cart?.itemCount || 0;
@@ -302,7 +316,7 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
     <div ref={heroRef} className="pb-0 mb-0">
       {/* Top Header Section */}
       <div
-        className="px-4 md:px-6 lg:px-8 pt-3 pb-3 transition-colors duration-500"
+        className="px-4 md:px-6 lg:px-8 pt-6 pb-3 transition-colors duration-500"
         style={{ backgroundColor: (activeTab === 'all' && deliveryMode === 'scheduled') ? '#00796B' : (theme.headerBg || '#007fb1') }}
       >
         {/* 1. Full-width Mode Toggle */}
@@ -362,12 +376,20 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
             </span>
           </div>
 
-          {/* Profile Circle */}
-          <div
-            className="w-10 h-10 bg-[#99d79a] text-[#006002] rounded-full flex items-center justify-center font-bold text-lg cursor-pointer border-2 border-white/20"
-            onClick={() => navigate('/account')}
+          {/* Wallet Balance Chip */}
+          <div 
+            id="wallet-balance-header"
+            className={`flex items-center gap-1 bg-white border border-[#9d794d] px-0.5 py-0.5 rounded-full cursor-pointer transition-all active:scale-95 group shadow-sm scale-90 ${animateBalance ? 'animate-pulse ring-2 ring-yellow-400' : ''}`}
+            onClick={() => navigate('/coins')}
           >
-            S
+            <div className={`w-5 h-5 bg-[#ffce10] rounded-full flex items-center justify-center shadow-inner ${animateBalance ? 'scale-125 transition-transform' : ''}`}>
+               <svg viewBox="0 0 24 24" fill="white" className="w-3.5 h-3.5">
+                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+               </svg>
+            </div>
+            <span className={`text-sm font-bold text-gray-900 pr-1.5 leading-none transition-all ${animateBalance ? 'scale-110 text-yellow-600' : ''}`}>
+              {totalCoins}
+            </span>
           </div>
         </div>
 

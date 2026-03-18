@@ -147,8 +147,14 @@ export const capturePayment = async (
         await payment.save({ session });
 
         // Update order
-        order.paymentStatus = 'Paid';
+        if (order.paymentMethod === 'COD') {
+            order.paymentStatus = 'PARTIAL_PAID';
+            order.advancePaymentId = razorpayPaymentId;
+        } else {
+            order.paymentStatus = 'Paid';
+        }
         order.paymentId = razorpayPaymentId;
+        
         // Change order status from 'Pending' to 'Received' after successful payment
         if (order.status === 'Pending') {
             order.status = 'Received';
@@ -495,6 +501,7 @@ const handlePaymentCaptured = async (payload: any) => {
 
         // Find payment record
         const payment = await Payment.findOne({ razorpayOrderId });
+        const OrderModel = mongoose.models.Order;
 
         if (payment) {
             payment.status = 'Completed';
@@ -502,11 +509,22 @@ const handlePaymentCaptured = async (payload: any) => {
             payment.paidAt = new Date();
             await payment.save();
 
+            // Find order to check payment method
+            const order = await OrderModel.findById(payment.order);
+
             // Update order
-            await Order.findByIdAndUpdate(payment.order, {
-                paymentStatus: 'Paid',
-                paymentId: razorpayPaymentId,
-            });
+            if (order && order.paymentMethod === 'COD') {
+                await OrderModel.findByIdAndUpdate(payment.order, {
+                    paymentStatus: 'PARTIAL_PAID',
+                    paymentId: razorpayPaymentId,
+                    advancePaymentId: razorpayPaymentId
+                });
+            } else {
+                await OrderModel.findByIdAndUpdate(payment.order, {
+                    paymentStatus: 'Paid',
+                    paymentId: razorpayPaymentId,
+                });
+            }
         }
     } catch (error) {
         console.error('Error handling payment captured:', error);

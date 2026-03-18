@@ -13,10 +13,11 @@ export interface OrderItem {
 
 export interface CreateOrderData {
     items: {
-        product: {
+        product?: {
             id: string;
             name?: string;
         };
+        comboOffer?: string;
         quantity: number;
         variant?: string;
     }[];
@@ -94,6 +95,22 @@ export const refreshDeliveryOtp = async (id: string): Promise<OrderResponse> => 
  */
 export const cancelOrder = async (id: string, reason: string): Promise<OrderResponse> => {
     const response = await api.post<OrderResponse>(`/customer/orders/${id}/cancel`, { reason });
+    return response.data;
+};
+
+/**
+ * Cancel a specific item in an order
+ */
+export const cancelOrderItem = async (id: string, itemId: string, reason: string): Promise<OrderResponse> => {
+    const response = await api.post<OrderResponse>(`/customer/orders/${id}/items/${itemId}/cancel`, { reason });
+    return response.data;
+};
+
+/**
+ * Request a return for a specific item in an order
+ */
+export const requestReturn = async (id: string, itemId: string, data: { reason: string; description?: string; images?: string[] }): Promise<OrderResponse> => {
+    const response = await api.post<OrderResponse>(`/customer/orders/${id}/items/${itemId}/return`, data);
     return response.data;
 };
 

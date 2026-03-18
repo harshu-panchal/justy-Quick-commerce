@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useOrders } from '../../hooks/useOrders';
+import { useWarehouse } from '../../hooks/useWarehouse';
 
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -8,9 +9,14 @@ const getStatusColor = (status: string) => {
     case 'On the way':
       return 'bg-blue-100 text-blue-700';
     case 'Accepted':
+    case 'Preparing in Warehouse':
       return 'bg-yellow-100 text-yellow-700';
     case 'Received':
       return 'bg-neutral-100 text-neutral-700';
+    case 'Cancelled':
+      return 'bg-red-100 text-red-700';
+    case 'Returned':
+      return 'bg-orange-100 text-orange-700';
     default:
       return 'bg-neutral-100 text-neutral-700';
   }
@@ -29,6 +35,7 @@ const formatDate = (dateString: string) => {
 
 export default function Orders() {
   const { orders } = useOrders();
+  const { isWarehouseEnabled } = useWarehouse();
 
   console.log('📋 Orders component - orders:', orders);
   console.log('📋 Orders count:', orders.length);
@@ -76,7 +83,9 @@ export default function Orders() {
                     order.status
                   )}`}
                 >
-                  {order.status}
+                  {order.status === 'Accepted' 
+                    ? (isWarehouseEnabled ? 'Preparing in Warehouse' : 'Seller Processing') 
+                    : order.status}
                 </span>
               </div>
               <div className="flex items-center justify-between">

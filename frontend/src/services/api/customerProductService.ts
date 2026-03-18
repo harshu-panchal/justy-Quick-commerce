@@ -115,6 +115,9 @@ export const getProductById = async (id: string, latitude?: number, longitude?: 
  * Get category details by ID or slug (Public)
  */
 export const getCategoryById = async (id: string): Promise<any> => {
+    if (!id || id === '[object Object]') {
+        throw new Error('Invalid category ID or slug');
+    }
     const response = await api.get<any>(`/customer/categories/${id}`);
     return response.data;
 };

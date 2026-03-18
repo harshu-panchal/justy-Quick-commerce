@@ -1,4 +1,4 @@
-﻿import {
+import {
   useParams,
   useNavigate,
   useLocation as useRouterLocation,
@@ -679,82 +679,102 @@ export default function ProductDetail() {
           <div className="mt-1.5">
             {/* Service Guarantees Card */}
             <div className="bg-white rounded-lg p-3 mb-2">
-              <div className="grid grid-cols-3 gap-2">
-                {/* Replacement */}
+              <div className="grid grid-cols-4 gap-2">
+                {/* Cancellation */}
                 <div className="flex flex-col items-center">
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="mb-1">
-                    <path
-                      d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3M20.49 15a9 9 0 0 1-14.85 3"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                  <span className="text-sm font-bold text-neutral-900">
-                    48 hours
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-1 ${product.cancelAvailable ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg">
+                      <path
+                        d="M18 6L6 18M6 6l12 12"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </div>
+                  <span className="text-[10px] font-bold text-neutral-900 text-center uppercase">
+                    {product.cancelAvailable ? 'Cancellable' : 'Non-Cancellable'}
                   </span>
-                  <span className="text-xs text-neutral-600">
-                    Replacement
+                </div>
+
+                {/* Replacement/Return */}
+                <div className="flex flex-col items-center">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-1 ${product.isReturnable ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg">
+                      <path
+                        d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3M20.49 15a9 9 0 0 1-14.85 3"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </div>
+                  <span className="text-[10px] font-bold text-neutral-900 text-center uppercase">
+                    {product.isReturnable ? `${product.maxReturnDays || 2} Days` : 'No Return'}
+                  </span>
+                  <span className="text-[9px] text-neutral-600 uppercase">
+                    Returnable
                   </span>
                 </div>
 
                 {/* Support */}
                 <div className="flex flex-col items-center">
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="mb-1">
-                    <path
-                      d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <path
-                      d="M13 8H7M17 12H7"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                  <span className="text-sm font-bold text-neutral-900">
+                  <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mb-1">
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg">
+                      <path
+                        d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </div>
+                  <span className="text-[10px] font-bold text-neutral-900 uppercase">
                     24/7
                   </span>
-                  <span className="text-xs text-neutral-600">Support</span>
+                  <span className="text-[9px] text-neutral-600 uppercase">Support</span>
                 </div>
 
                 {/* Delivery */}
                 <div className="flex flex-col items-center">
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="mb-1">
-                    <path
-                      d="M5 17H2l1-7h18l1 7h-3M5 17l-1-5h20l-1 5M5 17v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-5M9 22h6"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                  <span className="text-sm font-bold text-neutral-900">
-                    Fast
+                  <div className="w-10 h-10 rounded-full bg-orange-50 text-orange-600 flex items-center justify-center mb-1">
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg">
+                      <path
+                        d="M5 17H2l1-7h18l1 7h-3M5 17l-1-5h20l-1 5M5 17v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-5M9 22h6"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </div>
+                  <span className="text-[10px] font-bold text-neutral-900 uppercase">
+                    Safe
                   </span>
-                  <span className="text-xs text-neutral-600">Delivery</span>
+                  <span className="text-[9px] text-neutral-600 uppercase">Delivery</span>
                 </div>
               </div>
             </div>
@@ -915,7 +935,7 @@ export default function ProductDetail() {
                         Customer Care Details:
                       </span>
                       <span className="text-xs text-neutral-600">
-                        Email: help@dhakadsnazzy.com
+                        Email: help@justi.com
                       </span>
                     </div>
                     <div className="flex items-start">
@@ -940,14 +960,18 @@ export default function ProductDetail() {
 
                     <div className="flex items-start">
                       <span className="text-xs font-semibold text-neutral-800 w-[180px] flex-shrink-0">
-                        Return Policy:
+                        Detailed Policy:
                       </span>
-                      <span className="text-xs text-neutral-600 leading-relaxed flex-1">
-                        {product.isReturnable
-                          ? `This product is returnable within ${product.maxReturnDays || 2
-                          } days.`
-                          : "This product is non-returnable."}
-                      </span>
+                      <div className="space-y-1">
+                        <p className="text-xs text-neutral-600 leading-relaxed">
+                          Cancellation: {product.cancelAvailable ? "Available before shipping." : "Non-cancellable once ordered."}
+                        </p>
+                        <p className="text-xs text-neutral-600 leading-relaxed">
+                          Returns: {product.isReturnable
+                            ? `Eligible for return within ${product.maxReturnDays || 2} days of delivery.`
+                            : "This product is non-returnable."}
+                        </p>
+                      </div>
                     </div>
                     {product.sellerId && (
                       <div className="flex items-start">

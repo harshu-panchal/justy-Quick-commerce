@@ -9,6 +9,7 @@ import deliveryAuthRoutes from "./deliveryAuthRoutes";
 // ... (other imports)
 import { authenticate, requireUserType } from "../middleware/auth";
 import customerRoutes from "./customerRoutes";
+import customerReferralRoutes from "./customerReferralRoutes";
 import sellerRoutes from "./sellerRoutes";
 import uploadRoutes from "./uploadRoutes";
 import productRoutes from "./productRoutes";
@@ -37,12 +38,15 @@ import sellerWalletRoutes from "./sellerWalletRoutes";
 import deliveryWalletRoutes from "./deliveryWalletRoutes";
 import adminWithdrawalRoutes from "./adminWithdrawalRoutes";
 import * as bannerController from "../controllers/bannerController";
+import sellerComboRoutes from "./sellerComboRoutes";
 
 import {
   createOrder,
   getMyOrders,
   getOrderById,
   cancelOrder,
+  cancelOrderItem,
+  requestReturn,
   updateOrderNotes,
 } from "../modules/customer/controllers/customerOrderController";
 
@@ -56,6 +60,31 @@ router.get("/health", (_req, res) => {
     timestamp: new Date().toISOString(),
   });
 });
+
+// Debug all requests to v1
+router.use((req, _res, next) => {
+  console.log(`[V1-DEBUG] ${req.method} ${req.originalUrl}`);
+  next();
+});
+
+// Specific order routes first to avoid overlap
+router.post("/customer/orders/:id/items/:itemId/return", authenticate, requireUserType("Customer"), requestReturn);
+router.post("/customer/orders/:id/items/:itemId/cancel", authenticate, requireUserType("Customer"), cancelOrderItem);
+router.post("/customer/orders/:id/cancel", authenticate, requireUserType("Customer"), cancelOrder);
+router.get("/customer/orders/:id", authenticate, requireUserType("Customer"), getOrderById);
+router.get("/customer/orders", authenticate, requireUserType("Customer"), getMyOrders);
+router.patch("/customer/orders/:id/notes", authenticate, requireUserType("Customer"), updateOrderNotes);
+
+router.post(
+  "/customer/orders",
+  (_req, _res, next) => {
+    console.log("✅ POST /customer/orders ROUTE MATCHED!");
+    next();
+  },
+  authenticate,
+  requireUserType("Customer"),
+  createOrder
+);
 
 // Authentication routes
 router.use("/auth/admin", adminAuthRoutes);
@@ -82,29 +111,14 @@ router.use(
 
 // Customer routes - Specific routes MUST be registered before general /customer route
 // to prevent Express from matching the broader route first
+router.use("/customer/referral", customerReferralRoutes);
 router.use("/customer/products", customerProductRoutes);
 router.use("/customer/categories", customerCategoryRoutes);
 
-// Tracking routes (must be before general /customer/orders/:id route)
+// Tracking routes (must be after specific order routes)
 router.use("/customer", customerTrackingRoutes);
 
-// Customer orders route - direct registration to avoid module loading issue
-console.log("🔥 REGISTERING CUSTOMER ORDER ROUTES");
-router.post(
-  "/customer/orders",
-  (_req, _res, next) => {
-    console.log("✅ POST /customer/orders ROUTE MATCHED!");
-    next();
-  },
-  authenticate,
-  requireUserType("Customer"),
-  createOrder
-);
-router.get("/customer/orders", authenticate, requireUserType("Customer"), getMyOrders);
-router.get("/customer/orders/:id", authenticate, requireUserType("Customer"), getOrderById);
-router.post("/customer/orders/:id/cancel", authenticate, requireUserType("Customer"), cancelOrder);
-router.patch("/customer/orders/:id/notes", authenticate, requireUserType("Customer"), updateOrderNotes);
-
+// Customer specific sub-routes
 router.use("/customer/coupons", customerCouponRoutes);
 router.use("/customer/addresses", customerAddressRoutes);
 router.use("/customer/home", customerHomeRoutes);
@@ -112,7 +126,8 @@ router.use("/customer/quick-delivery", customerQuickDeliveryRoutes);
 router.use("/customer/cart", customerCartRoutes);
 router.use("/customer/wishlist", wishlistRoutes);
 router.use("/customer/reviews", productReviewRoutes);
-// General customer route (must be last to avoid intercepting specific routes)
+
+// General customer profile/location routes (catch-all for /customer)
 router.use("/customer", customerRoutes);
 
 // Seller dashboard routes
@@ -150,6 +165,9 @@ router.use("/seller/reports", reportRoutes);
 
 // Wallet routes (protected, seller only)
 router.use("/seller/wallet", walletRoutes);
+
+// Seller Combo Offer routes
+router.use("/seller/combo-offers", sellerComboRoutes);
 
 // Tax routes (protected, seller/admin)
 router.use("/seller/taxes", taxRoutes);

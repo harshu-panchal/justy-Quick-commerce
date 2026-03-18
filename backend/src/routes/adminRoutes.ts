@@ -46,6 +46,7 @@ import * as faqController from "../modules/admin/controllers/adminFAQController"
 import * as paymentController from "../modules/admin/controllers/adminPaymentController";
 import * as policyController from "../modules/admin/controllers/adminPolicyController";
 import * as sellerController from "../modules/admin/controllers/adminSellerController";
+import * as sellerCommissionController from "../modules/admin/controllers/adminSellerCommissionController";
 
 // Profile Controllers
 import * as profileController from "../modules/admin/controllers/adminProfileController";
@@ -74,11 +75,20 @@ import * as lowestPricesController from "../modules/admin/controllers/adminLowes
 // PromoStrip Controllers
 import * as promoStripController from "../modules/admin/controllers/adminPromoStripController";
 
+// Product Slot Controllers
+import * as productSlotController from "../modules/admin/controllers/adminProductSlotController";
+
 // Pincode Demand Controllers
 import * as pincodeDemandController from "../modules/admin/controllers/pincodeDemandController";
 
 // Banner Controllers
 import * as bannerController from "../controllers/bannerController";
+
+// Combo Offers Controllers
+import * as comboController from "../modules/admin/controllers/adminComboController";
+
+// Subscription Plan Controllers
+import * as subscriptionPlanController from "../modules/admin/controllers/adminSubscriptionPlanController";
 
 const router = Router();
 
@@ -218,6 +228,8 @@ router.put(
   "/settings/sms-gateway",
   settingsController.updateSMSGatewaySettings
 );
+router.get("/settings/spinner", settingsController.getSpinnerSettings);
+router.put("/settings/spinner", settingsController.updateSpinnerSettings);
 
 // ==================== Coupon Routes ====================
 router.post("/coupons", couponController.createCoupon);
@@ -311,6 +323,10 @@ router.delete("/policies/:id", policyController.deletePolicy);
 router.get("/sellers", sellerController.getAllSellers);
 router.post("/seller/penalty", sellerController.applySellerPenalty);
 
+// Seller Category Commissions
+router.get("/sellers/:sellerId/category-commissions", sellerCommissionController.getSellerCategoryCommissions);
+router.post("/sellers/:sellerId/category-commissions", sellerCommissionController.saveSellerCategoryCommissions);
+
 // ==================== Shop Management ====================
 // Legacy routes (keep for backward compatibility)
 router.post("/shop/create", createShop);
@@ -367,9 +383,31 @@ router.delete("/promo-strips/:id", promoStripController.deletePromoStrip);
 // ==================== Pincode Demand Routes ====================
 router.get("/pincode-demands", pincodeDemandController.getPincodeDemands);
 
-// ==================== Banner Routes ====================
+// ==================== Banners Routes ====================
 router.post('/banners', bannerController.createBanner);
 router.get('/banners', bannerController.getAllBanners);
 router.delete('/banners/:id', bannerController.deleteBanner);
+
+// ==================== Combo Offers Routes ====================
+router.get("/combo-offers", comboController.getAllComboOffers);
+router.get("/combo-offers/pending", comboController.getPendingSellerCombos);
+router.get("/combo-offers/:id", comboController.getComboOfferById);
+router.post("/combo-offers", comboController.createComboOffer);
+router.put("/combo-offers/:id", comboController.updateComboOffer);
+router.delete("/combo-offers/:id", comboController.deleteComboOffer);
+router.post("/combo-offers/:id/approve", comboController.approveSellerCombo);
+router.post("/combo-offers/:id/reject", comboController.rejectSellerCombo);
+
+// ==================== Subscription Plan Routes ====================
+router.post("/subscription-plans", subscriptionPlanController.createSubscriptionPlan);
+router.get("/subscription-plans", subscriptionPlanController.getSubscriptionPlans);
+router.put("/subscription-plans/:id", subscriptionPlanController.updateSubscriptionPlan);
+router.delete("/subscription-plans/:id", subscriptionPlanController.deleteSubscriptionPlan);
+router.patch("/subscription-plans/:id/status", subscriptionPlanController.toggleSubscriptionPlanStatus);
+
+// ==================== Product Slot Routes ====================
+router.get("/product-slot-config", productSlotController.getProductSlotConfig);
+router.put("/product-slot-config", productSlotController.updateProductSlotConfig);
+router.get("/product-slot-earnings", productSlotController.getSlotEarnings);
 
 export default router;

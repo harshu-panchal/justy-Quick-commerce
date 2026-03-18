@@ -58,10 +58,14 @@ export const getProducts = async (req: Request, res: Response) => {
         ]
       });
     } else {
-      // If no location provided, we can strictly show only scheduled products
-      // This ensures quick delivery products (which REQUIRE location) are filtered out,
-      // while scheduled products remain visible.
-      query.headerCategoryId = { $in: scheduledIds };
+      // If no location provided, all approved sellers are eligible (frontend handles selection)
+      const allApprovedSellers = await Seller.find({ status: "Approved" }).select("_id").lean();
+      const approvedSellerIds = allApprovedSellers.map(s => s._id);
+      
+      query.$and = query.$and || [];
+      query.$and.push({
+        seller: { $in: approvedSellerIds }
+      });
     }
 
     // Helper to resolve category/subcategory ID from slug or ID
@@ -140,8 +144,8 @@ export const getProducts = async (req: Request, res: Response) => {
             ...oldHierarchySubs.map(s => s._id)
           ];
 
+          query.$and = query.$and || [];
           if (subIds.length > 0) {
-            query.$and = query.$and || [];
             query.$and.push({
               $or: [
                 { category: categoryId },
@@ -150,11 +154,10 @@ export const getProducts = async (req: Request, res: Response) => {
               ]
             });
           } else {
-            query.category = categoryId;
+            query.$and.push({ category: categoryId });
           }
-        } else {
-          query.category = categoryId;
         }
+        // If subcategory is present, we let the subcategory block below handle the query
       }
     }
 

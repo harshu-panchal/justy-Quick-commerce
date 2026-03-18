@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getAllSellers, updateSellerStatus, deleteSeller, Seller as SellerType, updateSeller } from '../../../services/api/sellerService';
+import { getSellerCategoryCommissions, saveSellerCategoryCommissions, CategoryCommission } from '../../../services/api/admin/adminSellerCommissionService';
 import SellerServiceMap from '../components/SellerServiceMap';
 
 interface Seller {
@@ -114,6 +115,9 @@ export default function AdminManageSellerList() {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isUpdatingRadius, setIsUpdatingRadius] = useState(false);
     const [newRadius, setNewRadius] = useState<number>(10);
+    const [categoryCommissions, setCategoryCommissions] = useState<CategoryCommission[]>([]);
+    const [isSavingCommissions, setIsSavingCommissions] = useState(false);
+    const [isFetchingCommissions, setIsFetchingCommissions] = useState(false);
 
     // Fetch sellers from backend
     useEffect(() => {
@@ -356,9 +360,53 @@ export default function AdminManageSellerList() {
         }
     };
 
-    const handleViewCategories = (seller: Seller) => {
+    const handleViewCategories = async (seller: Seller) => {
         setSelectedSeller(seller);
         setIsModalOpen(true);
+        setCategoryCommissions([]);
+        try {
+            setIsFetchingCommissions(true);
+            const response = await getSellerCategoryCommissions(seller._id);
+            if (response.success) {
+                setCategoryCommissions(response.data);
+            }
+        } catch (err) {
+            console.error('Error fetching category commissions:', err);
+        } finally {
+            setIsFetchingCommissions(false);
+        }
+    };
+
+    const handleCommissionChange = (headerCategoryId: string, value: string) => {
+        const rate = parseFloat(value);
+        setCategoryCommissions(prev => 
+            prev.map(c => c.headerCategoryId === headerCategoryId ? { ...c, commissionRate: isNaN(rate) ? 0 : rate } : c)
+        );
+    };
+
+    const handleSaveCommissions = async () => {
+        if (!selectedSeller) return;
+
+        try {
+            setIsSavingCommissions(true);
+            const commissionsToSave = categoryCommissions.map(c => ({
+                headerCategoryId: c.headerCategoryId,
+                commissionRate: c.commissionRate || 0
+            }));
+            
+            const response = await saveSellerCategoryCommissions(selectedSeller._id, commissionsToSave);
+            if (response.success) {
+                setSuccessMessage('Category commissions updated successfully');
+                setTimeout(() => setSuccessMessage(''), 3000);
+                setIsModalOpen(false);
+            }
+        } catch (err) {
+            console.error('Error saving category commissions:', err);
+            setError('Failed to save category commissions');
+            setTimeout(() => setError(''), 3000);
+        } finally {
+            setIsSavingCommissions(false);
+        }
     };
 
     const handleCloseModal = () => {
@@ -733,20 +781,46 @@ export default function AdminManageSellerList() {
 
                         {/* Modal Body */}
                         <div className="p-6 overflow-y-auto flex-1">
-                            {selectedSeller.categories.length > 0 ? (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    {selectedSeller.categories.map((category, index) => (
-                                        <div
-                                            key={index}
-                                            className="flex items-center gap-2 px-4 py-3 bg-teal-50 border border-teal-200 rounded-lg hover:bg-teal-100 transition-colors"
-                                        >
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-teal-600 flex-shrink-0">
-                                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                                                <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                                            </svg>
-                                            <span className="text-sm font-medium text-teal-900">{category}</span>
-                                        </div>
-                                    ))}
+                            {isFetchingCommissions ? (
+                                <div className="text-center py-8">
+                                    <p className="text-neutral-600">Loading commissions...</p>
+                                </div>
+                            ) : categoryCommissions.length > 0 ? (
+                                <div className="space-y-4">
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left border-collapse">
+                                            <thead>
+                                                <tr className="bg-neutral-50 text-xs font-bold text-neutral-800 border-b border-neutral-200">
+                                                    <th className="p-3">Category Name</th>
+                                                    <th className="p-3">Commission %</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {categoryCommissions.map((category) => (
+                                                    <tr key={category.headerCategoryId} className="border-b border-neutral-100">
+                                                        <td className="p-3 align-middle text-sm font-medium text-neutral-700">
+                                                            {category.name}
+                                                        </td>
+                                                        <td className="p-3 align-middle">
+                                                            <div className="flex items-center gap-2">
+                                                                <input
+                                                                    type="number"
+                                                                    min="0"
+                                                                    max="100"
+                                                                    step="0.01"
+                                                                    value={category.commissionRate ?? ''}
+                                                                    onChange={(e) => handleCommissionChange(category.headerCategoryId, e.target.value)}
+                                                                    placeholder="Enter rate"
+                                                                    className="w-24 px-3 py-1.5 bg-white border border-neutral-300 rounded text-sm focus:ring-1 focus:ring-teal-500 focus:outline-none"
+                                                                />
+                                                                <span className="text-sm text-neutral-500">%</span>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
                             ) : (
                                 <div className="text-center py-8 text-neutral-400">
@@ -756,12 +830,21 @@ export default function AdminManageSellerList() {
                         </div>
 
                         {/* Modal Footer */}
-                        <div className="px-6 py-4 border-t border-neutral-200 flex justify-end">
+                        <div className="px-6 py-4 border-t border-neutral-200 flex justify-end gap-3">
                             <button
                                 onClick={handleCloseModal}
-                                className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded text-sm font-medium transition-colors"
+                                className="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 rounded text-sm font-medium transition-colors"
                             >
-                                Close
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleSaveCommissions}
+                                disabled={isSavingCommissions || categoryCommissions.length === 0}
+                                className={`px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded text-sm font-medium transition-colors flex items-center gap-2 ${
+                                    (isSavingCommissions || categoryCommissions.length === 0) ? 'opacity-50 cursor-not-allowed' : ''
+                                }`}
+                            >
+                                {isSavingCommissions ? 'Saving...' : 'Save Changes'}
                             </button>
                         </div>
                     </div>

@@ -1,5 +1,5 @@
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import ProductCard from "./components/ProductCard";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -8,11 +8,12 @@ import {
   Category as ApiCategory,
 } from "../../services/api/customerProductService";
 import { useLocation as useLocationContext } from "../../hooks/useLocation";
+import EmptyState from "../../components/EmptyState";
 
 export default function CategoryPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { location: userLocation } = useLocationContext();
 
   const [category, setCategory] = useState<ApiCategory | null>(null);
@@ -73,8 +74,11 @@ export default function CategoryPage() {
       }
     };
 
-    if (slug) {
+    if (slug && slug !== '[object Object]') {
       fetchCategoryDetails();
+    } else if (slug === '[object Object]') {
+      setError("Invalid category link.");
+      setCategoryLoading(false);
     }
   }, [slug, searchParams]);
 
@@ -283,11 +287,19 @@ export default function CategoryPage() {
                 key={subcat.id || subcat._id}
                 type="button"
                 onClick={() => {
-                  console.log("Clicked subcategory:", subcat.id || subcat._id);
-                  if (subcat.slug) {
-                    navigate(`/subcategory/${subcat.slug}`);
+                  const subId = subcat.id || subcat._id;
+                  console.log("Clicked subcategory:", subId);
+                  
+                  // Update state
+                  setSelectedSubcategory(subId);
+                  
+                  // Update URL search params
+                  if (subId === "all") {
+                    const newParams = new URLSearchParams(searchParams);
+                    newParams.delete("subcategory");
+                    setSearchParams(newParams);
                   } else {
-                    setSelectedSubcategory(subcat.id || subcat._id);
+                    setSearchParams({ subcategory: subId });
                   }
                 }}
                 className={`w-full flex flex-col items-center justify-center py-2 relative transition-all duration-200 group ${isSelected ? "bg-green-50" : "hover:bg-neutral-50"
@@ -440,11 +452,11 @@ export default function CategoryPage() {
                   <button
                     key={subId}
                     onClick={() => {
-                      if (subcat.slug) {
-                        navigate(`/subcategory/${subcat.slug}`);
-                      } else {
-                        setSelectedSubcategory(subId);
-                      }
+                      // Update state
+                      setSelectedSubcategory(subId);
+                      
+                      // Update URL search params
+                      setSearchParams({ subcategory: subId });
                     }}
                     className={`flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md transition-colors flex-shrink-0 whitespace-nowrap ${isSelected
                       ? "bg-white border border-neutral-300 text-neutral-900"
@@ -488,10 +500,13 @@ export default function CategoryPage() {
               </div>
             </div>
           ) : (
-            <div className="px-4 md:px-6 lg:px-8 py-8 md:py-12 text-center">
-              <p className="text-neutral-500 md:text-lg">
-                No products found in this category.
-              </p>
+            <div className="flex-1 flex items-start justify-center pt-4">
+              <EmptyState 
+                title="No products found"
+                description="There are currently no products available in this category. Please check back later or explore other sections."
+                buttonText="Explore Home"
+                onButtonClick={() => navigate("/")}
+              />
             </div>
           )}
         </div>

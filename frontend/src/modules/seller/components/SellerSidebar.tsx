@@ -89,6 +89,7 @@ const menuItems: MenuItem[] = [
     ],
   },
   { label: "Return", path: "/seller/return", requiresPayment: true },
+  { label: "Combo Offers", path: "/seller/combo-offers", requiresPayment: true },
 ];
 
 export default function SellerSidebar({ onClose }: SellerSidebarProps) {

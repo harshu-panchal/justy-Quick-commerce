@@ -2,7 +2,8 @@ import mongoose, { Document, Schema } from "mongoose";
 
 export interface ICartItem extends Document {
   cart: mongoose.Types.ObjectId;
-  product: mongoose.Types.ObjectId;
+  product?: mongoose.Types.ObjectId;
+  comboOffer?: mongoose.Types.ObjectId;
   quantity: number;
   variation?: string;
   createdAt: Date;
@@ -19,7 +20,12 @@ const CartItemSchema = new Schema<ICartItem>(
     product: {
       type: Schema.Types.ObjectId,
       ref: "Product",
-      required: [true, "Product is required"],
+      required: false, // Made optional for combo offers
+    },
+    comboOffer: {
+      type: Schema.Types.ObjectId,
+      ref: "ComboOffer",
+      required: false,
     },
     quantity: {
       type: Number,

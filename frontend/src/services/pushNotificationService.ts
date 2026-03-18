@@ -1,7 +1,7 @@
 import { messaging, getToken, onMessage } from './firebase';
 import { getAuthToken } from './api/config';
 
-const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY || 'BNtQ-yWzXEuz_T9O0xQeEGi52R4-8nNjVbBao1oT4VuASPq0uiLhfPk81_ULMXl3eTsmpMQDhzKDSk47fgohgVQ';
+const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY || 'BBSbjS_0YdpezGr5o1M8xXEiqfPrUsq5_WGDwYDjIlP7T1YmZEnpVcs1zzRuEFXzk7xs0gh7dHnbz8bogjKwdbc';
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.dhakadsnazzy.com/api/v1';
 
 /**

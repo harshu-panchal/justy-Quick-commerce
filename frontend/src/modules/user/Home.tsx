@@ -14,9 +14,11 @@ import PageLoader from "../../components/PageLoader";
 import ComingSoon from "../../components/ComingSoon";
 import { isCategoryAvailable } from "../../config/pincodeService";
 import { getStoredPincode } from "../../components/PincodeSelector";
+import LuckySpin from "../../components/LuckySpin";
 
 import { useThemeContext } from "../../context/ThemeContext";
 import { useDeliveryMode } from "../../hooks/useDeliveryMode";
+import { useSpinner } from "../../hooks/useSpinner";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -47,6 +49,7 @@ export default function Home() {
   const [headerCategories, setHeaderCategories] = useState<any[]>([]);
 
   const [products, setProducts] = useState<any[]>([]);
+
 
   const saveScrollPosition = () => {
     const mainElement = document.querySelector('main');
@@ -112,6 +115,12 @@ export default function Home() {
 
     fetchData();
   }, [userLocation?.latitude, userLocation?.longitude, activeTab]);
+
+  const { showLuckySpin, setShowLuckySpin, triggerSpinner, config: spinnerConfig } = useSpinner(homeData.spinnerSettings);
+
+  useEffect(() => {
+    triggerSpinner('onLogin', 3000);
+  }, [triggerSpinner]);
 
   useEffect(() => {
     const preloadHeaderCategories = async () => {
@@ -352,6 +361,12 @@ export default function Home() {
           )}
         </div>
       )}
+      <LuckySpin 
+        isOpen={showLuckySpin} 
+        onClose={() => setShowLuckySpin(false)} 
+        autoOpened={true}
+        config={spinnerConfig}
+      />
     </div>
   );
 }

@@ -49,3 +49,5 @@ export { default as WalletTransaction } from "./WalletTransaction";
 export { default as SellerWalletTransaction } from "./SellerWalletTransaction";
 export { default as PlatformWallet } from "./PlatformWallet";
 export { default as Banner } from "./Banner";
+export { default as SellerCategoryCommission } from "./SellerCategoryCommission";
+export { default as ComboOffer } from "./ComboOffer";

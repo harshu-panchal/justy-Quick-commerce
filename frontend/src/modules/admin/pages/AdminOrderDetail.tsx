@@ -191,15 +191,33 @@ export default function AdminOrderDetail() {
                 </thead>
                 <tbody>
                   {items.map((item: any, index: number) => {
-                    const product = typeof item.product === 'object' ? item.product : null;
+                    const isCombo = !!item.comboOffer;
+                    const productName = isCombo ? item.comboOffer.name : (item.productName || item.product?.productName || 'N/A');
                     const seller = typeof item.seller === 'object' ? item.seller : null;
                     return (
                       <tr key={item._id || index} className="border-b">
                         <td className="py-3 px-2">
                           <div>
-                            <div className="font-medium">{item.productName || product?.productName || 'N/A'}</div>
+                            <div className="font-medium flex items-center gap-2">
+                              {productName}
+                              {isCombo && (
+                                <span className="text-[10px] bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded font-bold uppercase">
+                                  Combo
+                                </span>
+                              )}
+                            </div>
+                            {isCombo && item.comboProducts && (
+                              <div className="text-[10px] text-neutral-500 mt-1 space-y-0.5">
+                                {item.comboProducts.map((cp: any, idx: number) => (
+                                  <div key={idx}>• {cp.name} (x{cp.quantity})</div>
+                                ))}
+                              </div>
+                            )}
+                            {!isCombo && item.variant && (
+                              <div className="text-xs text-neutral-500">{item.variant}</div>
+                            )}
                             {seller && (
-                              <div className="text-sm text-neutral-500">
+                              <div className="text-sm text-neutral-500 mt-1">
                                 Seller: {seller.storeName || seller.sellerName}
                               </div>
                             )}

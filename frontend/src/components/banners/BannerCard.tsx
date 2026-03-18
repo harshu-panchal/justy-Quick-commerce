@@ -1,16 +1,34 @@
 import React from "react";
 import { Banner } from "./banner.types";
-
-interface BannerCardProps {
-    banner: Banner;
-}
-
-const BannerCard: React.FC<BannerCardProps> = ({ banner }) => {
-
-    return (
-        <div
-            className="relative w-full h-full cursor-pointer overflow-hidden rounded-2xl md:rounded-3xl shadow-lg border border-neutral-100 transition-transform duration-300 hover:scale-[1.01]"
-        >
+import { useNavigate } from "react-router-dom";
+ 
+ interface BannerCardProps {
+     banner: Banner;
+ }
+ 
+ const BannerCard: React.FC<BannerCardProps> = ({ banner }) => {
+     const navigate = useNavigate();
+ 
+     const handleClick = () => {
+         if (!banner.linkType || banner.linkType === 'none' || !banner.linkValue) return;
+ 
+         if (banner.linkType === 'category') {
+             // Redirect to category page
+             navigate(`/category/${banner.linkValue}`);
+         } else if (banner.linkType === 'product') {
+             // Redirect to product detail
+             navigate(`/product/${banner.linkValue}`);
+         } else if (banner.linkType === 'external') {
+             // Open external link
+             window.open(banner.linkValue, '_blank');
+         }
+     };
+ 
+     return (
+         <div
+             onClick={handleClick}
+             className="relative w-full h-full cursor-pointer overflow-hidden rounded-2xl md:rounded-3xl shadow-lg border border-neutral-100 transition-transform duration-300 hover:scale-[1.01]"
+         >
             <img
                 src={banner.imageUrl}
                 alt={banner.title}

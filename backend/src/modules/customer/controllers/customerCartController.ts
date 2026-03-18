@@ -8,6 +8,7 @@ import mongoose from 'mongoose';
 import AppSettings from '../../../models/AppSettings';
 import { getRoadDistances } from '../../../services/mapService';
 import Seller from '../../../models/Seller';
+// import HeaderCategory from '../../../models/HeaderCategory'; // UNUSED
 
 // Helper to calculate item price matching frontend logic
 const calculateItemPrice = (product: any, variationSelector: any) => {
@@ -41,40 +42,71 @@ const calculateItemPrice = (product: any, variationSelector: any) => {
 
 // Helper to calculate cart total with location filtering
 const calculateCartTotal = async (cartId: any, nearbySellerIds: mongoose.Types.ObjectId[] = []) => {
-    const items = await CartItem.find({ cart: cartId }).populate({
-        path: 'product',
-        select: 'price discPrice variations seller status publish productName headerCategoryId category subcategory',
-        populate: [
-            { path: 'headerCategoryId', select: 'deliveryType' },
-            {
-                path: 'category',
-                select: 'headerCategoryId',
-                populate: { path: 'headerCategoryId', select: 'deliveryType' }
-            },
-            {
-                path: 'subcategory',
-                select: 'headerCategoryId',
-                populate: { path: 'headerCategoryId', select: 'deliveryType' }
-            }
-        ]
-    });
+    const items = await CartItem.find({ cart: cartId })
+        .populate({
+            path: 'comboOffer',
+            select: 'comboPrice isActive sellerId mainProduct comboProducts name description',
+            populate: [
+                {
+                    path: 'mainProduct',
+                    select: 'seller status publish productName headerCategoryId category subcategory',
+                    populate: [
+                        { path: 'headerCategoryId', select: 'deliveryType' },
+                        {
+                            path: 'category',
+                            select: 'headerCategoryId',
+                            populate: { path: 'headerCategoryId', select: 'deliveryType' }
+                        },
+                        {
+                            path: 'subcategory',
+                            select: 'headerCategoryId',
+                            populate: { path: 'headerCategoryId', select: 'deliveryType' }
+                        }
+                    ]
+                },
+                {
+                    path: 'comboProducts.product',
+                    select: 'productName mainImage price discPrice variations stock pack mrp sku'
+                }
+            ]
+        });
 
     let total = 0;
     const hasLocation = nearbySellerIds.length > 0;
 
     for (const item of items) {
-        const product = item.product as any;
-        if (product && product.status === 'Active' && product.publish) {
-            const isScheduled =
-                product.headerCategoryId?.deliveryType === 'scheduled' ||
-                (product.category as any)?.headerCategoryId?.deliveryType === 'scheduled' ||
-                (product.subcategory as any)?.headerCategoryId?.deliveryType === 'scheduled';
+        if (item.comboOffer) {
+            const combo = item.comboOffer as any;
+            if (combo && combo.isActive) {
+                // Determine delivery and location by checking the main product of the combo
+                const product = combo.mainProduct;
+                if (product && product.status === 'Active' && product.publish) {
+                    const isScheduled =
+                        product.headerCategoryId?.deliveryType === 'scheduled' ||
+                        (product.category as any)?.headerCategoryId?.deliveryType === 'scheduled' ||
+                        (product.subcategory as any)?.headerCategoryId?.deliveryType === 'scheduled';
+                    
+                    const isNearby = hasLocation ? nearbySellerIds.some(id => id.toString() === (product.seller?._id || product.seller)?.toString()) : false;
 
-            const isNearby = hasLocation ? nearbySellerIds.some(id => id.toString() === product.seller.toString()) : false;
+                    if (isScheduled || isNearby) {
+                        total += combo.comboPrice * item.quantity;
+                    }
+                }
+            }
+        } else if (item.product) {
+            const product = item.product as any;
+            if (product && product.status === 'Active' && product.publish) {
+                const isScheduled =
+                    product.headerCategoryId?.deliveryType === 'scheduled' ||
+                    (product.category as any)?.headerCategoryId?.deliveryType === 'scheduled' ||
+                    (product.subcategory as any)?.headerCategoryId?.deliveryType === 'scheduled';
 
-            if (isScheduled || isNearby) {
-                const price = calculateItemPrice(product, item.variation);
-                total += price * item.quantity;
+                const isNearby = hasLocation ? nearbySellerIds.some(id => id.toString() === (product.seller?._id || product.seller)?.toString()) : false;
+
+                if (isScheduled || isNearby) {
+                    const price = calculateItemPrice(product, item.variation);
+                    total += price * item.quantity;
+                }
             }
         }
     }
@@ -107,7 +139,7 @@ const calculateDeliveryStuff = async (total: number, items: any[], userLat: numb
                     const sellerIds = new Set<string>();
                     items.forEach((item: any) => {
                         if (item.product?.seller) {
-                            sellerIds.add(item.product.seller.toString());
+                            sellerIds.add((item.product.seller?._id || item.product.seller)?.toString());
                         }
                     });
 
@@ -174,35 +206,65 @@ export const getCart = async (req: Request, res: Response) => {
             nearbySellerIds = await findSellersWithinRange(userLat!, userLng!);
         }
 
-        let cart = await Cart.findOne({ customer: userId }).populate({
-            path: 'items',
-            populate: {
-                path: 'product',
-                select: 'productName price mainImage stock pack mrp category seller status publish discPrice variations headerCategoryId',
+        let cart = await Cart.findOne({ customer: userId })
+            .populate({
+                path: 'items',
                 populate: [
                     {
-                        path: 'headerCategoryId',
-                        select: 'deliveryType'
+                        path: 'product',
+                        select: 'productName price mainImage stock pack mrp category seller status publish discPrice variations headerCategoryId',
+                        populate: [
+                            {
+                                path: 'headerCategoryId',
+                                select: 'deliveryType'
+                            },
+                            {
+                                path: 'category',
+                                select: 'headerCategoryId',
+                                populate: {
+                                    path: 'headerCategoryId',
+                                    select: 'deliveryType'
+                                }
+                            },
+                            {
+                                path: 'subcategory',
+                                select: 'headerCategoryId',
+                                populate: {
+                                    path: 'headerCategoryId',
+                                    select: 'deliveryType'
+                                }
+                            }
+                        ]
                     },
                     {
-                        path: 'category',
-                        select: 'headerCategoryId',
-                        populate: {
-                            path: 'headerCategoryId',
-                            select: 'deliveryType'
-                        }
-                    },
-                    {
-                        path: 'subcategory',
-                        select: 'headerCategoryId',
-                        populate: {
-                            path: 'headerCategoryId',
-                            select: 'deliveryType'
-                        }
+                        path: 'comboOffer',
+                        select: 'comboPrice isActive sellerId mainProduct comboProducts name description',
+                        populate: [
+                            {
+                                path: 'mainProduct',
+                                select: 'seller status publish productName headerCategoryId category subcategory',
+                                populate: [
+                                    { path: 'headerCategoryId', select: 'deliveryType' },
+                                    {
+                                        path: 'category',
+                                        select: 'headerCategoryId',
+                                        populate: { path: 'headerCategoryId', select: 'deliveryType' }
+                                    },
+                                    {
+                                        path: 'subcategory',
+                                        select: 'headerCategoryId',
+                                        populate: { path: 'headerCategoryId', select: 'deliveryType' }
+                                    }
+                                ]
+                            },
+                            {
+                                path: 'comboProducts.product',
+                                select: 'productName mainImage price discPrice variations stock pack mrp sku'
+                            }
+                        ]
                     }
                 ]
-            }
-        });
+            });
 
         if (!cart) {
             cart = await Cart.create({ customer: userId, items: [], total: 0 });
@@ -214,20 +276,39 @@ export const getCart = async (req: Request, res: Response) => {
         let total = 0;
 
         for (const item of (cart.items as any)) {
-            const product = item.product;
-            if (product && product.status === 'Active' && product.publish) {
-                const isScheduled =
-                    product.headerCategoryId?.deliveryType === 'scheduled' ||
-                    (product.category as any)?.headerCategoryId?.deliveryType === 'scheduled' ||
-                    (product.subcategory as any)?.headerCategoryId?.deliveryType === 'scheduled';
+            if (item.comboOffer) {
+                const combo = item.comboOffer as any;
+                if (combo && combo.isActive) {
+                    const product = combo.mainProduct;
+                    if (product && product.status === 'Active' && product.publish) {
+                        const isScheduled =
+                            product.headerCategoryId?.deliveryType === 'scheduled' ||
+                            (product.category as any)?.headerCategoryId?.deliveryType === 'scheduled' ||
+                            (product.subcategory as any)?.headerCategoryId?.deliveryType === 'scheduled';
+                        
+                        const isNearby = hasLocation ? nearbySellerIds.some(id => id.toString() === (product.seller?._id || product.seller)?.toString()) : false;
 
-                const isNearby = hasLocation ? nearbySellerIds.some(id => id.toString() === product.seller.toString()) : false;
+                        if (isScheduled || isNearby) {
+                            filteredItems.push(item);
+                            total += combo.comboPrice * item.quantity;
+                        }
+                    }
+                }
+            } else if (item.product) {
+                const product = item.product;
+                if (product && product.status === 'Active' && product.publish) {
+                    const isScheduled =
+                        product.headerCategoryId?.deliveryType === 'scheduled' ||
+                        (product.category as any)?.headerCategoryId?.deliveryType === 'scheduled' ||
+                        (product.subcategory as any)?.headerCategoryId?.deliveryType === 'scheduled';
 
-                if (isScheduled || isNearby) {
-                    filteredItems.push(item);
-                    const price = calculateItemPrice(product, item.variation);
-                    total += price * item.quantity;
-                    console.log(`[DEBUG CartLoop] Item: ${product.productName}, Price: ${price}, Qty: ${item.quantity}, RunningTotal: ${total}`);
+                    const isNearby = hasLocation ? nearbySellerIds.some(id => id.toString() === (product.seller?._id || product.seller)?.toString()) : false;
+
+                    if (isScheduled || isNearby) {
+                        filteredItems.push(item);
+                        const price = calculateItemPrice(product, item.variation);
+                        total += price * item.quantity;
+                    }
                 }
             }
         }
@@ -254,6 +335,207 @@ export const getCart = async (req: Request, res: Response) => {
         return res.status(500).json({
             success: false,
             message: 'Error fetching cart',
+            error: error.message
+        });
+    }
+};
+
+// Add combo offer to cart
+export const addComboToCart = async (req: Request, res: Response) => {
+    try {
+        const userId = req.user?.userId;
+        const { comboId, quantity = 1 } = req.body;
+        const { latitude, longitude } = req.query;
+
+        if (!comboId) {
+            return res.status(400).json({ success: false, message: 'Combo ID is required' });
+        }
+
+        // Parse location
+        const userLat = latitude ? parseFloat(latitude as string) : null;
+        const userLng = longitude ? parseFloat(longitude as string) : null;
+
+        // Verify combo exists and is active, populate main product to check delivery constraints
+        const combo = await mongoose.model("ComboOffer").findOne({ _id: comboId, isActive: true })
+            .populate({
+                path: 'mainProduct',
+                populate: [
+                    { path: 'seller' },
+                    { path: 'headerCategoryId' },
+                    {
+                        path: 'category',
+                        populate: { path: 'headerCategoryId' }
+                    },
+                    {
+                        path: 'subcategory',
+                        populate: { path: 'headerCategoryId' }
+                    }
+                ]
+            });
+
+        if (!combo) {
+            return res.status(404).json({ success: false, message: 'Combo offer not found or inactive' });
+        }
+
+        const product = combo.mainProduct as any;
+        if (!product || product.status !== 'Active' || !product.publish) {
+            return res.status(400).json({ success: false, message: 'Main product of this combo is unavailable' });
+        }
+
+        const isScheduled =
+            product.headerCategoryId?.deliveryType === 'scheduled' ||
+            (product.category as any)?.headerCategoryId?.deliveryType === 'scheduled' ||
+            (product.subcategory as any)?.headerCategoryId?.deliveryType === 'scheduled';
+
+        let nearbySellerIds: mongoose.Types.ObjectId[] = [];
+        const hasLocation = userLat !== null && userLng !== null && !isNaN(userLat) && !isNaN(userLng);
+        
+        if (!isScheduled) {
+            if (!hasLocation) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Location needs to be updated. Please turn on location.",
+                    locationRequired: true
+                });
+            }
+
+            nearbySellerIds = await findSellersWithinRange(userLat!, userLng!);
+            
+            if (!nearbySellerIds.some(id => id.toString() === product.seller._id.toString())) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Sorry, this combo offer is not available at your current location',
+                    notServiceable: true
+                });
+            }
+        } else if (hasLocation) {
+             nearbySellerIds = await findSellersWithinRange(userLat!, userLng!);
+        }
+
+        // Stock check based on main product for simplicity, real app might check all combo products
+        if (product.stock < quantity) {
+            return res.status(400).json({ success: false, message: 'Insufficient stock available' });
+        }
+
+        let cart = await Cart.findOne({ customer: userId });
+
+        if (!cart) {
+            cart = await Cart.create({ customer: userId, items: [], total: 0 });
+        }
+
+        let cartItem = await CartItem.findOne({
+            cart: cart._id,
+            comboOffer: comboId
+        });
+
+        if (cartItem) {
+            cartItem.quantity += quantity;
+            await cartItem.save();
+        } else {
+            const newItem = await CartItem.create({
+                cart: cart._id,
+                comboOffer: comboId,
+                quantity
+            });
+            cart.items.push(newItem._id as any);
+        }
+
+        cart.total = await calculateCartTotal(cart._id, nearbySellerIds);
+        await cart.save();
+
+        // Return updated cart with full population
+        const updatedCart = await Cart.findById(cart._id)
+            .populate({
+                path: 'items',
+                populate: [
+                    {
+                        path: 'product',
+                        select: 'productName price mainImage stock pack mrp category seller status publish discPrice variations headerCategoryId',
+                        populate: [
+                            { path: 'headerCategoryId', select: 'deliveryType' },
+                            {
+                                path: 'category',
+                                select: 'headerCategoryId',
+                                populate: { path: 'headerCategoryId', select: 'deliveryType' }
+                            },
+                            {
+                                path: 'subcategory',
+                                select: 'headerCategoryId',
+                                populate: { path: 'headerCategoryId', select: 'deliveryType' }
+                            }
+                        ]
+                    },
+                    {
+                        path: 'comboOffer',
+                        select: 'comboPrice isActive sellerId mainProduct comboProducts name description',
+                        populate: [
+                            {
+                                path: 'mainProduct',
+                                select: 'seller status publish productName headerCategoryId category subcategory',
+                                populate: [
+                                    { path: 'headerCategoryId', select: 'deliveryType' },
+                                    {
+                                        path: 'category',
+                                        select: 'headerCategoryId',
+                                        populate: { path: 'headerCategoryId', select: 'deliveryType' }
+                                    },
+                                    {
+                                        path: 'subcategory',
+                                        select: 'headerCategoryId',
+                                        populate: { path: 'headerCategoryId', select: 'deliveryType' }
+                                    }
+                                ]
+                            },
+                            {
+                                path: 'comboProducts.product',
+                                select: 'productName mainImage price discPrice variations stock pack mrp sku'
+                            }
+                        ]
+                    }
+                ]
+            });
+
+        const filteredItems = (updatedCart?.items as any[] || []).filter(item => {
+            if (item.comboOffer) {
+                const combo = item.comboOffer;
+                if (!combo.isActive) return false;
+                const prod = combo.mainProduct;
+                if (!prod) return false;
+                const isProdScheduled =
+                    prod.headerCategoryId?.deliveryType === 'scheduled' ||
+                    (prod.category as any)?.headerCategoryId?.deliveryType === 'scheduled' ||
+                    (prod.subcategory as any)?.headerCategoryId?.deliveryType === 'scheduled';
+                const isProdNearby = hasLocation ? nearbySellerIds.some(id => id.toString() === prod.seller?.toString()) : false;
+                return isProdScheduled || isProdNearby;
+            } else if (item.product) {
+                const prod = item.product;
+                const isProdScheduled =
+                    prod.headerCategoryId?.deliveryType === 'scheduled' ||
+                    (prod.category as any)?.headerCategoryId?.deliveryType === 'scheduled' ||
+                    (prod.subcategory as any)?.headerCategoryId?.deliveryType === 'scheduled';
+                const isProdNearby = hasLocation ? nearbySellerIds.some(id => id.toString() === prod.seller.toString()) : false;
+                return isProdScheduled || isProdNearby;
+            }
+            return false;
+        });
+
+        // Calculate fees
+        const fees = await calculateDeliveryStuff(cart.total, filteredItems, userLat, userLng);
+
+        return res.status(200).json({
+            success: true,
+            message: 'Combo offer added to cart',
+            data: {
+                ...updatedCart?.toObject(),
+                items: filteredItems,
+                total: cart.total,
+                ...fees
+            }
+        });
+    } catch (error: any) {
+        return res.status(500).json({
+            success: false,
+            message: 'Error adding combo to cart',
             error: error.message
         });
     }
@@ -364,34 +646,76 @@ export const addToCart = async (req: Request, res: Response) => {
         // Return updated cart with filtering
         const updatedCart = await Cart.findById(cart._id).populate({
             path: 'items',
-            populate: {
-                path: 'product',
-                select: 'productName price mainImage stock pack mrp category seller status publish discPrice variations headerCategoryId',
-                populate: [
-                    {
-                        path: 'headerCategoryId',
-                        select: 'deliveryType'
-                    },
-                    {
-                        path: 'category',
-                        select: 'headerCategoryId',
-                        populate: {
-                            path: 'headerCategoryId',
-                            select: 'deliveryType'
+            populate: [
+                {
+                    path: 'product',
+                    select: 'productName price mainImage stock pack mrp category seller status publish discPrice variations headerCategoryId',
+                    populate: [
+                        { path: 'headerCategoryId', select: 'deliveryType' },
+                        {
+                            path: 'category',
+                            select: 'headerCategoryId',
+                            populate: { path: 'headerCategoryId', select: 'deliveryType' }
+                        },
+                        {
+                            path: 'subcategory',
+                            select: 'headerCategoryId',
+                            populate: { path: 'headerCategoryId', select: 'deliveryType' }
                         }
-                    }
-                ]
-            }
+                    ]
+                },
+                {
+                    path: 'comboOffer',
+                    select: 'comboPrice isActive sellerId mainProduct comboProducts name description',
+                    populate: [
+                        {
+                            path: 'mainProduct',
+                            select: 'seller status publish productName mainImage headerCategoryId category subcategory',
+                            populate: [
+                                { path: 'headerCategoryId', select: 'deliveryType' },
+                                {
+                                    path: 'category',
+                                    select: 'headerCategoryId',
+                                    populate: { path: 'headerCategoryId', select: 'deliveryType' }
+                                },
+                                {
+                                    path: 'subcategory',
+                                    select: 'headerCategoryId',
+                                    populate: { path: 'headerCategoryId', select: 'deliveryType' }
+                                }
+                            ]
+                        },
+                        {
+                            path: 'comboProducts.product',
+                            select: 'productName mainImage price discPrice variations stock pack mrp sku'
+                        }
+                    ]
+                }
+            ]
         });
 
         const filteredItems = (updatedCart?.items as any[] || []).filter(item => {
-            const prod = item.product;
-            if (!prod) return false;
-            const isProdScheduled =
-                prod.headerCategoryId?.deliveryType === 'scheduled' ||
-                (prod.category as any)?.headerCategoryId?.deliveryType === 'scheduled';
-            const isProdNearby = nearbySellerIds.some(id => id.toString() === prod.seller.toString());
-            return isProdScheduled || isProdNearby;
+            if (item.comboOffer) {
+                const combo = item.comboOffer;
+                if (!combo.isActive) return false;
+                const prod = combo.mainProduct;
+                if (!prod) return false;
+                const isProdScheduled =
+                    prod.headerCategoryId?.deliveryType === 'scheduled' ||
+                    (prod.category as any)?.headerCategoryId?.deliveryType === 'scheduled' ||
+                    (prod.subcategory as any)?.headerCategoryId?.deliveryType === 'scheduled';
+                const isProdNearby = nearbySellerIds.some(id => id.toString() === prod.seller?.toString());
+                return isProdScheduled || isProdNearby;
+            } else if (item.product) {
+                const prod = item.product;
+                const isProdScheduled =
+                    prod.headerCategoryId?.deliveryType === 'scheduled' ||
+                    (prod.category as any)?.headerCategoryId?.deliveryType === 'scheduled' ||
+                    (prod.subcategory as any)?.headerCategoryId?.deliveryType === 'scheduled';
+                const isProdNearby = nearbySellerIds.some(id => id.toString() === prod.seller?.toString());
+                return isProdScheduled || isProdNearby;
+            }
+            return false;
         });
 
         // Calculate fees
@@ -434,7 +758,7 @@ export const updateCartItem = async (req: Request, res: Response) => {
 
         let nearbySellerIds: mongoose.Types.ObjectId[] = [];
         const hasLocation = userLat !== null && userLng !== null && !isNaN(userLat) && !isNaN(userLng);
-        
+
         if (hasLocation) {
             nearbySellerIds = await findSellersWithinRange(userLat!, userLng!);
         }
@@ -444,36 +768,77 @@ export const updateCartItem = async (req: Request, res: Response) => {
             return res.status(404).json({ success: false, message: 'Cart not found' });
         }
 
-        const cartItem = await CartItem.findOne({ _id: itemId, cart: cart._id }).populate({
-            path: 'product',
-            populate: [
-                { path: 'headerCategoryId', select: 'deliveryType' },
-                {
-                    path: 'category',
-                    select: 'headerCategoryId',
-                    populate: { path: 'headerCategoryId', select: 'deliveryType' }
-                },
-                {
-                    path: 'subcategory',
-                    select: 'headerCategoryId',
-                    populate: { path: 'headerCategoryId', select: 'deliveryType' }
+        const cartItem = await CartItem.findOne({ _id: itemId, cart: cart._id })
+            .populate({
+                path: 'product',
+                populate: [
+                    { path: 'headerCategoryId', select: 'deliveryType' },
+                    {
+                        path: 'category',
+                        select: 'headerCategoryId',
+                        populate: { path: 'headerCategoryId', select: 'deliveryType' }
+                    },
+                    {
+                        path: 'subcategory',
+                        select: 'headerCategoryId',
+                        populate: { path: 'headerCategoryId', select: 'deliveryType' }
+                    }
+                ]
+            })
+            .populate({
+                path: 'comboOffer',
+                populate: {
+                    path: 'mainProduct',
+                    populate: [
+                        { path: 'headerCategoryId', select: 'deliveryType' },
+                        {
+                            path: 'category',
+                            select: 'headerCategoryId',
+                            populate: { path: 'headerCategoryId', select: 'deliveryType' }
+                        },
+                        {
+                            path: 'subcategory',
+                            select: 'headerCategoryId',
+                            populate: { path: 'headerCategoryId', select: 'deliveryType' }
+                        }
+                    ]
                 }
-            ]
-        });
+            });
         if (!cartItem) {
             return res.status(404).json({ success: false, message: 'Item not found in cart' });
         }
 
         // Verify item availability
-        const product = cartItem.product as any;
-        const isScheduled =
-            product?.headerCategoryId?.deliveryType === 'scheduled' ||
-            (product?.category as any)?.headerCategoryId?.deliveryType === 'scheduled' ||
-            (product?.subcategory as any)?.headerCategoryId?.deliveryType === 'scheduled';
+        let isScheduled = false;
+        let isNearby = false;
+        let itemAvailable = false;
 
-        const isNearby = hasLocation && product && nearbySellerIds.some(id => id.toString() === product.seller.toString());
+        if (cartItem.product) {
+            const product = cartItem.product as any;
+            isScheduled =
+                product?.headerCategoryId?.deliveryType === 'scheduled' ||
+                (product?.category as any)?.headerCategoryId?.deliveryType === 'scheduled' ||
+                (product?.subcategory as any)?.headerCategoryId?.deliveryType === 'scheduled';
 
-        if (!isScheduled && !isNearby) {
+            isNearby = hasLocation && product && nearbySellerIds.some(id => id.toString() === (product.seller?._id || product.seller)?.toString());
+            itemAvailable = isScheduled || isNearby;
+        } else if (cartItem.comboOffer) {
+            const combo = cartItem.comboOffer as any;
+            if (combo.isActive) {
+                const product = combo.mainProduct;
+                if (product && product.status === 'Active' && product.publish) {
+                    isScheduled =
+                        product.headerCategoryId?.deliveryType === 'scheduled' ||
+                        (product.category as any)?.headerCategoryId?.deliveryType === 'scheduled' ||
+                        (product.subcategory as any)?.headerCategoryId?.deliveryType === 'scheduled';
+
+                    isNearby = hasLocation && nearbySellerIds.some(id => id.toString() === (product.seller?._id || product.seller)?.toString());
+                    itemAvailable = isScheduled || isNearby;
+                }
+            }
+        }
+
+        if (!itemAvailable) {
             return res.status(403).json({
                 success: false,
                 message: 'This item is no longer available in your location'
@@ -486,45 +851,79 @@ export const updateCartItem = async (req: Request, res: Response) => {
         cart.total = await calculateCartTotal(cart._id, nearbySellerIds);
         await cart.save();
 
-        const updatedCart = await Cart.findById(cart._id).populate({
-            path: 'items',
-            populate: {
-                path: 'product',
-                select: 'productName price mainImage stock pack mrp category seller status publish discPrice variations headerCategoryId',
+        const updatedCart = await Cart.findById(cart._id)
+            .populate({
+                path: 'items',
                 populate: [
                     {
-                        path: 'headerCategoryId',
-                        select: 'deliveryType'
+                        path: 'product',
+                        select: 'productName price mainImage stock pack mrp category seller status publish discPrice variations headerCategoryId',
+                        populate: [
+                            { path: 'headerCategoryId', select: 'deliveryType' },
+                            {
+                                path: 'category',
+                                select: 'headerCategoryId',
+                                populate: { path: 'headerCategoryId', select: 'deliveryType' }
+                            },
+                            {
+                                path: 'subcategory',
+                                select: 'headerCategoryId',
+                                populate: { path: 'headerCategoryId', select: 'deliveryType' }
+                            }
+                        ]
                     },
                     {
-                        path: 'category',
-                        select: 'headerCategoryId',
-                        populate: {
-                            path: 'headerCategoryId',
-                            select: 'deliveryType'
-                        }
-                    },
-                    {
-                        path: 'subcategory',
-                        select: 'headerCategoryId',
-                        populate: {
-                            path: 'headerCategoryId',
-                            select: 'deliveryType'
-                        }
+                        path: 'comboOffer',
+                        select: 'comboPrice isActive sellerId mainProduct comboProducts name description',
+                        populate: [
+                            {
+                                path: 'mainProduct',
+                                select: 'seller status publish productName headerCategoryId category subcategory',
+                                populate: [
+                                    { path: 'headerCategoryId', select: 'deliveryType' },
+                                    {
+                                        path: 'category',
+                                        select: 'headerCategoryId',
+                                        populate: { path: 'headerCategoryId', select: 'deliveryType' }
+                                    },
+                                    {
+                                        path: 'subcategory',
+                                        select: 'headerCategoryId',
+                                        populate: { path: 'headerCategoryId', select: 'deliveryType' }
+                                    }
+                                ]
+                            },
+                            {
+                                path: 'comboProducts.product',
+                                select: 'productName mainImage price discPrice variations stock pack mrp sku'
+                            }
+                        ]
                     }
                 ]
-            }
-        });
+            });
 
         const filteredItems = (updatedCart?.items as any[] || []).filter(item => {
-            const prod = item.product;
-            if (!prod) return false;
-            const isProdScheduled =
-                prod.headerCategoryId?.deliveryType === 'scheduled' ||
-                (prod.category as any)?.headerCategoryId?.deliveryType === 'scheduled' ||
-                (prod.subcategory as any)?.headerCategoryId?.deliveryType === 'scheduled';
-            const isProdNearby = hasLocation ? nearbySellerIds.some(id => id.toString() === prod.seller.toString()) : false;
-            return isProdScheduled || isProdNearby;
+            if (item.comboOffer) {
+                const combo = item.comboOffer;
+                if (!combo.isActive) return false;
+                const prod = combo.mainProduct;
+                if (!prod) return false;
+                const isProdScheduled =
+                    prod.headerCategoryId?.deliveryType === 'scheduled' ||
+                    (prod.category as any)?.headerCategoryId?.deliveryType === 'scheduled' ||
+                    (prod.subcategory as any)?.headerCategoryId?.deliveryType === 'scheduled';
+                const isProdNearby = hasLocation ? nearbySellerIds.some(id => id.toString() === prod.seller?.toString()) : false;
+                return isProdScheduled || isProdNearby;
+            } else if (item.product) {
+                const prod = item.product;
+                const isProdScheduled =
+                    prod.headerCategoryId?.deliveryType === 'scheduled' ||
+                    (prod.category as any)?.headerCategoryId?.deliveryType === 'scheduled' ||
+                    (prod.subcategory as any)?.headerCategoryId?.deliveryType === 'scheduled';
+                const isProdNearby = hasLocation ? nearbySellerIds.some(id => id.toString() === prod.seller.toString()) : false;
+                return isProdScheduled || isProdNearby;
+            }
+            return false;
         });
 
         // Calculate fees
@@ -574,34 +973,86 @@ export const removeFromCart = async (req: Request, res: Response) => {
         let nearbySellerIds: mongoose.Types.ObjectId[] = [];
         const hasLocation = userLat !== null && userLng !== null && !isNaN(userLat) && !isNaN(userLng);
         if (hasLocation) {
-            nearbySellerIds = await findSellersWithinRange(userLat, userLng);
+            nearbySellerIds = await findSellersWithinRange(userLat!, userLng!);
         }
 
         cart.total = await calculateCartTotal(cart._id, nearbySellerIds);
         await cart.save();
 
-        const updatedCart = await Cart.findById(cart._id).populate({
-            path: 'items',
-            populate: {
-                path: 'product',
-                select: 'productName price mainImage stock pack mrp category seller status publish discPrice variations headerCategoryId',
-                populate: {
-                    path: 'headerCategoryId',
-                    select: 'deliveryType'
-                }
-            }
-        });
+        const updatedCart = await Cart.findById(cart._id)
+            .populate({
+                path: 'items',
+                populate: [
+                    {
+                        path: 'product',
+                        select: 'productName price mainImage stock pack mrp category seller status publish discPrice variations headerCategoryId',
+                        populate: [
+                            { path: 'headerCategoryId', select: 'deliveryType' },
+                            {
+                                path: 'category',
+                                select: 'headerCategoryId',
+                                populate: { path: 'headerCategoryId', select: 'deliveryType' }
+                            },
+                            {
+                                path: 'subcategory',
+                                select: 'headerCategoryId',
+                                populate: { path: 'headerCategoryId', select: 'deliveryType' }
+                            }
+                        ]
+                    },
+                    {
+                        path: 'comboOffer',
+                        select: 'comboPrice isActive sellerId mainProduct comboProducts name description',
+                        populate: [
+                            {
+                                path: 'mainProduct',
+                                select: 'seller status publish productName headerCategoryId category subcategory',
+                                populate: [
+                                    { path: 'headerCategoryId', select: 'deliveryType' },
+                                    {
+                                        path: 'category',
+                                        select: 'headerCategoryId',
+                                        populate: { path: 'headerCategoryId', select: 'deliveryType' }
+                                    },
+                                    {
+                                        path: 'subcategory',
+                                        select: 'headerCategoryId',
+                                        populate: { path: 'headerCategoryId', select: 'deliveryType' }
+                                    }
+                                ]
+                            },
+                            {
+                                path: 'comboProducts.product',
+                                select: 'productName mainImage price discPrice variations stock pack mrp sku'
+                            }
+                        ]
+                    }
+                ]
+            });
 
         const filteredItems = (updatedCart?.items as any[] || []).filter(item => {
-            const prod = item.product;
-            if (!prod) return false;
-            const isProdScheduled =
-                prod.headerCategoryId?.deliveryType === 'scheduled' ||
-                (prod.category as any)?.headerCategoryId?.deliveryType === 'scheduled' ||
-                (prod.subcategory as any)?.headerCategoryId?.deliveryType === 'scheduled';
+            if (item.comboOffer) {
+                const combo = item.comboOffer;
+                if (!combo.isActive) return false;
+                const prod = combo.mainProduct;
+                if (!prod) return false;
+                const isProdScheduled =
+                    prod.headerCategoryId?.deliveryType === 'scheduled' ||
+                    (prod.category as any)?.headerCategoryId?.deliveryType === 'scheduled' ||
+                    (prod.subcategory as any)?.headerCategoryId?.deliveryType === 'scheduled';
+                const isProdNearby = hasLocation ? nearbySellerIds.some(id => id.toString() === prod.seller?.toString()) : false;
+                return isProdScheduled || isProdNearby;
+            } else if (item.product) {
+                const prod = item.product;
+                const isProdScheduled =
+                    prod.headerCategoryId?.deliveryType === 'scheduled' ||
+                    (prod.category as any)?.headerCategoryId?.deliveryType === 'scheduled' ||
+                    (prod.subcategory as any)?.headerCategoryId?.deliveryType === 'scheduled';
 
-            const isProdNearby = hasLocation ? nearbySellerIds.some(id => id.toString() === prod.seller.toString()) : false;
-            return isProdScheduled || isProdNearby;
+                const isProdNearby = hasLocation ? nearbySellerIds.some(id => id.toString() === prod.seller.toString()) : false;
+                return isProdScheduled || isProdNearby;
+            }
+            return false;
         });
 
         // Calculate fees
@@ -632,23 +1083,23 @@ export const clearCart = async (req: Request, res: Response) => {
         const userId = req.user?.userId;
         const cart = await Cart.findOne({ customer: userId });
 
-        if (cart) {
-            await CartItem.deleteMany({ cart: cart._id });
-            cart.items = [];
-            cart.total = 0;
-            await cart.save();
-        }
+            if (cart) {
+                await CartItem.deleteMany({ cart: cart._id });
+                cart.items = [];
+                cart.total = 0;
+                await cart.save();
+            }
 
-        return res.status(200).json({
-            success: true,
-            message: 'Cart cleared',
-            data: { items: [], total: 0 }
-        });
-    } catch (error: any) {
-        return res.status(500).json({
-            success: false,
-            message: 'Error clearing cart',
-            error: error.message
-        });
-    }
-};
+            return res.status(200).json({
+                success: true,
+                message: 'Cart cleared',
+                data: { items: [], total: 0 }
+            });
+        } catch (error: any) {
+            return res.status(500).json({
+                success: false,
+                message: 'Error clearing cart',
+                error: error.message
+            });
+        }
+    };

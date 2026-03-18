@@ -1,9 +1,13 @@
 import { Product } from './domain';
 
 export interface CartItem {
-  product: Product;
+  id?: string;
+  _id?: string;
+  product?: Product;
+  comboOffer?: any;
   quantity: number;
   variant?: any;
+  deliveryType?: 'quick' | 'scheduled';
 }
 
 export interface Cart {

@@ -29,6 +29,53 @@ const menuItems: MenuItem[] = [
   { label: "Category", path: "/seller/category", requiresPayment: true },
   { label: "SubCategory", path: "/seller/subcategory", requiresPayment: true },
   {
+    label: "Video Call",
+    path: "/seller/call",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M23 7l-7 5 7 5V7z"></path>
+        <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+      </svg>
+    ),
+  },
+  {
+    label: "Plans",
+    path: "/seller/plans",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4 19.5A2.5 2.5 0 0 0 6.5 22h11A2.5 2.5 0 0 0 20 19.5v-13A2.5 2.5 0 0 0 17.5 4h-11A2.5 2.5 0 0 0 4 6.5v13z"></path>
+        <path d="M8 7h8"></path>
+        <path d="M8 11h8"></path>
+        <path d="M8 15h5"></path>
+      </svg>
+    ),
+  },
+  {
+    label: "Spin & Win",
+    path: "/seller/spin-wheel",
+    icon: (
+      <svg
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round">
+        <circle cx="12" cy="12" r="9"></circle>
+        <path d="M12 3v3"></path>
+        <path d="M21 12h-3"></path>
+        <path d="M12 21v-3"></path>
+        <path d="M3 12h3"></path>
+        <path d="M7 7l2 2"></path>
+        <path d="M17 17l-2-2"></path>
+        <path d="M17 7l-2 2"></path>
+        <path d="M7 17l2-2"></path>
+      </svg>
+    ),
+  },
+  {
     label: "Product",
     path: "/seller/product",
     hasSubmenu: true,

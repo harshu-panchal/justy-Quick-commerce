@@ -140,6 +140,16 @@ export const createProduct = async (
   return response.data;
 };
 
+export const generateProductDescriptionAI = async (params: {
+  name: string;
+  category?: string;
+  tags?: string[];
+  existingDescription?: string;
+}): Promise<{ success: boolean; data?: { description: string }; message?: string }> => {
+  const response = await api.post("/ai/product-description", params);
+  return response.data;
+};
+
 /**
  * Get seller's products with filters
  */

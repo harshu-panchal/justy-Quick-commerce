@@ -7,6 +7,7 @@ import { getSellerDashboardStats, DashboardStats, NewOrder } from '../../../serv
 import { getSellerProfile, toggleShopStatus } from '../../../services/api/auth/sellerAuthService';
 import { useAuth } from '../../../context/AuthContext';
 import { seedSellerProducts } from '../../../utils/seedSellerProducts';
+import { getSellerSpinWheelCampaign } from '../../../services/api/sellerSpinWheelService';
 
 export default function SellerDashboard() {
   const navigate = useNavigate();
@@ -75,6 +76,20 @@ export default function SellerDashboard() {
 
     fetchDashboardData();
   }, []);
+
+  useEffect(() => {
+    const key = `spin-wheel-auto-seller-${new Date().toISOString().slice(0, 10)}`;
+    if (sessionStorage.getItem(key)) return;
+    sessionStorage.setItem(key, "1");
+
+    getSellerSpinWheelCampaign()
+      .then((res) => {
+        if (res?.success && res?.data?.campaign && !res?.data?.mySpin) {
+          navigate("/seller/spin-wheel");
+        }
+      })
+      .catch(() => {});
+  }, [navigate]);
 
   const handleToggleShop = async () => {
     try {
@@ -418,6 +433,40 @@ export default function SellerDashboard() {
         <DashboardCard icon={pendingOrdersIcon} title="Pending Orders" value={stats.pendingOrders} accentColor="#a855f7" />
         <DashboardCard icon={cancelledOrdersIcon} title="Cancelled Orders" value={stats.cancelledOrders} accentColor="#ef4444" />
         <DashboardCard icon={productIcon} title="Total Product" value={stats.totalProduct} accentColor="#f97316" />
+        <div
+          onClick={() => navigate("/seller/spin-wheel")}
+          className="bg-white rounded-lg shadow-sm border border-neutral-200 p-3 sm:p-4 md:p-5 cursor-pointer hover:shadow-md transition-shadow"
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") navigate("/seller/spin-wheel");
+          }}
+        >
+          <div className="flex items-start justify-between mb-2 sm:mb-3">
+            <div className="p-2 sm:p-3 rounded-lg" style={{ backgroundColor: `#10b98120` }}>
+              <div style={{ color: "#10b981" }} className="w-6 h-6 sm:w-8 sm:h-8">
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M12 3v3" />
+                  <path d="M21 12h-3" />
+                  <path d="M12 21v-3" />
+                  <path d="M3 12h3" />
+                </svg>
+              </div>
+            </div>
+          </div>
+          <h3 className="text-neutral-600 text-xs sm:text-sm font-medium mb-1">Spin &amp; Win</h3>
+          <p className="text-xl sm:text-2xl font-bold text-neutral-900">Daily</p>
+        </div>
       </div>
 
       {/* Charts Row */}

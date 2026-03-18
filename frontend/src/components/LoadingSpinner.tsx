@@ -6,7 +6,7 @@ import React from 'react';
  */
 export default function LoadingSpinner({
   size = 'md',
-  className = ''
+  className = '',
 }: {
   size?: 'sm' | 'md' | 'lg';
   className?: string;

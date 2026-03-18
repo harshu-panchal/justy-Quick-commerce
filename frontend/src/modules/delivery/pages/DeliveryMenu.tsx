@@ -11,6 +11,8 @@ export default function DeliveryMenu() {
     { id: "menu-cod", title: "COD Collection", route: "/delivery/cod" },
     { id: "menu-history", title: "Delivery History", route: "/delivery/orders/all" },
     { id: "menu-2", title: "Earnings", route: "/delivery/earnings" },
+    { id: "menu-plans", title: "Plans", route: "/delivery/plans" },
+    { id: "menu-spin", title: "Spin & Win", route: "/delivery/spin-wheel" },
     { id: "menu-3", title: "Settings", route: "/delivery/settings" },
     { id: "menu-4", title: "Help & Support", route: "/delivery/help" },
     { id: "menu-5", title: "About", route: "/delivery/about" },
@@ -160,6 +162,25 @@ export default function DeliveryMenu() {
               strokeLinejoin="round"
               fill="none"
             />
+          </svg>
+        );
+      case "menu-plans": // Plans
+        return (
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4 19.5A2.5 2.5 0 0 0 6.5 22h11A2.5 2.5 0 0 0 20 19.5v-13A2.5 2.5 0 0 0 17.5 4h-11A2.5 2.5 0 0 0 4 6.5v13z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M8 7h8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M8 11h8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M8 15h5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        );
+      case "menu-spin": // Spin & Win
+        return (
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" fill="none" />
+            <path d="M12 3v3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            <path d="M21 12h-3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            <path d="M12 21v-3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            <path d="M3 12h3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
           </svg>
         );
       case "menu-4": // Help & Support

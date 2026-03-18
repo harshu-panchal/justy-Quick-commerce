@@ -19,9 +19,12 @@ import LuckySpin from "../../components/LuckySpin";
 import { useThemeContext } from "../../context/ThemeContext";
 import { useDeliveryMode } from "../../hooks/useDeliveryMode";
 import { useSpinner } from "../../hooks/useSpinner";
+import { useAuth } from "../../context/AuthContext";
+import { getSpinWheelCampaign } from "../../services/api/customerSpinWheelService";
 
 export default function Home() {
   const navigate = useNavigate();
+  const { isAuthenticated, user } = useAuth();
   const { location: userLocation } = useLocation();
   const { activeCategory, setActiveCategory, currentTheme } = useThemeContext();
   const { deliveryMode } = useDeliveryMode();
@@ -31,6 +34,23 @@ export default function Home() {
   const contentRef = useRef<HTMLDivElement>(null);
   const scrollHandledRef = useRef(false);
   const SCROLL_POSITION_KEY = 'home-scroll-position';
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    if (user?.userType && user.userType !== "Customer") return;
+
+    const key = `spin-wheel-auto-customer-${new Date().toISOString().slice(0, 10)}`;
+    if (sessionStorage.getItem(key)) return;
+    sessionStorage.setItem(key, "1");
+
+    getSpinWheelCampaign()
+      .then((res) => {
+        if (res?.success && res?.data?.campaign && !res?.data?.mySpin) {
+          navigate("/spin-wheel");
+        }
+      })
+      .catch(() => {});
+  }, [isAuthenticated, navigate, user?.userType]);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -361,12 +381,42 @@ export default function Home() {
           )}
         </div>
       )}
+<<<<<<< Updated upstream
       <LuckySpin 
         isOpen={showLuckySpin} 
         onClose={() => setShowLuckySpin(false)} 
         autoOpened={true}
         config={spinnerConfig}
       />
+=======
+
+      <button
+        type="button"
+        onClick={() => navigate("/spin-wheel")}
+        className="fixed bottom-24 right-4 sm:right-6 z-[60] flex items-center gap-2 rounded-full bg-emerald-600 text-white px-4 py-3 shadow-lg hover:bg-emerald-700 active:bg-emerald-800"
+        aria-label="Open Spin & Win"
+      >
+        <span className="inline-flex items-center justify-center h-9 w-9 rounded-full bg-white/15">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 3v3" />
+            <path d="M21 12h-3" />
+            <path d="M12 21v-3" />
+            <path d="M3 12h3" />
+          </svg>
+        </span>
+        <span className="text-sm font-semibold leading-none">Spin &amp; Win</span>
+      </button>
+>>>>>>> Stashed changes
     </div>
   );
 }

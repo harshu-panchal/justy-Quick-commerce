@@ -942,11 +942,11 @@ const menuSections: MenuSection[] = [
     ],
   },
   {
-    title: "Setting",
+    title: "Plans & Subscription",
     items: [
       {
-        label: "Product Slots",
-        path: "/admin/product-slots",
+        label: "Plans",
+        path: "/admin/plans",
         icon: (
           <svg
             width="18"
@@ -957,10 +957,30 @@ const menuSections: MenuSection[] = [
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round">
-            <rect x="3" y="3" width="7" height="7"></rect>
-            <rect x="14" y="3" width="7" height="7"></rect>
-            <rect x="14" y="14" width="7" height="7"></rect>
-            <rect x="3" y="14" width="7" height="7"></rect>
+            <path d="M4 19.5A2.5 2.5 0 0 0 6.5 22h11A2.5 2.5 0 0 0 20 19.5v-13A2.5 2.5 0 0 0 17.5 4h-11A2.5 2.5 0 0 0 4 6.5v13z"></path>
+            <path d="M8 7h8"></path>
+            <path d="M8 11h8"></path>
+            <path d="M8 15h5"></path>
+          </svg>
+        ),
+      },
+      {
+        label: "Subscriptions",
+        path: "/admin/subscriptions",
+        icon: (
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round">
+            <path d="M20 7H4"></path>
+            <path d="M20 12H4"></path>
+            <path d="M20 17H4"></path>
+            <path d="M7 7v10"></path>
           </svg>
         ),
       },
@@ -979,6 +999,26 @@ const menuSections: MenuSection[] = [
             strokeLinejoin="round">
             <rect x="3" y="4" width="18" height="16" rx="2" />
             <path d="M7 8h10M7 12h10M7 16h6" />
+          </svg>
+        ),
+      },
+      {
+        label: "Product Slots",
+        path: "/admin/product-slots",
+        icon: (
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round">
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
           </svg>
         ),
       },
@@ -1021,6 +1061,61 @@ const menuSections: MenuSection[] = [
           </svg>
         ),
       },
+    ],
+  },
+  {
+    title: "Rewards",
+    items: [
+      {
+        label: "Spin Wheel",
+        path: "/admin/spin-wheel",
+        icon: (
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M12 3v3"></path>
+            <path d="M21 12h-3"></path>
+            <path d="M12 21v-3"></path>
+            <path d="M3 12h3"></path>
+            <path d="M7 7l2 2"></path>
+            <path d="M17 17l-2-2"></path>
+            <path d="M17 7l-2 2"></path>
+            <path d="M7 17l2-2"></path>
+          </svg>
+        ),
+      },
+      {
+        label: "Refer & Earn",
+        path: "/admin/refer-earn",
+        icon: (
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="8.5" cy="7" r="4"></circle>
+            <path d="M20 8v6"></path>
+            <path d="M23 11h-6"></path>
+          </svg>
+        ),
+      },
+    ],
+  },
+  {
+    title: "Setting",
+    items: [
       {
         label: "SMS Gateway",
         path: "/admin/sms-gateway",

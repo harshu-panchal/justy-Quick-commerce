@@ -63,6 +63,8 @@ const DeliveryOrders = lazy(() => import("./modules/delivery/pages/DeliveryOrder
 const DeliveryOrderDetail = lazy(() => import("./modules/delivery/pages/DeliveryOrderDetail"));
 const DeliveryNotifications = lazy(() => import("./modules/delivery/pages/DeliveryNotifications"));
 const DeliveryMenu = lazy(() => import("./modules/delivery/pages/DeliveryMenu"));
+const DeliveryPlans = lazy(() => import("./modules/delivery/pages/DeliveryPlans"));
+const DeliverySpinWheel = lazy(() => import("./modules/delivery/pages/DeliverySpinWheel"));
 const DeliveryPendingOrders = lazy(() => import("./modules/delivery/pages/DeliveryPendingOrders"));
 const DeliveryAllOrders = lazy(() => import("./modules/delivery/pages/DeliveryAllOrders"));
 const DeliveryReturnOrders = lazy(() => import("./modules/delivery/pages/DeliveryReturnOrders"));
@@ -97,6 +99,11 @@ const SellerSalesReport = lazy(() => import("./modules/seller/pages/SellerSalesR
 const SellerReturnRequest = lazy(() => import("./modules/seller/pages/SellerReturnRequest"));
 const SellerAccountSettings = lazy(() => import("./modules/seller/pages/SellerAccountSettings"));
 const SellerComboOffers = lazy(() => import("./modules/seller/pages/SellerComboOffers"));
+const SellerVideoCall = lazy(() => import("./modules/seller/pages/SellerVideoCall"));
+const SellerPlans = lazy(() => import("./modules/seller/pages/SellerPlans"));
+const SellerSpinWheel = lazy(() => import("./modules/seller/pages/SellerSpinWheel"));
+const CustomerPlans = lazy(() => import("./modules/user/CustomerPlans"));
+const SpinWheel = lazy(() => import("./modules/user/SpinWheel"));
 const SellerLogin = lazy(() => import("./modules/seller/pages/SellerLogin"));
 const SellerSignUp = lazy(() => import("./modules/seller/pages/SellerSignUp"));
 
@@ -164,6 +171,10 @@ const AdminComboOffers = lazy(() => import("./modules/admin/pages/AdminComboOffe
 const AdminBanners = lazy(() => import("./modules/admin/pages/AdminBanners"));
 const AdminSubscriptionPlan = lazy(() => import("./modules/admin/pages/AdminSubscriptionPlan"));
 const AdminProductSlots = lazy(() => import("./modules/admin/pages/AdminProductSlots"));
+const AdminPlans = lazy(() => import("./modules/admin/pages/AdminPlans"));
+const AdminSpinWheel = lazy(() => import("./modules/admin/pages/AdminSpinWheel"));
+const AdminReferEarn = lazy(() => import("./modules/admin/pages/AdminReferEarn"));
+const AdminSubscriptions = lazy(() => import("./modules/admin/pages/AdminSubscriptions"));
 
 import { DeliveryModeProvider } from "./context/DeliveryModeContext";
 
@@ -285,6 +296,8 @@ function App() {
                                           <Route path="orders/return" element={<DeliveryReturnOrders />} />
                                           <Route path="notifications" element={<DeliveryNotifications />} />
                                           <Route path="menu" element={<DeliveryMenu />} />
+                                          <Route path="plans" element={<DeliveryPlans />} />
+                                          <Route path="spin-wheel" element={<DeliverySpinWheel />} />
                                           <Route path="profile" element={<DeliveryProfile />} />
                                           <Route path="earnings" element={<DeliveryEarnings />} />
                                           <Route path="wallet" element={<DeliveryWallet />} />
@@ -326,6 +339,9 @@ function App() {
                                                   <Route path="product/taxes" element={<SellerTaxes />} />
                                                   <Route path="product/list" element={<SellerProductList />} />
                                                   <Route path="product/stock" element={<SellerStockManagement />} />
+                                                  <Route path="call" element={<SellerVideoCall />} />
+                                                  <Route path="plans" element={<SellerPlans />} />
+                                                  <Route path="spin-wheel" element={<SellerSpinWheel />} />
                                                   <Route path="return" element={<SellerReturnRequest />} />
                                                   <Route path="return-order" element={<SellerReturnRequest />} />
                                                   <Route path="wallet" element={<SellerWallet />} />
@@ -407,6 +423,10 @@ function App() {
                                           <Route path="subscription-plans" element={<AdminSubscriptionPlan />} />
                                           <Route path="product-slots" element={<AdminProductSlots />} />
                                           <Route path="spinner" element={<SpinnerManagement />} />
+                                          <Route path="plans" element={<AdminPlans />} />
+                                          <Route path="subscriptions" element={<AdminSubscriptions />} />
+                                          <Route path="spin-wheel" element={<AdminSpinWheel />} />
+                                          <Route path="refer-earn" element={<AdminReferEarn />} />
                                         </Routes>
                                       </AdminLayout>
                                     </Suspense>
@@ -449,6 +469,8 @@ function App() {
                                         <Route path="/order-again" element={<OrderAgain />} />
                                         <Route path="/account" element={<Account />} />
                                         <Route path="/coins" element={<CoinsPage />} />
+                                        <Route path="/plans" element={<CustomerPlans />} />
+                                        <Route path="/spin-wheel" element={<SpinWheel />} />
                                         <Route path="/about-us" element={<AboutUs />} />
                                         <Route path="/faq" element={<FAQ />} />
                                         <Route path="/wishlist" element={<Wishlist />} />

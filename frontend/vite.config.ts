@@ -76,6 +76,8 @@ export default defineConfig({
   ],
   assetsInclude: ['**/*.jpg', '**/*.jpeg', '**/*.png', '**/*.webp'],
   server: {
+    host: "0.0.0.0",
+    port: 5173,
     fs: {
       strict: false,
     },
@@ -83,15 +85,15 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
-      '@assets': path.resolve(__dirname, './assets'),
+      "@": path.resolve(__dirname, "./src"),
+      "@assets": path.resolve(__dirname, "./assets"),
     },
     // Ensure single React instance
-    dedupe: ['react', 'react-dom'],
+    dedupe: ["react", "react-dom"],
   },
   optimizeDeps: {
     // Force include React and react-dom to ensure single instance
-    include: ['react', 'react-dom', 'react-apexcharts', 'apexcharts'],
+    include: ["react", "react-dom", "react-apexcharts", "apexcharts"],
     // Exclude problematic packages if needed
     exclude: [],
   },
@@ -106,10 +108,10 @@ export default defineConfig({
       output: {
         manualChunks: {
           // Vendor chunks
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'ui-vendor': ['framer-motion', 'gsap'],
-          'chart-vendor': ['apexcharts', 'react-apexcharts', 'recharts'],
-          'map-vendor': ['@react-google-maps/api', 'leaflet', 'react-leaflet'],
+          "react-vendor": ["react", "react-dom", "react-router-dom"],
+          "ui-vendor": ["framer-motion", "gsap"],
+          "chart-vendor": ["apexcharts", "react-apexcharts", "recharts"],
+          "map-vendor": ["@react-google-maps/api", "leaflet", "react-leaflet"],
         },
       },
     },
@@ -118,6 +120,6 @@ export default defineConfig({
     // Enable source maps for production debugging (optional)
     sourcemap: false,
     // Minify with esbuild (built-in, faster than terser, no extra dependencies needed)
-    minify: 'esbuild',
+    minify: "esbuild",
   },
-})
+});

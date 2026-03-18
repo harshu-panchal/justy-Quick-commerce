@@ -6,6 +6,7 @@ import DashboardCard from "../components/DashboardCard";
 import DeliveryBottomNav from "../components/DeliveryBottomNav";
 import { getDashboardStats } from "../../../services/api/delivery/deliveryService";
 import { useDeliveryStatus } from "../context/DeliveryStatusContext";
+import { getDeliverySpinWheelCampaign } from "../../../services/api/deliverySpinWheelService";
 
 export default function DeliveryDashboard() {
   const navigate = useNavigate();
@@ -28,6 +29,20 @@ export default function DeliveryDashboard() {
 
     fetchStats();
   }, []);
+
+  useEffect(() => {
+    const key = `spin-wheel-auto-delivery-${new Date().toISOString().slice(0, 10)}`;
+    if (sessionStorage.getItem(key)) return;
+    sessionStorage.setItem(key, "1");
+
+    getDeliverySpinWheelCampaign()
+      .then((res) => {
+        if (res?.success && res?.data?.campaign && !res?.data?.mySpin) {
+          navigate("/delivery/spin-wheel");
+        }
+      })
+      .catch(() => {});
+  }, [navigate]);
 
   // Icons for dashboard cards (Keep existing SVGs)
   const pendingOrderIcon = (
@@ -146,6 +161,16 @@ export default function DeliveryDashboard() {
         strokeWidth="2"
         fill="none"
       />
+    </svg>
+  );
+
+  const spinWheelIcon = (
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" fill="none" />
+      <path d="M12 3v3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <path d="M21 12h-3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <path d="M12 21v-3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <path d="M3 12h3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
     </svg>
   );
 
@@ -393,6 +418,13 @@ export default function DeliveryDashboard() {
 
         {/* Dashboard Cards Grid */}
         <div className="grid grid-cols-2 gap-4">
+          <DashboardCard
+            icon={spinWheelIcon}
+            title="Spin & Win"
+            value="Daily"
+            accentColor="#10b981"
+            onClick={() => navigate("/delivery/spin-wheel")}
+          />
           <DashboardCard
             icon={pendingOrderIcon}
             title="Today's Pending Order"

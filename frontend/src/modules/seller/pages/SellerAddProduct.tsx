@@ -13,6 +13,7 @@ import {
   getShops,
   ProductVariation,
   Shop,
+  generateProductDescriptionAI,
 } from "../../../services/api/productService";
 import {
   getCategories,
@@ -77,6 +78,7 @@ export default function SellerAddProduct() {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string>("");
   const [successMessage, setSuccessMessage] = useState<string>("");
+  const [aiLoading, setAiLoading] = useState(false);
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [subcategories, setSubcategories] = useState<SubCategory[]>([]);
@@ -747,6 +749,59 @@ export default function SellerAddProduct() {
                 <label className="block text-sm font-medium text-neutral-700 mb-2">
                   Product Small Description
                 </label>
+                <div className="flex items-center justify-between mb-2 gap-2">
+                  <p className="text-xs text-neutral-500">
+                    Write a short summary, or let AI suggest one.
+                  </p>
+                  <button
+                    type="button"
+                    disabled={aiLoading || !formData.productName}
+                    onClick={async () => {
+                      setUploadError("");
+                      if (!formData.productName) {
+                        setUploadError("Enter product name before using AI description.");
+                        return;
+                      }
+                      try {
+                        setAiLoading(true);
+                        const tags =
+                          formData.tags
+                            ?.split(",")
+                            .map((t) => t.trim())
+                            .filter(Boolean) || [];
+                        const res = await generateProductDescriptionAI({
+                          name: formData.productName,
+                          category: formData.category || undefined,
+                          tags,
+                          existingDescription: formData.smallDescription || undefined,
+                        });
+                        if (res.success && res.data?.description) {
+                          setFormData((prev) => ({
+                            ...prev,
+                            smallDescription: res.data!.description,
+                          }));
+                        } else {
+                          setUploadError(res.message || "Failed to generate AI description.");
+                        }
+                      } catch (err: any) {
+                        setUploadError(
+                          err?.response?.data?.message ||
+                          err?.message ||
+                          "AI description failed. Please try again."
+                        );
+                      } finally {
+                        setAiLoading(false);
+                      }
+                    }}
+                    className={`px-3 py-1.5 rounded-md text-xs font-medium border ${
+                      aiLoading || !formData.productName
+                        ? "bg-neutral-100 text-neutral-400 border-neutral-200 cursor-not-allowed"
+                        : "bg-teal-50 text-teal-700 border-teal-200 hover:bg-teal-100"
+                    }`}
+                  >
+                    {aiLoading ? "Generating…" : "Generate with AI"}
+                  </button>
+                </div>
                 <textarea
                   name="smallDescription"
                   value={formData.smallDescription}

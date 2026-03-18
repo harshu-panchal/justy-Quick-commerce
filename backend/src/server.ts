@@ -10,6 +10,11 @@ import { ensureDefaultAdmin } from "./utils/ensureDefaultAdmin";
 import { seedHeaderCategories } from "./utils/seedHeaderCategories";
 import { initializeSocket } from "./socket/socketService";
 import { initializeFirebaseAdmin } from "./services/firebaseAdmin";
+import { handleRazorpayWebhook } from "./webhooks/razorpayWebhookHandler";
+import cron from "node-cron";
+import { syncRazorpaySubscriptionsOnce } from "./cron/razorpaySubscriptionSync";
+import { syncRazorpayCustomerSubscriptionsOnce } from "./cron/razorpayCustomerSubscriptionSync";
+import { syncRazorpayDeliverySubscriptionsOnce } from "./cron/razorpayDeliverySubscriptionSync";
 
 
 // Load environment variables
@@ -66,6 +71,31 @@ const corsOptions = {
 // Apply CORS middleware - This handles everything including preflight
 app.use(cors(corsOptions));
 
+// Razorpay webhook must use raw body for signature verification.
+// Register BEFORE express.json().
+const razorpayWebhookMiddleware = [
+  express.raw({ type: "application/json" }),
+  async (req: Request, res: Response) => {
+    try {
+      const signature = String(req.headers["x-razorpay-signature"] || "");
+      const rawBody = req.body as Buffer;
+      console.log(`[${new Date().toISOString()}] POST ${req.path} (razorpay webhook)`);
+      const result = await handleRazorpayWebhook({ rawBody, signature });
+      // Always 200 to stop retries once signature is valid; 400 only when invalid.
+      if (!result.ok) {
+        return res.status(400).json({ success: false, message: result.message });
+      }
+      return res.status(200).json({ success: true, message: result.message });
+    } catch (e: any) {
+      return res.status(500).json({ success: false, message: e?.message || "Webhook error" });
+    }
+  },
+];
+
+// Keep both paths so you can use either URL in Razorpay dashboard
+app.post("/api/v1/jasti-razorpay-webhooks", ...razorpayWebhookMiddleware);
+app.post("/api/v1/webhooks/razorpay", ...razorpayWebhookMiddleware);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -96,6 +126,9 @@ app.use(notFound);
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
+let lastRazorpaySubCronRunAt: Date | null = null;
+let lastRazorpaySubCronStats: { checked: number; updated: number; errors: number } | null = null;
+let lastRazorpaySubCronError: string | null = null;
 
 async function startServer() {
   // Connect DB then ensure default admin exists
@@ -105,6 +138,47 @@ async function startServer() {
 
   // Initialize Firebase Admin SDK for push notifications
   initializeFirebaseAdmin();
+
+  // Cron: periodic Razorpay subscription sync (backup for missed webhooks)
+  // Every 1 minute so seller subscription activates quickly.
+  cron.schedule("*/1 * * * *", async () => {
+    try {
+      const stats = await syncRazorpaySubscriptionsOnce({ limit: 50 });
+      lastRazorpaySubCronRunAt = new Date();
+      lastRazorpaySubCronStats = stats;
+      lastRazorpaySubCronError = null;
+      console.log(
+        `[${lastRazorpaySubCronRunAt.toISOString()}] cron razorpay-subscriptions: checked=${stats.checked} updated=${stats.updated} errors=${stats.errors}`
+      );
+    } catch (e: any) {
+      lastRazorpaySubCronRunAt = new Date();
+      lastRazorpaySubCronError = e?.message || String(e);
+    }
+  });
+
+  // Cron: customer subscription sync
+  cron.schedule("*/1 * * * *", async () => {
+    try {
+      const stats = await syncRazorpayCustomerSubscriptionsOnce({ limit: 50 });
+      console.log(
+        `[${new Date().toISOString()}] cron razorpay-customer-subscriptions: checked=${stats.checked} updated=${stats.updated} errors=${stats.errors}`
+      );
+    } catch {
+      // ignore
+    }
+  });
+
+  // Cron: delivery subscription sync
+  cron.schedule("*/1 * * * *", async () => {
+    try {
+      const stats = await syncRazorpayDeliverySubscriptionsOnce({ limit: 50 });
+      console.log(
+        `[${new Date().toISOString()}] cron razorpay-delivery-subscriptions: checked=${stats.checked} updated=${stats.updated} errors=${stats.errors}`
+      );
+    } catch {
+      // ignore
+    }
+  });
 
   // Handle server errors gracefully (e.g., port already in use)
   httpServer.on('error', (error: NodeJS.ErrnoException) => {
@@ -134,6 +208,16 @@ startServer().catch((err) => {
   console.error("\n\x1b[31m✗ Failed to start server\x1b[0m");
   console.error(err);
   process.exit(1);
+});
+
+// Cron health endpoint (debug)
+app.get("/api/v1/health/razorpay-subscription-cron", (_req: Request, res: Response) => {
+  res.json({
+    success: true,
+    lastRunAt: lastRazorpaySubCronRunAt ? lastRazorpaySubCronRunAt.toISOString() : null,
+    lastStats: lastRazorpaySubCronStats,
+    lastError: lastRazorpaySubCronError,
+  });
 });
 
 

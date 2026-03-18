@@ -47,6 +47,9 @@ import * as paymentController from "../modules/admin/controllers/adminPaymentCon
 import * as policyController from "../modules/admin/controllers/adminPolicyController";
 import * as sellerController from "../modules/admin/controllers/adminSellerController";
 import * as sellerCommissionController from "../modules/admin/controllers/adminSellerCommissionController";
+import * as planController from "../modules/admin/controllers/adminPlanController";
+import * as spinWheelController from "../modules/admin/controllers/adminSpinWheelController";
+import * as subscriptionController from "../modules/admin/controllers/adminSubscriptionController";
 
 // Profile Controllers
 import * as profileController from "../modules/admin/controllers/adminProfileController";
@@ -409,5 +412,18 @@ router.patch("/subscription-plans/:id/status", subscriptionPlanController.toggle
 router.get("/product-slot-config", productSlotController.getProductSlotConfig);
 router.put("/product-slot-config", productSlotController.updateProductSlotConfig);
 router.get("/product-slot-earnings", productSlotController.getSlotEarnings);
+
+// ==================== Plans Routes ====================
+router.get("/plans", planController.listPlans);
+router.post("/plans", planController.createPlan);
+router.put("/plans/:id", planController.updatePlan);
+router.delete("/plans/:id", planController.deletePlan);
+
+// ==================== Subscriptions (Seller/Customer/Delivery) ====================
+router.get("/subscriptions", subscriptionController.listAllSubscriptions);
+
+// ==================== Spin Wheel (Admin) ====================
+router.get("/spin-wheel/campaign", spinWheelController.getSpinCampaign);
+router.put("/spin-wheel/campaign", spinWheelController.upsertSpinCampaign);
 
 export default router;

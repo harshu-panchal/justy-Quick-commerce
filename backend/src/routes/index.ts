@@ -39,6 +39,14 @@ import deliveryWalletRoutes from "./deliveryWalletRoutes";
 import adminWithdrawalRoutes from "./adminWithdrawalRoutes";
 import * as bannerController from "../controllers/bannerController";
 import sellerComboRoutes from "./sellerComboRoutes";
+import sellerCallRoutes from "./sellerCallRoutes";
+import aiRoutes from "./aiRoutes";
+import sellerPlanRoutes from "./sellerPlanRoutes";
+import customerPlanRoutes from "./customerPlanRoutes";
+import deliveryPlanRoutes from "./deliveryPlanRoutes";
+import customerSpinWheelRoutes from "./customerSpinWheelRoutes";
+import sellerSpinWheelRoutes from "./sellerSpinWheelRoutes";
+import deliverySpinWheelRoutes from "./deliverySpinWheelRoutes";
 
 import {
   createOrder,
@@ -177,6 +185,26 @@ router.use("/payment", paymentRoutes);
 
 // Seller wallet routes (protected, seller only)
 router.use("/seller/wallet-new", authenticate, requireUserType("Seller"), sellerWalletRoutes);
+
+// Seller call routes (protected, seller only)
+router.use("/seller/calls", sellerCallRoutes);
+
+// Seller plan routes (protected, seller only)
+router.use("/seller/plans", sellerPlanRoutes);
+
+// Customer plan routes (protected, customer only)
+router.use("/customer/plans", customerPlanRoutes);
+
+// Customer spin wheel (protected, customer only)
+router.use("/customer/spin-wheel", customerSpinWheelRoutes);
+router.use("/seller/spin-wheel", sellerSpinWheelRoutes);
+router.use("/delivery/spin-wheel", deliverySpinWheelRoutes);
+
+// Delivery plan routes (protected, delivery only)
+router.use("/delivery/plans", deliveryPlanRoutes);
+
+// AI helper routes (protected, seller only)
+router.use("/ai", aiRoutes);
 
 // Delivery wallet routes (protected, delivery only)
 router.use("/delivery/wallet", authenticate, requireUserType("Delivery"), deliveryWalletRoutes);

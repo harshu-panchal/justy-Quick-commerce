@@ -152,8 +152,7 @@ router.put("/brands/:id", productController.updateBrand);
 router.delete("/brands/:id", productController.deleteBrand);
 
 // ==================== Product Routes ====================
-// Admin cannot create products - only sellers can add products
-// router.post("/products", productController.createProduct);
+router.post("/products", productController.createProduct);
 router.get("/products", productController.getProducts);
 // Product order functionality removed
 // router.put("/products/order", productController.updateProductOrder);
@@ -233,6 +232,11 @@ router.put(
 );
 router.get("/settings/spinner", settingsController.getSpinnerSettings);
 router.put("/settings/spinner", settingsController.updateSpinnerSettings);
+
+// ==================== Referral Settings ====================
+router.get("/settings/referral", settingsController.getReferralSettings);
+router.put("/settings/referral", settingsController.updateReferralSettings);
+router.get("/referral/stats", settingsController.getAdminReferralStats);
 
 // ==================== Coupon Routes ====================
 router.post("/coupons", couponController.createCoupon);

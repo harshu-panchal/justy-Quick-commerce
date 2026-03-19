@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { asyncHandler } from "../../../utils/asyncHandler";
 import AppSettings from "../../../models/AppSettings";
 import PaymentMethod from "../../../models/PaymentMethod";
+import Customer from "../../../models/Customer";
 
 /**
  * Get app settings
@@ -193,6 +194,86 @@ export const updateSpinnerSettings = asyncHandler(
       success: true,
       message: "Spinner settings updated successfully",
       data: settings.spinnerSettings,
+    });
+  }
+);
+
+/**
+ * Get referral settings
+ */
+export const getReferralSettings = asyncHandler(
+  async (_req: Request, res: Response) => {
+    const settings = await AppSettings.findOne().select("referralSettings");
+    const defaults = {
+      enabled: false,
+      rewardAmount: 50,
+      rewardType: "Wallet" as const,
+      minOrderValue: 200,
+      maxReferralsPerUser: 100,
+    };
+    return res.status(200).json({
+      success: true,
+      message: "Referral settings fetched successfully",
+      data: settings?.referralSettings ?? defaults,
+    });
+  }
+);
+
+/**
+ * Update referral settings
+ */
+export const updateReferralSettings = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { enabled, rewardAmount, rewardType, minOrderValue, maxReferralsPerUser } = req.body;
+
+    let settings = await AppSettings.findOne();
+    const referralSettings = {
+      enabled: Boolean(enabled),
+      rewardAmount: Number(rewardAmount) || 50,
+      rewardType: (rewardType === "Points" ? "Points" : "Wallet") as "Wallet" | "Points",
+      minOrderValue: Number(minOrderValue) || 200,
+      maxReferralsPerUser: Number(maxReferralsPerUser) || 100,
+    };
+
+    if (!settings) {
+      settings = await AppSettings.create({
+        contactEmail: "contact@dhakadsnazzy.com",
+        contactPhone: "1234567890",
+        referralSettings,
+      });
+    } else {
+      settings.referralSettings = referralSettings;
+      settings.updatedBy = req.user?.userId as any;
+      await settings.save();
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Referral settings updated successfully",
+      data: settings.referralSettings,
+    });
+  }
+);
+
+/**
+ * Admin: get top referrers list
+ */
+export const getAdminReferralStats = asyncHandler(
+  async (_req: Request, res: Response) => {
+    const topReferrers = await Customer.find({ referralCount: { $gt: 0 } })
+      .select("name phone refCode referralCount referralEarnings")
+      .sort({ referralCount: -1 })
+      .limit(50)
+      .lean();
+
+    const totalReferrals = topReferrers.reduce((s, c) => s + (c.referralCount || 0), 0);
+    const totalCoinsAwarded = topReferrers.reduce((s, c) => s + (c.referralEarnings || 0), 0);
+    const totalReferrers = await Customer.countDocuments({ referralCount: { $gt: 0 } });
+    const totalReferred = await Customer.countDocuments({ isReferralApplied: true });
+
+    return res.status(200).json({
+      success: true,
+      data: { topReferrers, totalReferrals, totalCoinsAwarded, totalReferrers, totalReferred },
     });
   }
 );

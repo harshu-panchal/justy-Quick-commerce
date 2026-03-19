@@ -15,6 +15,28 @@ import cron from "node-cron";
 import { syncRazorpaySubscriptionsOnce } from "./cron/razorpaySubscriptionSync";
 import { syncRazorpayCustomerSubscriptionsOnce } from "./cron/razorpayCustomerSubscriptionSync";
 import { syncRazorpayDeliverySubscriptionsOnce } from "./cron/razorpayDeliverySubscriptionSync";
+import SpinAttempt from "./models/SpinAttempt";
+
+/** Drop any unique indexes on SpinAttempt that should NOT be unique */
+async function fixSpinAttemptIndexes() {
+  try {
+    const col = SpinAttempt.collection;
+    const indexes = await col.indexes();
+    for (const idx of indexes) {
+      if (idx.name === "_id_") continue; // never drop _id
+      if (idx.unique) {
+        console.log(`[SpinAttempt] Dropping incorrect unique index: ${idx.name}`);
+        await col.dropIndex(idx.name as string);
+      }
+    }
+    // Ensure correct (non-unique) indexes exist
+    await col.createIndex({ campaignId: 1, userType: 1, userId: 1, createdAt: -1 });
+    await col.createIndex({ campaignId: 1, createdAt: -1 });
+    console.log("[SpinAttempt] Indexes verified.");
+  } catch (e: any) {
+    console.warn("[SpinAttempt] Index fix warning:", e?.message || e);
+  }
+}
 
 
 // Load environment variables
@@ -133,6 +155,7 @@ let lastRazorpaySubCronError: string | null = null;
 async function startServer() {
   // Connect DB then ensure default admin exists
   await connectDB();
+  await fixSpinAttemptIndexes();
   await ensureDefaultAdmin();
   await seedHeaderCategories();
 

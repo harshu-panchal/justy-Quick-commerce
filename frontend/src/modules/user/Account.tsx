@@ -9,6 +9,7 @@ import { useThemeContext } from '../../context/ThemeContext';
 import { useToast } from '../../context/ToastContext';
 import LuckySpin from '../../components/LuckySpin';
 import { useSpinner } from '../../hooks/useSpinner';
+import { getCustomerCoinBalance, convertCustomerCoins } from '../../services/api/customerSpinWheelService';
 
 export default function Account() {
   const navigate = useNavigate();
@@ -31,6 +32,10 @@ export default function Account() {
   const [referralInput, setReferralInput] = useState('');
   const [isApplyingReferral, setIsApplyingReferral] = useState(false);
   const [showCartPreview, setShowCartPreview] = useState(false);
+  const [coinBalance, setCoinBalance] = useState(0);
+  const [convertAmount, setConvertAmount] = useState('');
+  const [isConverting, setIsConverting] = useState(false);
+  const [showCoinConvert, setShowCoinConvert] = useState(false);
   const [spinnerSettings, setSpinnerSettings] = useState<any>(null);
   const { showLuckySpin, setShowLuckySpin, triggerSpinner, config: spinnerConfig } = useSpinner(spinnerSettings);
   const { cart, clearCart } = useCart();
@@ -85,9 +90,17 @@ export default function Account() {
       }
     };
 
+    const fetchCoinBalance = async () => {
+      try {
+        const res = await getCustomerCoinBalance();
+        if (res.success && res.data) setCoinBalance(res.data.coinBalance);
+      } catch {}
+    };
+
     if (user) {
       fetchProfile();
       fetchSpinnerSettings();
+      fetchCoinBalance();
     } else {
       setLoading(false);
     }
@@ -133,6 +146,35 @@ export default function Account() {
       showToast(err.response?.data?.message || 'Failed to apply referral code', 'error');
     } finally {
       setIsApplyingReferral(false);
+    }
+  };
+
+  const handleConvertCoins = async () => {
+    const coins = Number(convertAmount);
+    if (!coins || coins < 10 || coins % 10 !== 0) {
+      showToast('Enter a valid amount (minimum 10 coins, multiples of 10)', 'error');
+      return;
+    }
+    if (coins > coinBalance) {
+      showToast('Insufficient coin balance', 'error');
+      return;
+    }
+    try {
+      setIsConverting(true);
+      const res = await convertCustomerCoins(coins);
+      if (res.success && res.data) {
+        setCoinBalance(res.data.coinBalance);
+        setProfile(prev => prev ? { ...prev, walletAmount: res.data!.walletBalance } : prev);
+        showToast(res.message || `₹${res.data.rupeesEarned} added to wallet!`, 'success');
+        setConvertAmount('');
+        setShowCoinConvert(false);
+      } else {
+        showToast(res.message || 'Conversion failed', 'error');
+      }
+    } catch (err: any) {
+      showToast(err.response?.data?.message || 'Conversion failed', 'error');
+    } finally {
+      setIsConverting(false);
     }
   };
 
@@ -356,6 +398,99 @@ export default function Account() {
         </div>
       </motion.div>
 
+      {/* Coin Balance Card */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.12 }}
+        className="px-4 md:px-6 lg:px-8 mb-6"
+      >
+        <div className="max-w-2xl md:mx-auto">
+          <div className="rounded-3xl p-5 shadow-xl relative overflow-hidden border border-amber-100 bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50">
+            <div className="absolute -right-8 -top-8 w-36 h-36 bg-amber-200/30 rounded-full blur-2xl" />
+            <div className="absolute -left-6 -bottom-6 w-28 h-28 bg-yellow-200/30 rounded-full blur-2xl" />
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-2xl bg-amber-400/20 border border-amber-200 flex items-center justify-center text-2xl">🪙</div>
+                  <div>
+                    <p className="text-xs font-bold text-amber-700 uppercase tracking-widest">Coin Balance</p>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-2xl font-black text-amber-600">{coinBalance.toLocaleString('en-IN')}</span>
+                      <span className="text-xs font-bold text-amber-500">coins</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-[10px] text-amber-600/70 font-medium">Rate</p>
+                  <p className="text-sm font-black text-amber-700">10 coins = ₹1</p>
+                  <p className="text-[10px] text-amber-500/80 mt-0.5">Worth ₹{(coinBalance / 10).toFixed(1)}</p>
+                </div>
+              </div>
+              {coinBalance >= 10 ? (
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => setShowCoinConvert(v => !v)}
+                  className="w-full py-2.5 rounded-2xl bg-amber-500 text-white font-bold text-sm shadow-md shadow-amber-300/40 hover:bg-amber-600 transition-colors flex items-center justify-center gap-2"
+                >
+                  <span>💸</span> Convert Coins to Wallet
+                  <svg className={`w-4 h-4 transition-transform ${showCoinConvert ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                </motion.button>
+              ) : (
+                <p className="text-center text-xs text-amber-600/70 py-2 font-medium">Spin the wheel to earn coins! Min 10 coins needed to convert.</p>
+              )}
+              <AnimatePresence>
+                {showCoinConvert && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="mt-3 overflow-hidden"
+                  >
+                    <div className="bg-white/70 rounded-2xl p-4 border border-amber-100">
+                      <p className="text-xs text-amber-700 font-bold mb-2">Enter coins to convert (multiples of 10)</p>
+                      <div className="flex gap-2">
+                        <input
+                          type="number"
+                          value={convertAmount}
+                          onChange={e => setConvertAmount(e.target.value)}
+                          placeholder={`Max ${coinBalance}`}
+                          min={10}
+                          max={coinBalance}
+                          step={10}
+                          className="flex-1 px-3 py-2.5 rounded-xl border border-amber-200 text-sm font-bold text-amber-900 bg-amber-50/50 focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400"
+                        />
+                        <motion.button
+                          whileTap={{ scale: 0.95 }}
+                          onClick={handleConvertCoins}
+                          disabled={isConverting}
+                          className="px-5 py-2.5 bg-amber-500 text-white rounded-xl text-sm font-bold shadow-sm hover:bg-amber-600 transition-colors disabled:opacity-50"
+                        >
+                          {isConverting ? '...' : 'Convert'}
+                        </motion.button>
+                      </div>
+                      {convertAmount && Number(convertAmount) >= 10 && Number(convertAmount) % 10 === 0 && (
+                        <p className="mt-2 text-xs text-green-600 font-bold">
+                          = ₹{(Number(convertAmount) / 10).toFixed(0)} will be added to your wallet
+                        </p>
+                      )}
+                      <div className="mt-2 flex gap-2 flex-wrap">
+                        {[10, 20, 50, 100].filter(v => v <= coinBalance).map(v => (
+                          <button key={v} onClick={() => setConvertAmount(String(v))} className="px-3 py-1 rounded-lg bg-amber-100 text-amber-700 text-xs font-bold border border-amber-200 hover:bg-amber-200 transition-colors">{v} 🪙</button>
+                        ))}
+                        {coinBalance >= 10 && (
+                          <button onClick={() => setConvertAmount(String(Math.floor(coinBalance / 10) * 10))} className="px-3 py-1 rounded-lg bg-amber-100 text-amber-700 text-xs font-bold border border-amber-200 hover:bg-amber-200 transition-colors">All</button>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+
       {/* Invite & Earn Section */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -574,7 +709,7 @@ export default function Account() {
               }
             }, color: 'text-red-500', isCritical: true },
             { id: 'about', label: 'About Us', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" /><line x1="12" y1="16" x2="12" y2="12" stroke="currentColor" strokeWidth="2" /><line x1="12" y1="8" x2="12.01" y2="8" stroke="currentColor" strokeWidth="2" /></svg>, action: () => window.location.href = 'https://about.dhakadsnazzy.com', color: 'text-sky-500' },
-            { id: 'lucky-spin', label: 'Spin & Win', icon: <span className="text-lg">🎁</span>, action: () => triggerSpinner('manual'), color: 'text-purple-500 font-bold' },
+            // { id: 'lucky-spin', label: 'Spin & Win', icon: <span className="text-lg">🎁</span>, action: () => triggerSpinner('manual'), color: 'text-purple-500 font-bold' },
             { id: 'logout', label: 'Log Out', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><polyline points="16 17 21 12 16 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><line x1="21" y1="12" x2="9" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>, action: handleLogout, color: 'text-red-500', isCritical: true },
           ].map((item, idx) => (
             <motion.button

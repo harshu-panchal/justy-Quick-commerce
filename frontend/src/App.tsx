@@ -104,6 +104,7 @@ const SellerPlans = lazy(() => import("./modules/seller/pages/SellerPlans"));
 const SellerSpinWheel = lazy(() => import("./modules/seller/pages/SellerSpinWheel"));
 const CustomerPlans = lazy(() => import("./modules/user/CustomerPlans"));
 const SpinWheel = lazy(() => import("./modules/user/SpinWheel"));
+const CustomerReferEarn = lazy(() => import("./modules/user/CustomerReferEarn"));
 const SellerLogin = lazy(() => import("./modules/seller/pages/SellerLogin"));
 const SellerSignUp = lazy(() => import("./modules/seller/pages/SellerSignUp"));
 
@@ -119,6 +120,7 @@ const AdminTaxes = lazy(() => import("./modules/admin/pages/AdminTaxes"));
 const AdminSellerTransaction = lazy(() => import("./modules/admin/pages/AdminSellerTransaction"));
 const AdminSellerPenaltyPage = lazy(() => import("./modules/admin/pages/AdminSellerPenaltyPage"));
 const AdminStockManagement = lazy(() => import("./modules/admin/pages/AdminStockManagement"));
+const AdminAddProduct = lazy(() => import("./modules/admin/pages/AdminAddProduct"));
 const AdminSubcategoryOrder = lazy(() => import("./modules/admin/pages/AdminSubcategoryOrder"));
 const AdminManageSellerList = lazy(() => import("./modules/admin/pages/AdminManageSellerList"));
 const AdminCoupon = lazy(() => import("./modules/admin/pages/AdminCoupon"));
@@ -376,6 +378,7 @@ function App() {
                                           <Route path="brand" element={<AdminBrand />} />
                                           <Route path="product/taxes" element={<AdminTaxes />} />
                                           <Route path="product/list" element={<AdminStockManagement />} />
+                                          <Route path="product/add" element={<AdminAddProduct />} />
                                           <Route path="product/edit/:id" element={<AdminProductEdit />} />
                                           <Route path="manage-seller/list" element={<AdminManageSellerList />} />
                                           <Route path="manage-seller/transaction" element={<AdminSellerTransaction />} />
@@ -470,6 +473,7 @@ function App() {
                                         <Route path="/account" element={<Account />} />
                                         <Route path="/coins" element={<CoinsPage />} />
                                         <Route path="/plans" element={<CustomerPlans />} />
+                                        <Route path="/refer-earn" element={<CustomerReferEarn />} />
                                         <Route path="/spin-wheel" element={<SpinWheel />} />
                                         <Route path="/about-us" element={<AboutUs />} />
                                         <Route path="/faq" element={<FAQ />} />

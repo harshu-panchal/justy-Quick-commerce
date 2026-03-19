@@ -396,8 +396,15 @@ export default function AdminStockManagement() {
         {/* Main Panel */}
         <div className="bg-white rounded-lg shadow-sm border border-neutral-200">
           {/* Header */}
-          <div className="bg-teal-600 text-white px-6 py-4 rounded-t-lg">
+          <div className="bg-teal-600 text-white px-6 py-4 rounded-t-lg flex items-center justify-between">
             <h2 className="text-lg font-semibold">View Stock Management</h2>
+            <button
+              onClick={() => navigate("/admin/product/add")}
+              className="flex items-center gap-2 px-4 py-2 bg-white text-teal-700 rounded-lg text-sm font-bold hover:bg-teal-50 transition-colors shadow-sm"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14" /></svg>
+              Add Product
+            </button>
           </div>
 
           {/* Filters and Controls */}

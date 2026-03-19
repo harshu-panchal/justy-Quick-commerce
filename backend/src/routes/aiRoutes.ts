@@ -7,8 +7,8 @@ const router = Router();
 
 router.use(authenticate);
 
-// Only sellers can use product‑related AI helpers for now
-router.use(requireUserType("Seller"));
+// Sellers and Admin can use product‑related AI helpers
+router.use(requireUserType("Seller", "Admin"));
 
 router.post(
   "/product-description",

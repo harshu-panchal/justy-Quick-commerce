@@ -234,6 +234,11 @@ router.put(
 router.get("/settings/spinner", settingsController.getSpinnerSettings);
 router.put("/settings/spinner", settingsController.updateSpinnerSettings);
 
+// ==================== Referral Settings ====================
+router.get("/settings/referral", settingsController.getReferralSettings);
+router.put("/settings/referral", settingsController.updateReferralSettings);
+router.get("/referral/stats", settingsController.getAdminReferralStats);
+
 // ==================== Coupon Routes ====================
 router.post("/coupons", couponController.createCoupon);
 router.get("/coupons", couponController.getCoupons);

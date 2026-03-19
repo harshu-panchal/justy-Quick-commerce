@@ -104,6 +104,7 @@ const SellerPlans = lazy(() => import("./modules/seller/pages/SellerPlans"));
 const SellerSpinWheel = lazy(() => import("./modules/seller/pages/SellerSpinWheel"));
 const CustomerPlans = lazy(() => import("./modules/user/CustomerPlans"));
 const SpinWheel = lazy(() => import("./modules/user/SpinWheel"));
+const CustomerReferEarn = lazy(() => import("./modules/user/CustomerReferEarn"));
 const SellerLogin = lazy(() => import("./modules/seller/pages/SellerLogin"));
 const SellerSignUp = lazy(() => import("./modules/seller/pages/SellerSignUp"));
 
@@ -470,6 +471,7 @@ function App() {
                                         <Route path="/account" element={<Account />} />
                                         <Route path="/coins" element={<CoinsPage />} />
                                         <Route path="/plans" element={<CustomerPlans />} />
+                                        <Route path="/refer-earn" element={<CustomerReferEarn />} />
                                         <Route path="/spin-wheel" element={<SpinWheel />} />
                                         <Route path="/about-us" element={<AboutUs />} />
                                         <Route path="/faq" element={<FAQ />} />

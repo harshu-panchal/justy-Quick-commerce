@@ -414,6 +414,17 @@ export default function Home() {
         </span>
         <span className="text-sm font-semibold leading-none">Spin &amp; Win</span>
       </button>
+
+      {/* Refer & Earn floating button */}
+      <button
+        type="button"
+        onClick={() => navigate("/refer-earn")}
+        className="fixed bottom-40 right-4 sm:right-6 z-[60] flex items-center gap-2 rounded-full bg-teal-600 text-white px-4 py-3 shadow-lg hover:bg-teal-700 active:bg-teal-800"
+        aria-label="Refer & Earn"
+      >
+        <span className="inline-flex items-center justify-center h-9 w-9 rounded-full bg-white/15 text-lg">🎁</span>
+        <span className="text-sm font-semibold leading-none">Refer &amp; Earn</span>
+      </button>
     </div>
   );
 }

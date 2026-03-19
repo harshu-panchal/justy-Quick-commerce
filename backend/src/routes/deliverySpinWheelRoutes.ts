@@ -77,66 +77,50 @@ router.post(
       });
     }
 
-    for (let attempt = 0; attempt < 5; attempt++) {
-      const session = await mongoose.startSession();
-      session.startTransaction();
-      try {
-        const fresh = await SpinCampaign.findById(campaign._id).session(session);
-        if (!fresh || !fresh.isActive) {
-          await session.abortTransaction();
-          session.endSession();
-          return res.status(404).json({ success: false, message: "No active spin campaign" });
-        }
-
-        if (fresh.blockSpinCount >= fresh.blockSize) {
-          fresh.blockIndex += 1;
-          fresh.blockSpinCount = 0;
-          fresh.blockWinningSpinNumber = crypto.randomInt(1, fresh.blockSize + 1);
-        }
-
-        const nextSpinNumber = fresh.blockSpinCount + 1;
-        const isMega = nextSpinNumber === fresh.blockWinningSpinNumber;
-
-        const coinOptions = Array.isArray(fresh.coinRewards) && fresh.coinRewards.length ? fresh.coinRewards : [{ amount: 10 }];
-        const coinPick = coinOptions[crypto.randomInt(0, coinOptions.length)];
-        const coinsWon = isMega ? 0 : Number((coinPick as any).amount || 0);
-
-        fresh.blockSpinCount = nextSpinNumber;
-        await fresh.save({ session });
-
-        const spinDoc = await SpinAttempt.create(
-          [{
-            campaignId: fresh._id,
-            userType: "DeliveryPartner",
-            userId: userObjectId,
-            resultType: isMega ? "MEGA_REWARD" : "COINS",
-            coinsWon,
-            megaRewardName: isMega ? fresh.megaReward?.name : undefined,
-            megaRewardImageUrl: isMega ? fresh.megaReward?.imageUrl : undefined,
-            blockIndex: fresh.blockIndex,
-            spinNumberInBlock: nextSpinNumber,
-          }],
-          { session }
-        );
-
-        await session.commitTransaction();
-        session.endSession();
-
-        return res.status(200).json({
-          success: true,
-          message: isMega ? "Mega reward won!" : "Coins won",
-          data: spinDoc[0],
-        });
-      } catch (e: any) {
-        await session.abortTransaction();
-        session.endSession();
-        const msg = String(e?.message || "");
-        if (msg.includes("E11000") || msg.toLowerCase().includes("duplicate")) continue;
-        return res.status(500).json({ success: false, message: e?.message || "Spin failed" });
-      }
+    const prevCampaign = await SpinCampaign.findById(campaign._id);
+    if (!prevCampaign || !prevCampaign.isActive) {
+      return res.status(404).json({ success: false, message: "No active spin campaign" });
     }
 
-    return res.status(429).json({ success: false, message: "Too much contention. Please retry." });
+    let blockIndex = prevCampaign.blockIndex;
+    let blockWinningSpinNumber = prevCampaign.blockWinningSpinNumber;
+    let newBlockSpinCount: number;
+
+    if (prevCampaign.blockSpinCount >= prevCampaign.blockSize) {
+      blockIndex += 1;
+      blockWinningSpinNumber = crypto.randomInt(1, prevCampaign.blockSize + 1);
+      newBlockSpinCount = 1;
+    } else {
+      newBlockSpinCount = prevCampaign.blockSpinCount + 1;
+    }
+
+    const isMega = newBlockSpinCount === blockWinningSpinNumber;
+    const coinOptions = Array.isArray(prevCampaign.coinRewards) && prevCampaign.coinRewards.length
+      ? prevCampaign.coinRewards : [{ amount: 10 }];
+    const coinPick = coinOptions[crypto.randomInt(0, coinOptions.length)];
+    const coinsWon = isMega ? 0 : Number((coinPick as any).amount || 0);
+
+    await SpinCampaign.findByIdAndUpdate(campaign._id, {
+      $set: { blockIndex, blockWinningSpinNumber, blockSpinCount: newBlockSpinCount },
+    });
+
+    const spinDoc = await SpinAttempt.create({
+      campaignId: campaign._id,
+      userType: "DeliveryPartner",
+      userId: userObjectId,
+      resultType: isMega ? "MEGA_REWARD" : "COINS",
+      coinsWon,
+      megaRewardName: isMega ? prevCampaign.megaReward?.name : undefined,
+      megaRewardImageUrl: isMega ? prevCampaign.megaReward?.imageUrl : undefined,
+      blockIndex,
+      spinNumberInBlock: newBlockSpinCount,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: isMega ? "Mega reward won!" : "Coins won",
+      data: spinDoc,
+    });
   })
 );
 

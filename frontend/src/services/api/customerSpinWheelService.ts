@@ -36,8 +36,18 @@ export async function getSpinWheelCampaign(): Promise<{
   return res.data;
 }
 
-export async function spinNow(): Promise<{ success: boolean; message?: string; data?: SpinAttempt }> {
+export async function spinNow(): Promise<{ success: boolean; message?: string; data?: SpinAttempt & { coinBalance?: number } }> {
   const res = await api.post("/customer/spin-wheel/spin");
+  return res.data;
+}
+
+export async function getCustomerCoinBalance(): Promise<{ success: boolean; data?: { coinBalance: number; walletBalance: number } }> {
+  const res = await api.get("/customer/spin-wheel/coins/balance");
+  return res.data;
+}
+
+export async function convertCustomerCoins(coins: number): Promise<{ success: boolean; message?: string; data?: { coinBalance: number; walletBalance: number; rupeesEarned: number } }> {
+  const res = await api.post("/customer/spin-wheel/coins/convert", { coins });
   return res.data;
 }
 

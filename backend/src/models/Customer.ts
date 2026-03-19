@@ -12,6 +12,7 @@ export interface ICustomer extends Document {
   totalOrders: number;
   totalSpent: number;
   walletAmount: number;
+  coinBalance: number;
   // Location fields
   latitude?: number;
   longitude?: number;
@@ -117,6 +118,11 @@ const CustomerSchema = new Schema<ICustomer>(
       type: Number,
       default: 0,
       min: [0, 'Wallet amount cannot be negative'],
+    },
+    coinBalance: {
+      type: Number,
+      default: 0,
+      min: [0, 'Coin balance cannot be negative'],
     },
     // Location fields
     latitude: {

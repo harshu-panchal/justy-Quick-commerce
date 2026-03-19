@@ -69,6 +69,7 @@ export interface ISeller extends Document {
   // Status
   status: 'Approved' | 'Pending' | 'Rejected';
   balance: number;
+  coinBalance: number;
   categories: string[];
   logo?: string;
   isShopOpen: boolean;
@@ -310,6 +311,11 @@ const SellerSchema = new Schema<ISeller>(
       type: Number,
       default: 0,
       min: [0, 'Balance cannot be negative'],
+    },
+    coinBalance: {
+      type: Number,
+      default: 0,
+      min: [0, 'Coin balance cannot be negative'],
     },
     categories: {
       type: [String],

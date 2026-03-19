@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   getSellerSpinWheelCampaign,
   sellerSpinNow,
+  getSellerCoinBalance,
+  convertSellerCoins,
   type SpinAttempt,
   type SpinCampaign,
 } from "../../../services/api/sellerSpinWheelService";
@@ -207,6 +209,11 @@ export default function SellerSpinWheel() {
   const [error,    setError]      = useState("");
   const [result,   setResult]     = useState<SpinAttempt  | null>(null);
   const [showResult, setShowResult] = useState(false);
+  const [coinBalance, setCoinBalance] = useState(0);
+  const [convertAmount, setConvertAmount] = useState("");
+  const [isConverting, setIsConverting] = useState(false);
+  const [showCoinConvert, setShowCoinConvert] = useState(false);
+  const [convertMsg, setConvertMsg] = useState<{ text: string; ok: boolean } | null>(null);
 
   const wheelRef = useRef<HTMLDivElement>(null);
   const baseAngle = useRef(0); // accumulated rotation so wheel doesn't reset
@@ -247,7 +254,14 @@ export default function SellerSpinWheel() {
     } finally { setLoading(false); }
   };
 
-  useEffect(() => { load(); }, []);
+  const loadCoinBalance = async () => {
+    try {
+      const res = await getSellerCoinBalance();
+      if (res.success && res.data) setCoinBalance(res.data.coinBalance);
+    } catch {}
+  };
+
+  useEffect(() => { load(); loadCoinBalance(); }, []);
 
   /* spin */
   const onSpin = async () => {
@@ -282,6 +296,7 @@ export default function SellerSpinWheel() {
 
       setMySpin(spin);
       setResult(spin);
+      if ((spin as any).coinBalance !== undefined) setCoinBalance((spin as any).coinBalance);
 
       setTimeout(() => {
         baseAngle.current = newAngle % 360;
@@ -297,6 +312,32 @@ export default function SellerSpinWheel() {
       setError(e?.response?.data?.message || e?.message || "Spin failed");
       setSpinning(false);
     }
+  };
+
+  const handleConvertCoins = async () => {
+    const coins = Number(convertAmount);
+    if (!coins || coins < 10 || coins % 10 !== 0) {
+      setConvertMsg({ text: "Enter a valid amount (min 10, multiples of 10)", ok: false });
+      return;
+    }
+    if (coins > coinBalance) {
+      setConvertMsg({ text: "Insufficient coin balance", ok: false });
+      return;
+    }
+    try {
+      setIsConverting(true); setConvertMsg(null);
+      const res = await convertSellerCoins(coins);
+      if (res.success && res.data) {
+        setCoinBalance(res.data.coinBalance);
+        setConvertMsg({ text: `✅ ₹${res.data.rupeesEarned} added to your wallet!`, ok: true });
+        setConvertAmount("");
+        setShowCoinConvert(false);
+      } else {
+        setConvertMsg({ text: res.message || "Conversion failed", ok: false });
+      }
+    } catch (e: any) {
+      setConvertMsg({ text: e?.response?.data?.message || "Conversion failed", ok: false });
+    } finally { setIsConverting(false); }
   };
 
   const reset = () => {
@@ -518,6 +559,84 @@ export default function SellerSpinWheel() {
             </div>
           </div>
         )}
+
+        {/* Coin Balance & Convert Card */}
+        <div className="mt-5 rounded-3xl border border-amber-200 bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 shadow-lg p-5 relative overflow-hidden">
+          <div className="absolute -right-6 -top-6 w-28 h-28 bg-amber-200/30 rounded-full blur-2xl" />
+          <div className="relative z-10">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-amber-400/20 border border-amber-200 flex items-center justify-center text-xl">🪙</div>
+                <div>
+                  <p className="text-[10px] font-bold text-amber-700 uppercase tracking-widest">Your Coin Balance</p>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-xl font-black text-amber-600">{coinBalance.toLocaleString("en-IN")}</span>
+                    <span className="text-xs font-bold text-amber-500">coins</span>
+                  </div>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-[10px] text-amber-600/70 font-medium">Worth</p>
+                <p className="text-sm font-black text-amber-700">₹{(coinBalance / 10).toFixed(1)}</p>
+                <p className="text-[9px] text-amber-500/80">10 coins = ₹1</p>
+              </div>
+            </div>
+
+            {convertMsg && (
+              <div className={`mb-3 rounded-xl px-3 py-2 text-xs font-bold ${convertMsg.ok ? "bg-green-50 text-green-700 border border-green-200" : "bg-red-50 text-red-600 border border-red-200"}`}>
+                {convertMsg.text}
+              </div>
+            )}
+
+            {coinBalance >= 10 ? (
+              <>
+                <button
+                  onClick={() => { setShowCoinConvert(v => !v); setConvertMsg(null); }}
+                  className="w-full py-2.5 rounded-2xl bg-amber-500 text-white font-bold text-sm shadow-md shadow-amber-300/40 hover:bg-amber-600 transition-colors flex items-center justify-center gap-2"
+                >
+                  <span>💸</span> Convert to Wallet Balance
+                  <svg className={`w-4 h-4 transition-transform ${showCoinConvert ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                </button>
+                {showCoinConvert && (
+                  <div className="mt-3 bg-white/70 rounded-2xl p-4 border border-amber-100">
+                    <p className="text-xs text-amber-700 font-bold mb-2">Enter coins (multiples of 10)</p>
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        value={convertAmount}
+                        onChange={e => setConvertAmount(e.target.value)}
+                        placeholder={`Max ${coinBalance}`}
+                        min={10} max={coinBalance} step={10}
+                        className="flex-1 px-3 py-2.5 rounded-xl border border-amber-200 text-sm font-bold text-amber-900 bg-amber-50/50 focus:outline-none focus:ring-2 focus:ring-amber-400/40"
+                      />
+                      <button
+                        onClick={handleConvertCoins}
+                        disabled={isConverting}
+                        className="px-5 py-2.5 bg-amber-500 text-white rounded-xl text-sm font-bold hover:bg-amber-600 transition-colors disabled:opacity-50"
+                      >
+                        {isConverting ? "…" : "Convert"}
+                      </button>
+                    </div>
+                    {convertAmount && Number(convertAmount) >= 10 && Number(convertAmount) % 10 === 0 && (
+                      <p className="mt-2 text-xs text-green-600 font-bold">= ₹{(Number(convertAmount) / 10).toFixed(0)} will be added to wallet</p>
+                    )}
+                    <div className="mt-2 flex gap-2 flex-wrap">
+                      {[10, 20, 50, 100].filter(v => v <= coinBalance).map(v => (
+                        <button key={v} onClick={() => setConvertAmount(String(v))} className="px-3 py-1 rounded-lg bg-amber-100 text-amber-700 text-xs font-bold border border-amber-200 hover:bg-amber-200 transition-colors">{v} 🪙</button>
+                      ))}
+                      {coinBalance >= 10 && (
+                        <button onClick={() => setConvertAmount(String(Math.floor(coinBalance / 10) * 10))} className="px-3 py-1 rounded-lg bg-amber-100 text-amber-700 text-xs font-bold border border-amber-200 hover:bg-amber-200 transition-colors">All</button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <p className="text-center text-xs text-amber-600/70 py-2 font-medium">Spin the wheel to earn coins! Min 10 coins to convert.</p>
+            )}
+          </div>
+        </div>
+
       </div>
     </div>
   );

@@ -36,6 +36,7 @@ export interface IDelivery extends Document {
     coordinates: [number, number]; // [longitude, latitude]
   };
   balance: number;
+  coinBalance: number;
   cashCollected: number;
   pendingAdminPayout: number;
   settings: {
@@ -181,6 +182,11 @@ const DeliverySchema = new Schema<IDelivery>(
       type: Number,
       default: 0,
       min: [0, "Balance cannot be negative"],
+    },
+    coinBalance: {
+      type: Number,
+      default: 0,
+      min: [0, "Coin balance cannot be negative"],
     },
     cashCollected: {
       type: Number,

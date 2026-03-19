@@ -9,11 +9,13 @@ import groceryAnimation from '../../../assets/animation/Grocery-animation.json';
 export default function Login() {
   const navigate = useNavigate();
   const { login } = useAuth();
-  const [mobileNumber, setMobileNumber] = useState('');
-  const [showOTP, setShowOTP] = useState(false);
-  const [sessionId, setSessionId] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [mobileNumber, setMobileNumber]   = useState('');
+  const [showOTP, setShowOTP]             = useState(false);
+  const [sessionId, setSessionId]         = useState('');
+  const [loading, setLoading]             = useState(false);
+  const [error, setError]                 = useState('');
+  const [referralCode, setReferralCode]   = useState('');
+  const [showReferral, setShowReferral]   = useState(false);
 
   const handleContinue = async () => {
     if (mobileNumber.length !== 10) return;
@@ -39,7 +41,7 @@ export default function Login() {
     setError('');
 
     try {
-      const response = await verifyOTP(mobileNumber, otp, sessionId);
+      const response = await verifyOTP(mobileNumber, otp, sessionId, referralCode || undefined);
       if (response.success && response.data) {
         // Update auth context with user data
         login(response.data.token, {
@@ -125,6 +127,34 @@ export default function Login() {
                   maxLength={10}
                   disabled={loading}
                 />
+              </div>
+
+              {/* Optional referral code */}
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setShowReferral(v => !v)}
+                  className="flex items-center gap-1.5 text-xs text-green-600 font-semibold hover:text-green-700 transition-colors"
+                >
+                  <span className="text-base">🎁</span>
+                  Have a referral code?
+                  <span className={`transition-transform duration-200 ${showReferral ? 'rotate-180' : ''}`}>▾</span>
+                </button>
+                {showReferral && (
+                  <div className="mt-2 animate-fadeIn">
+                    <input
+                      type="text"
+                      value={referralCode}
+                      onChange={e => setReferralCode(e.target.value.toUpperCase().replace(/\s/g, ''))}
+                      placeholder="Enter referral code (optional)"
+                      maxLength={10}
+                      className="block w-full px-4 py-3 bg-green-50 border border-green-200 rounded-xl text-sm font-mono font-bold tracking-widest text-green-800 placeholder-green-300 focus:outline-none focus:ring-2 focus:ring-green-400/50 focus:border-green-400 transition-all uppercase"
+                    />
+                    <p className="mt-1 text-[11px] text-neutral-400">
+                      Only applies for new accounts • Skip if you don't have one
+                    </p>
+                  </div>
+                )}
               </div>
 
               {error && (

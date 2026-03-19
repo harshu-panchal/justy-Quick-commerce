@@ -79,6 +79,7 @@ export const verifySmsOtp = asyncHandler(
     // Find or create customer
     let customer = await Customer.findOne({ phone: mobile });
     let isNewUser = false;
+    const { referralCode } = req.body;
 
     if (!customer) {
       // Auto-create new customer with placeholder data
@@ -92,6 +93,19 @@ export const verifySmsOtp = asyncHandler(
         totalSpent: 0,
       });
       isNewUser = true;
+
+      // Apply referral code if provided at signup (new users only)
+      if (referralCode && typeof referralCode === "string") {
+        const code = referralCode.trim().toUpperCase();
+        if (code && code !== customer.refCode) {
+          const referrer = await Customer.findOne({ refCode: code });
+          if (referrer && !referrer._id.equals(customer._id)) {
+            customer.referredBy = referrer._id;
+            customer.isReferralApplied = true;
+            await customer.save();
+          }
+        }
+      }
     }
 
     // Generate JWT token
@@ -114,6 +128,7 @@ export const verifySmsOtp = asyncHandler(
           status: customer.status,
         },
         isNewUser,
+        referralApplied: isNewUser && customer.isReferralApplied ? true : false,
       },
     });
   },

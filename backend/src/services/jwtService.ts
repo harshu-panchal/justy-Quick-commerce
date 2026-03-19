@@ -5,6 +5,7 @@ export interface TokenPayload {
   userId: string;
   userType: UserType;
   role?: string;
+  sellerId?: string;
 }
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
@@ -13,11 +14,12 @@ const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 /**
  * Generate JWT token for authenticated user
  */
-export function generateToken(userId: string, userType: UserType, role?: string): string {
+export function generateToken(userId: string, userType: UserType, role?: string, sellerId?: string): string {
   const payload: TokenPayload = {
     userId,
     userType,
     ...(role && { role }),
+    ...(sellerId && { sellerId }),
   };
 
   return jwt.sign(payload, JWT_SECRET, {

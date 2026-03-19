@@ -8,7 +8,7 @@ import { asyncHandler } from "../../../utils/asyncHandler";
 /**
  * Get product slot configuration from AppSettings
  */
-export const getProductSlotConfig = asyncHandler(async (req: Request, res: Response) => {
+export const getProductSlotConfig = asyncHandler(async (_req: Request, res: Response) => {
   const settings = await AppSettings.getSettings();
   
   return res.status(200).json({

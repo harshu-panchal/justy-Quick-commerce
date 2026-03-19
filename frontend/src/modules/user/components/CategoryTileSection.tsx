@@ -19,7 +19,7 @@ interface CategoryTile {
 interface CategoryTileSectionProps {
   title: string;
   tiles: CategoryTile[];
-  columns?: 2 | 3 | 4 | 6 | 8; // Support all column options
+  columns?: 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10; // Support all column options
   showProductCount?: boolean; // Show product count only for bestsellers
 }
 
@@ -76,24 +76,27 @@ export default function CategoryTileSection({
 
   // Dynamic grid classes based on column count
   const getGridCols = () => {
+    // For small category tiles (non-bestsellers), use a denser grid on desktop
+    if (!showProductCount) {
+      return "grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-10";
+    }
+
     switch (columns) {
-      case 2:
-        return "grid-cols-2";
-      case 3:
-        return "grid-cols-3";
-      case 4:
-        return "grid-cols-4";
-      case 6:
-        return "grid-cols-6";
-      case 8:
-        return "grid-cols-8";
-      default:
-        return "grid-cols-4";
+      case 2: return "grid-cols-2";
+      case 3: return "grid-cols-3";
+      case 4: return "grid-cols-4";
+      case 5: return "grid-cols-5";
+      case 6: return "grid-cols-6";
+      case 7: return "grid-cols-7";
+      case 8: return "grid-cols-8";
+      case 9: return "grid-cols-9";
+      case 10: return "grid-cols-10";
+      default: return "grid-cols-4 md:grid-cols-6 lg:grid-cols-8";
     }
   };
 
   const gridCols = getGridCols();
-  const gapClass = columns >= 6 ? "gap-2 md:gap-3" : "gap-4 md:gap-6";
+  const gapClass = columns >= 8 ? "gap-2 md:gap-4" : columns >= 6 ? "gap-2.5 md:gap-5" : "gap-4 md:gap-6";
 
   return (
     <div className="mb-6 md:mb-8 mt-0 overflow-visible">
@@ -139,12 +142,16 @@ export default function CategoryTileSection({
                       handleTileClick(tile);
                     }
                   }}
-                  className={`block bg-white shadow-sm border border-neutral-200 hover:shadow-md transition-all ${showProductCount ? "rounded-xl px-2.5 h-full" : "rounded-full aspect-square p-1.5"
-                    }`}>
+                  className={`block transition-all ${
+                    showProductCount 
+                      ? "bg-white shadow-sm border border-neutral-200 hover:shadow-md rounded-xl px-2.5 h-full" 
+                      : "rounded-2xl aspect-square p-0"
+                  }`}>
                   {/* Image - Single image for non-bestsellers, 2x2 grid for bestsellers */}
                   <div
-                    className={`w-full overflow-hidden ${showProductCount ? "rounded-lg h-32 md:h-36 mb-2" : "rounded-full aspect-square"
-                      } ${tile.bgColor || "bg-cyan-50"}`}>
+                    className={`w-full overflow-hidden ${
+                      showProductCount ? "rounded-lg h-32 md:h-36 mb-2" : "rounded-2xl aspect-square"
+                    } ${tile.bgColor || "bg-[#F2F7FF]"}`}>
                     {hasImages ? (
                       showProductCount ? (
                         // Bestsellers: 2x2 grid
@@ -214,8 +221,8 @@ export default function CategoryTileSection({
 
                 {/* Category name - outside card for non-bestsellers */}
                 {!showProductCount && (
-                  <div className="mt-1.5 text-center">
-                    <span className="text-xs font-semibold text-neutral-900 line-clamp-2 leading-tight">
+                  <div className="mt-1.5 text-center px-0.5">
+                    <span className="text-[10px] md:text-[11px] font-semibold text-neutral-900 line-clamp-2 leading-tight">
                       {tile.name}
                     </span>
                   </div>

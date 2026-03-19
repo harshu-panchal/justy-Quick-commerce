@@ -2,6 +2,7 @@ import { ReactNode, useEffect, useRef, useState, useMemo } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import FloatingCartPill from './FloatingCartPill';
+import Header from './header/Header';
 import { useLocation as useLocationContext } from '../hooks/useLocation';
 import LocationPermissionRequest from './LocationPermissionRequest';
 import { useThemeContext } from '../context/ThemeContext';
@@ -177,130 +178,12 @@ export default function AppLayout({ children }: AppLayoutProps) {
       {/* Desktop Container Wrapper */}
       <div className="md:w-full md:bg-white md:min-h-screen overflow-x-hidden">
         <div className="md:w-full md:min-h-screen md:flex md:flex-col overflow-x-hidden">
-          {/* Top Navigation Bar - Desktop Only */}
-          {showFooter && (
-            <nav
-              className="hidden md:flex items-center justify-center gap-8 px-6 lg:px-8 py-3 shadow-sm transition-colors duration-300"
-              style={{
-                background: (activeCategory === 'all' && deliveryMode === 'scheduled')
-                  ? '#00796B'
-                  : currentTheme.headerBg
-                    ? `linear-gradient(to right, ${currentTheme.headerBg}, ${currentTheme.searchBarBg || currentTheme.headerBg})`
-                    : `linear-gradient(to right, ${currentTheme.primary[0]}, ${currentTheme.primary[1]})`,
-                borderBottom: `1px solid ${(activeCategory === 'all' && deliveryMode === 'scheduled') ? '#00695C' : (currentTheme.headerBg || currentTheme.primary[0])}`
-              }}
-            >
-              {/* Home */}
-              <Link
-                to="/"
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${isActive('/')
-                  ? 'bg-white shadow-md font-semibold'
-                  : 'hover:bg-white/20'
-                  }`}
-                style={{
-                  color: isActive('/') ? currentTheme.accentColor : currentTheme.headerTextColor
-                }}
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  {isActive('/') ? (
-                    <>
-                      <path d="M2 12L12 4L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="currentColor" />
-                      <rect x="4" y="12" width="16" height="8" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-                    </>
-                  ) : (
-                    <>
-                      <path d="M2 12L12 4L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-                      <rect x="4" y="12" width="16" height="8" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" fill="none" />
-                    </>
-                  )}
-                </svg>
-                <span className="font-medium text-sm">Home</span>
-              </Link>
+          {/* Desktop Header */}
+          <Header />
 
-              {/* Order Again */}
-              <Link
-                to="/order-again"
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${isActive('/order-again')
-                  ? 'bg-white shadow-md font-semibold'
-                  : 'hover:bg-white/20'
-                  }`}
-                style={{
-                  color: isActive('/order-again') ? currentTheme.accentColor : currentTheme.headerTextColor
-                }}
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  {isActive('/order-again') ? (
-                    <path d="M5 8V6C5 4.34315 6.34315 3 8 3H16C17.6569 3 19 4.34315 19 6V8H21C21.5523 8 22 8.44772 22 9V20C22 20.5523 21.5523 21 21 21H3C2.44772 21 2 20.5523 2 20V9C2 8.44772 2.44772 8 3 8H5Z" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-                  ) : (
-                    <path d="M5 8V6C5 4.34315 6.34315 3 8 3H16C17.6569 3 19 4.34315 19 6V8H21C21.5523 8 22 8.44772 22 9V20C22 20.5523 21.5523 21 21 21H3C2.44772 21 2 20.5523 2 20V9C2 8.44772 2.44772 8 3 8H5Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" fill="none" />
-                  )}
-                </svg>
-                <span className="font-medium text-sm">Order Again</span>
-              </Link>
-
-              {/* Categories */}
-              <Link
-                to="/categories"
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${(isActive('/categories') || location.pathname.startsWith('/category/'))
-                  ? 'bg-white shadow-md font-semibold'
-                  : 'hover:bg-white/20'
-                  }`}
-                style={{
-                  color: (isActive('/categories') || location.pathname.startsWith('/category/')) ? currentTheme.accentColor : currentTheme.headerTextColor
-                }}
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  {(isActive('/categories') || location.pathname.startsWith('/category/')) ? (
-                    <>
-                      <circle cx="7" cy="7" r="2.5" fill="currentColor" stroke="currentColor" strokeWidth="2" />
-                      <circle cx="17" cy="7" r="2.5" fill="currentColor" stroke="currentColor" strokeWidth="2" />
-                      <circle cx="7" cy="17" r="2.5" fill="currentColor" stroke="currentColor" strokeWidth="2" />
-                      <circle cx="17" cy="17" r="2.5" fill="currentColor" stroke="currentColor" strokeWidth="2" />
-                    </>
-                  ) : (
-                    <>
-                      <circle cx="7" cy="7" r="2.5" stroke="currentColor" strokeWidth="2" fill="none" />
-                      <circle cx="17" cy="7" r="2.5" stroke="currentColor" strokeWidth="2" fill="none" />
-                      <circle cx="7" cy="17" r="2.5" stroke="currentColor" strokeWidth="2" fill="none" />
-                      <circle cx="17" cy="17" r="2.5" stroke="currentColor" strokeWidth="2" fill="none" />
-                    </>
-                  )}
-                </svg>
-                <span className="font-medium text-sm">Categories</span>
-              </Link>
-
-              {/* Profile */}
-              <Link
-                to="/account"
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${isActive('/account')
-                  ? 'bg-white shadow-md font-semibold'
-                  : 'hover:bg-white/20'
-                  }`}
-                style={{
-                  color: isActive('/account') ? currentTheme.accentColor : currentTheme.headerTextColor
-                }}
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  {isActive('/account') ? (
-                    <>
-                      <circle cx="12" cy="8" r="4" fill="currentColor" stroke="currentColor" strokeWidth="2" />
-                      <path d="M4 20c0-4 3.5-7 8-7s8 3 8 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="currentColor" />
-                    </>
-                  ) : (
-                    <>
-                      <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="2" fill="none" />
-                      <path d="M4 20c0-4 3.5-7 8-7s8 3 8 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none" />
-                    </>
-                  )}
-                </svg>
-                <span className="font-medium text-sm">Profile</span>
-              </Link>
-            </nav>
-          )}
-
-          {/* Sticky Header - Show on search page and other non-home pages, excluding account page */}
+          {/* Sticky Header - Show on search page and other non-home pages, excluding account page - Mobile Only */}
           {(showHeader || isSearchPage) && (
-            <header className="sticky top-0 z-50 bg-white shadow-sm md:shadow-md md:top-[60px]">
+            <header className="sticky top-0 z-50 bg-white shadow-sm md:hidden">
               {/* Delivery info line */}
               <div className="px-4 md:px-6 lg:px-8 py-1.5 bg-green-50 text-xs text-green-700 text-center">
                 Delivering in 10–15 mins

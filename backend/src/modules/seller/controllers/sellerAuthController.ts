@@ -77,7 +77,7 @@ export const verifyOTP = asyncHandler(async (req: Request, res: Response) => {
   }
 
   // Generate JWT token
-  const token = generateToken(seller._id.toString(), "Seller");
+  const token = generateToken(seller._id.toString(), "Seller", undefined, seller._id.toString());
 
   return res.status(200).json({
     success: true,
@@ -230,7 +230,7 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
   });
 
   // Generate token
-  const token = generateToken(seller._id.toString(), "Seller");
+  const token = generateToken(seller._id.toString(), "Seller", undefined, seller._id.toString());
 
   return res.status(201).json({
     success: true,

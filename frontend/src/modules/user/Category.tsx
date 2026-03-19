@@ -297,9 +297,9 @@ export default function CategoryPage() {
                   if (subId === "all") {
                     const newParams = new URLSearchParams(searchParams);
                     newParams.delete("subcategory");
-                    setSearchParams(newParams);
+                    setSearchParams(newParams, { replace: true });
                   } else {
-                    setSearchParams({ subcategory: subId });
+                    setSearchParams({ subcategory: subId }, { replace: true });
                   }
                 }}
                 className={`w-full flex flex-col items-center justify-center py-2 relative transition-all duration-200 group ${isSelected ? "bg-green-50" : "hover:bg-neutral-50"
@@ -368,7 +368,14 @@ export default function CategoryPage() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <button
-                  onClick={() => navigate(-1)}
+                  onClick={() => {
+                    // Check if we have history to go back to, otherwise go to categories or home
+                    if (window.history.length > 2) {
+                      navigate(-1);
+                    } else {
+                      navigate("/categories");
+                    }
+                  }}
                   className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center text-neutral-700 hover:bg-neutral-100 rounded-full transition-colors"
                   aria-label="Go back">
                   <svg
@@ -456,7 +463,7 @@ export default function CategoryPage() {
                       setSelectedSubcategory(subId);
                       
                       // Update URL search params
-                      setSearchParams({ subcategory: subId });
+                      setSearchParams({ subcategory: subId }, { replace: true });
                     }}
                     className={`flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md transition-colors flex-shrink-0 whitespace-nowrap ${isSelected
                       ? "bg-white border border-neutral-300 text-neutral-900"

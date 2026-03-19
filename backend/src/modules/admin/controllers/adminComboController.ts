@@ -41,7 +41,7 @@ export const getAllComboOffers = async (req: Request, res: Response) => {
 };
 
 // GET all pending seller combos for admin review
-export const getPendingSellerCombos = async (req: Request, res: Response) => {
+export const getPendingSellerCombos = async (_req: Request, res: Response) => {
   try {
     const combos = await ComboOffer.find({ creatorType: "seller", isApproved: false })
       .populate("mainProduct", "productName price mainImage")

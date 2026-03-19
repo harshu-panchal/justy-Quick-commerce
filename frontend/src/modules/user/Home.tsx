@@ -345,7 +345,7 @@ export default function Home() {
               <div className="mb-6 mt-6 md:mb-8 md:mt-8">
                 <h2 className="text-lg md:text-2xl font-semibold text-neutral-900 mb-3 md:mb-6 px-4 md:px-6 lg:px-8 tracking-tight">Shop by Store</h2>
                 <div className="px-4 md:px-6 lg:px-8">
-                  <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2 md:gap-4">
+                  <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2 md:gap-4">
                     {(homeData.shops || [])
                       .filter((tile: any) => !['pharma', 'pet', 'gift', 'spiritual', 'sport', 'book', 'toy', 'meat', 'chicken', 'fish', 'egg', 'non veg', 'baby', 'wellness', 'fitness'].some(w => (tile.name || '').toLowerCase().includes(w)))
                       .map((tile: any) => {
@@ -354,13 +354,13 @@ export default function Home() {
                           <div key={tile.id} className="flex flex-col">
                             <div
                               onClick={() => { const slug = tile.slug || tile.id.replace("-store", ""); saveScrollPosition(); navigate(`/store/${slug}`); }}
-                              className="block bg-white rounded-full shadow-sm border border-neutral-200 hover:shadow-md transition-all cursor-pointer overflow-hidden aspect-square p-1.5"
+                              className="block bg-[#F2F7FF] rounded-2xl shadow-sm border border-neutral-100 hover:shadow-md transition-all cursor-pointer overflow-hidden aspect-square p-0"
                             >
                               {hasImages ? (
                                 <img
                                   src={tile.image || tile.productImages?.[0] || ""}
                                   alt={tile.name}
-                                  className="w-full h-full object-contain rounded-full"
+                                  className="w-full h-full object-contain rounded-2xl"
                                 />
                               ) : (
                                 <div className={`w-full h-full flex items-center justify-center text-2xl text-neutral-300 ${tile.bgColor || "bg-neutral-50"}`}>
@@ -368,8 +368,8 @@ export default function Home() {
                                 </div>
                               )}
                             </div>
-                            <div className="mt-1.5 text-center">
-                              <span className="text-xs font-semibold text-neutral-900 line-clamp-2 leading-tight">{tile.name}</span>
+                            <div className="mt-1.5 text-center px-0.5">
+                              <span className="text-[10px] md:text-[11px] font-semibold text-neutral-900 line-clamp-2 leading-tight">{tile.name}</span>
                             </div>
                           </div>
                         );

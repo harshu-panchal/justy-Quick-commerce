@@ -314,9 +314,9 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
 
   return (
     <div ref={heroRef} className="pb-0 mb-0">
-      {/* Top Header Section */}
+      {/* Top Header Section - Mobile Only */}
       <div
-        className="px-4 md:px-6 lg:px-8 pt-6 pb-3 transition-colors duration-500"
+        className="px-4 md:px-6 lg:px-8 pt-6 pb-3 transition-colors duration-500 md:hidden"
         style={{ backgroundColor: (activeTab === 'all' && deliveryMode === 'scheduled') ? '#00796B' : (theme.headerBg || '#007fb1') }}
       >
         {/* 1. Full-width Mode Toggle */}
@@ -433,10 +433,10 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
         </div>
       </div>
 
-      {/* 4. Sticky Category Header (Untouched as requested) */}
+      {/* 4. Sticky Category Header (Untouched as requested) - Mobile Only */}
       <div
         ref={stickyRef}
-        className="sticky top-0 z-50 bg-white shadow-md border-b border-gray-100"
+        className="sticky top-0 z-50 bg-white shadow-md border-b border-gray-100 md:hidden"
       >
         <div className="w-full">
           <div

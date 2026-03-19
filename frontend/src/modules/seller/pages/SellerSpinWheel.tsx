@@ -230,8 +230,18 @@ export default function SellerSpinWheel() {
     setLoading(true); setError(""); setResult(null); setShowResult(false);
     try {
       const res = await getSellerSpinWheelCampaign();
-      if (res.success) { setCampaign(res.data.campaign); setMySpin(res.data.mySpin); }
-      else setError(res.message || "Failed to load spin wheel");
+      if (res.success) {
+        setCampaign(res.data.campaign);
+        const spin = res.data.mySpin;
+        const nextAt = (res.data as any).nextEligibleAt;
+        if (spin && nextAt) {
+          setMySpin({ ...spin, nextEligibleAt: nextAt } as any);
+        } else {
+          setMySpin(spin);
+        }
+      } else {
+        setError(res.message || "Failed to load spin wheel");
+      }
     } catch (e: any) {
       setError(e?.response?.data?.message || e?.message || "Failed to load");
     } finally { setLoading(false); }

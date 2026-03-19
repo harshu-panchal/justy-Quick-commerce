@@ -142,7 +142,12 @@ export default function DeliverySpinWheel() {
     setLoading(true); setError(""); setResult(null); setShowResult(false);
     try {
       const res = await getDeliverySpinWheelCampaign();
-      if (res.success) { setCampaign(res.data.campaign); setMySpin(res.data.mySpin); }
+      if (res.success) {
+        setCampaign(res.data.campaign);
+        const spin = res.data.mySpin;
+        const nextAt = (res.data as any).nextEligibleAt;
+        setMySpin(spin && nextAt ? { ...spin, nextEligibleAt: nextAt } as any : spin);
+      }
       else setError(res.message || "Failed to load spin wheel");
     } catch (e: any) {
       setError(e?.response?.data?.message || e?.message || "Failed to load");

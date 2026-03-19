@@ -14,33 +14,35 @@ router.use(requireUserType("Delivery"));
 router.get(
   "/campaign",
   asyncHandler(async (req, res) => {
-    const userId = req.user?.userId;
+    const rawUserId = req.user?.userId;
+    if (!rawUserId || !mongoose.Types.ObjectId.isValid(rawUserId)) {
+      return res.status(401).json({ success: false, message: "Authentication required" });
+    }
+    const userObjectId = new mongoose.Types.ObjectId(rawUserId);
+
     const campaign = await SpinCampaign.findOne({ isActive: true }).sort({ updatedAt: -1 }).lean();
     if (!campaign) {
       return res.status(200).json({ success: true, message: "No active campaign", data: { campaign: null, mySpin: null } });
     }
 
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    const mySpin = userId
-      ? await SpinAttempt.findOne({
-          campaignId: campaign._id,
-          userType: "DeliveryPartner",
-          userId,
-          createdAt: { $gte: since },
-        })
-          .sort({ createdAt: -1 })
-          .lean()
+    const mySpin = await SpinAttempt.findOne({
+      campaignId: campaign._id,
+      userType: "DeliveryPartner",
+      userId: userObjectId,
+      createdAt: { $gte: since },
+    })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const nextEligibleAt = mySpin?.createdAt
+      ? new Date(new Date(mySpin.createdAt).getTime() + 24 * 60 * 60 * 1000)
       : null;
 
     return res.status(200).json({
       success: true,
       message: "Campaign fetched",
-      data: {
-        campaign,
-        mySpin,
-        cooldownSeconds: 24 * 60 * 60,
-        nextEligibleAt: mySpin?.createdAt ? new Date(new Date(mySpin.createdAt).getTime() + 24 * 60 * 60 * 1000) : null,
-      },
+      data: { campaign, mySpin, cooldownSeconds: 24 * 60 * 60, nextEligibleAt },
     });
   })
 );
@@ -48,8 +50,11 @@ router.get(
 router.post(
   "/spin",
   asyncHandler(async (req, res) => {
-    const userId = req.user?.userId;
-    if (!userId) return res.status(401).json({ success: false, message: "Authentication required" });
+    const rawUserId = req.user?.userId;
+    if (!rawUserId || !mongoose.Types.ObjectId.isValid(rawUserId)) {
+      return res.status(401).json({ success: false, message: "Authentication required" });
+    }
+    const userObjectId = new mongoose.Types.ObjectId(rawUserId);
 
     const campaign = await SpinCampaign.findOne({ isActive: true }).sort({ updatedAt: -1 });
     if (!campaign) return res.status(404).json({ success: false, message: "No active spin campaign" });
@@ -58,7 +63,7 @@ router.post(
     const recent = await SpinAttempt.findOne({
       campaignId: campaign._id,
       userType: "DeliveryPartner",
-      userId,
+      userId: userObjectId,
       createdAt: { $gte: since },
     })
       .sort({ createdAt: -1 })
@@ -100,19 +105,17 @@ router.post(
         await fresh.save({ session });
 
         const spinDoc = await SpinAttempt.create(
-          [
-            {
-              campaignId: fresh._id,
-              userType: "DeliveryPartner",
-              userId,
-              resultType: isMega ? "MEGA_REWARD" : "COINS",
-              coinsWon,
-              megaRewardName: isMega ? fresh.megaReward?.name : undefined,
-              megaRewardImageUrl: isMega ? fresh.megaReward?.imageUrl : undefined,
-              blockIndex: fresh.blockIndex,
-              spinNumberInBlock: nextSpinNumber,
-            },
-          ],
+          [{
+            campaignId: fresh._id,
+            userType: "DeliveryPartner",
+            userId: userObjectId,
+            resultType: isMega ? "MEGA_REWARD" : "COINS",
+            coinsWon,
+            megaRewardName: isMega ? fresh.megaReward?.name : undefined,
+            megaRewardImageUrl: isMega ? fresh.megaReward?.imageUrl : undefined,
+            blockIndex: fresh.blockIndex,
+            spinNumberInBlock: nextSpinNumber,
+          }],
           { session }
         );
 

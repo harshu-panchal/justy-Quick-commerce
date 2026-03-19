@@ -203,13 +203,29 @@ export default function DeliverySpinWheel() {
         </div>
         {error && <div className="rounded-2xl bg-red-50 border border-red-200 p-3 text-sm text-red-700 mb-4">⚠️ {error}</div>}
         {showResult && result && (
-          <div className={`rounded-2xl p-5 text-center mb-4 shadow-xl border-2 ${result.resultType === "MEGA_REWARD" ? "bg-gradient-to-br from-yellow-300 via-amber-400 to-orange-400 border-yellow-500" : "bg-gradient-to-br from-emerald-400 via-green-500 to-teal-500 border-emerald-600"} text-white`}>
-            <div className="text-4xl mb-2">{result.resultType === "MEGA_REWARD" ? "🎁🎉" : "🎊🪙"}</div>
-            <div className="text-lg font-extrabold drop-shadow mb-1">🎉 Congratulations!</div>
-            <div className="text-2xl font-black drop-shadow">
-              {result.resultType === "MEGA_REWARD" ? `You won: ${result.megaRewardName || "Mega Reward"}!` : `You won ${Number(result.coinsWon || 0)} Coins!`}
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.65)" }}>
+            <div className={`relative w-full max-w-sm rounded-3xl p-8 text-center shadow-2xl border-4 ${
+              result.resultType === "MEGA_REWARD"
+                ? "bg-gradient-to-br from-yellow-300 via-amber-400 to-orange-400 border-yellow-500"
+                : "bg-gradient-to-br from-emerald-400 via-green-500 to-teal-500 border-emerald-600"
+            } text-white`} style={{ animation: "popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both" }}>
+              <div className="text-5xl mb-3">{result.resultType === "MEGA_REWARD" ? "🎁" : "🪙"}</div>
+              <div className="text-2xl font-black drop-shadow mb-1">🎉 Congratulations!</div>
+              <div className="text-3xl font-black drop-shadow mt-2">
+                {result.resultType === "MEGA_REWARD" ? `You won: ${result.megaRewardName || "Mega Reward"}!` : `You won ${Number(result.coinsWon || 0)} Coins!`}
+              </div>
+              {result.resultType === "COINS" && (
+                <div className="mt-3 text-base font-semibold opacity-90 bg-white/20 rounded-xl px-4 py-2">
+                  🪙 {Number(result.coinsWon || 0)} coins added to your account
+                </div>
+              )}
+              <button onClick={() => setShowResult(false)}
+                className="mt-6 px-8 py-3 rounded-2xl bg-white font-extrabold text-base shadow-lg active:scale-95 transition-all"
+                style={{ color: result.resultType === "MEGA_REWARD" ? "#92400e" : "#065f46" }}>
+                Awesome! 🙌
+              </button>
             </div>
-            {result.resultType === "COINS" && <div className="mt-1 text-sm font-semibold opacity-90">🪙 {Number(result.coinsWon || 0)} coins added to your account</div>}
+            <style>{`@keyframes popIn { from { opacity:0; transform:scale(0.5); } to { opacity:1; transform:scale(1); } }`}</style>
           </div>
         )}
         {!loading && !campaign && (

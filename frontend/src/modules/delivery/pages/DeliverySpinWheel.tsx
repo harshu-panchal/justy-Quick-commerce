@@ -6,7 +6,7 @@ import {
   type SpinCampaign,
 } from "../../../services/api/deliverySpinWheelService";
 
-function formatNextEligible(mySpin: SpinAttempt | null) {
+function getNextEligibleDate(mySpin: SpinAttempt | null): Date | null {
   const next = (mySpin as any)?.nextEligibleAt;
   const createdAt = mySpin?.createdAt;
   const base = next
@@ -15,7 +15,26 @@ function formatNextEligible(mySpin: SpinAttempt | null) {
     ? new Date(new Date(createdAt).getTime() + 24 * 60 * 60 * 1000)
     : null;
   if (!base || Number.isNaN(base.getTime())) return null;
-  return base.toLocaleString();
+  return base;
+}
+
+function useCountdown(targetDate: Date | null): string {
+  const [remaining, setRemaining] = useState("");
+  useEffect(() => {
+    if (!targetDate) { setRemaining(""); return; }
+    const tick = () => {
+      const diff = targetDate.getTime() - Date.now();
+      if (diff <= 0) { setRemaining("00:00:00"); return; }
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      setRemaining(`${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`);
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [targetDate]);
+  return remaining;
 }
 
 interface Segment {
@@ -169,7 +188,8 @@ export default function DeliverySpinWheel() {
   };
 
   const canSpin = !mySpin && !spinning;
-  const nextEligibleText = formatNextEligible(mySpin);
+  const nextEligibleDate = useMemo(() => getNextEligibleDate(mySpin), [mySpin]);
+  const countdown = useCountdown(nextEligibleDate);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 p-4 sm:p-6">
@@ -183,9 +203,13 @@ export default function DeliverySpinWheel() {
         </div>
         {error && <div className="rounded-2xl bg-red-50 border border-red-200 p-3 text-sm text-red-700 mb-4">⚠️ {error}</div>}
         {showResult && result && (
-          <div className={`rounded-2xl p-4 text-center mb-4 ${result.resultType === "MEGA_REWARD" ? "bg-gradient-to-r from-yellow-400 to-amber-500" : "bg-gradient-to-r from-emerald-500 to-green-600"} text-white shadow-lg`}>
-            <div className="text-3xl mb-1">{result.resultType === "MEGA_REWARD" ? "🎁" : "🪙"}</div>
-            <div className="text-base font-extrabold">{result.resultType === "MEGA_REWARD" ? `🎉 You won: ${result.megaRewardName || "Mega Reward"}!` : `🎉 You won ${Number(result.coinsWon || 0)} Coins!`}</div>
+          <div className={`rounded-2xl p-5 text-center mb-4 shadow-xl border-2 ${result.resultType === "MEGA_REWARD" ? "bg-gradient-to-br from-yellow-300 via-amber-400 to-orange-400 border-yellow-500" : "bg-gradient-to-br from-emerald-400 via-green-500 to-teal-500 border-emerald-600"} text-white`}>
+            <div className="text-4xl mb-2">{result.resultType === "MEGA_REWARD" ? "🎁🎉" : "🎊🪙"}</div>
+            <div className="text-lg font-extrabold drop-shadow mb-1">🎉 Congratulations!</div>
+            <div className="text-2xl font-black drop-shadow">
+              {result.resultType === "MEGA_REWARD" ? `You won: ${result.megaRewardName || "Mega Reward"}!` : `You won ${Number(result.coinsWon || 0)} Coins!`}
+            </div>
+            {result.resultType === "COINS" && <div className="mt-1 text-sm font-semibold opacity-90">🪙 {Number(result.coinsWon || 0)} coins added to your account</div>}
           </div>
         )}
         {!loading && !campaign && (
@@ -199,7 +223,7 @@ export default function DeliverySpinWheel() {
             <div className="bg-gradient-to-r from-amber-500 via-yellow-400 to-orange-400 px-5 py-3 flex items-center justify-between">
               <span className="text-base font-extrabold text-white drop-shadow tracking-wide">🏆 SPIN &amp; WIN!</span>
               <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${canSpin ? "bg-white text-emerald-700" : "bg-black/20 text-white"}`}>
-                {canSpin ? "✅ Spin available" : nextEligibleText ? `🕐 ${nextEligibleText}` : "🕐 24h cooldown"}
+                {canSpin ? "✅ Spin available" : countdown ? `⏱ ${countdown}` : "🕐 24h cooldown"}
               </span>
             </div>
             <div className="p-4 sm:p-5">
@@ -246,8 +270,10 @@ export default function DeliverySpinWheel() {
                 </button>
               </div>
               {!canSpin && !spinning && (
-                <div className="mt-3 rounded-xl bg-amber-50 border border-amber-200 p-3 text-center text-xs text-amber-700 font-medium">
-                  {nextEligibleText ? `🕐 Next spin at: ${nextEligibleText}` : "Come back in 24 hours!"}
+                <div className="mt-3 rounded-xl bg-amber-50 border border-amber-200 p-3 text-center">
+                  <div className="text-xs text-amber-600 font-semibold mb-1">⏰ Next spin available in</div>
+                  <div className="text-2xl font-black text-amber-800 tracking-widest font-mono">{countdown || "00:00:00"}</div>
+                  {nextEligibleDate && <div className="text-[10px] text-amber-500 mt-1">{nextEligibleDate.toLocaleString()}</div>}
                 </div>
               )}
             </div>

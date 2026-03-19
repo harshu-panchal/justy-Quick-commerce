@@ -5,41 +5,96 @@ import { useNavigate } from "react-router-dom";
 function formatNextEligible(mySpin: SpinAttempt | null) {
   const next = (mySpin as any)?.nextEligibleAt;
   const createdAt = mySpin?.createdAt;
-  const base = next ? new Date(next) : createdAt ? new Date(new Date(createdAt).getTime() + 24 * 60 * 60 * 1000) : null;
+  const base = next
+    ? new Date(next)
+    : createdAt
+    ? new Date(new Date(createdAt).getTime() + 24 * 60 * 60 * 1000)
+    : null;
   if (!base || Number.isNaN(base.getTime())) return null;
   return base.toLocaleString();
 }
 
-const CoinIcon = ({ className }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-    <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
-    <path d="M12 7v10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-    <path d="M9 10h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-    <path d="M9 14h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-  </svg>
-);
+interface Segment {
+  type: "COINS" | "MEGA_REWARD";
+  label: string;
+  value: number;
+  megaName?: string;
+  megaImageUrl?: string;
+}
 
-const GiftIcon = ({ className }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-    <path d="M20 12v10H4V12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M22 7H2v5h20V7Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M12 22V7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    <path
-      d="M12 7H7.5C6.12 7 5 5.88 5 4.5S6.12 2 7.5 2C11 2 12 7 12 7Z"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <path
-      d="M12 7h4.5C17.88 7 19 5.88 19 4.5S17.88 2 16.5 2C13 2 12 7 12 7Z"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
+const COIN_COLORS = ["#22c55e", "#16a34a", "#4ade80", "#15803d", "#86efac"];
+
+function sliceColor(index: number, isMega: boolean) {
+  if (isMega) return "#FFD700";
+  return COIN_COLORS[index % COIN_COLORS.length];
+}
+
+function pieSlice(cx: number, cy: number, r: number, startDeg: number, endDeg: number) {
+  const toRad = (d: number) => ((d - 90) * Math.PI) / 180;
+  const x1 = cx + r * Math.cos(toRad(startDeg));
+  const y1 = cy + r * Math.sin(toRad(startDeg));
+  const x2 = cx + r * Math.cos(toRad(endDeg));
+  const y2 = cy + r * Math.sin(toRad(endDeg));
+  return `M${cx},${cy} L${x1},${y1} A${r},${r} 0 ${endDeg - startDeg > 180 ? 1 : 0},1 ${x2},${y2} Z`;
+}
+
+function SpinWheelSVG({ segments, wheelRef }: { segments: Segment[]; wheelRef: React.RefObject<HTMLDivElement> }) {
+  if (!segments.length) return null;
+  const cx = 150, cy = 150, r = 138;
+  const slice = 360 / segments.length;
+  return (
+    <div ref={wheelRef} className="w-full h-full" style={{ transformOrigin: "center center" }}>
+      <svg viewBox="0 0 300 300" className="w-full h-full">
+        <circle cx={cx} cy={cy} r={r + 8} fill="#92400E" />
+        <circle cx={cx} cy={cy} r={r + 3} fill="#FEF3C7" />
+        {segments.map((seg, i) => {
+          const startDeg = i * slice, endDeg = (i + 1) * slice, midDeg = startDeg + slice / 2;
+          const midRad = ((midDeg - 90) * Math.PI) / 180;
+          const isMega = seg.type === "MEGA_REWARD";
+          const lx = cx + r * 0.65 * Math.cos(midRad), ly = cy + r * 0.65 * Math.sin(midRad);
+          const iconR = r * 0.38;
+          return (
+            <g key={i}>
+              <path d={pieSlice(cx, cy, r, startDeg, endDeg)} fill={sliceColor(i, isMega)} stroke="#fff" strokeWidth="2" />
+              <g transform={`rotate(${midDeg}, ${cx}, ${cy})`}>
+                {isMega ? (
+                  <g transform={`translate(${cx}, ${cy - iconR})`}>
+                    <rect x="-10" y="-7" width="20" height="14" rx="2" fill="none" stroke="#78350F" strokeWidth="2" />
+                    <line x1="0" y1="-7" x2="0" y2="7" stroke="#78350F" strokeWidth="2" />
+                    <line x1="-10" y1="-2" x2="10" y2="-2" stroke="#78350F" strokeWidth="2" />
+                    <path d="M0,-7 C-1,-12 -6,-12 -6,-8 C-6,-4 0,-7 0,-7Z" fill="#78350F" />
+                    <path d="M0,-7 C1,-12 6,-12 6,-8 C6,-4 0,-7 0,-7Z" fill="#78350F" />
+                  </g>
+                ) : (
+                  <circle cx={cx} cy={cy - iconR} r="10" fill="#FBBF24" stroke="#92400E" strokeWidth="2" />
+                )}
+              </g>
+              <text x={lx} y={ly} textAnchor="middle" dominantBaseline="middle"
+                fontSize={isMega ? "12" : slice < 50 ? "11" : "13"} fontWeight="900"
+                fill={isMega ? "#78350F" : "#fff"} fontFamily="'Arial Black', Arial, sans-serif"
+                stroke={isMega ? "none" : "rgba(0,0,0,0.3)"} strokeWidth="2" paintOrder="stroke"
+                transform={`rotate(${midDeg}, ${lx}, ${ly})`}>
+                {isMega ? "MEGA" : seg.label}
+              </text>
+              {!isMega && (
+                <text x={lx} y={ly + (slice < 50 ? 11 : 14)} textAnchor="middle" dominantBaseline="middle"
+                  fontSize={slice < 50 ? "7" : "9"} fontWeight="700"
+                  fill="rgba(255,255,255,0.9)" fontFamily="Arial, sans-serif"
+                  transform={`rotate(${midDeg}, ${lx}, ${ly + (slice < 50 ? 11 : 14)})`}>
+                  coins
+                </text>
+              )}
+            </g>
+          );
+        })}
+        <circle cx={cx} cy={cy} r="28" fill="#1F2937" stroke="white" strokeWidth="5" />
+        <circle cx={cx} cy={cy} r="24" fill="#065F46" />
+        <text x={cx} y={cy + 1} textAnchor="middle" dominantBaseline="middle"
+          fontSize="10" fontWeight="900" fill="white" fontFamily="'Arial Black', Arial, sans-serif">SPIN</text>
+      </svg>
+    </div>
+  );
+}
 
 export default function SpinWheel() {
   const navigate = useNavigate();
@@ -48,313 +103,162 @@ export default function SpinWheel() {
   const [loading, setLoading] = useState(false);
   const [spinning, setSpinning] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-  const [resultOpen, setResultOpen] = useState(false);
-  const [resultSpin, setResultSpin] = useState<SpinAttempt | null>(null);
+  const [result, setResult] = useState<SpinAttempt | null>(null);
+  const [showResult, setShowResult] = useState(false);
   const wheelRef = useRef<HTMLDivElement>(null);
+  const baseAngle = useRef(0);
 
-  const segments = useMemo(() => {
+  const segments = useMemo<Segment[]>(() => {
     if (!campaign) return [];
-    const coins = (campaign.coinRewards || []).map((c) => ({
-      type: "COINS" as const,
-      label: `${c.amount}`,
-      value: c.amount,
+    const coins: Segment[] = (campaign.coinRewards || []).map((c) => ({
+      type: "COINS", label: `${c.amount}`, value: c.amount,
     }));
-    const mega = {
-      type: "MEGA_REWARD" as const,
-      label: "MEGA",
-      value: 0,
-      megaName: campaign.megaReward?.name || "Mega Reward",
-      megaImageUrl: campaign.megaReward?.imageUrl,
-    };
-    return [mega, ...coins];
+    return [
+      { type: "MEGA_REWARD", label: "MEGA", value: 0,
+        megaName: campaign.megaReward?.name || "Mega Reward",
+        megaImageUrl: campaign.megaReward?.imageUrl },
+      ...coins,
+    ];
   }, [campaign]);
 
-  const wheelStyle = useMemo(() => {
-    if (!segments.length) return {};
-    const colors = segments.map((s, i) => {
-      if (s.type === "MEGA_REWARD") return "#f7d774";
-      return i % 2 === 0 ? "#fde68a" : "#fbbf24";
-    });
-    const slice = 360 / segments.length;
-    const stops: string[] = [];
-    for (let i = 0; i < segments.length; i++) {
-      const start = i * slice;
-      const end = (i + 1) * slice;
-      stops.push(`${colors[i]} ${start}deg ${end}deg`);
-    }
-    return { background: `conic-gradient(${stops.join(",")})` } as React.CSSProperties;
-  }, [segments]);
-
   const load = async () => {
-    setLoading(true);
-    setError("");
-    setSuccess("");
+    setLoading(true); setError(""); setResult(null); setShowResult(false);
     try {
       const res = await getSpinWheelCampaign();
-      if (res.success) {
-        setCampaign(res.data.campaign);
-        setMySpin(res.data.mySpin);
-      } else {
-        setError(res.message || "Failed to load spin wheel");
-      }
+      if (res.success) { setCampaign(res.data.campaign); setMySpin(res.data.mySpin); }
+      else setError(res.message || "Failed to load spin wheel");
     } catch (e: any) {
-      setError(e?.response?.data?.message || e?.message || "Failed to load spin wheel");
-    } finally {
-      setLoading(false);
-    }
+      setError(e?.response?.data?.message || e?.message || "Failed to load");
+    } finally { setLoading(false); }
   };
 
-  useEffect(() => {
-    load();
-  }, []);
-
-  const rotateToResult = (spin: SpinAttempt) => {
-    if (!campaign || !wheelRef.current || !segments.length) return;
-
-    // find target segment index
-    let targetIndex = 0;
-    if (spin.resultType === "MEGA_REWARD") {
-      targetIndex = 0;
-    } else {
-      const coins = Number(spin.coinsWon || 0);
-      const idx = segments.findIndex((s, i) => i !== 0 && s.type === "COINS" && s.value === coins);
-      targetIndex = idx >= 0 ? idx : 1; // fallback to first coin segment
-    }
-
-    const slice = 360 / segments.length;
-    const targetAngle = targetIndex * slice + slice / 2;
-    const spins = 6;
-    const final = spins * 360 + (360 - targetAngle);
-
-    wheelRef.current.style.transition = "transform 4.2s cubic-bezier(0.12, 0.9, 0.12, 1)";
-    wheelRef.current.style.transform = `rotate(${final}deg)`;
-  };
+  useEffect(() => { load(); }, []);
 
   const onSpin = async () => {
-    if (spinning) return;
-    setError("");
-    setSuccess("");
-
-    if (!campaign) {
-      setError("No active spin campaign.");
-      return;
-    }
-    if (mySpin) {
-      setSuccess("Cooldown active. Come back after 24h.");
-      return;
-    }
-
-    setSpinning(true);
+    if (!campaign || spinning || !segments.length) return;
+    setSpinning(true); setError(""); setResult(null); setShowResult(false);
     try {
       const res = await spinNow();
-      if (!res.success || !res.data) throw new Error(res.message || "Spin failed");
+      if (!res.success || !res.data) { setError(res.message || "Spin failed"); setSpinning(false); return; }
       const spin = res.data;
-
-      setMySpin(spin);
-      rotateToResult(spin);
-
+      let targetIndex = 0;
+      if (spin.resultType === "COINS") {
+        const coins = Number(spin.coinsWon || 0);
+        const idx = segments.findIndex((s, i) => i !== 0 && s.type === "COINS" && s.value === coins);
+        targetIndex = idx >= 0 ? idx : 1;
+      }
+      const slice = 360 / segments.length;
+      const sliceMid = targetIndex * slice + slice / 2;
+      const newAngle = baseAngle.current + 360 * 8 + (360 - sliceMid - (baseAngle.current % 360));
+      if (wheelRef.current) {
+        wheelRef.current.style.transition = "transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99)";
+        wheelRef.current.style.transform = `rotate(${newAngle}deg)`;
+      }
+      setMySpin(spin); setResult(spin);
       setTimeout(() => {
-        setResultSpin(spin);
-        setResultOpen(true);
-      }, 4300);
+        baseAngle.current = newAngle % 360;
+        if (wheelRef.current) { wheelRef.current.style.transition = "none"; wheelRef.current.style.transform = `rotate(${baseAngle.current}deg)`; }
+        setSpinning(false); setShowResult(true);
+      }, 4200);
     } catch (e: any) {
-      setError(e?.response?.data?.message || e?.message || "Spin failed");
-      setSpinning(false);
-      return;
+      setError(e?.response?.data?.message || e?.message || "Spin failed"); setSpinning(false);
     }
-    setTimeout(() => setSpinning(false), 4500);
   };
 
-  const nextEligibleText = useMemo(() => formatNextEligible(mySpin), [mySpin]);
+  const reset = () => {
+    if (wheelRef.current) { wheelRef.current.style.transition = "none"; wheelRef.current.style.transform = "rotate(0deg)"; }
+    baseAngle.current = 0; setShowResult(false); setResult(null); load();
+  };
+
+  const canSpin = !mySpin && !spinning;
+  const nextEligibleText = formatNextEligible(mySpin);
 
   return (
-    <div className="min-h-screen bg-neutral-50 pb-24">
-      <div className="px-4 pt-6 max-w-3xl mx-auto">
-        <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
-          <button onClick={() => navigate(-1)} className="p-2 rounded-lg bg-white border border-neutral-200">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-          <div className="flex-1">
-            <div className="text-xl font-bold text-neutral-900">{campaign?.title || "Spin & Win"}</div>
-            <div className="text-sm text-neutral-600">Daily spin (every 24 hours).</div>
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 p-4 sm:p-6">
+      <div className="max-w-md mx-auto">
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <h1 className="text-2xl font-extrabold text-amber-900">🎡 Spin &amp; Win</h1>
+            <p className="text-xs text-amber-700 mt-0.5">One free spin every 24 hours</p>
           </div>
-          <button
-            onClick={load}
-            disabled={loading}
-            className="px-3 py-2 rounded-lg border border-neutral-200 bg-white text-sm font-medium disabled:opacity-50"
-          >
-            {loading ? "..." : "Refresh"}
-          </button>
+          <div className="flex gap-2">
+            <button onClick={() => navigate(-1)} className="px-3 py-1.5 rounded-xl border border-neutral-200 bg-white text-xs font-bold text-neutral-600 hover:bg-neutral-50 shadow-sm">← Back</button>
+            <button onClick={reset} disabled={loading || spinning} className="px-3 py-1.5 rounded-xl border border-amber-300 bg-white text-xs font-bold text-amber-700 hover:bg-amber-50 disabled:opacity-50 shadow-sm">{loading ? "⟳…" : "⟳"}</button>
+          </div>
         </div>
-
-        {error ? <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-800 text-sm mb-4">{error}</div> : null}
-        {success ? (
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-800 text-sm mb-4">{success}</div>
-        ) : null}
-
-        {!campaign ? (
-          <div className="rounded-2xl border border-dashed border-neutral-300 bg-white p-10 text-center text-neutral-600">
-            {loading ? "Loading..." : "No active spin campaign right now."}
+        {error && <div className="rounded-2xl bg-red-50 border border-red-200 p-3 text-sm text-red-700 mb-4">⚠️ {error}</div>}
+        {showResult && result && (
+          <div className={`rounded-2xl p-4 text-center mb-4 ${result.resultType === "MEGA_REWARD" ? "bg-gradient-to-r from-yellow-400 to-amber-500 text-white" : "bg-gradient-to-r from-emerald-500 to-green-600 text-white"} shadow-lg`}>
+            <div className="text-3xl mb-1">{result.resultType === "MEGA_REWARD" ? "🎁" : "🪙"}</div>
+            <div className="text-base font-extrabold">{result.resultType === "MEGA_REWARD" ? `🎉 You won: ${result.megaRewardName || "Mega Reward"}!` : `🎉 You won ${Number(result.coinsWon || 0)} Coins!`}</div>
           </div>
-        ) : (
-          <div className="rounded-[28px] border border-[#E7D6B5] bg-gradient-to-b from-[#FFF6DC] to-[#FFF0C7] shadow-sm overflow-hidden">
-            <div className="px-5 sm:px-6 py-4 flex items-center justify-between">
-              <div className="text-lg sm:text-xl font-extrabold tracking-wide text-[#6B3B17]">SPIN &amp; WIN!</div>
-              <div className="text-xs text-[#8A5A2B]">
-                {!mySpin ? "You can spin now" : nextEligibleText ? `Next spin: ${nextEligibleText}` : "Come back after 24h"}
-              </div>
+        )}
+        {!loading && !campaign && (
+          <div className="rounded-3xl border border-amber-200 bg-white shadow p-10 text-center">
+            <div className="text-5xl mb-3">🎡</div>
+            <div className="text-neutral-600 font-medium">No active spin campaign</div>
+          </div>
+        )}
+        {campaign && (
+          <div className="rounded-3xl border-2 border-amber-300 bg-white shadow-xl overflow-hidden">
+            <div className="bg-gradient-to-r from-amber-500 via-yellow-400 to-orange-400 px-5 py-3 flex items-center justify-between">
+              <span className="text-base font-extrabold text-white drop-shadow tracking-wide">🏆 SPIN &amp; WIN!</span>
+              <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${canSpin ? "bg-white text-emerald-700" : "bg-black/20 text-white"}`}>
+                {canSpin ? "✅ Spin available" : nextEligibleText ? `🕐 ${nextEligibleText}` : "🕐 24h cooldown"}
+              </span>
             </div>
-
-            <div className="px-5 sm:px-6 pb-6">
-              <div className="rounded-2xl border border-[#E7D6B5] bg-white/70 p-4 flex items-center gap-4">
-                <div className="h-14 w-14 rounded-2xl bg-[#FFF0C7] border border-[#E7D6B5] flex items-center justify-center overflow-hidden">
-                  {campaign.megaReward?.imageUrl ? (
-                    <img src={campaign.megaReward.imageUrl} alt={campaign.megaReward.name} className="h-full w-full object-cover" />
-                  ) : (
-                    <GiftIcon className="h-7 w-7 text-[#8A5A2B]" />
-                  )}
+            <div className="p-4 sm:p-5">
+              <div className="rounded-2xl bg-gradient-to-r from-yellow-50 to-amber-50 border border-amber-200 p-3 flex items-center gap-3 mb-4">
+                <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-yellow-300 to-amber-400 flex items-center justify-center overflow-hidden flex-shrink-0 shadow">
+                  {campaign.megaReward?.imageUrl ? <img src={campaign.megaReward.imageUrl} alt={campaign.megaReward.name} className="h-full w-full object-cover" /> : <span className="text-2xl">🎁</span>}
                 </div>
-                <div className="min-w-0">
-                  <div className="text-xs font-semibold text-[#8A5A2B]">Mega Reward</div>
-                  <div className="text-sm sm:text-base font-extrabold text-[#3B1F0B] truncate">
-                    {campaign.megaReward?.name || "Mega Reward"}
+                <div className="min-w-0 flex-1">
+                  <div className="text-[10px] font-bold text-amber-600 uppercase tracking-wider">⭐ Grand Prize</div>
+                  <div className="text-sm font-extrabold text-amber-900 truncate">{campaign.megaReward?.name || "Mega Reward"}</div>
+                </div>
+                <div className="text-xl">✨</div>
+              </div>
+              <div className="flex items-center justify-center my-2">
+                <div className="relative" style={{ width: 280, height: 280 }}>
+                  <div className="absolute -top-2 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center">
+                    <div className="w-0 h-0 border-l-[10px] border-r-[10px] border-b-[18px] border-l-transparent border-r-transparent border-b-red-600" style={{ filter: "drop-shadow(0 2px 3px rgba(0,0,0,0.4))" }} />
+                    <div className="w-4 h-4 rounded-full bg-red-600 -mt-0.5 shadow" />
                   </div>
+                  <div className="absolute inset-0 rounded-full shadow-[0_0_24px_rgba(251,191,36,0.5)]" />
+                  <SpinWheelSVG segments={segments} wheelRef={wheelRef} />
+                  <button type="button" onClick={onSpin} disabled={!canSpin || spinning}
+                    className="absolute w-16 h-16 rounded-full bg-gradient-to-b from-emerald-400 to-emerald-700 text-white text-sm font-extrabold shadow-lg border-4 border-white z-20 disabled:opacity-60 hover:from-emerald-300 hover:to-emerald-600 active:scale-95 transition-all"
+                    style={{ top: "50%", left: "50%", transform: "translate(-50%,-50%)" }}>
+                    {spinning ? "…" : "SPIN"}
+                  </button>
                 </div>
               </div>
-
-              <div className="mt-5 flex items-center justify-center">
-                <div className="relative w-[300px] h-[300px] sm:w-[360px] sm:h-[360px]">
-                  <div className="absolute -top-1 left-1/2 -translate-x-1/2 z-20">
-                    <div className="h-9 w-9 rounded-full bg-[#F6B800] shadow border-4 border-white flex items-center justify-center">
-                      <div className="w-0 h-0 border-l-[8px] border-r-[8px] border-b-[14px] border-l-transparent border-r-transparent border-b-[#6B3B17]" />
-                    </div>
-                  </div>
-
-                  <div className="absolute inset-0 rounded-full bg-[#8A4B1E] shadow-md" />
-                  <div className="absolute inset-[10px] rounded-full bg-[#F4E6C8]" />
-                  <div className="absolute inset-[18px] rounded-full bg-white shadow-inner border border-[#E7D6B5]" />
-
-                  <div ref={wheelRef} className="absolute inset-[22px] rounded-full" style={wheelStyle}>
-                    {segments.map((s, i) => {
-                      const slice = 360 / segments.length;
-                      const angle = i * slice + slice / 2;
-                      const rad = (angle * Math.PI) / 180;
-                      const r = 42;
-                      const x = 50 + r * Math.cos(rad);
-                      const y = 50 + r * Math.sin(rad);
-                      const rotate = angle + 90;
-                      const isMega = s.type === "MEGA_REWARD";
-                      return (
-                        <div
-                          key={`${s.type}-${s.label}-${i}`}
-                          className="absolute left-1/2 top-1/2"
-                          style={{ transform: `translate(-50%, -50%) translate(${x - 50}%, ${y - 50}%) rotate(${rotate}deg)` }}
-                        >
-                          <div
-                            className={`flex items-center gap-1 px-2 py-1 rounded-full ${
-                              isMega ? "bg-[#fff7d6] text-[#6B3B17]" : "bg-white/70 text-[#4B2A12]"
-                            } border border-[#E7D6B5] shadow-sm`}
-                            style={{ transform: `rotate(${-rotate}deg)` }}
-                          >
-                            {isMega ? <GiftIcon className="h-4 w-4" /> : <CoinIcon className="h-4 w-4" />}
-                            <span className="text-xs font-extrabold">{isMega ? "MEGA" : s.label}</span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  <div className="absolute inset-0 flex items-center justify-center z-20">
-                    <button
-                      type="button"
-                      onClick={onSpin}
-                      disabled={Boolean(mySpin) || spinning || loading}
-                      className="h-20 w-20 rounded-full bg-gradient-to-b from-emerald-400 to-emerald-700 shadow-lg border-[6px] border-white text-white font-extrabold tracking-wide disabled:opacity-60"
-                    >
-                      {spinning ? "..." : "SPIN"}
-                    </button>
-                  </div>
-                </div>
+              <div className="flex flex-wrap gap-1.5 justify-center mt-4 mb-3">
+                {segments.map((s, i) => (
+                  <span key={i} className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold border ${s.type === "MEGA_REWARD" ? "bg-yellow-400 text-yellow-900 border-yellow-500" : "bg-emerald-50 text-emerald-800 border-emerald-200"}`}>
+                    {s.type === "MEGA_REWARD" ? "🎁" : "🪙"} {s.type === "MEGA_REWARD" ? (s.megaName || "Mega") : `${s.label} coins`}
+                  </span>
+                ))}
               </div>
-
-              <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={onSpin}
-                  disabled={Boolean(mySpin) || spinning || loading}
-                  className="w-full px-4 py-3 rounded-2xl bg-emerald-600 text-white text-sm font-extrabold hover:bg-emerald-700 disabled:opacity-50"
-                >
-                  {spinning ? "Spinning…" : !mySpin ? "SPIN NOW" : "COOLDOWN (24H)"}
+              <div className="grid grid-cols-2 gap-3 mt-3">
+                <button type="button" onClick={onSpin} disabled={!canSpin || spinning}
+                  className="py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-green-600 text-white font-extrabold text-sm shadow hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all">
+                  {spinning ? "⟳ Spinning…" : canSpin ? "🎡 SPIN NOW" : "⏳ COOLDOWN"}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!wheelRef.current) return;
-                    wheelRef.current.style.transition = "none";
-                    wheelRef.current.style.transform = "rotate(0deg)";
-                    setTimeout(() => load(), 0);
-                  }}
-                  className="w-full px-4 py-3 rounded-2xl border border-[#E7D6B5] bg-white/70 text-sm font-extrabold text-[#6B3B17] hover:bg-white"
-                >
-                  RESET
+                <button type="button" onClick={reset} disabled={spinning}
+                  className="py-3 rounded-2xl border-2 border-amber-300 bg-white text-amber-700 font-extrabold text-sm hover:bg-amber-50 active:scale-95 transition-all disabled:opacity-50">
+                  ↺ RESET
                 </button>
               </div>
-
-              <div className="mt-4 text-xs text-[#8A5A2B]">
-                Possible rewards:{" "}
-                <span className="font-semibold">
-                  {campaign.megaReward?.name || "Mega Reward"} + {(campaign.coinRewards || []).map((c) => `${c.amount} coins`).join(", ")}
-                </span>
-              </div>
+              {!canSpin && !spinning && (
+                <div className="mt-3 rounded-xl bg-amber-50 border border-amber-200 p-3 text-center text-xs text-amber-700 font-medium">
+                  {nextEligibleText ? `🕐 Next spin available at: ${nextEligibleText}` : "You've already spun today. Come back in 24 hours!"}
+                </div>
+              )}
             </div>
           </div>
         )}
       </div>
-
-      {resultOpen && resultSpin ? (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setResultOpen(false)} />
-          <div className="relative w-full max-w-sm rounded-3xl bg-white shadow-2xl border border-neutral-200 overflow-hidden animate-[pop_260ms_ease-out]">
-            <style>{`@keyframes pop{from{transform:scale(.92);opacity:.6}to{transform:scale(1);opacity:1}}`}</style>
-            <div className="p-5 text-center">
-              <div className="text-lg font-extrabold text-neutral-900">Congratulations!</div>
-              <div className="text-sm text-neutral-600 mt-1">You have won</div>
-
-              {resultSpin.resultType === "MEGA_REWARD" ? (
-                <div className="mt-4">
-                  <div className="mx-auto h-20 w-20 rounded-2xl overflow-hidden border border-neutral-200 bg-neutral-50 flex items-center justify-center">
-                    {resultSpin.megaRewardImageUrl ? (
-                      <img src={resultSpin.megaRewardImageUrl} alt={resultSpin.megaRewardName || "Mega Reward"} className="h-full w-full object-cover" />
-                    ) : (
-                      <GiftIcon className="h-10 w-10 text-emerald-600" />
-                    )}
-                  </div>
-                  <div className="mt-3 text-base font-extrabold text-emerald-700">
-                    {resultSpin.megaRewardName || "Mega Reward"}
-                  </div>
-                </div>
-              ) : (
-                <div className="mt-4 flex items-center justify-center gap-2">
-                  <CoinIcon className="h-8 w-8 text-amber-500" />
-                  <div className="text-2xl font-extrabold text-neutral-900">{Number(resultSpin.coinsWon || 0)} Coins</div>
-                </div>
-              )}
-
-              <button
-                type="button"
-                onClick={() => setResultOpen(false)}
-                className="mt-6 w-full h-11 rounded-2xl bg-emerald-600 text-white font-extrabold hover:bg-emerald-700"
-              >
-                OK
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
     </div>
   );
 }
-

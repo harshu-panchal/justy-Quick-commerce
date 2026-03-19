@@ -179,7 +179,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
       <div className="md:w-full md:bg-white md:min-h-screen overflow-x-hidden">
         <div className="md:w-full md:min-h-screen md:flex md:flex-col overflow-x-hidden">
           {/* Desktop Header */}
-          <Header />
+          {location.pathname !== '/account' && <Header />}
 
           {/* Sticky Header - Show on search page and other non-home pages, excluding account page - Mobile Only */}
           {(showHeader || isSearchPage) && (

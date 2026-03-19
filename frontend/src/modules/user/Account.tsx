@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
@@ -10,6 +10,8 @@ import { useToast } from '../../context/ToastContext';
 import LuckySpin from '../../components/LuckySpin';
 import { useSpinner } from '../../hooks/useSpinner';
 import { getCustomerCoinBalance, convertCustomerCoins } from '../../services/api/customerSpinWheelService';
+
+import jastiLogo from '@assets/jasti-removebg-preview.png';
 
 export default function Account() {
   const navigate = useNavigate();
@@ -268,10 +270,70 @@ export default function Account() {
   const displayPhone = profile?.phone || user?.phone || '';
   const displayDateOfBirth = profile?.dateOfBirth;
 
+  const menuItems = [
+    { id: 'orders', label: 'Your Orders', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" /><line x1="3" y1="6" x2="21" y2="6" /><path d="M16 10a4 4 0 0 1-8 0" /></svg>, action: () => navigate('/orders'), color: 'text-orange-500' },
+    { id: 'cart', label: 'My Cart', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" /><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" /></svg>, action: () => navigate('/cart'), color: 'text-teal-500' },
+    { id: 'address', label: 'Address Book', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /></svg>, action: () => navigate('/address-book'), color: 'text-indigo-500' },
+    { id: 'wishlist', label: 'Your Wishlist', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" /></svg>, action: () => navigate('/wishlist'), color: 'text-rose-500' },
+    { id: 'spin-wheel', label: 'Spin & Win', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 3v3M21 12h-3M12 21v-3M3 12h3" /><circle cx="12" cy="12" r="1.5" fill="currentColor" /></svg>, action: () => navigate('/spin-wheel'), color: 'text-teal-600' },
+    { id: 'plans', label: 'Plans', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22h11A2.5 2.5 0 0 0 20 19.5v-13A2.5 2.5 0 0 0 17.5 4h-11A2.5 2.5 0 0 0 4 6.5v13z" /><path d="M8 7h8" /><path d="M8 11h8" /><path d="M8 15h5" /></svg>, action: () => navigate('/plans'), color: 'text-emerald-600' },
+    { id: 'gst', label: 'GST Details', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>, action: () => setShowGstModal(true), color: 'text-amber-500' },
+    { id: 'clean', label: 'Deep Clean Cart', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 6L5 20M5 6l14 14" /></svg>, action: () => {
+      if (confirm('This will wipe all items from your cart and reset it. Continue?')) {
+        localStorage.removeItem('saved_cart');
+        clearCart();
+        alert('Cart cleaned successfully!');
+      }
+    }, color: 'text-red-500', isCritical: true },
+    { id: 'about', label: 'About Us', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></svg>, action: () => window.location.href = 'https://about.dhakadsnazzy.com', color: 'text-sky-500' },
+    { id: 'logout', label: 'Log Out', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>, action: handleLogout, color: 'text-red-500', isCritical: true },
+  ];
+
+  const Sidebar = () => (
+    <div className="hidden md:flex flex-col w-72 bg-white border-r border-neutral-100 h-screen sticky top-0 overflow-y-auto pt-4 transition-all duration-300">
+      <div className="px-6 mb-8 flex flex-col items-center">
+        <Link to="/" className="block hover:opacity-80 transition-opacity">
+          <img src={jastiLogo} alt="Jasti" className="h-24 w-auto object-contain" />
+        </Link>
+        <div className="w-full h-[1px] bg-gradient-to-r from-transparent via-neutral-100 to-transparent mt-4" />
+      </div>
+      
+      <div className="flex-1 px-3 space-y-1">
+        {menuItems.map((item) => (
+          <button
+            key={item.id}
+            onClick={item.action}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all group ${
+              item.isCritical ? 'hover:bg-red-50 text-red-600' : 'hover:bg-neutral-50 text-neutral-700'
+            }`}
+          >
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+              item.isCritical ? 'bg-red-50 text-red-500' : 'bg-neutral-50 ' + item.color
+            } group-hover:scale-110`}>
+              {item.icon}
+            </div>
+            <span className="text-sm font-bold">{item.label}</span>
+          </button>
+        ))}
+      </div>
+      
+      <div className="p-6 border-t border-neutral-50">
+        <div className="bg-neutral-50 rounded-2xl p-4">
+          <p className="text-[10px] text-neutral-400 font-bold uppercase mb-2">Need help?</p>
+          <button onClick={() => navigate('/faq')} className="text-xs font-bold text-teal-600 hover:underline">Visit Support Center</button>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="pb-24 md:pb-8 bg-neutral-50 min-h-screen">
-      <div
-        className="pb-12 md:pb-16 pt-12 md:pt-16 relative overflow-hidden"
+    <div className="flex min-h-screen bg-neutral-50">
+      <Sidebar />
+      
+      <div className="flex-1 pb-24 md:pb-8">
+        {/* Profile Header Section */}
+        <div
+          className="pb-12 md:pb-16 pt-12 md:pt-16 relative overflow-hidden"
         style={{
           background: `linear-gradient(180deg, ${currentTheme.headerBg || '#16a34a'}22 0%, #f9fafb 100%)`
         }}
@@ -290,15 +352,15 @@ export default function Account() {
         </div>
 
         <div className="px-4 md:px-6 lg:px-8 relative z-10">
-          <motion.button
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            onClick={() => navigate(-1)}
-            className="mb-4 w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-neutral-900 hover:bg-neutral-50 transition-colors"
-            aria-label="Back"
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-          </motion.button>
+            <motion.button
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              onClick={() => navigate(-1)}
+              className="mb-4 w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-neutral-900 hover:bg-neutral-50 transition-colors md:hidden"
+              aria-label="Back"
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            </motion.button>
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -692,26 +754,10 @@ export default function Account() {
         )}
       </AnimatePresence>
 
-      <div className="px-4 py-2 max-w-2xl md:mx-auto">
+      <div className="px-4 py-2 max-w-2xl md:mx-auto md:hidden">
         <h2 className="text-xs font-black text-neutral-400 mb-4 uppercase tracking-[0.2em] px-1">Settings & Info</h2>
         <div className="bg-white rounded-3xl border border-neutral-100 shadow-sm overflow-hidden mb-8">
-          {[
-            { id: 'address', label: 'Address Book', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>, action: () => navigate('/address-book'), color: 'text-indigo-500' },
-            { id: 'wishlist', label: 'Your Wishlist', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>, action: () => navigate('/wishlist'), color: 'text-rose-500' },
-            { id: 'spin-wheel', label: 'Spin & Win', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" /><path d="M12 3v3M21 12h-3M12 21v-3M3 12h3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><circle cx="12" cy="12" r="1.5" fill="currentColor" /></svg>, action: () => navigate('/spin-wheel'), color: 'text-teal-600' },
-            { id: 'plans', label: 'Plans', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22h11A2.5 2.5 0 0 0 20 19.5v-13A2.5 2.5 0 0 0 17.5 4h-11A2.5 2.5 0 0 0 4 6.5v13z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><path d="M8 7h8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><path d="M8 11h8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><path d="M8 15h5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>, action: () => navigate('/plans'), color: 'text-emerald-600' },
-            { id: 'gst', label: 'GST Details', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><polyline points="14 2 14 8 20 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>, action: () => setShowGstModal(true), color: 'text-amber-500' },
-            { id: 'clean', label: 'Deep Clean Cart', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M19 6L5 20M5 6l14 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>, action: () => {
-              if (confirm('This will wipe all items from your cart and reset it. Continue?')) {
-                localStorage.removeItem('saved_cart');
-                clearCart();
-                alert('Cart cleaned successfully!');
-              }
-            }, color: 'text-red-500', isCritical: true },
-            { id: 'about', label: 'About Us', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" /><line x1="12" y1="16" x2="12" y2="12" stroke="currentColor" strokeWidth="2" /><line x1="12" y1="8" x2="12.01" y2="8" stroke="currentColor" strokeWidth="2" /></svg>, action: () => window.location.href = 'https://about.dhakadsnazzy.com', color: 'text-sky-500' },
-            // { id: 'lucky-spin', label: 'Spin & Win', icon: <span className="text-lg">🎁</span>, action: () => triggerSpinner('manual'), color: 'text-purple-500 font-bold' },
-            { id: 'logout', label: 'Log Out', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><polyline points="16 17 21 12 16 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><line x1="21" y1="12" x2="9" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>, action: handleLogout, color: 'text-red-500', isCritical: true },
-          ].map((item, idx) => (
+          {menuItems.filter(item => !['orders', 'cart', 'about'].includes(item.id)).map((item, idx) => (
             <motion.button
               key={item.id}
               whileHover={{ backgroundColor: "rgba(0,0,0,0.02)" }}
@@ -757,6 +803,7 @@ export default function Account() {
         onClose={() => setShowLuckySpin(false)} 
         config={spinnerConfig}
       />
+        </div>
     </div>
   );
 }

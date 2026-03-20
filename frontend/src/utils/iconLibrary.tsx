@@ -560,6 +560,206 @@ export const ICON_LIBRARY: IconDef[] = [
                 <path d="M2.27 21.7s9.87-3.5 12.73-6.36a4.5 4.5 0 0 0-6.36-6.37C5.77 11.84 2.27 21.7 2.27 21.7Z" /><path d="M8.64 14l-2.05-2.04" /><path d="M11.5 16.86l-2.05-2.04" /><path d="M18 5.74c-.5.5-5.6 1.3-5.6 1.3" /><path d="M18.26 5.74s.8-5.1 1.3-5.6" /><path d="M18.26 5.74s5.1.8 5.6 1.3" />
             </svg>
         )
+    },
+    {
+        name: 'paw',
+        label: 'Pet Care',
+        tags: ['pet', 'animal', 'dog', 'cat', 'paw'],
+        svg: (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M11 5a2 2 0 1 0-2-2" /><path d="M15 5a2 2 0 1 1 2-2" /><path d="M7 10a2 2 0 1 0-2-2" /><path d="M19 10a2 2 0 1 1 2-2" /><path d="M12 12c-3 0-4.5 1.5-4.5 4.5s1.5 4.5 4.5 4.5 4.5-1.5 4.5-4.5-1.5-4.5-4.5-4.5z" />
+            </svg>
+        )
+    },
+    {
+        name: 'sprout',
+        label: 'Garden',
+        tags: ['garden', 'plant', 'nature', 'grow'],
+        svg: (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M7 20h10" /><path d="M10 20c5.5-2.5 8-6.5 8-6.5s-2.8 0-5 2c-2.2 2-3 4.5-3 4.5z" /><path d="M14 20c-5.5-2.5-8-6.5-8-6.5s2.8 0 5 2c2.2 2 3 4.5 3 4.5z" /><path d="M12 20v-9" /><path d="M12 11c0-4 3-7 3-7s-3 3-3 7z" />
+            </svg>
+        )
+    },
+    {
+        name: 'wrench',
+        label: 'Tools',
+        tags: ['tools', 'hardware', 'repair', 'fix'],
+        svg: (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+            </svg>
+        )
+    },
+    {
+        name: 'gamepad',
+        label: 'Gaming',
+        tags: ['gaming', 'game', 'play', 'fun', 'controller'],
+        svg: (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="6" y1="12" x2="10" y2="12" /><line x1="8" y1="10" x2="8" y2="14" /><rect x="15" y="13" width="2" height="2" rx="1" /><rect x="17" y="11" width="2" height="2" rx="1" /><path d="M18 6H6a4 4 0 0 0-4 4v4a4 4 0 0 0 4 4h12a4 4 0 0 0 4-4v-4a4 4 0 0 0-4-4z" />
+            </svg>
+        )
+    },
+    {
+        name: 'plane',
+        label: 'Travel',
+        tags: ['travel', 'flight', 'plane', 'holiday', 'trip'],
+        svg: (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3.5s-2.5 0-4 1.5L13.5 8.5 5.3 6.7c-1.1-.3-2.3.2-2.8 1.1-.5.9-.2 2.1.8 2.5l7.5 3-3.1 3.1-3.2-.8c-.9-.2-1.9.1-2.4.9-.5.8-.4 1.9.3 2.5l3.2 2.5a1.5 1.5 0 0 0 2.1 0l2.5-3.2c.6.7 1.7.8 2.5.3.8-.5 1.1-1.5.9-2.4l-.8-3.2 3.1-3.1 3 7.5c.4 1 1.6 1.3 2.5.8.9-.5 1.4-1.7 1.1-2.8z" />
+            </svg>
+        )
+    },
+    {
+        name: 'music-note',
+        label: 'Music',
+        tags: ['music', 'audio', 'sound', 'song'],
+        svg: (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" />
+            </svg>
+        )
+    },
+    {
+        name: 'briefcase',
+        label: 'Office',
+        tags: ['office', 'work', 'business', 'bag', 'job'],
+        svg: (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+            </svg>
+        )
+    },
+    {
+        name: 'tent',
+        label: 'Outdoor',
+        tags: ['outdoor', 'camping', 'tent', 'nature', 'adventure'],
+        svg: (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="m19 20-7-14-7 14h14z" /><path d="M12 14v6" /><path d="m7 20 5-5 5 5" />
+            </svg>
+        )
+    },
+    {
+        name: 'battery',
+        label: 'Tech Power',
+        tags: ['battery', 'power', 'tech', 'energy', 'charge'],
+        svg: (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="7" width="16" height="10" rx="2" /><line x1="22" y1="11" x2="22" y2="13" />
+            </svg>
+        )
+    },
+    {
+        name: 'lamp',
+        label: 'Home Light',
+        tags: ['home', 'light', 'lamp', 'decor', 'bedroom'],
+        svg: (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M8 22h8" /><path d="M12 11v11" /><path d="M12 7a4 4 0 0 1 4 4H8a4 4 0 0 1 4-4z" /><path d="m6 7 1.1-4.4a1 1 0 0 1 .9-.6h8a1 1 0 0 1 .9.6L18 7" />
+            </svg>
+        )
+    },
+    {
+        name: 'utensils',
+        label: 'Dining',
+        tags: ['dining', 'food', 'restaurant', 'eat', 'fork', 'knife'],
+        svg: (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2" /><path d="M7 2v20" /><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7" />
+            </svg>
+        )
+    },
+    {
+        name: 'sun',
+        label: 'Summer',
+        tags: ['summer', 'sun', 'weather', 'hot', 'day'],
+        svg: (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="4" /><path d="M12 2v2" /><path d="M12 20v2" /><path d="m4.9 4.9 1.4 1.4" /><path d="m17.7 17.7 1.4 1.4" /><path d="M2 12h2" /><path d="M20 12h2" /><path d="m6.3 17.7-1.4 1.4" /><path d="m19.1 4.9-1.4 1.4" />
+            </svg>
+        )
+    },
+    {
+        name: 'moon',
+        label: 'Night',
+        tags: ['night', 'moon', 'sleep', 'weather', 'dark'],
+        svg: (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+            </svg>
+        )
+    },
+    {
+        name: 'cloud',
+        label: 'Weather',
+        tags: ['weather', 'cloud', 'nature', 'sky'],
+        svg: (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17.5 19x0a4.5 4.5 0 0 1-1.45-8.76 7 7 0 1 1 13.5 1.5 4.5 4.5 0 0 1 1.45 8.76Z" />
+            </svg>
+        )
+    },
+    {
+        name: 'umbrella',
+        label: 'Rain',
+        tags: ['rain', 'weather', 'protection', 'umbrella'],
+        svg: (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 10a10 10 0 0 0-20 0" /><path d="M12 10v10a2 2 0 0 1-4 0" /><path d="M12 2v1" />
+            </svg>
+        )
+    },
+    {
+        name: 'flag',
+        label: 'Event',
+        tags: ['event', 'flag', 'country', 'mark'],
+        svg: (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" /><line x1="4" y1="22" x2="4" y2="15" />
+            </svg>
+        )
+    },
+    {
+        name: 'map',
+        label: 'Travel Location',
+        tags: ['travel', 'location', 'map', 'navigation'],
+        svg: (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="3 7 9 4 15 7 21 4 21 17 15 20 9 17 3 20 3 7" /><line x1="9" y1="4" x2="9" y2="17" /><line x1="15" y1="7" x2="15" y2="20" />
+            </svg>
+        )
+    },
+    {
+        name: 'key',
+        label: 'Security Access',
+        tags: ['security', 'access', 'key', 'privacy'],
+        svg: (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="m21 2-2 2m-7.61 7a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3L15.5 7.5z" />
+            </svg>
+        )
+    },
+    {
+        name: 'lock',
+        label: 'Security Privacy',
+        tags: ['security', 'privacy', 'lock', 'safe'],
+        svg: (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+        )
+    },
+    {
+        name: 'bell',
+        label: 'Notification',
+        tags: ['notification', 'alert', 'bell', 'reminder'],
+        svg: (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+            </svg>
+        )
     }
 ];
 

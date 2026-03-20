@@ -305,7 +305,29 @@ export default function AdminHeaderCategory() {
                     teal: 'Teal',
                     dark: 'Dark',
                     hotpink: 'Hot Pink',
-                    gold: 'Gold'
+                    gold: 'Gold',
+                    lime: 'Lime',
+                    cyan: 'Cyan',
+                    indigo: 'Indigo',
+                    rose: 'Rose',
+                    amber: 'Amber',
+                    emerald: 'Emerald',
+                    fuchsia: 'Fuchsia',
+                    slate: 'Slate',
+                    brown: 'Brown',
+                    maroon: 'Maroon',
+                    navy: 'Navy',
+                    olive: 'Olive',
+                    silver: 'Silver',
+                    copper: 'Copper',
+                    mint: 'Mint',
+                    lavender: 'Lavender',
+                    coral: 'Coral',
+                    turquoise: 'Turquoise',
+                    crimson: 'Crimson',
+                    orchid: 'Orchid',
+                    salmon: 'Salmon',
+                    sky: 'Sky'
                   };
 
                   const displayColor = colorNames[themeKey] || themeKey;

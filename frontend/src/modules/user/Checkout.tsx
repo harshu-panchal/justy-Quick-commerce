@@ -1295,7 +1295,7 @@ export default function Checkout() {
                 </div>
                 <div>
                   <h2 className="text-base font-black text-neutral-900 leading-none mb-1">Scheduled Delivery</h2>
-                  <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-wider">Arrival in 1-2 days</p>
+                  <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-wider">15-30 mins</p>
                 </div>
               </div>
 

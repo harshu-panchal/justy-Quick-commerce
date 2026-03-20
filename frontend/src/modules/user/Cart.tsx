@@ -68,7 +68,7 @@ export default function Cart() {
 
             const isQuick = dtype === 'quick';
             const title = isQuick ? 'QUICK DELIVERY' : 'SCHEDULED DELIVERY';
-            const subtitle = isQuick ? `Estimated ${appConfig.estimatedDeliveryTime}` : 'Arriving in 1-2 days';
+            const subtitle = isQuick ? `Estimated ${appConfig.estimatedDeliveryTime}` : '15-30 mins';
             const icon = isQuick ? '⚡' : '📅';
             const iconColor = isQuick ? 'text-blue-600' : 'text-blue-500';
 

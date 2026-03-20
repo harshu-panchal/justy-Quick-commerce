@@ -368,11 +368,15 @@ export default function ProductDetail() {
           </div>
         )}
 
-        {/* Product Image Gallery */}
-        <div className="relative w-full bg-gradient-to-br from-neutral-100 to-neutral-200 overflow-hidden">
+        {/* Main Content Grid Wrapper - Two Column on Desktop */}
+        <div className="max-w-7xl mx-auto md:grid md:grid-cols-12 md:gap-8 md:items-start md:px-6 lg:px-8">
+          
+          {/* Left Column: Product Image Gallery */}
+          <div className="md:col-span-5 lg:col-span-5 md:sticky md:top-24">
+            <div className="relative w-full bg-gradient-to-br from-neutral-100 to-neutral-200 overflow-hidden md:rounded-2xl md:shadow-md">
           {/* Main Product Image - Swipeable on mobile */}
           <div
-            className="w-full aspect-square relative overflow-hidden"
+            className="w-full aspect-square md:aspect-auto md:h-[450px] lg:h-[500px] relative overflow-hidden"
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
@@ -544,10 +548,13 @@ export default function ProductDetail() {
               </div>
             </div>
           )}
-        </div>
+            </div>
+          </div>
 
-        {/* Product Details Card - White section */}
-        <div className="bg-white rounded-t-3xl -mt-6 relative z-10 px-4 md:px-6 lg:px-8 pt-2.5 md:pt-4 pb-2 md:pb-4">
+          {/* Right Column: Product Details and Offers */}
+          <div className="md:col-span-7 lg:col-span-7 mt-6 md:mt-0">
+            {/* Product Details Card - White section */}
+            <div className="bg-white rounded-t-3xl md:rounded-none -mt-6 md:mt-0 relative z-10 px-4 md:px-0 pt-2.5 md:pt-0 pb-2 md:pb-4">
           {/* Delivery time */}
           <div className="flex items-center gap-0.5 mb-1">
             <svg
@@ -1008,7 +1015,9 @@ export default function ProductDetail() {
               products={similarProducts}
             />
           </div>
-        )}
+            )}
+          </div>
+        </div>
 
 
 

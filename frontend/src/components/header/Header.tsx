@@ -29,7 +29,7 @@ export default function Header() {
         const cats = await getHeaderCategoriesPublic(true);
         const filtered = cats.filter(c => {
           if (c.status !== 'Published') return false;
-          
+
           const slug = c.slug.toLowerCase();
           const name = c.name.toLowerCase();
           const scheduledKeywords = ['fashion', 'electronics', 'beauty', 'wedding', 'sports', 'lux', 'home-decor', 'mobile'];
@@ -142,7 +142,7 @@ export default function Header() {
         {/* Middle: Toggle & Search */}
         <div className="flex-1 flex items-center gap-4 max-w-3xl">
           <DeliveryToggle variant="compact" />
-          
+
           <form onSubmit={handleSearch} className="flex-1 relative group">
             <input
               type="text"
@@ -209,7 +209,7 @@ export default function Header() {
               );
             })}
           </div>
-          
+
           <Link to="/spin-wheel" className="flex items-center gap-2 bg-gradient-to-r from-yellow-100 to-amber-100 px-4 py-1.5 rounded-full border border-yellow-200 hover:shadow-md transition-all group">
             <span className="text-[10px] font-black italic text-amber-800 tracking-tighter uppercase">Spin & Win Rewards</span>
             <div className="w-5 h-5 bg-amber-500 rounded-full flex items-center justify-center text-white scale-90 group-hover:rotate-[360deg] transition-transform duration-700">

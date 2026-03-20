@@ -575,24 +575,22 @@ export default function Checkout() {
       // Create the order
       const placedId = await addOrder(order);
       if (placedId) {
-        if (payableAmount === 0) {
-          // Trigger generic afterOrder spinner if enabled
-          triggerSpinner('afterOrder', 2000);
+        // Trigger generic afterOrder spinner if enabled
+        triggerSpinner('afterOrder', 2000);
 
-          if (paymentMethod === "COD" || payableAmount === 0) {
-            // For COD or Full Wallet Payment, proceed directly to success
-            setPlacedOrderId(placedId);
-            clearCart();
-            setShowOrderSuccess(true);
-            showGlobalToast("Order placed successfully!", "success");
-          } else {
-            // For Online, trigger Razorpay payment
-            setPendingOrderId(placedId);
-            setShowRazorpayCheckout(true);
-          }
-          // Note: For Online payment, the cart will be cleared and success shown only after successful payment
-          // See the RazorpayCheckout onSuccess handler (lines 1840-1846)
+        if (payableAmount === 0) {
+          // Fully paid (e.g. by wallet), proceed directly to success
+          setPlacedOrderId(placedId);
+          clearCart();
+          setShowOrderSuccess(true);
+          showGlobalToast("Order placed successfully!", "success");
+        } else {
+          // Trigger Razorpay payment (for Online total, or COD 25% advance)
+          setPendingOrderId(placedId);
+          setShowRazorpayCheckout(true);
         }
+        // Note: For Online payment, the cart will be cleared and success shown only after successful payment
+        // See the RazorpayCheckout onSuccess handler (lines 1840-1846)
       }
     } catch (error: any) {
       console.error("Order placement failed", error);

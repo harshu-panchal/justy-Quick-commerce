@@ -1210,7 +1210,7 @@ export default function Checkout() {
         {/* Shipment Sections */}
         <div className="space-y-4 mb-4">
           {/* Quick Delivery Shipment */}
-          {displayItems.filter(i => i.deliveryType !== "scheduled").length > 0 && (
+          {displayItems.filter(i => i.deliveryType === "quick").length > 0 && (
             <div className="px-4 md:px-6 lg:px-8 py-4 bg-white border-b border-neutral-200">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-2xl bg-yellow-400/20 flex items-center justify-center text-xl shadow-sm border border-yellow-200">
@@ -1224,7 +1224,7 @@ export default function Checkout() {
 
               <div className="space-y-4">
                 {displayItems
-                  .filter(i => i.deliveryType !== "scheduled")
+                  .filter(i => i.deliveryType === "quick")
                   .map((item) => {
                     const isCombo = !!item.comboOffer;
                     const itemProduct = item.comboOffer ? item.comboOffer : item.product;

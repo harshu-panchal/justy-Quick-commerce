@@ -228,8 +228,26 @@ export const getProducts = async (req: Request, res: Response) => {
     if (sort === "popular") sortOptions = { popular: -1, dealOfDay: -1 };
 
     const products = await Product.find(query)
-      .populate("category", "name icon image")
-      .populate("subcategory", "name")
+      .populate({
+        path: "category",
+        select: "name icon image headerCategoryId",
+        populate: {
+          path: "headerCategoryId",
+          select: "deliveryType"
+        }
+      })
+      .populate({
+        path: "subcategory",
+        select: "name headerCategoryId",
+        populate: {
+          path: "headerCategoryId",
+          select: "deliveryType"
+        }
+      })
+      .populate({
+        path: "headerCategoryId",
+        select: "deliveryType"
+      })
       .populate("brand", "name")
       .populate("seller", "storeName")
       .sort(sortOptions)

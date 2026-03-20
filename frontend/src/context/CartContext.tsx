@@ -41,6 +41,22 @@ interface ExtendedCartItem extends CartItem {
   id?: string;
 }
 
+// Helper to check if a product is scheduled based on header categories
+const getDeliveryType = (product: any): 'scheduled' | 'quick' => {
+  if (!product) return 'quick';
+  
+  const isScheduled =
+    product.headerCategoryId?.deliveryType === 'scheduled' ||
+    product.category?.headerCategoryId?.deliveryType === 'scheduled' ||
+    product.subcategory?.headerCategoryId?.deliveryType === 'scheduled' ||
+    // Handle cases where IDs might be objects or strings
+    (product.headerCategoryId && typeof product.headerCategoryId === 'object' && product.headerCategoryId.deliveryType === 'scheduled') ||
+    (product.category && typeof product.category === 'object' && product.category.headerCategoryId?.deliveryType === 'scheduled') ||
+    (product.subcategory && typeof product.subcategory === 'object' && product.subcategory.headerCategoryId?.deliveryType === 'scheduled');
+
+  return isScheduled ? 'scheduled' : 'quick';
+};
+
 export function CartProvider({ children }: { children: ReactNode }) {
   // Initialize state from localStorage for persistence on refresh
   const [items, setItems] = useState<ExtendedCartItem[]>(() => {
@@ -98,7 +114,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
                 } : null
               }))
             },
-            deliveryType: isScheduled ? 'scheduled' : 'quick' as 'quick' | 'scheduled'
+            deliveryType: getDeliveryType(item.comboOffer.mainProduct)
           };
         }
 
@@ -106,10 +122,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
         // Determine delivery type using the same logic as backend
         const product = item.product;
-        const isScheduled =
-          product.headerCategoryId?.deliveryType === 'scheduled' ||
-          product.category?.headerCategoryId?.deliveryType === 'scheduled' ||
-          product.subcategory?.headerCategoryId?.deliveryType === 'scheduled';
+        const deliveryType = getDeliveryType(product);
 
         return {
           ...base,
@@ -126,7 +139,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
             description: product.description,
             variantId: item.variation // Preserving variation ID/value
           },
-          deliveryType: isScheduled ? 'scheduled' : 'quick' as 'quick' | 'scheduled'
+          deliveryType: deliveryType
         };
       })
       .filter((item): item is any => item !== null);
@@ -307,7 +320,12 @@ const addToCart = async (product: Product, sourceElement?: HTMLElement | null) =
           : item;
       });
     }
-    return [...validItems, { id: `temp-${Date.now()}-${productId}`, product: normalizedProduct, quantity: 1 }];
+      return [...validItems, { 
+        id: `temp-${Date.now()}-${productId}`, 
+        product: normalizedProduct, 
+        quantity: 1, 
+        deliveryType: getDeliveryType(normalizedProduct) 
+      }];
   });
 
   // Only sync to API if user is authenticated

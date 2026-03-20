@@ -8,7 +8,7 @@ import { getHeaderCategoriesPublic } from '../../services/api/headerCategoryServ
 import { useDeliveryMode } from '../../hooks/useDeliveryMode';
 import { useThemeContext } from '../../context/ThemeContext';
 import { getIconByName } from '../../utils/iconLibrary';
-import jastiLogo from '@assets/jasti-removebg-preview.png';
+import jyastiLogo from '@assets/jyastiLogo.png';
 
 export default function Header() {
   const navigate = useNavigate();
@@ -136,7 +136,7 @@ export default function Header() {
       <div className="max-w-[1440px] mx-auto px-6 lg:px-10 py-3 flex items-center gap-8">
         {/* Logo */}
         <Link to="/" onClick={() => setActiveCategory('all')} className="flex-shrink-0">
-          <img src={jastiLogo} alt="Jasti" className="h-20 lg:h-24 w-auto object-contain" />
+          <img src={jyastiLogo} alt="JYASTI builds trust" className="h-20 lg:h-24 w-auto object-contain" />
         </Link>
 
         {/* Middle: Toggle & Search */}

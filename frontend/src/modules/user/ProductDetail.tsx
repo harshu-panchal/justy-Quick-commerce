@@ -986,7 +986,7 @@ export default function ProductDetail() {
                           Seller:
                         </span>
                         <span className="text-xs text-neutral-600 leading-relaxed flex-1">
-                          Jasti Partner (
+                          JYASTI builds trust Partner (
                           {product.sellerId.slice(-6).toUpperCase()})
                         </span>
                       </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import jastiLogo from '@assets/jasti-removebg-preview.png';
+import jyastiLogo from '@assets/jyastiLogo.png';
 import { useAuth } from '../../../context/AuthContext';
 
 interface SellerHeaderProps {
@@ -88,14 +88,14 @@ export default function SellerHeader({ onMenuClick, isSidebarOpen }: SellerHeade
               </svg>
             )}
           </button>
-          {/* Jasti Logo */}
+          {/* JYASTI builds trust Logo */}
           <button
             onClick={handleLogoClick}
             className="hover:opacity-80 transition-opacity"
           >
             <img
-              src={jastiLogo}
-              alt="Jasti"
+              src={jyastiLogo}
+              alt="JYASTI builds trust"
               className="h-12 sm:h-20 w-auto object-contain cursor-pointer"
               style={{ maxWidth: '250px' }}
             />

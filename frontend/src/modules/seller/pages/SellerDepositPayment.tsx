@@ -59,7 +59,7 @@ const SellerDepositPayment = () => {
                 key: razorpayKey,
                 amount: amount,
                 currency: currency,
-                name: 'Jasti',
+                name: 'JYASTI builds trust',
                 description: 'Security Deposit for Seller Panel',
                 order_id: razorpayOrderId,
                 prefill: {
@@ -131,7 +131,7 @@ const SellerDepositPayment = () => {
 
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">Security Deposit Required</h2>
                 <p className="text-gray-600 mb-8 leading-relaxed">
-                    Great news! Your store has been approved. To start selling on Jasti, you need to pay a one-time refundable security deposit of ₹1000.
+                    Great news! Your store has been approved. To start selling on JYASTI builds trust, you need to pay a one-time refundable security deposit of ₹1000.
                 </p>
 
                 {/* Progress steps */}

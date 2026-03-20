@@ -394,7 +394,7 @@ export default function AdminComboOffers() {
       </div>
 
       <footer className="text-center py-6 text-sm text-neutral-500 border-t bg-white">
-        Copyright © 2025. Developed By <a href="#" className="text-blue-600 font-medium">Jasti - 10 Minute App</a>
+        Copyright © 2025. Developed By <a href="#" className="text-blue-600 font-medium">JYASTI builds trust - 10 Minute App</a>
       </footer>
     </div>
   );

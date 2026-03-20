@@ -11,7 +11,7 @@ import LuckySpin from '../../components/LuckySpin';
 import { useSpinner } from '../../hooks/useSpinner';
 import { getCustomerCoinBalance, convertCustomerCoins } from '../../services/api/customerSpinWheelService';
 
-import jastiLogo from '@assets/jasti-removebg-preview.png';
+import jyastiLogo from '@assets/jyastiLogo.png';
 
 export default function Account() {
   const navigate = useNavigate();
@@ -293,7 +293,7 @@ export default function Account() {
     <div className="hidden md:flex flex-col w-72 bg-white border-r border-neutral-100 h-screen sticky top-0 overflow-y-auto pt-4 transition-all duration-300">
       <div className="px-6 mb-8 flex flex-col items-center">
         <Link to="/" className="block hover:opacity-80 transition-opacity">
-          <img src={jastiLogo} alt="Jasti" className="h-24 w-auto object-contain" />
+          <img src={jyastiLogo} alt="JYASTI builds trust" className="h-24 w-auto object-contain" />
         </Link>
         <div className="w-full h-[1px] bg-gradient-to-r from-transparent via-neutral-100 to-transparent mt-4" />
       </div>

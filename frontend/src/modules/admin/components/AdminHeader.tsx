@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
-import jastiLogo from '@assets/jasti-removebg-preview.png';
+import jyastiLogo from '@assets/jyastiLogo.png';
 
 interface AdminHeaderProps {
   onMenuClick: () => void;
@@ -74,14 +74,14 @@ export default function AdminHeader({ onMenuClick, isSidebarOpen }: AdminHeaderP
               </svg>
             )}
           </button>
-          {/* Jasti Logo */}
+          {/* JYASTI builds trust Logo */}
           <button
             onClick={handleLogoClick}
             className="hover:opacity-80 transition-opacity"
           >
             <img
-              src={jastiLogo}
-              alt="Jasti"
+              src={jyastiLogo}
+              alt="JYASTI builds trust"
               className="h-10 sm:h-20 w-auto object-contain cursor-pointer"
               style={{ maxWidth: '250px' }}
             />

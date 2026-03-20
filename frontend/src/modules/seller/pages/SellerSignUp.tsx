@@ -262,8 +262,8 @@ export default function SellerSignUp() {
         <div className="px-6 py-6 text-center bg-gradient-to-br from-teal-700 to-teal-900">
           <div className="flex justify-center mb-4">
             <img
-              src="/assets/jasti-removebg-preview.png"
-              alt="Jasti"
+              src="/assets/jyastiLogo.png"
+              alt="JYASTI builds trust"
               className="h-28 w-auto object-contain bg-white/90 rounded-xl p-2 shadow-sm"
             />
           </div>
@@ -584,7 +584,7 @@ export default function SellerSignUp() {
       </div>
 
       <p className="mt-6 text-xs text-neutral-500 text-center max-w-md">
-        By continuing, you agree to Jasti's Terms of Service and Privacy Policy
+        By continuing, you agree to JYASTI builds trust's Terms of Service and Privacy Policy
       </p>
     </div>
   );

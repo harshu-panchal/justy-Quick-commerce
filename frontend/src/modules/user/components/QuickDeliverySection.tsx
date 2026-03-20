@@ -2,6 +2,7 @@ import React from 'react';
 import { useQuickDelivery } from '../../../hooks/useQuickDelivery';
 import ProductCard from './ProductCard';
 import { useDeliveryMode } from '../../../hooks/useDeliveryMode';
+import UnavailableBanner from './UnavailableBanner';
 
 interface QuickDeliverySectionProps {
     activeTab?: string;
@@ -12,9 +13,6 @@ const QuickDeliverySection: React.FC<QuickDeliverySectionProps> = ({ activeTab =
     const { deliveryMode } = useDeliveryMode();
 
     if (deliveryMode === 'scheduled') return null;
-
-    // No pincode detected: hide silently
-    if (!pincode) return null;
 
     if (loading) {
         return (
@@ -29,8 +27,8 @@ const QuickDeliverySection: React.FC<QuickDeliverySectionProps> = ({ activeTab =
         );
     }
 
-    // No local sellers: hide silently (full-page ComingSoon in Home.tsx handles pincode-restricted tabs)
-    if (!available || products.length === 0) return null;
+    // If no products at all (global or local), then hide
+    if (products.length === 0) return null;
 
     return (
         <div className="mt-6 md:mt-8">
@@ -45,12 +43,17 @@ const QuickDeliverySection: React.FC<QuickDeliverySectionProps> = ({ activeTab =
                 </div>
             </div>
 
+            {/* Show local unavailability banner if user has a pincode but no local sellers */}
+            {pincode && !available && (
+                <UnavailableBanner pincode={pincode} />
+            )}
+
             <div className="relative">
                 <div className="flex overflow-x-auto pb-4 px-4 md:px-6 lg:px-8 gap-3 no-scrollbar scroll-smooth">
                     {products.map((product) => (
                         <div key={product._id} className="min-w-[140px] md:min-w-[180px] w-[140px] md:w-[180px]">
                             <ProductCard
-                                product={product}
+                                product={{ ...product, isAvailable: available }}
                                 categoryStyle={true}
                                 showBadge={true}
                                 compact={true}

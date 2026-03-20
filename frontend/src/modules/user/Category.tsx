@@ -9,6 +9,8 @@ import {
 } from "../../services/api/customerProductService";
 import { useLocation as useLocationContext } from "../../hooks/useLocation";
 import EmptyState from "../../components/EmptyState";
+import UnavailableBanner from "./components/UnavailableBanner";
+import { useQuickDelivery } from "../../hooks/useQuickDelivery";
 
 export default function CategoryPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -489,6 +491,11 @@ export default function CategoryPage() {
 
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto scrollbar-hide bg-white">
+          {/* Show local unavailability banner if any products are out of range (Quick Delivery) */}
+          {userLocation?.pincode && categoryProducts.some(p => p.isAvailable === false) && (
+            <UnavailableBanner pincode={userLocation.pincode} />
+          )}
+
           {/* Products Grid */}
           {categoryProducts.length > 0 ? (
             <div className="px-3 md:px-6 lg:px-8 py-4 md:py-6">

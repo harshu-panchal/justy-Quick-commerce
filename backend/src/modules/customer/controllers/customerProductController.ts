@@ -43,28 +43,31 @@ export const getProducts = async (req: Request, res: Response) => {
     const scheduledHeaders = await HeaderCategory.find({ deliveryType: 'scheduled' }).select('_id').lean();
     const scheduledIds = scheduledHeaders.map(h => h._id);
 
+    const allApprovedSellers = await Seller.find({ status: "Approved" }).select("_id").lean();
+    const allApprovedSellerIds = allApprovedSellers.map(s => s._id);
+
     if (userLat && userLng && !isNaN(userLat) && !isNaN(userLng)) {
       // Find sellers within user's location range
       const nearbySellerIds = await findSellersWithinRange(userLat, userLng);
 
       // We allow products that are either:
       // 1. In a scheduled delivery category (visible from any seller)
-      // 2. From a seller within range (standard for quick delivery)
+      // 2. From an approved seller (standard for quick delivery, but marked as unavailable if not nearby)
       query.$and = query.$and || [];
       query.$and.push({
         $or: [
           { headerCategoryId: { $in: scheduledIds } },
-          { seller: { $in: nearbySellerIds } }
+          { seller: { $in: allApprovedSellerIds } }
         ]
       });
+
+      // Keep nearbySellerIds for mapping isAvailable later
+      (req as any).nearbySellerIds = nearbySellerIds;
     } else {
-      // If no location provided, all approved sellers are eligible (frontend handles selection)
-      const allApprovedSellers = await Seller.find({ status: "Approved" }).select("_id").lean();
-      const approvedSellerIds = allApprovedSellers.map(s => s._id);
-      
+      // If no location provided, all approved sellers are eligible
       query.$and = query.$and || [];
       query.$and.push({
-        seller: { $in: approvedSellerIds }
+        seller: { $in: allApprovedSellerIds }
       });
     }
 
@@ -256,9 +259,29 @@ export const getProducts = async (req: Request, res: Response) => {
 
     const total = await Product.countDocuments(query);
 
+    // Map to add availability and fix IDs
+    const nearbySellerIds = (req as any).nearbySellerIds || [];
+    const formattedProducts = products.map((p: any) => {
+      const sellerId = p.seller?._id || p.seller;
+      const isProdScheduled = 
+        p.headerCategoryId?.deliveryType === 'scheduled' ||
+        (p.category as any)?.headerCategoryId?.deliveryType === 'scheduled' ||
+        (p.subcategory as any)?.headerCategoryId?.deliveryType === 'scheduled';
+      
+      const isAvailable = isProdScheduled || (nearbySellerIds.length > 0 && sellerId
+        ? nearbySellerIds.some((id: any) => id.toString() === sellerId.toString())
+        : false);
+        
+      return {
+        ...p.toObject(),
+        id: p._id.toString(),
+        isAvailable
+      };
+    });
+
     return res.status(200).json({
       success: true,
-      data: products,
+      data: formattedProducts,
       pagination: {
         page: Number(page),
         limit: Number(limit),
@@ -326,19 +349,19 @@ export const getProductsBySubcategory = async (req: Request, res: Response) => {
       (subcategory.headerCategoryId as any)?.deliveryType === 'scheduled' ||
       (subcategory.parentId as any)?.headerCategoryId?.deliveryType === 'scheduled';
 
-    // 3. Seller Filtering (only for quick delivery products if pincode is provided)
-    let eligibleSellerIds: mongoose.Types.ObjectId[] = [];
-    if (!isScheduled && pincode) {
-      const sellersInPincode = await Seller.find({
-        pincode: pincode,
-        status: "Approved"
-      }).select("_id").lean();
-      eligibleSellerIds = sellersInPincode.map(s => s._id);
-    } else {
-      // For scheduled delivery or if no pincode, all approved sellers are eligible
-      const allApprovedSellers = await Seller.find({ status: "Approved" }).select("_id").lean();
-      eligibleSellerIds = allApprovedSellers.map(s => s._id);
+    // 3. Seller Filtering (always allow approved sellers for global visibility, but track local ones)
+    const allApprovedSellers = await Seller.find({ status: "Approved" }).select("_id pincode").lean();
+    const allApprovedSellerIds = allApprovedSellers.map(s => s._id);
+    
+    let localSellerIds: string[] = [];
+    if (pincode) {
+      localSellerIds = allApprovedSellers
+        .filter(s => s.pincode === pincode)
+        .map(s => s._id.toString());
     }
+
+    // Use all approved sellers for the query to ensure products are visible globally
+    const eligibleSellerIds = allApprovedSellerIds;
 
     if (eligibleSellerIds.length === 0) {
       return res.status(200).json({

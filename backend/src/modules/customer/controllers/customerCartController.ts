@@ -8,6 +8,7 @@ import mongoose from 'mongoose';
 import AppSettings from '../../../models/AppSettings';
 import { getRoadDistances } from '../../../services/mapService';
 import Seller from '../../../models/Seller';
+import PincodeDemand from '../../../models/PincodeDemand';
 // import HeaderCategory from '../../../models/HeaderCategory'; // UNUSED
 
 // Helper to calculate item price matching frontend logic
@@ -595,9 +596,32 @@ export const addToCart = async (req: Request, res: Response) => {
             const isNearby = nearbySellerIds.some(id => id.toString() === ((product.seller as any)._id || product.seller).toString());
 
             if (!isNearby) {
+                // Record demand for the unserviceable pincode
+                try {
+                    const pincode = req.query.pincode || (req.body.address?.pincode) || "";
+                    if (pincode) {
+                        const filter = { 
+                            pincode: pincode as string,
+                            productId: product._id,
+                            headerCategoryId: product.headerCategoryId || (product.category as any)?.headerCategoryId
+                        };
+                        const update = {
+                            $inc: { count: 1 },
+                            $set: { 
+                                updatedAt: new Date(),
+                                userId: userId,
+                                sellerId: product.seller?._id || product.seller
+                            }
+                        };
+                        await PincodeDemand.findOneAndUpdate(filter, update, { upsert: true });
+                    }
+                } catch (demandError) {
+                    console.error("Error recording demand in addToCart:", demandError);
+                }
+
                 return res.status(403).json({
                     success: false,
-                    message: 'This product is not available in your current location'
+                    message: `Quick delivery is not currently available for your location. We've recorded your demand and are working on expanding our service area!`
                 });
             }
         }

@@ -254,7 +254,9 @@ export default function Home() {
   }
 
   const selectedPincode = getStoredPincode();
-  const isCategoryUnavailable = activeTab !== "all" && selectedPincode && !isCategoryAvailable(activeTab, selectedPincode);
+  // We no longer hide entire categories based on pincode, 
+  // because we want global visibility for all categories.
+  const isCategoryUnavailable = false; 
 
   return (
     <div className="bg-white min-h-screen pb-20 md:pb-0" ref={contentRef}>
@@ -266,7 +268,8 @@ export default function Home() {
       {/* Quick Delivery Section — hidden for universal categories (electronics, beauty, fashion) */}
       <QuickDeliverySection activeTab={activeTab} />
 
-      {isCategoryUnavailable ? (
+      {/* isCategoryUnavailable is now always false to allow global browsing */}
+      {false ? (
         <ComingSoon />
       ) : (
         <div

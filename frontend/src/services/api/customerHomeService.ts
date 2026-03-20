@@ -93,7 +93,8 @@ export const getHeaderCategorySections = async (
   slug: string,
   pincode?: string,
   latitude?: number,
-  longitude?: number
+  longitude?: number,
+  global?: boolean
 ): Promise<{ success: boolean; data: any[] }> => {
   const params: any = {};
   if (pincode) params.pincode = pincode;
@@ -101,6 +102,7 @@ export const getHeaderCategorySections = async (
     params.latitude = latitude;
     params.longitude = longitude;
   }
+  if (global) params.global = global;
 
   const response = await api.get<{ success: boolean; data: any[] }>(
     `/customer/home/header-category/${slug}`,

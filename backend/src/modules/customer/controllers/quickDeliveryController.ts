@@ -1,60 +1,55 @@
 import { Request, Response } from "express";
 import Seller from "../../../models/Seller";
 import Product from "../../../models/Product";
+import PincodeDemand from "../../../models/PincodeDemand";
 
 /**
- * Get quick delivery products based on user pincode
+ * Get quick delivery products
  * Logic:
- * 1. Find approved sellers in the same pincode with active status and open shops
- * 2. Get active products from those sellers
+ * 1. If pincode provided, find approved local sellers
+ * 2. If local sellers found, return their products (available: true)
+ * 3. If no pincode or no local sellers, return global quick products (available: false, isGlobal: true)
  */
 export const getQuickDeliveryProducts = async (req: Request, res: Response) => {
     try {
         const { pincode } = req.query;
+        let sellerIds: any[] = [];
+        let isAvailable = false;
 
-        if (!pincode) {
-            return res.status(400).json({
-                success: false,
-                message: "Pincode is required",
-            });
+        if (pincode) {
+            // Find sellers that match the pincode and are active
+            const localSellers = await Seller.find({
+                pincode: pincode as string,
+                status: "Approved",
+                isShopOpen: true,
+                depositPaid: true,
+                isPincodeActive: true,
+            }).select("_id");
+            
+            if (localSellers && localSellers.length > 0) {
+                sellerIds = localSellers.map((s) => s._id);
+                isAvailable = true;
+            }
         }
 
-        // 1. Find sellers that match the pincode and are active
-        const localSellers = await Seller.find({
-            pincode: pincode as string,
-            status: "Approved",
-            isShopOpen: true,
-            depositPaid: true,
-            isPincodeActive: true,
-        }).select("_id sellerName logo storeName");
+        const matchStage: any = {
+            status: "Active",
+            publish: true,
+            stock: { $gt: 0 },
+        };
 
-        if (!localSellers || localSellers.length === 0) {
-            return res.status(200).json({
-                success: true,
-                available: false,
-                message: "No sellers available in your area yet.",
-                products: [],
-                sellers: [],
-            });
+        // If we have local sellers, filter by them. Otherwise, show global products.
+        if (sellerIds.length > 0) {
+            matchStage.seller = { $in: sellerIds };
         }
-
-        const sellerIds = localSellers.map((s) => s._id);
 
         /**
          * Filter products that:
-         * 1. Belong to these local sellers
-         * 2. Are active, published, and in stock
-         * 3. Have a HeaderCategory with deliveryType: 'quick' (either directly or via category)
+         * 1. Are active, published, and in stock
+         * 2. Have a HeaderCategory with deliveryType: 'quick' (either directly or via category)
          */
         const products = await Product.aggregate([
-            {
-                $match: {
-                    seller: { $in: sellerIds },
-                    status: "Active",
-                    publish: true,
-                    stock: { $gt: 0 },
-                },
-            },
+            { $match: matchStage },
             // Lookup HeaderCategory from product directly
             {
                 $lookup: {
@@ -90,15 +85,15 @@ export const getQuickDeliveryProducts = async (req: Request, res: Response) => {
                         { "directHeader.deliveryType": "quick" },
                         {
                             $and: [
-                                { headerCategoryId: { $exists: false } },
+                                { "directHeader": { $size: 0 } }, // Header is missing on product
                                 { "catHeader.deliveryType": "quick" },
                             ],
                         },
                         // Default to quick if NO header category is found at all (backwards compatibility for grocery)
                         {
                             $and: [
-                                { headerCategoryId: { $exists: false } },
-                                { "catDoc.headerCategoryId": { $exists: false } },
+                                { "directHeader": { $size: 0 } },
+                                { "catHeader": { $size: 0 } },
                             ],
                         },
                     ],
@@ -150,10 +145,11 @@ export const getQuickDeliveryProducts = async (req: Request, res: Response) => {
 
         return res.status(200).json({
             success: true,
-            available: true,
+            available: isAvailable,
+            isGlobal: !isAvailable,
             data: {
                 products,
-                sellers: localSellers,
+                sellers: isAvailable ? await Seller.find({ _id: { $in: sellerIds } }).select("_id sellerName logo storeName") : [],
             },
         });
     } catch (error: any) {
@@ -161,6 +157,48 @@ export const getQuickDeliveryProducts = async (req: Request, res: Response) => {
         return res.status(500).json({
             success: false,
             message: error.message || "Internal server error",
+        });
+    }
+};
+
+/**
+ * Record pincode demand
+ * Logic: Upsert based on pincode + category/product
+ */
+export const recordPincodeDemand = async (req: Request, res: Response) => {
+    try {
+        const { pincode, headerCategoryId, productId, userId, address } = req.body;
+
+        if (!pincode) {
+            return res.status(400).json({ success: false, message: "Pincode is required" });
+        }
+
+        // Search for existing demand for same pincode + category (or product)
+        const filter: any = { pincode };
+        if (headerCategoryId) filter.headerCategoryId = headerCategoryId;
+        if (productId) filter.productId = productId;
+
+        const update: any = {
+            $inc: { count: 1 },
+            $set: { updatedAt: new Date() }
+        };
+
+        if (userId) update.$set.userId = userId;
+        if (address) update.$set.address = address;
+        if (headerCategoryId) update.$set.headerCategoryId = headerCategoryId;
+        if (productId) update.$set.productId = productId;
+
+        await PincodeDemand.findOneAndUpdate(filter, update, { upsert: true, new: true });
+
+        return res.status(200).json({
+            success: true,
+            message: "Demand recorded successfully"
+        });
+    } catch (error: any) {
+        console.error("Error recordPincodeDemand:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Failed to record demand"
         });
     }
 };

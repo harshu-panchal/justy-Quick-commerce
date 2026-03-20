@@ -141,9 +141,11 @@ export default function ProductCard({
     e.preventDefault();
 
     // Check if product is available in user's location
+    /*
     if (product.isAvailable === false) {
       return;
     }
+    */
 
     // Redirect to login if not authenticated
     if (!isAuthenticated) {
@@ -196,9 +198,11 @@ export default function ProductCard({
     e.preventDefault();
 
     // Check if product is available in user's location
+    /*
     if (product.isAvailable === false) {
       return;
     }
+    */
 
     // Redirect to login if not authenticated
     if (!isAuthenticated) {
@@ -336,17 +340,17 @@ export default function ProductCard({
                     ref={addButtonRef}
                     variant="outline"
                     size="sm"
-                    disabled={product.isAvailable === false || ((product.stock !== undefined && product.stock <= 0) || product.status === "Sold out")}
+                    disabled={((product.stock !== undefined && product.stock <= 0) || product.status === "Sold out")}
                     onClick={(e) => {
                       e.stopPropagation();
                       handleAdd(e);
                     }}
-                    className={`w-full border rounded-full font-semibold text-xs h-7 px-3 flex items-center justify-center uppercase tracking-wide ${product.isAvailable === false || ((product.stock !== undefined && product.stock <= 0) || product.status === "Sold out")
+                    className={`w-full border rounded-full font-semibold text-xs h-7 px-3 flex items-center justify-center uppercase tracking-wide ${((product.stock !== undefined && product.stock <= 0) || product.status === "Sold out")
                       ? 'border-neutral-300 text-neutral-400 bg-neutral-50 cursor-not-allowed'
                       : 'border-green-600 text-green-600 bg-transparent hover:bg-green-50'
                       }`}
                   >
-                    {product.isAvailable === false ? 'Out of Range' : ((product.stock !== undefined && product.stock <= 0) || product.status === "Sold out") ? 'Out of Stock' : 'ADD'}
+                    {((product.stock !== undefined && product.stock <= 0) || product.status === "Sold out") ? 'Out of Stock' : 'ADD'}
                   </Button>
                 </div>
               </div>
@@ -370,13 +374,7 @@ export default function ProductCard({
                 <Button
                   variant="default"
                   size="icon"
-                  disabled={product.isAvailable === false}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleIncrease(e);
-                  }}
-                  className={`w-5 h-5 p-0 bg-transparent text-green-600 shadow-none ${product.isAvailable === false ? 'text-neutral-300 cursor-not-allowed' : 'hover:bg-green-50'
-                    }`}
+                  className={`w-5 h-5 p-0 bg-transparent text-green-600 shadow-none hover:bg-green-50`}
                   aria-label="Increase quantity"
                 >
                   +
@@ -508,14 +506,14 @@ export default function ProductCard({
                   ref={addButtonRef}
                   variant="outline"
                   size="sm"
-                  disabled={product.isAvailable === false || ((product.stock !== undefined && product.stock <= 0) || product.status === "Sold out")}
+                  disabled={((product.stock !== undefined && product.stock <= 0) || product.status === "Sold out")}
                   onClick={handleAdd}
-                  className={`w-full border h-8 text-xs font-semibold uppercase tracking-wide ${product.isAvailable === false || ((product.stock !== undefined && product.stock <= 0) || product.status === "Sold out")
+                  className={`w-full border h-8 text-xs font-semibold uppercase tracking-wide ${((product.stock !== undefined && product.stock <= 0) || product.status === "Sold out")
                     ? 'border-neutral-300 text-neutral-400 bg-neutral-50 cursor-not-allowed'
                     : 'border-green-600 text-green-600 hover:bg-green-50'
                     }`}
                 >
-                  {product.isAvailable === false ? 'Out of Range' : ((product.stock !== undefined && product.stock <= 0) || product.status === "Sold out") ? 'Out of Stock' : 'Add'}
+                  {((product.stock !== undefined && product.stock <= 0) || product.status === "Sold out") ? 'Out of Stock' : 'Add'}
                 </Button>
                 <div className="h-4 mt-1">
                 </div>
@@ -537,10 +535,7 @@ export default function ProductCard({
                 <Button
                   variant="default"
                   size="icon"
-                  disabled={product.isAvailable === false}
-                  onClick={handleIncrease}
-                  className={`w-6 h-6 p-0 bg-transparent text-green-600 shadow-none ${product.isAvailable === false ? 'text-neutral-300 cursor-not-allowed' : 'hover:bg-green-50'
-                    }`}
+                  className={`w-6 h-6 p-0 bg-transparent text-green-600 shadow-none hover:bg-green-50`}
                   aria-label="Increase quantity"
                 >
                   +

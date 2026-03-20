@@ -2,11 +2,12 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IPincodeDemand extends Document {
     pincode: string;
-    userId: mongoose.Types.ObjectId;
-    productId: mongoose.Types.ObjectId;
-    sellerId: mongoose.Types.ObjectId;
-    headerCategoryId: mongoose.Types.ObjectId;
-    address: string;
+    userId?: mongoose.Types.ObjectId;
+    productId?: mongoose.Types.ObjectId;
+    sellerId?: mongoose.Types.ObjectId;
+    headerCategoryId?: mongoose.Types.ObjectId;
+    address?: string;
+    count: number;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -14,11 +15,12 @@ export interface IPincodeDemand extends Document {
 const PincodeDemandSchema: Schema = new Schema(
     {
         pincode: { type: String, required: true },
-        userId: { type: Schema.Types.ObjectId, ref: 'Customer', required: true },
-        productId: { type: Schema.Types.ObjectId, ref: 'Product', required: true },
-        sellerId: { type: Schema.Types.ObjectId, ref: 'Seller', required: true },
-        headerCategoryId: { type: Schema.Types.ObjectId, ref: 'HeaderCategory', required: true },
-        address: { type: String, required: true },
+        userId: { type: Schema.Types.ObjectId, ref: 'Customer' },
+        productId: { type: Schema.Types.ObjectId, ref: 'Product' },
+        sellerId: { type: Schema.Types.ObjectId, ref: 'Seller' },
+        headerCategoryId: { type: Schema.Types.ObjectId, ref: 'HeaderCategory' },
+        address: { type: String },
+        count: { type: Number, default: 1 },
     },
     { timestamps: true }
 );

@@ -361,9 +361,16 @@ const addToCart = async (product: Product, sourceElement?: HTMLElement | null) =
         setFreeDeliveryThreshold(response.data.freeDeliveryThreshold);
       }
     } catch (error: any) {
-      console.error("Add to cart failed", error);
-      // Show error toast
-      showToast(error.response?.data?.message || "Failed to add to cart", 'error');
+      const isComingSoon = error.response?.status === 403;
+      
+      if (isComingSoon) {
+        // This is a feature, not a bug - demand was recorded
+        showToast(error.response?.data?.message || "Quick delivery coming soon!", 'info');
+      } else {
+        console.error("Add to cart failed", error);
+        showToast(error.response?.data?.message || "Failed to add to cart", 'error');
+      }
+      
       // Revert on error
       setItems(previousItems);
     } finally {
@@ -599,8 +606,14 @@ const updateQuantity = async (itemIdOrProductId: string, quantity: number, varia
         setPlatformFee(response.data.platformFee);
         setFreeDeliveryThreshold(response.data.freeDeliveryThreshold);
       }
-    } catch (error) {
-      console.error("Update quantity failed", error);
+    } catch (error: any) {
+      const isOutRange = error.response?.status === 403;
+      if (isOutRange) {
+        showToast(error.response?.data?.message || "Item not available in your location", 'info');
+      } else {
+        console.error("Update quantity failed", error);
+        showToast(error.response?.data?.message || "Failed to update quantity", 'error');
+      }
       setItems(previousItems);
     } finally {
       // Remove from pending operations

@@ -1071,7 +1071,9 @@ export const getHeaderCategorySections = async (req: Request, res: Response) => 
       isShopOpen: true,
     };
 
-    if (pincode) {
+    // For quick delivery, we show products globally if requested or if no pincode provided
+    // If it's NOT quick delivery, we still honor the pincode if provided
+    if (pincode && headerCategory.deliveryType !== 'quick') {
       eligibleSellerQuery.pincode = pincode;
     }
 
@@ -1114,8 +1116,13 @@ export const getHeaderCategorySections = async (req: Request, res: Response) => 
             status: "Active",
             publish: true,
             stock: { $gt: 0 },
-            seller: { $in: eligibleSellerIds },
           };
+
+          // If quick delivery, we might still want to filter by Approved sellers (eligibleSellerIds)
+          // but we've already removed the pincode filter from eligibleSellerQuery for quick delivery.
+          if (eligibleSellerIds.length > 0) {
+            productQuery.seller = { $in: eligibleSellerIds };
+          }
 
           if (categories && categories.length > 0) {
             productQuery.category = { $in: categories.map((c: any) => c._id || c) };

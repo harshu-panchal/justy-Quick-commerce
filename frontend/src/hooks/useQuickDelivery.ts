@@ -16,18 +16,13 @@ export function useQuickDelivery() {
 
     useEffect(() => {
         const fetchData = async () => {
-            if (!pincode) {
-                setLoading(false);
-                setAvailable(false);
-                return;
-            }
-
+            // Note: We still call API even if pincode is missing to get global products
             try {
                 setLoading(true);
-                const response = await getQuickDeliveryProducts(pincode);
+                const response = await getQuickDeliveryProducts(pincode || undefined);
                 if (response.success) {
                     setAvailable(response.available);
-                    if (response.available && response.data) {
+                    if (response.data) {
                         setProducts(response.data.products);
                         setSellers(response.data.sellers);
                     } else {

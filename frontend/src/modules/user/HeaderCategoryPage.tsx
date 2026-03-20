@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import HomeHero from "./components/HomeHero";
 import BannerCarousel from "../../components/banners/BannerCarousel";
@@ -11,6 +11,8 @@ import { getStoredPincode } from "../../components/PincodeSelector";
 import { useThemeContext } from "../../context/ThemeContext";
 import { useDeliveryMode } from "../../hooks/useDeliveryMode";
 import EmptyState from "../../components/EmptyState";
+import { ORGANIC_CATEGORIES, isCategoryAvailable } from "../../config/pincodeService";
+import UnavailableBanner from "./components/UnavailableBanner";
 
 export default function HeaderCategoryPage() {
     const { slug } = useParams<{ slug: string }>();
@@ -20,6 +22,17 @@ export default function HeaderCategoryPage() {
     const [loading, setLoading] = useState(true);
     const [sections, setSections] = useState<any[]>([]);
     const [error, setError] = useState<string | null>(null);
+
+    const isOrganic = useMemo(() => {
+        if (!slug) return false;
+        const normalizedSlug = slug.toLowerCase().replace(/[\s-]/g, "");
+        return ORGANIC_CATEGORIES.some(organic => 
+            normalizedSlug.includes(organic.replace(/[\s-]/g, ""))
+        );
+    }, [slug]);
+
+    const pincode = getStoredPincode();
+    const showUnavailableBanner = pincode && slug && !isCategoryAvailable(slug, pincode) && isOrganic;
 
     // Sync active category in context when slug changes
     useEffect(() => {
@@ -34,12 +47,15 @@ export default function HeaderCategoryPage() {
             try {
                 setLoading(true);
                 setError(null);
-                const pincode = getStoredPincode();
+                
+                // For organic (quick delivery) categories, we can load globally if we want to show products 
+                // even if the user hasn't set a pincode or is in an unsupported area.
                 const response = await getHeaderCategorySections(
                     slug,
                     pincode || undefined,
                     location?.latitude,
-                    location?.longitude
+                    location?.longitude,
+                    isOrganic // pass global flag if organic
                 );
                 if (response.success) {
                     setSections(response.data);
@@ -55,7 +71,7 @@ export default function HeaderCategoryPage() {
         };
 
         fetchData();
-    }, [slug, location?.latitude, location?.longitude]);
+    }, [slug, location?.latitude, location?.longitude, pincode, isOrganic]);
 
     if (loading) return <PageLoader />;
 
@@ -85,6 +101,13 @@ export default function HeaderCategoryPage() {
     return (
         <div className="bg-white min-h-screen pb-20 md:pb-0">
             <HomeHero activeTab={slug || "all"} onTabChange={setActiveCategory} />
+            
+            {showUnavailableBanner && (
+                <div className="mt-4">
+                    <UnavailableBanner pincode={pincode!} context="page" />
+                </div>
+            )}
+
             <div className="w-full relative z-10 mt-2">
                 <BannerCarousel mode={deliveryMode} />
             </div>

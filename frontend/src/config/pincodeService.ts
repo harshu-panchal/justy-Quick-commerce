@@ -74,8 +74,8 @@ export function getDeliveryInfo(type: "organic" | "inorganic") {
         };
     }
     return {
-        badge: "15-30 min.",
-        deliveryText: "Delivery in 15-30 mins",
-        detailText: "Delivery • 15-30 min.",
+        badge: "1-2 days",
+        deliveryText: "Delivery in 1-2 days",
+        detailText: "Standard Delivery • 1-2 days",
     };
 }

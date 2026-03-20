@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, useMemo } from 'react';
 import { Product } from '../../../types/domain';
 import { useCart } from '../../../context/CartContext';
 import { useAuth } from '../../../context/AuthContext';
@@ -12,7 +12,7 @@ import Badge from '../../../components/ui/badge';
 import StarRating from '../../../components/ui/StarRating';
 import { calculateProductPrice } from '../../../utils/priceUtils';
 import ProductTypeBadge from '../../../components/ProductTypeBadge';
-import { getCategoryType } from '../../../config/pincodeService';
+import { getCategoryType, getDeliveryInfo } from '../../../config/pincodeService';
 
 interface ProductCardProps {
   product: Product;
@@ -131,6 +131,17 @@ export default function ProductCard({
 
   // Get Price and MRP using utility
   const { displayPrice, mrp, discount } = calculateProductPrice(product);
+
+  const isOutOfStock = useMemo(() => {
+    if (product.status === "Sold out") return true;
+    
+    if (product.variations && product.variations.length > 0) {
+      // If all variations are sold out or have 0 stock
+      return product.variations.every(v => v.status === "Sold out" || (v.stock !== undefined && v.stock <= 0));
+    }
+    
+    return product.stock !== undefined && product.stock <= 0;
+  }, [product]);
 
   const handleCardClick = () => {
     navigate(`/product/${((product as any).id || product._id) as string}`);
@@ -269,6 +280,14 @@ export default function ProductCard({
             </div>
           )}
 
+          {isOutOfStock && (
+            <div className="absolute inset-0 z-20 bg-white/60 backdrop-blur-[1px] flex items-center justify-center">
+              <span className="bg-neutral-900/80 text-white text-[10px] md:text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wider shadow-lg">
+                Out of Stock
+              </span>
+            </div>
+          )}
+
           {categoryStyle && showBadge && discount > 0 && (
             <div className="absolute top-2 left-2 z-10 bg-green-600 text-white text-[10px] font-semibold px-2 py-0.5 rounded">
               {discount}% off
@@ -340,17 +359,17 @@ export default function ProductCard({
                     ref={addButtonRef}
                     variant="outline"
                     size="sm"
-                    disabled={((product.stock !== undefined && product.stock <= 0) || product.status === "Sold out")}
+                    disabled={isOutOfStock}
                     onClick={(e) => {
                       e.stopPropagation();
                       handleAdd(e);
                     }}
-                    className={`w-full border rounded-full font-semibold text-xs h-7 px-3 flex items-center justify-center uppercase tracking-wide ${((product.stock !== undefined && product.stock <= 0) || product.status === "Sold out")
+                    className={`w-full border rounded-full font-semibold text-xs h-7 px-3 flex items-center justify-center uppercase tracking-wide ${isOutOfStock
                       ? 'border-neutral-300 text-neutral-400 bg-neutral-50 cursor-not-allowed'
                       : 'border-green-600 text-green-600 bg-transparent hover:bg-green-50'
                       }`}
                   >
-                    {((product.stock !== undefined && product.stock <= 0) || product.status === "Sold out") ? 'Out of Stock' : 'ADD'}
+                    {isOutOfStock ? 'Out of Stock' : 'ADD'}
                   </Button>
                 </div>
               </div>
@@ -374,7 +393,9 @@ export default function ProductCard({
                 <Button
                   variant="default"
                   size="icon"
-                  className={`w-5 h-5 p-0 bg-transparent text-green-600 shadow-none hover:bg-green-50`}
+                  onClick={handleIncrease}
+                  disabled={inCartQty >= (product.stock || 0)}
+                  className={`w-5 h-5 p-0 bg-transparent text-green-600 shadow-none hover:bg-green-50 ${inCartQty >= (product.stock || 0) ? 'opacity-30 cursor-not-allowed' : ''}`}
                   aria-label="Increase quantity"
                 >
                   +
@@ -416,7 +437,7 @@ export default function ProductCard({
                   <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
                   <path d="M12 6v6l4 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                 </svg>
-                <span>15-30 MINS</span>
+                <span>{getDeliveryInfo(getCategoryType(product.category?.name)).badge.toUpperCase()}</span>
               </p>
 
               {/* 4. % OFF */}
@@ -506,14 +527,14 @@ export default function ProductCard({
                   ref={addButtonRef}
                   variant="outline"
                   size="sm"
-                  disabled={((product.stock !== undefined && product.stock <= 0) || product.status === "Sold out")}
+                  disabled={isOutOfStock}
                   onClick={handleAdd}
-                  className={`w-full border h-8 text-xs font-semibold uppercase tracking-wide ${((product.stock !== undefined && product.stock <= 0) || product.status === "Sold out")
+                  className={`w-full border h-8 text-xs font-semibold uppercase tracking-wide ${isOutOfStock
                     ? 'border-neutral-300 text-neutral-400 bg-neutral-50 cursor-not-allowed'
                     : 'border-green-600 text-green-600 hover:bg-green-50'
                     }`}
                 >
-                  {((product.stock !== undefined && product.stock <= 0) || product.status === "Sold out") ? 'Out of Stock' : 'Add'}
+                  {isOutOfStock ? 'Out of Stock' : 'Add'}
                 </Button>
                 <div className="h-4 mt-1">
                 </div>
@@ -535,7 +556,9 @@ export default function ProductCard({
                 <Button
                   variant="default"
                   size="icon"
-                  className={`w-6 h-6 p-0 bg-transparent text-green-600 shadow-none hover:bg-green-50`}
+                  onClick={handleIncrease}
+                  disabled={inCartQty >= (product.stock || 0)}
+                  className={`w-6 h-6 p-0 bg-transparent text-green-600 shadow-none hover:bg-green-50 ${inCartQty >= (product.stock || 0) ? 'opacity-30 cursor-not-allowed' : ''}`}
                   aria-label="Increase quantity"
                 >
                   +

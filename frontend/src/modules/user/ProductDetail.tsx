@@ -1038,6 +1038,11 @@ export default function ProductDetail() {
                   );
                   const similarInCartQty = similarCartItem?.quantity || 0;
 
+                  const isSimilarOutOfStock = similarProduct.status === "Sold out" ||
+                    (similarProduct.variations && similarProduct.variations.length > 0
+                      ? similarProduct.variations.every((v: any) => v.status === "Sold out" || (v.stock !== undefined && v.stock <= 0))
+                      : (similarProduct.stock !== undefined && similarProduct.stock <= 0));
+
                   return (
                     <div
                       key={similarProduct.id}
@@ -1201,7 +1206,8 @@ export default function ProductDetail() {
                                       similarInCartQty + 1
                                     );
                                   }}
-                                  className="w-7 h-7 p-0"
+                                  disabled={similarInCartQty >= (similarProduct.stock || 0)}
+                                  className={`w-7 h-7 p-0 ${similarInCartQty >= (similarProduct.stock || 0) ? 'opacity-30 cursor-not-allowed' : ''}`}
                                   aria-label="Increase quantity">
                                   +
                                 </Button>
@@ -1323,7 +1329,8 @@ export default function ProductDetail() {
                       const variantId = selectedVariant?._id;
                       updateQuantity(productId, inCartQty + 1, variantId, variantTitle);
                     }}
-                    className="w-6 h-6 flex items-center justify-center text-green-600 font-bold hover:bg-green-50 rounded-full transition-colors border border-green-600 p-0 leading-none text-base"
+                    disabled={inCartQty >= variantStock}
+                    className={`w-6 h-6 flex items-center justify-center text-green-600 font-bold hover:bg-green-50 rounded-full transition-colors border border-green-600 p-0 leading-none text-base ${inCartQty >= variantStock ? 'opacity-30 cursor-not-allowed' : ''}`}
                     style={{ lineHeight: 1 }}>
                     <span className="relative top-[-1px]">+</span>
                   </motion.button>

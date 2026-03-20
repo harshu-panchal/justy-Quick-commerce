@@ -137,7 +137,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
             pack: product.pack || '1 unit',
             categoryId: product.category?._id || product.category || '',
             description: product.description,
-            variantId: item.variation // Preserving variation ID/value
+            variantId: item.variation, // Preserving variation ID/value
+            stock: product.stock // Include main product stock
           },
           deliveryType: deliveryType
         };
@@ -251,6 +252,7 @@ const addToCart = async (product: Product, sourceElement?: HTMLElement | null) =
     id: productId,
     name: product.name || product.productName || 'Product',
     imageUrl: product.imageUrl || product.mainImage,
+    stock: product.stock // Ensure stock is preserved
   };
 
   // Optimistic Update
@@ -314,6 +316,12 @@ const addToCart = async (product: Product, sourceElement?: HTMLElement | null) =
         const isMatch = (variantId || (itemVariantId && itemVariantId !== itemProductId))
           ? itemProductId === productId && (itemVariantId === variantId || itemVariantTitle === variantTitle)
           : itemProductId === productId && !itemVariantId && !itemVariantTitle;
+
+        // Check stock before optimistic increment
+        const itemStock = (item.product as any)?.stock || 0;
+        if (isMatch && item.quantity >= itemStock && itemStock > 0) {
+          return item;
+        }
 
         return isMatch
           ? { ...item, quantity: item.quantity + 1 }
@@ -585,6 +593,13 @@ const updateQuantity = async (itemIdOrProductId: string, quantity: number, varia
       } else if (item.comboOffer) {
         const comboId = item.comboOffer.id || item.comboOffer._id;
         isMatch = comboId === itemIdOrProductId;
+      }
+
+      // Check stock before optimistic update
+      const itemStock = (item.product as any)?.stock || (item.comboOffer as any)?.stock || 999;
+      if (isMatch && quantity > item.quantity && quantity > itemStock) {
+        showToast(`Only ${itemStock} units available`, 'info');
+        return item;
       }
 
       return isMatch ? { ...item, quantity } : item;

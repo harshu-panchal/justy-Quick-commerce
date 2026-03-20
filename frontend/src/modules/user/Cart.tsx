@@ -68,7 +68,7 @@ export default function Cart() {
 
             const isQuick = dtype === 'quick';
             const title = isQuick ? 'QUICK DELIVERY' : 'SCHEDULED DELIVERY';
-            const subtitle = isQuick ? `Estimated ${appConfig.estimatedDeliveryTime}` : '15-30 mins';
+            const subtitle = isQuick ? `Estimated ${appConfig.estimatedDeliveryTime}` : '1-2 days';
             const icon = isQuick ? '⚡' : '📅';
             const iconColor = isQuick ? 'text-blue-600' : 'text-blue-500';
 
@@ -181,7 +181,8 @@ export default function Cart() {
                                 <span className="text-sm md:text-base font-bold text-neutral-900 min-w-[2rem] text-center">{item.quantity}</span>
                                 <button
                                   onClick={() => updateQuantity(itemId, item.quantity + 1, item.variant)}
-                                  className="w-8 h-8 flex items-center justify-center text-neutral-600 font-bold hover:bg-white hover:shadow-sm rounded-lg transition-all"
+                                  disabled={item.quantity >= (item.product?.stock || 0)}
+                                  className={`w-8 h-8 flex items-center justify-center text-neutral-600 font-bold hover:bg-white hover:shadow-sm rounded-lg transition-all ${item.quantity >= (item.product?.stock || 0) ? 'opacity-30 cursor-not-allowed' : ''}`}
                                 >
                                   +
                                 </button>

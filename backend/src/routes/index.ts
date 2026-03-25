@@ -47,6 +47,7 @@ import deliveryPlanRoutes from "./deliveryPlanRoutes";
 import customerSpinWheelRoutes from "./customerSpinWheelRoutes";
 import sellerSpinWheelRoutes from "./sellerSpinWheelRoutes";
 import deliverySpinWheelRoutes from "./deliverySpinWheelRoutes";
+import equipmentRoutes from "./equipmentRoutes";
 
 import {
   createOrder,
@@ -182,6 +183,9 @@ router.use("/seller/taxes", taxRoutes);
 
 // Payment routes (Razorpay integration)
 router.use("/payment", paymentRoutes);
+
+// Equipment Marketplace Routes
+router.use("/equipment", equipmentRoutes);
 
 // Seller wallet routes (protected, seller only)
 router.use("/seller/wallet-new", authenticate, requireUserType("Seller"), sellerWalletRoutes);

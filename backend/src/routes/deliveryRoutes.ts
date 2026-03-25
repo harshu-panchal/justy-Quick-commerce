@@ -7,6 +7,7 @@ import { getProfile } from "../modules/delivery/controllers/deliveryAuthControll
 import * as deliveryProfileController from "../modules/delivery/controllers/deliveryProfileController";
 import * as deliveryNotificationController from "../modules/delivery/controllers/deliveryNotificationController";
 import * as deliveryQuickCommerceController from "../modules/delivery/controllers/deliveryQuickCommerceController";
+import * as deliveryEquipmentController from "../modules/delivery/controllers/deliveryEquipmentController";
 
 const router = Router();
 
@@ -51,5 +52,9 @@ router.patch("/assignments/:assignmentId/status", deliveryQuickCommerceControlle
 // Earnings
 router.get("/earnings", deliveryEarningController.getEarningsHistory);
 router.post("/withdraw", deliveryEarningController.requestWithdrawal);
+
+// ==================== Equipment Deliveries ====================
+router.get("/equipment-deliveries", deliveryEquipmentController.getMyEquipmentDeliveries);
+router.patch("/equipment-deliveries/:id/delivered", deliveryEquipmentController.markEquipmentDelivered);
 
 export default router;

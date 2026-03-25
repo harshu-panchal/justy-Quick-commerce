@@ -57,3 +57,6 @@ export { default as CustomerSubscription } from "./CustomerSubscription";
 export { default as DeliverySubscription } from "./DeliverySubscription";
 export { default as SpinCampaign } from "./SpinCampaign";
 export { default as SpinAttempt } from "./SpinAttempt";
+export { default as EquipmentItem } from "./EquipmentItem";
+export { default as EquipmentOrder } from "./EquipmentOrder";
+export { default as RefundRequest } from "./RefundRequest";

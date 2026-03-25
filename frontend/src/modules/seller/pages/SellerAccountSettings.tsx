@@ -25,6 +25,7 @@ const SellerAccountSettings = () => {
         category: '',
         address: '',
         city: '',
+        pincode: '',
         searchLocation: '',
         latitude: '',
         longitude: '',
@@ -40,6 +41,7 @@ const SellerAccountSettings = () => {
         branch: '',
         accountNumber: '',
         ifsc: '',
+        upiId: '',
         profile: '',
         logo: '',
         storeBanner: '',
@@ -93,6 +95,15 @@ const SellerAccountSettings = () => {
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
+        
+        // Only allow digits for pincode
+        if (name === 'pincode') {
+            const numericValue = value.replace(/\D/g, '');
+            if (numericValue.length > 6) return;
+            setSellerData(prev => ({ ...prev, [name]: numericValue }));
+            return;
+        }
+
         setSellerData(prev => ({
             ...prev,
             [name]: value
@@ -466,6 +477,7 @@ const SellerAccountSettings = () => {
                                                     </div>
 
                                                     <InputGroup label="City" name="city" value={sellerData.city} onChange={handleInputChange} disabled={!isEditing} />
+                                                    <InputGroup label="Pincode" name="pincode" value={sellerData.pincode} onChange={handleInputChange} disabled={!isEditing} maxLength={6} />
 
                                                     <div className="space-y-3">
                                                         <label className="block text-sm font-semibold text-gray-700 ml-1">
@@ -613,8 +625,11 @@ const SellerAccountSettings = () => {
                                                         <InputGroup label="Account Holder Name" name="accountName" value={sellerData.accountName} onChange={handleInputChange} disabled={!isEditing} />
                                                         <InputGroup label="Bank Name" name="bankName" value={sellerData.bankName} onChange={handleInputChange} disabled={!isEditing} />
                                                         <InputGroup label="Account Number" name="accountNumber" value={sellerData.accountNumber} onChange={handleInputChange} disabled={!isEditing} />
-                                                        <InputGroup label="IFSC Code" name="ifsc" value={sellerData.ifsc} onChange={handleInputChange} disabled={!isEditing} />
-                                                    </div>
+                                                         <InputGroup label="IFSC Code" name="ifsc" value={sellerData.ifsc} onChange={handleInputChange} disabled={!isEditing} />
+                                                         <div className="md:col-span-2">
+                                                            <InputGroup label="UPI ID (Optional)" name="upiId" value={sellerData.upiId} onChange={handleInputChange} disabled={!isEditing} placeholder="e.g. name@upi" />
+                                                         </div>
+                                                     </div>
                                                 </section>
 
                                                 <section>
@@ -670,7 +685,7 @@ const SellerAccountSettings = () => {
     );
 };
 
-const InputGroup = ({ label, name, value, onChange, disabled, type = "text", placeholder = "", autoComplete }: any) => (
+const InputGroup = ({ label, name, value, onChange, disabled, type = "text", placeholder = "", autoComplete, maxLength }: any) => (
 
     <div className="space-y-1.5">
         <label className="text-sm font-semibold text-gray-700 ml-1">{label}</label>
@@ -682,6 +697,7 @@ const InputGroup = ({ label, name, value, onChange, disabled, type = "text", pla
             disabled={disabled}
             placeholder={placeholder}
             autoComplete={autoComplete}
+            maxLength={maxLength}
             className={`w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 outline-none transition-all ${disabled ? 'bg-gray-50/50 text-gray-500 cursor-default' : 'bg-white'
 
                 }`}

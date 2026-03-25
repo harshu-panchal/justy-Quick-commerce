@@ -141,6 +141,11 @@ const AdminBestsellerCards = lazy(() => import("./modules/admin/pages/AdminBests
 const AdminPromoStrip = lazy(() => import("./modules/admin/pages/AdminPromoStrip"));
 const AdminLowestPrices = lazy(() => import("./modules/admin/pages/AdminLowestPrices"));
 const AdminShopByStore = lazy(() => import("./modules/admin/pages/AdminShopByStore"));
+const AdminEquipmentItems = lazy(() => import("./modules/admin/pages/AdminEquipmentItems"));
+const AdminEquipmentOrders = lazy(() => import("./modules/admin/pages/AdminEquipmentOrders"));
+const AdminEquipmentRefunds = lazy(() => import("./modules/admin/pages/AdminEquipmentRefunds"));
+const SellerEquipmentShop = lazy(() => import("./modules/seller/pages/SellerEquipmentShop"));
+const DeliveryEquipmentOrders = lazy(() => import("./modules/delivery/pages/DeliveryEquipmentOrders"));
 const AdminAllOrders = lazy(() => import("./modules/admin/pages/AdminAllOrders"));
 const AdminPendingOrders = lazy(() => import("./modules/admin/pages/AdminPendingOrders"));
 const AdminReceivedOrders = lazy(() => import("./modules/admin/pages/AdminReceivedOrders"));
@@ -157,6 +162,7 @@ const AdminManageCustomer = lazy(() => import("./modules/admin/pages/AdminManage
 const AdminProfile = lazy(() => import("./modules/admin/pages/AdminProfile"));
 const AdminProductEdit = lazy(() => import("./modules/admin/pages/AdminProductEdit"));
 const SpinnerManagement = lazy(() => import("./modules/admin/pages/SpinnerManagement"));
+const SellerEquipmentCart = lazy(() => import("./modules/seller/pages/SellerEquipmentCart"));
 
 // Warehouse routes
 const WarehouseLayout = lazy(() => import("./modules/warehouse/components/WarehouseLayout"));
@@ -307,6 +313,7 @@ function App() {
                                           <Route path="help" element={<DeliveryHelp />} />
                                           <Route path="about" element={<DeliveryAbout />} />
                                           <Route path="sellers-in-range" element={<DeliverySellersInRange />} />
+                                          <Route path="equipment/orders" element={<DeliveryEquipmentOrders />} />
                                           <Route path="cod" element={<DeliveryCOD />} />
                                           <Route path="settlement-history" element={<DeliverySettlementHistory />} />
                                         </Routes>
@@ -350,6 +357,8 @@ function App() {
                                                   <Route path="reports/sales" element={<SellerSalesReport />} />
                                                   <Route path="combo-offers" element={<SellerComboOffers />} />
                                                   <Route path="account-settings" element={<SellerAccountSettings />} />
+                                                  <Route path="marketplace" element={<SellerEquipmentShop />} />
+                                                  <Route path="marketplace/cart" element={<SellerEquipmentCart />} />
                                                 </Routes>
                                               </SellerLayout>
                                             }
@@ -401,6 +410,9 @@ function App() {
                                           <Route path="delivery-app-policy" element={<AdminDeliveryAppPolicy />} />
                                           <Route path="users" element={<AdminUsers />} />
                                           <Route path="faq" element={<AdminFAQ />} />
+                                          <Route path="equipment/items" element={<AdminEquipmentItems />} />
+                                          <Route path="equipment/orders" element={<AdminEquipmentOrders />} />
+                                          <Route path="equipment/refunds" element={<AdminEquipmentRefunds />} />
                                           <Route path="home-section" element={<AdminHomeSection />} />
                                           <Route path="bestseller-cards" element={<AdminBestsellerCards />} />
                                           <Route path="promo-strip" element={<AdminPromoStrip />} />

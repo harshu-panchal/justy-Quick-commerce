@@ -93,6 +93,10 @@ import * as comboController from "../modules/admin/controllers/adminComboControl
 // Subscription Plan Controllers
 import * as subscriptionPlanController from "../modules/admin/controllers/adminSubscriptionPlanController";
 
+// Equipment Marketplace Controllers
+import * as adminEquipmentController from "../modules/admin/controllers/adminEquipmentController";
+import * as adminRefundController from "../modules/admin/controllers/adminRefundController";
+
 const router = Router();
 
 // All routes require admin authentication
@@ -429,5 +433,21 @@ router.get("/subscriptions", subscriptionController.listAllSubscriptions);
 // ==================== Spin Wheel (Admin) ====================
 router.get("/spin-wheel/campaign", spinWheelController.getSpinCampaign);
 router.put("/spin-wheel/campaign", spinWheelController.upsertSpinCampaign);
+
+// ==================== Equipment Marketplace Routes ====================
+router.get("/equipment/items", adminEquipmentController.getAllEquipmentItems);
+router.post("/equipment/items", adminEquipmentController.createEquipmentItem);
+router.put("/equipment/items/:id", adminEquipmentController.updateEquipmentItem);
+router.delete("/equipment/items/:id", adminEquipmentController.deleteEquipmentItem);
+router.patch("/equipment/items/:id/status", adminEquipmentController.toggleEquipmentItemStatus);
+router.get("/equipment/orders", adminEquipmentController.getAllEquipmentOrders);
+router.patch("/equipment/orders/assign-delivery", adminEquipmentController.assignDeliveryBoy);
+router.patch("/equipment/orders/:id/approve", adminEquipmentController.approveEquipmentOrder);
+router.patch("/equipment/orders/:id/reject", adminEquipmentController.rejectEquipmentOrder);
+
+// Refund Management
+router.get("/equipment/refunds", adminRefundController.getAllRefundRequests);
+router.put("/equipment/refunds/:id", adminRefundController.updateRefundStatus);
+router.post("/equipment/refunds/:id/test-razorpay", adminRefundController.processRazorpayRefund);
 
 export default router;

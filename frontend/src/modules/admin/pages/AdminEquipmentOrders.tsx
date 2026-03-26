@@ -6,9 +6,12 @@ import {
   assignDeliveryBoy,
   approveEquipmentOrder,
   rejectEquipmentOrder,
+  regenerateEquipmentQR,
   type EquipmentOrder,
 } from "../../../services/api/admin/adminEquipmentService";
 import { useAuth } from "../../../context/AuthContext";
+import InvoiceModal from "../../../components/Invoice/InvoiceModal";
+import { OrderDetail } from "../../../services/api/orderService";
 
 export default function AdminEquipmentOrders() {
   const { isAuthenticated, token } = useAuth();
@@ -26,6 +29,11 @@ export default function AdminEquipmentOrders() {
   const [rejectionReason, setRejectionReason] = useState("");
   const [refundMethod, setRefundMethod] = useState<"Wallet" | "Bank">("Wallet");
   const [processing, setProcessing] = useState(false);
+  
+  // Invoice & QR States
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+  const [invoiceOrder, setInvoiceOrder] = useState<OrderDetail | null>(null);
+  const [isRegeneratingQR, setIsRegeneratingQR] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated && token) {
@@ -100,6 +108,66 @@ export default function AdminEquipmentOrders() {
     } finally {
       setProcessing(false);
     }
+  };
+
+  const handleRegenerateQR = async (id: string) => {
+    if (isRegeneratingQR) return;
+    try {
+      setIsRegeneratingQR(true);
+      const res = await regenerateEquipmentQR(id);
+      if (res.success) {
+        alert("QR Regenerated!");
+        fetchData();
+      }
+    } catch (err: any) {
+      alert("Failed to regenerate QR");
+    } finally {
+      setIsRegeneratingQR(false);
+    }
+  };
+
+  const openInvoice = (order: EquipmentOrder) => {
+    // Transformer EquipmentOrder to OrderDetail for the InvoiceModal
+    const orderDetail: OrderDetail = {
+      id: order._id,
+      invoiceNumber: order.orderNumber,
+      orderDate: order.createdAt,
+      deliveryDate: order.createdAt, // Fallback
+      timeSlot: 'Standard',
+      status: order.status as any,
+      customerName: order.sellerName,
+      customerEmail: order.seller.email,
+      customerPhone: order.sellerPhone,
+      deliveryBoyName: order.deliveryBoy?.name || '',
+      deliveryBoyPhone: order.deliveryBoy?.mobile || '',
+      items: order.items.map((item, idx) => ({
+        srNo: (idx + 1).toString(),
+        product: item.name,
+        soldBy: 'Admin Inventory',
+        unit: 'N/A',
+        price: item.price,
+        tax: 0,
+        taxPercent: 0,
+        qty: item.quantity,
+        subtotal: item.subtotal
+      })),
+      subtotal: order.total,
+      tax: 0,
+      grandTotal: order.total,
+      paymentMethod: 'Online', // Assuming mostly online for admin orders or get from model
+      paymentStatus: order.paymentStatus,
+      deliveryAddress: {
+        name: order.sellerName,
+        phone: order.sellerPhone,
+        address: order.deliveryAddress?.address || order.sellerAddress,
+        city: order.deliveryAddress?.city || '',
+        state: order.deliveryAddress?.state || '',
+        pincode: order.deliveryAddress?.pincode || ''
+      },
+      qrCodeUrl: order.qrCodeUrl
+    };
+    setInvoiceOrder(orderDetail);
+    setIsInvoiceModalOpen(true);
   };
 
   const getStatusBadge = (status: string) => {
@@ -243,12 +311,35 @@ export default function AdminEquipmentOrders() {
                           )
                         )}
 
-                        {order.deliveryBoy && order.status === 'assigned' && (
+                         {order.deliveryBoy && order.status === 'assigned' && (
                           <div className="text-right">
                              <div className="text-[9px] text-neutral-400 font-bold uppercase mb-1">Partner Assigned</div>
                              <div className="text-xs font-bold text-neutral-800">{order.deliveryBoy.name}</div>
                           </div>
                         )}
+
+                        {order.status === 'approved' || order.status === 'assigned' || order.status === 'delivered' ? (
+                          <div className="flex flex-col gap-2 mt-2 items-end">
+                            {order.qrCodeUrl && (
+                              <img src={order.qrCodeUrl} alt="QR" className="w-12 h-12 border rounded p-0.5 bg-gray-50" />
+                            )}
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => openInvoice(order)}
+                                className="text-[9px] font-black text-blue-600 hover:underline uppercase"
+                              >
+                                VIEW INVOICE
+                              </button>
+                              <button
+                                onClick={() => handleRegenerateQR(order._id)}
+                                disabled={isRegeneratingQR}
+                                className="text-[9px] font-black text-gray-400 hover:text-gray-600 uppercase"
+                              >
+                                {isRegeneratingQR ? '...' : 'REFRESH QR'}
+                              </button>
+                            </div>
+                          </div>
+                        ) : null}
                         
                         {order.paymentStatus === 'Refunded' && (
                            <span className="text-[10px] text-green-600 font-black uppercase italic">Completed</span>
@@ -448,6 +539,14 @@ export default function AdminEquipmentOrders() {
             </div>
           </div>
         </div>
+      )}
+
+      {invoiceOrder && (
+        <InvoiceModal 
+          isOpen={isInvoiceModalOpen} 
+          onClose={() => setIsInvoiceModalOpen(false)} 
+          order={invoiceOrder} 
+        />
       )}
     </div>
   );

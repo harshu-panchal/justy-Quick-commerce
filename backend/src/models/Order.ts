@@ -107,6 +107,18 @@ export interface IOrder extends Document {
   deliveryType: "instant" | "scheduled";
   sellerPincode?: string;
 
+  // QR Logistics
+  qrCodeUrl?: string;
+  qrData?: string;
+  isQrScanned?: boolean;
+  qrGeneratedAt?: Date;
+  expiresAt?: Date;
+  scanLogs?: Array<{
+    scannedAt: Date;
+    scannedBy: mongoose.Types.ObjectId;
+    location?: { lat: number; lng: number };
+  }>;
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -397,6 +409,42 @@ const OrderSchema = new Schema<IOrder>(
       type: String,
       trim: true,
     },
+
+    // QR Logistics
+    qrCodeUrl: {
+      type: String,
+      trim: true,
+    },
+    qrData: {
+      type: String,
+      trim: true,
+    },
+    isQrScanned: {
+      type: Boolean,
+      default: false,
+    },
+    qrGeneratedAt: {
+      type: Date,
+    },
+    expiresAt: {
+      type: Date,
+    },
+    scanLogs: [
+      {
+        scannedAt: {
+          type: Date,
+          default: Date.now,
+        },
+        scannedBy: {
+          type: Schema.Types.ObjectId,
+          ref: "Delivery",
+        },
+        location: {
+          lat: Number,
+          lng: Number,
+        },
+      },
+    ],
   },
   {
     timestamps: true,

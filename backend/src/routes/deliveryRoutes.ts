@@ -8,6 +8,7 @@ import * as deliveryProfileController from "../modules/delivery/controllers/deli
 import * as deliveryNotificationController from "../modules/delivery/controllers/deliveryNotificationController";
 import * as deliveryQuickCommerceController from "../modules/delivery/controllers/deliveryQuickCommerceController";
 import * as deliveryEquipmentController from "../modules/delivery/controllers/deliveryEquipmentController";
+import * as qrController from "../modules/delivery/controllers/qrController";
 
 const router = Router();
 
@@ -56,5 +57,9 @@ router.post("/withdraw", deliveryEarningController.requestWithdrawal);
 // ==================== Equipment Deliveries ====================
 router.get("/equipment-deliveries", deliveryEquipmentController.getMyEquipmentDeliveries);
 router.patch("/equipment-deliveries/:id/delivered", deliveryEquipmentController.markEquipmentDelivered);
+
+// ==================== QR Logistics ====================
+router.post("/qr/scan", qrController.scanQr);
+router.patch("/qr/:orderId/status", qrController.updateStatusViaQr);
 
 export default router;

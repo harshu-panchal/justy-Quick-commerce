@@ -671,16 +671,18 @@ export default function DeliveryOrderDetail() {
                                         </div>
 
                                         {!isPickedUp && (
-                                            <button
-                                                onClick={() => handleSellerPickup(seller.sellerId)}
-                                                disabled={!withinRange || isLoading}
-                                                className={`w-full py-2.5 rounded-lg font-semibold text-sm transition-all ${withinRange && !isLoading
-                                                        ? 'bg-green-600 text-white hover:bg-green-700 active:scale-[0.98]'
-                                                        : 'bg-neutral-200 text-neutral-400 cursor-not-allowed'
-                                                    }`}
+                                            <Link
+                                                to="/delivery/scan"
+                                                state={{ 
+                                                    expectedOrderId: id, 
+                                                    mode: 'pickup', 
+                                                    orderType: 'ORDER',
+                                                    sellerId: seller.sellerId 
+                                                }}
+                                                className={`w-full py-3 rounded-xl font-black text-center transition-all bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.98] shadow-lg shadow-blue-600/20`}
                                             >
-                                                {isLoading ? 'Confirming...' : withinRange ? 'Confirm Pickup' : 'Move within 500m to pickup'}
-                                            </button>
+                                                START PICKUP
+                                            </Link>
                                         )}
                                     </div>
                                 );

@@ -96,6 +96,7 @@ import * as subscriptionPlanController from "../modules/admin/controllers/adminS
 // Equipment Marketplace Controllers
 import * as adminEquipmentController from "../modules/admin/controllers/adminEquipmentController";
 import * as adminRefundController from "../modules/admin/controllers/adminRefundController";
+import * as qrController from "../modules/delivery/controllers/qrController";
 
 const router = Router();
 
@@ -444,6 +445,7 @@ router.get("/equipment/orders", adminEquipmentController.getAllEquipmentOrders);
 router.patch("/equipment/orders/assign-delivery", adminEquipmentController.assignDeliveryBoy);
 router.patch("/equipment/orders/:id/approve", adminEquipmentController.approveEquipmentOrder);
 router.patch("/equipment/orders/:id/reject", adminEquipmentController.rejectEquipmentOrder);
+router.post("/equipment/orders/:id/regenerate-qr", qrController.regenerateQr);
 
 // Refund Management
 router.get("/equipment/refunds", adminRefundController.getAllRefundRequests);

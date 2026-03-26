@@ -1,7 +1,8 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { getOrderById, updateOrderStatus, OrderDetail } from '../../../services/api/orderService';
+import { getOrderById, updateOrderStatus, OrderDetail, regenerateOrderQR } from '../../../services/api/orderService';
 import jsPDF from 'jspdf';
+import InvoiceModal from '../../../components/Invoice/InvoiceModal';
 
 export default function SellerOrderDetail() {
   const { id } = useParams<{ id: string }>();
@@ -10,6 +11,8 @@ export default function SellerOrderDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [orderStatus, setOrderStatus] = useState<string>('Out For Delivery');
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+  const [isRegeneratingQR, setIsRegeneratingQR] = useState(false);
 
   // Fetch order detail from API
   useEffect(() => {
@@ -307,7 +310,24 @@ export default function SellerOrderDetail() {
   };
 
   const handlePrint = () => {
-    window.print();
+    setIsInvoiceModalOpen(true);
+  };
+
+  const handleRegenerateQR = async () => {
+    if (!id || isRegeneratingQR) return;
+    setIsRegeneratingQR(true);
+    try {
+      const response = await regenerateOrderQR(id);
+      if (response.success && response.data) {
+        setOrderDetail(prev => prev ? { ...prev, qrCodeUrl: response.data.qrCodeUrl } : null);
+      } else {
+        alert(response.message || 'Failed to regenerate QR');
+      }
+    } catch (err: any) {
+      alert(err.message || 'Failed to regenerate QR');
+    } finally {
+      setIsRegeneratingQR(false);
+    }
   };
 
   const getStatusBadgeClass = (status: string) => {
@@ -415,11 +435,31 @@ export default function SellerOrderDetail() {
                 <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
                 <rect x="6" y="14" width="12" height="8" />
               </svg>
-              Print Invoice
+              View & Print Invoice
             </button>
           </div>
         </div>
       </div>
+
+      {/* QR Code Quick View (Additive) */}
+      {orderDetail.qrCodeUrl && (
+        <div className="bg-white mb-6 p-4 rounded-lg shadow-sm border border-neutral-200 flex flex-col sm:flex-row items-center gap-4">
+          <div className="p-2 border border-neutral-100 rounded-lg bg-gray-50">
+            <img src={orderDetail.qrCodeUrl} alt="QR" className="w-32 h-32 object-contain" />
+          </div>
+          <div className="flex-1 text-center sm:text-left">
+            <h3 className="font-bold text-neutral-800">Logistics QR Active</h3>
+            <p className="text-sm text-neutral-500 mb-2">Scan this QR to mark as Picked Up or Delivered.</p>
+            <button 
+              onClick={handleRegenerateQR}
+              disabled={isRegeneratingQR}
+              className="text-xs font-bold text-teal-600 hover:text-teal-700 uppercase tracking-wider disabled:opacity-50"
+            >
+              {isRegeneratingQR ? 'Regenerating...' : 'Regenerate QR'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* View Order Details Section */}
       <div className="bg-white rounded-lg shadow-sm border border-neutral-200 overflow-hidden">
@@ -548,6 +588,14 @@ export default function SellerOrderDetail() {
           <span className="font-semibold text-teal-600">JYASTI builds trust - 10 Minute App</span>
         </p>
       </footer>
+
+      {orderDetail && (
+        <InvoiceModal 
+          isOpen={isInvoiceModalOpen} 
+          onClose={() => setIsInvoiceModalOpen(false)} 
+          order={orderDetail} 
+        />
+      )}
     </div>
   );
 }

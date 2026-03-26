@@ -8,6 +8,7 @@ export default function DeliveryMenu() {
   const menuItems = [
     { id: "menu-1", title: "Profile", route: "/delivery/profile" },
     { id: "menu-equip", title: "Equipment Deliveries", route: "/delivery/equipment/orders" },
+    { id: "menu-scan", title: "Scan QR Code", route: "/delivery/scan" },
     { id: "menu-w", title: "Wallet", route: "/delivery/wallet" },
     { id: "menu-cod", title: "COD Collection", route: "/delivery/cod" },
     { id: "menu-history", title: "Delivery History", route: "/delivery/orders/all" },
@@ -61,6 +62,16 @@ export default function DeliveryMenu() {
             <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
             <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
             <line x1="12" y1="22.08" x2="12" y2="12"></line>
+          </svg>
+        );
+      case "menu-scan": // Scan QR
+        return (
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 7V5a2 2 0 0 1 2-2h2" />
+            <path d="M17 3h2a2 2 0 0 1 2 2v2" />
+            <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
+            <path d="M3 21h2a2 2 0 0 1 2-2" />
+            <rect x="7" y="7" width="10" height="10" rx="1" />
           </svg>
         );
       case "menu-w": // Wallet

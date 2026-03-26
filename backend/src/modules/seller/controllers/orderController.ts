@@ -6,6 +6,7 @@ import Seller from "../../../models/Seller";
 import WalletTransaction from "../../../models/WalletTransaction";
 import { notifyDeliveryBoysOfNewOrder } from "../../../services/orderNotificationService";
 import { Server as SocketIOServer } from "socket.io";
+import { generateAndAttachQr } from "../../../services/qrService";
 
 /**
  * Get seller's orders with filters, sorting, and pagination
@@ -296,10 +297,18 @@ export const updateOrderStatus = asyncHandler(
             })
             .lean();
 
-          if (fullOrder) {
-            await notifyDeliveryBoysOfNewOrder(io, fullOrder);
-            console.log(`Delivery notification triggered for Accepted order ${order.orderNumber}`);
-          }
+            if (fullOrder) {
+              await notifyDeliveryBoysOfNewOrder(io, fullOrder);
+              console.log(`Delivery notification triggered for Accepted order ${order.orderNumber}`);
+
+              // Generate QR Code for Logistics - wait for it to be ready for the invoice
+              try {
+                await generateAndAttachQr(order._id.toString(), 'ORDER');
+                console.log(`QR generated for accepted order: ${order.orderNumber}`);
+              } catch (qrErr) {
+                console.error('Failed to generate QR for order:', order.orderNumber, qrErr);
+              }
+            }
         }
       } catch (notifyError) {
         console.error('Error notifying delivery boys on seller acceptance:', notifyError);

@@ -107,6 +107,15 @@ export const useDeliveryOrderNotifications = () => {
             });
         });
 
+        socket.on('delivery-notification', (data: any) => {
+            console.log('🔔 Manual assignment notification received:', data);
+            if (data.type === 'NEW_ASSIGNMENT') {
+                // For manual assignments, just show a simple alert or toast
+                // We could also add to queue with a special flag
+                alert(`New Order Assigned: ${data.orderNumber}\nFrom: ${data.seller.name}\nDest: ${data.address}`);
+            }
+        });
+
         socket.on('order-accepted', (data: { orderId: string; acceptedBy: string }) => {
             console.log('✅ Order accepted by another delivery boy:', data);
 

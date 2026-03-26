@@ -35,7 +35,7 @@ export interface IEquipmentOrder extends Document {
   razorpayPaymentId?: string;
   razorpaySignature?: string;
 
-  status: "pending" | "approved" | "paid" | "rejected" | "cancelled" | "assigned" | "delivered" | "refunded";
+  status: "pending" | "approved" | "paid" | "rejected" | "cancelled" | "assigned" | "picked_up" | "delivered" | "refunded";
   rejectionReason?: string;
   cancellationReason?: string;
   refundStatus: "NONE" | "PENDING" | "REFUNDED" | "REJECTED";
@@ -45,6 +45,18 @@ export interface IEquipmentOrder extends Document {
 
   deliveryBoy?: mongoose.Types.ObjectId;
   assignedAt?: Date;
+
+  // QR Logistics
+  qrCodeUrl?: string;
+  qrData?: string;
+  isQrScanned?: boolean;
+  qrGeneratedAt?: Date;
+  expiresAt?: Date;
+  scanLogs?: Array<{
+    scannedAt: Date;
+    scannedBy: mongoose.Types.ObjectId;
+    location?: { lat: number; lng: number };
+  }>;
 
   createdAt: Date;
   updatedAt: Date;
@@ -119,7 +131,7 @@ const EquipmentOrderSchema = new Schema<IEquipmentOrder>(
 
     status: {
       type: String,
-      enum: ["pending", "approved", "paid", "rejected", "cancelled", "assigned", "delivered", "refunded"],
+      enum: ["pending", "approved", "paid", "rejected", "cancelled", "assigned", "picked_up", "delivered", "refunded"],
       default: "pending",
     },
     rejectionReason: { type: String },
@@ -145,6 +157,42 @@ const EquipmentOrderSchema = new Schema<IEquipmentOrder>(
       ref: "Delivery",
     },
     assignedAt: { type: Date },
+
+    // QR Logistics
+    qrCodeUrl: {
+      type: String,
+      trim: true,
+    },
+    qrData: {
+      type: String,
+      trim: true,
+    },
+    isQrScanned: {
+      type: Boolean,
+      default: false,
+    },
+    qrGeneratedAt: {
+      type: Date,
+    },
+    expiresAt: {
+      type: Date,
+    },
+    scanLogs: [
+      {
+        scannedAt: {
+          type: Date,
+          default: Date.now,
+        },
+        scannedBy: {
+          type: Schema.Types.ObjectId,
+          ref: "Delivery",
+        },
+        location: {
+          lat: Number,
+          lng: Number,
+        },
+      },
+    ],
   },
   {
     timestamps: true,

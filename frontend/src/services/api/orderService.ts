@@ -72,6 +72,7 @@ export interface OrderDetail {
   paymentMethod: string;
   paymentStatus: string;
   deliveryAddress: DeliveryAddress;
+  qrCodeUrl?: string;
 }
 
 export interface UpdateOrderStatusData {
@@ -122,3 +123,12 @@ export const updateOrderStatus = async (id: string, data: UpdateOrderStatusData)
   const response = await api.patch<ApiResponse<{ id: string; status: string }>>(`/orders/${id}/status`, data);
   return response.data;
 };
+
+/**
+ * Regenerate Order QR
+ */
+export const regenerateOrderQR = async (id: string): Promise<ApiResponse<{ qrCodeUrl: string }>> => {
+  const response = await api.post<ApiResponse<{ qrCodeUrl: string }>>(`/orders/${id}/regenerate-qr`, { orderType: 'ORDER' });
+  return response.data;
+};
+

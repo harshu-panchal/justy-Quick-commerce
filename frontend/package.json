@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host",
     "build": "tsc && vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
@@ -13,6 +13,8 @@
   },
   "dependencies": {
     "@react-google-maps/api": "^2.20.8",
+    "@zxing/browser": "^0.1.5",
+    "@zxing/library": "^0.21.3",
     "agora-rtc-sdk-ng": "^4.24.3",
     "apexcharts": "^5.3.6",
     "axios": "^1.13.2",
@@ -20,6 +22,7 @@
     "firebase": "^12.8.0",
     "framer-motion": "^10.16.16",
     "gsap": "^3.12.5",
+    "html5-qrcode": "^2.3.8",
     "jspdf": "^4.1.0",
     "leaflet": "^1.9.4",
     "lottie-react": "^2.4.1",
@@ -28,6 +31,7 @@
     "react-dom": "^18.2.0",
     "react-leaflet": "^4.2.1",
     "react-router-dom": "^6.20.0",
+    "react-to-print": "^3.3.0",
     "recharts": "^3.6.0",
     "socket.io-client": "^4.8.1",
     "tailwind-merge": "^2.2.0"

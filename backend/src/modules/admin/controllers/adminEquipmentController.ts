@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import { EquipmentItem, EquipmentOrder, Delivery } from '../../../models';
 import * as paymentService from '../../../services/equipmentPaymentService';
+import { generateAndAttachQr } from '../../../services/qrService';
 
 /**
  * Manage Equipment Items
@@ -100,7 +101,18 @@ export const assignDeliveryBoy = async (req: Request, res: Response) => {
         order.status = 'assigned';
         await order.save();
 
-        return res.status(200).json({ success: true, message: 'Delivery boy assigned successfully', data: order });
+        // Notify delivery boy
+        const io = req.app.get("io");
+        if (io) {
+            const { notifyDeliveryBoyOfAssignment } = await import("../../../services/deliveryNotificationService");
+            await notifyDeliveryBoyOfAssignment(io, deliveryBoyId, order, "EQUIPMENT");
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "Delivery boy assigned successfully",
+            data: order,
+        });
     } catch (error: any) {
         return res.status(400).json({ success: false, message: error.message });
     }
@@ -117,6 +129,13 @@ export const approveEquipmentOrder = async (req: Request, res: Response) => {
 
         order.status = 'approved';
         await order.save();
+
+        try {
+            await generateAndAttachQr(order._id.toString(), 'EQUIPMENT');
+            console.log(`QR generated for approved equipment order: ${order.orderNumber}`);
+        } catch (qrErr) {
+            console.error('Failed to generate QR for equipment order:', order.orderNumber, qrErr);
+        }
 
         return res.status(200).json({ success: true, message: 'Order approved successfully', data: order });
     } catch (error: any) {

@@ -138,13 +138,29 @@ export default function DeliveryEquipmentOrders() {
                       </div>
                     </div>
                     
-                    <button
-                      onClick={() => handleComplete(order._id)}
-                      disabled={completing === order._id}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-black shadow-lg shadow-blue-600/20 transition-all active:scale-95 disabled:bg-neutral-300"
-                    >
-                      {completing === order._id ? "PROCESSING..." : order.paymentMethod === 'COD' ? "COLLECT CASH & DELIVER" : "CONFIRM DELIVERY"}
-                    </button>
+                    <div className="flex gap-2">
+                      {order.status === 'assigned' ? (
+                        <Link
+                          to="/delivery/scan"
+                          state={{ 
+                            expectedOrderId: order._id, 
+                            mode: 'pickup', 
+                            orderType: 'EQUIPMENT' 
+                          }}
+                          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-black shadow-lg shadow-blue-600/20 text-center transition-all active:scale-95"
+                        >
+                          START PICKUP
+                        </Link>
+                      ) : (
+                        <button
+                          onClick={() => handleComplete(order._id)}
+                          disabled={completing === order._id}
+                          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-black shadow-lg shadow-blue-600/20 transition-all active:scale-95 disabled:bg-neutral-300"
+                        >
+                          {completing === order._id ? "PROCESSING..." : order.paymentMethod === 'COD' ? "COLLECT CASH & DELIVER" : "CONFIRM DELIVERY"}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>

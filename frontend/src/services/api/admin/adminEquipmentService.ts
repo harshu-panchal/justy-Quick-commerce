@@ -55,6 +55,7 @@ export interface EquipmentOrder {
         latitude?: number;
         longitude?: number;
     };
+    qrCodeUrl?: string;
     createdAt: string;
 }
 
@@ -102,6 +103,11 @@ export const approveEquipmentOrder = async (id: string) => {
 
 export const rejectEquipmentOrder = async (id: string, reason: string) => {
     const response = await api.patch(`/admin/equipment/orders/${id}/reject`, { reason });
+    return response.data;
+};
+
+export const regenerateEquipmentQR = async (id: string) => {
+    const response = await api.post(`/admin/equipment/orders/${id}/regenerate-qr`, { orderType: 'EQUIPMENT' });
     return response.data;
 };
 

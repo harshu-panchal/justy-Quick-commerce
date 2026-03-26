@@ -4,6 +4,7 @@ import {
   getOrderById,
   updateOrderStatus,
 } from "../modules/seller/controllers/orderController";
+import * as qrController from "../modules/delivery/controllers/qrController";
 import { authenticate, requireUserType } from "../middleware/auth";
 
 const router = Router();
@@ -20,5 +21,8 @@ router.get("/:id", getOrderById);
 
 // Update order status
 router.patch("/:id/status", updateOrderStatus);
+
+// QR Logistics
+router.post("/:id/regenerate-qr", qrController.regenerateQr);
 
 export default router;

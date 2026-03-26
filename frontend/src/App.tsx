@@ -79,6 +79,7 @@ const DeliveryLogin = lazy(() => import("./modules/delivery/pages/DeliveryLogin"
 const DeliverySignUp = lazy(() => import("./modules/delivery/pages/DeliverySignUp"));
 const DeliveryCOD = lazy(() => import("./modules/delivery/pages/DeliveryCOD"));
 const DeliverySettlementHistory = lazy(() => import("./modules/delivery/pages/DeliverySettlementHistory"));
+const DeliveryQrScanner = lazy(() => import("./modules/delivery/pages/DeliveryQrScanner"));
 
 // Lazy load seller routes
 const SellerLayout = lazy(() => import("./modules/seller/components/SellerLayout"));
@@ -316,6 +317,7 @@ function App() {
                                           <Route path="equipment/orders" element={<DeliveryEquipmentOrders />} />
                                           <Route path="cod" element={<DeliveryCOD />} />
                                           <Route path="settlement-history" element={<DeliverySettlementHistory />} />
+                                          <Route path="scan" element={<DeliveryQrScanner />} />
                                         </Routes>
                                       </DeliveryLayout>
                                     </Suspense>

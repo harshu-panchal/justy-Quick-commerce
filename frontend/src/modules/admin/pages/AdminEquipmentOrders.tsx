@@ -297,36 +297,70 @@ export default function AdminEquipmentOrders() {
               <div className="space-y-3">
                 <label className="block text-[11px] font-black text-neutral-400 uppercase">Payout Mode</label>
                 <div className="flex flex-col gap-2">
-                  {['FIXED_PER_ORDER', 'FIXED_PER_ITEM', 'PERCENTAGE'].map(mode => (
+                  {[
+                    { value: 'FIXED_SALARY', label: '💰 Fixed Salary (Monthly/Daily)' },
+                    { value: 'DISTANCE_BASED', label: '📍 Distance Based (₹/km rate)' },
+                  ].map(({ value: mode, label }) => (
                     <label key={mode} className="flex items-center gap-2 cursor-pointer group">
                       <input 
                         type="radio" 
                         name="payMode" 
                         checked={commissionConfig.payMode === mode}
-                        onChange={() => setCommissionConfig({...commissionConfig, payMode: mode})}
+                        onChange={() => setCommissionConfig({...commissionConfig, payMode: mode as any})}
                         className="w-4 h-4 text-teal-600 focus:ring-teal-500 border-neutral-300"
                       />
                       <span className={`text-xs font-bold transition-colors ${commissionConfig.payMode === mode ? 'text-teal-700' : 'text-neutral-500 hover:text-neutral-700'}`}>
-                        {mode.replace(/_/g, ' ')}
+                        {label}
                       </span>
                     </label>
                   ))}
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <label className="block text-[11px] font-black text-neutral-400 uppercase">Commission Value</label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 font-bold">
-                    {commissionConfig.payMode === 'PERCENTAGE' ? '%' : '₹'}
-                  </span>
-                  <input 
-                    type="number" 
-                    value={commissionConfig.amount}
-                    onChange={(e) => setCommissionConfig({...commissionConfig, amount: Number(e.target.value)})}
-                    className="w-full pl-8 pr-4 py-3 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-black text-neutral-700 focus:border-teal-600 outline-none"
-                    placeholder="Enter value..."
-                  />
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-[11px] font-black text-neutral-400 uppercase mb-1">
+                      {commissionConfig.payMode === 'FIXED_SALARY' ? 'Fixed Amount per Payout' : 'Fallback Amount'}
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 font-bold">₹</span>
+                      <input 
+                        type="number" 
+                        value={commissionConfig.amount}
+                        onChange={(e) => setCommissionConfig({...commissionConfig, amount: Number(e.target.value)})}
+                        className="w-full pl-8 pr-4 py-3 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-black text-neutral-700 focus:border-teal-600 outline-none"
+                        placeholder="Enter amount..."
+                      />
+                    </div>
+                  </div>
+
+                  {commissionConfig.payMode === 'FIXED_SALARY' && (
+                    <div>
+                      <label className="block text-[11px] font-black text-neutral-400 uppercase mb-1">Salary Duration (Days)</label>
+                      <input 
+                        type="number" 
+                        value={commissionConfig.salaryDays || 30}
+                        onChange={(e) => setCommissionConfig({...commissionConfig, salaryDays: Number(e.target.value)})}
+                        className="w-full px-4 py-3 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-black text-neutral-700 focus:border-teal-600 outline-none"
+                        placeholder="e.g. 30"
+                      />
+                      <p className="text-[10px] text-neutral-400 mt-1 italic">Number of days this salary arrangement covers (e.g. 30 for monthly).</p>
+                    </div>
+                  )}
+
+                  {commissionConfig.payMode === 'DISTANCE_BASED' && (
+                    <div>
+                      <label className="block text-[11px] font-black text-neutral-400 uppercase mb-1">Rate (₹ per KM)</label>
+                      <input 
+                        type="number" 
+                        value={commissionConfig.kmRate || 0}
+                        onChange={(e) => setCommissionConfig({...commissionConfig, kmRate: Number(e.target.value)})}
+                        className="w-full px-4 py-3 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-black text-neutral-700 focus:border-teal-600 outline-none"
+                        placeholder="e.g. 10"
+                      />
+                      <p className="text-[10px] text-neutral-400 mt-1 italic">Specific rate for equipment deliveries. Leave 0 to use global KM rate.</p>
+                    </div>
+                  )}
                 </div>
                 <div className="flex justify-end pt-2">
                   <button 
@@ -339,9 +373,8 @@ export default function AdminEquipmentOrders() {
                 </div>
               </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden">
         <div className="bg-teal-700 text-white px-6 py-4 flex justify-between items-center">
@@ -577,6 +610,38 @@ export default function AdminEquipmentOrders() {
                        </div>
                     )}
                   </div>
+
+                  {/* QR & Invoice Section for Mobile */}
+                  {(order.status === 'approved' || order.status === 'assigned' || order.status === 'delivered') && (
+                    <div className="flex items-center justify-between p-3 bg-neutral-50 rounded-xl border border-neutral-100 mt-1">
+                      <div className="flex items-center gap-3">
+                        {order.qrCodeUrl ? (
+                          <img src={order.qrCodeUrl} alt="QR" className="w-12 h-12 border border-white rounded shadow-sm bg-white" />
+                        ) : (
+                          <div className="w-12 h-12 bg-white border border-neutral-100 rounded flex items-center justify-center text-[8px] text-neutral-400 font-bold uppercase">No QR</div>
+                        )}
+                        <div>
+                          <p className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">Logistics</p>
+                          <p className="text-[10px] font-bold text-neutral-700">QR Code Active</p>
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-2 items-end">
+                        <button
+                          onClick={() => openInvoice(order)}
+                          className="px-3 py-1.5 bg-blue-50 text-blue-600 text-[10px] font-black rounded uppercase tracking-wider active:scale-95 transition-all"
+                        >
+                          Invoice
+                        </button>
+                        <button
+                          onClick={() => handleRegenerateQR(order._id)}
+                          disabled={isRegeneratingQR}
+                          className="text-[9px] font-black text-neutral-400 hover:text-neutral-600 uppercase"
+                        >
+                          {isRegeneratingQR ? 'Updating...' : 'Refresh QR'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

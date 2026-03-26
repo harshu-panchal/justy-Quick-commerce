@@ -1,4 +1,4 @@
-import axios from 'axios';
+﻿import axios from 'axios';
 import Otp from '../models/Otp';
 
 // SMS India HUB Configuration
@@ -205,12 +205,15 @@ function isMockMode(): boolean {
 }
 
 function isDeveloperBypass(otp: string): boolean {
-  // Always allow '1234' or '9999' for development/testing
-  if (otp === '1234' || otp === '9999' || otp === '999999') return true;
-
-  const isMock = process.env.NODE_ENV !== 'production' || process.env.USE_MOCK_OTP === 'true';
+  // Always allow common dev OTPs in non-production or mock mode
+  const isDevOrMock = process.env.NODE_ENV !== 'production' || process.env.USE_MOCK_OTP === 'true';
   const defaultOtp = process.env.DEFAULT_OTP || '9999';
-  return isMock && otp === defaultOtp;
+  
+  if (isDevOrMock) {
+    return otp === '1234' || otp === '9999' || otp === '999999' || otp === defaultOtp;
+  }
+  
+  return false;
 }
 
 // ==========================================

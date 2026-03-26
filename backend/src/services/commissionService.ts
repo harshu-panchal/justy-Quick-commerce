@@ -1235,7 +1235,7 @@ export const processEquipmentDeliveryCommission = async (equipmentOrderId: strin
 
     if (!order.deliveryBoy) return null;
 
-    // Check if commission already exists
+    // Check if commission already exists (idempotent)
     const existing = await Commission.findOne({
       equipmentOrder: equipmentOrderId,
       type: 'EQUIPMENT_DELIVERY'
@@ -1255,23 +1255,75 @@ export const processEquipmentDeliveryCommission = async (equipmentOrderId: strin
     }
 
     let commissionAmount = 0;
-    const { payMode, amount } = config;
+    const { payMode, amount, kmRate: configKmRate } = config;
 
     console.log(`[Equipment Commission] Calculating for order ${order.orderNumber}. Mode: ${payMode}, Amount: ${amount}`);
 
-    if (payMode === 'FIXED_PER_ORDER') {
+    if (payMode === 'FIXED_SALARY') {
+      // Flat salary per delivery trip
       commissionAmount = amount;
-    } else if (payMode === 'FIXED_PER_ITEM') {
-      const totalQty = order.items.reduce((sum: number, item: any) => sum + (item.quantity || 1), 0);
-      commissionAmount = amount * totalQty;
-      console.log(`[Equipment Commission] Item based: ${totalQty} items x ₹${amount}`);
-    } else if (payMode === 'PERCENTAGE') {
-      commissionAmount = (order.total * amount) / 100;
-      console.log(`[Equipment Commission] Percentage based: ${amount}% of ₹${order.total}`);
+      console.log(`[Equipment Commission] Fixed salary: ₹${amount} (Duration: ${config.salaryDays || 30} days)`);
+    } else if (payMode === 'DISTANCE_BASED') {
+      // Use equipment-specific kmRate if set, otherwise global rate
+      const kmRate = (configKmRate && configKmRate > 0) ? configKmRate : (settings.deliveryConfig?.deliveryBoyKmRate || 0);
+      const distanceKm = (order as any).deliveryDistanceKm || 0;
+      
+      if (distanceKm > 0 && kmRate > 0) {
+        commissionAmount = distanceKm * kmRate;
+        console.log(`[Equipment Commission] Distance based: ${distanceKm}km x ₹${kmRate}/km = ₹${commissionAmount}`);
+      } else {
+        // Fallback to fixed amount if distance is not available
+        commissionAmount = amount;
+        console.warn(`[Equipment Commission] Distance/rate not set, falling back to ₹${amount}`);
+      }
     }
+
 
     commissionAmount = Math.round(commissionAmount * 100) / 100;
     console.log(`[Equipment Commission] Final Amount: ₹${commissionAmount}`);
+
+    // COD Alignment: update delivery boy's cash tracking (same as processCODOrderDelivery for regular orders)
+    if (order.paymentMethod === 'COD') {
+      const orderTotal = Math.round((order.total || 0) * 100) / 100;
+      
+      // USER REQUEST: Full collected cash should show in "Admin Payout" section.
+      // We don't subtract commissionAmount from debt here because the user wants total cash in hand to be tracked.
+      const amountOwed = orderTotal; 
+      
+      console.log(`[Equipment COD Tracking] Order: ${order.orderNumber}, Total: ₹${orderTotal}, Commission: ₹${commissionAmount}, Owed to Admin: ₹${amountOwed}`);
+
+      // 1. Update Delivery Boy's Cash Counters (use $inc for safety)
+      await Delivery.findByIdAndUpdate(order.deliveryBoy, {
+        $inc: {
+          cashCollected: orderTotal,
+          pendingAdminPayout: amountOwed
+        }
+      });
+
+      // 2. Update Platform Wallet (so admin sees it in the dashboard)
+      const PlatformWallet = (await import("../models/PlatformWallet")).default;
+      const platformWallet = await PlatformWallet.findOne();
+      if (platformWallet) {
+        await PlatformWallet.findByIdAndUpdate(platformWallet._id, {
+          $inc: {
+            pendingFromDeliveryBoy: amountOwed,
+            deliveryBoyPendingPayouts: commissionAmount
+          }
+        });
+      } else {
+        // Create wallet if it doesn't exist
+        await PlatformWallet.create({
+          pendingFromDeliveryBoy: amountOwed,
+          deliveryBoyPendingPayouts: commissionAmount,
+          totalPlatformEarning: 0,
+          currentPlatformBalance: 0,
+          totalAdminEarning: 0,
+          sellerPendingPayouts: 0
+        });
+      }
+      
+      console.log(`[Equipment COD Tracking] SUCCESS: cashCollected +₹${orderTotal}, pendingAdminPayout +₹${amountOwed}`);
+    }
 
     // Create Commission Record
     const commission = await Commission.create({
@@ -1280,7 +1332,7 @@ export const processEquipmentDeliveryCommission = async (equipmentOrderId: strin
       deliveryBoy: order.deliveryBoy,
       type: 'EQUIPMENT_DELIVERY',
       orderAmount: order.total,
-      commissionRate: payMode === 'PERCENTAGE' ? amount : 0,
+      commissionRate: payMode === 'DISTANCE_BASED' ? (configKmRate && configKmRate > 0 ? configKmRate : (settings.deliveryConfig?.deliveryBoyKmRate || 0)) : 0,
       commissionAmount,
       status: 'Paid',
       paidAt: new Date()
@@ -1304,3 +1356,4 @@ export const processEquipmentDeliveryCommission = async (equipmentOrderId: strin
     return null;
   }
 };
+

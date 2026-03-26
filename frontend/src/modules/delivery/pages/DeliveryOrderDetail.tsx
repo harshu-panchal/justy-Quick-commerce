@@ -1,11 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-<<<<<<< Updated upstream
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { getOrderDetails, updateOrderStatus, getSellerLocationsForOrder, sendDeliveryOtp, verifyDeliveryOtp, updateDeliveryLocation, checkSellerProximity, confirmSellerPickup, checkCustomerProximity } from '../../../services/api/delivery/deliveryService';
-=======
-import { useParams, useNavigate } from 'react-router-dom';
 import { getOrderDetails, updateOrderStatus, getSellerLocationsForOrder, sendDeliveryOtp, verifyDeliveryOtp, updateDeliveryLocation, checkSellerProximity, confirmSellerPickup, checkCustomerProximity, initiateOrderSettlement, initiateOrderHandover } from '../../../services/api/delivery/deliveryService';
->>>>>>> Stashed changes
 import deliveryIcon from '@assets/deliveryboy/deliveryIcon.png';
 import GoogleMapsTracking from '../../../components/GoogleMapsTracking';
 
@@ -120,6 +115,7 @@ export default function DeliveryOrderDetail() {
     const [handoverOtp, setHandoverOtp] = useState<string | null>(null);
     const [initiatingHandover, setInitiatingHandover] = useState(false);
 
+
     // New state for seller proximity and pickup tracking
     const [sellerProximity, setSellerProximity] = useState<Record<string, { withinRange: boolean; distance: number }>>({});
     const [pickupLoading, setPickupLoading] = useState<Record<string, boolean>>({});
@@ -211,9 +207,9 @@ export default function DeliveryOrderDetail() {
             setInitiatingSettlement(true);
             const result = await initiateOrderSettlement(id);
             if (result.success && result.otp) {
-               setSettlementOtp(result.otp);
+                setSettlementOtp(result.otp);
             } else {
-               setSettlementOtp(result.data?.otp || null);
+                setSettlementOtp(result.data?.otp || null);
             }
             alert('Settlement OTP generated! Please show this to the warehouse manager.');
             await fetchOrder();
@@ -241,6 +237,8 @@ export default function DeliveryOrderDetail() {
             setInitiatingHandover(false);
         }
     };
+
+
 
     // Handle seller pickup confirmation
     const handleSellerPickup = async (sellerId: string) => {
@@ -715,7 +713,7 @@ export default function DeliveryOrderDetail() {
                                                 <p className="text-sm text-neutral-600">{seller.address}, {seller.city}</p>
                                                 {distance !== undefined && (
                                                     <p className={`text-xs mt-1 font-medium ${withinRange ? 'text-green-600' :
-                                                            distance < 1000 ? 'text-yellow-600' : 'text-red-600'
+                                                        distance < 1000 ? 'text-yellow-600' : 'text-red-600'
                                                         }`}>
                                                         {distance < 1000 ? `${distance}m away` : `${(distance / 1000).toFixed(1)}km away`}
                                                     </p>
@@ -726,11 +724,11 @@ export default function DeliveryOrderDetail() {
                                         {!isPickedUp && (
                                             <Link
                                                 to="/delivery/scan"
-                                                state={{ 
-                                                    expectedOrderId: id, 
-                                                    mode: 'pickup', 
+                                                state={{
+                                                    expectedOrderId: id,
+                                                    mode: 'pickup',
                                                     orderType: 'ORDER',
-                                                    sellerId: seller.sellerId 
+                                                    sellerId: seller.sellerId
                                                 }}
                                                 className={`w-full py-3 rounded-xl font-black text-center transition-all bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.98] shadow-lg shadow-blue-600/20`}
                                             >
@@ -904,7 +902,7 @@ export default function DeliveryOrderDetail() {
                         {/* Distance indicator */}
                         {customerProximity && (
                             <p className={`text-xs mb-2 font-medium ${customerProximity.withinRange ? 'text-green-600' :
-                                    customerProximity.distance < 1000 ? 'text-yellow-600' : 'text-red-600'
+                                customerProximity.distance < 1000 ? 'text-yellow-600' : 'text-red-600'
                                 }`}>
                                 {customerProximity.distance < 1000
                                     ? `${customerProximity.distance}m from customer`
@@ -930,8 +928,8 @@ export default function DeliveryOrderDetail() {
                                     onClick={handleSendOtp}
                                     disabled={!getOtpEnabled || otpSending}
                                     className={`flex-1 py-3 rounded-xl font-semibold transition-all ${getOtpEnabled && !otpSending
-                                            ? 'bg-green-600 text-white hover:bg-green-700 active:scale-[0.98]'
-                                            : 'bg-neutral-200 text-neutral-400 cursor-not-allowed'
+                                        ? 'bg-green-600 text-white hover:bg-green-700 active:scale-[0.98]'
+                                        : 'bg-neutral-200 text-neutral-400 cursor-not-allowed'
                                         }`}
                                 >
                                     {otpSending ? 'Sending...' : getOtpEnabled ? 'Get OTP' : 'Move within 500m to get OTP'}
@@ -1030,7 +1028,7 @@ export default function DeliveryOrderDetail() {
                             <Icons.Truck className="text-orange-500" size={20} />
                             <p className="text-sm font-bold text-neutral-900 uppercase tracking-tight">Warehouse Settlement</p>
                         </div>
-                        
+
                         {!settlementOtp ? (
                             <div className="space-y-3">
                                 <p className="text-xs text-neutral-500 leading-relaxed">
@@ -1065,7 +1063,7 @@ export default function DeliveryOrderDetail() {
 
             {/* Settled Success Indicator */}
             {order.isSettledWithWarehouse && (
-                 <div className="px-4 mt-2">
+                <div className="px-4 mt-2">
                     <div className="bg-green-50 border border-green-100 rounded-xl p-4 flex items-center gap-3">
                         <Icons.CheckCircle className="text-green-500" size={24} />
                         <div>
@@ -1073,7 +1071,7 @@ export default function DeliveryOrderDetail() {
                             <p className="text-xs text-green-600">Cash deposit confirmed by manager.</p>
                         </div>
                     </div>
-                 </div>
+                </div>
             )}
         </div>
     );

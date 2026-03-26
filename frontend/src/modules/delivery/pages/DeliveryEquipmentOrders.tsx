@@ -78,6 +78,7 @@ export default function DeliveryEquipmentOrders() {
                 </div>
                 
                 <div className="p-4 space-y-3">
+                  {/* Seller Info */}
                   <div className="flex gap-3">
                     <div className="w-8 h-8 bg-blue-50 text-blue-600 rounded flex items-center justify-center flex-shrink-0">
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
@@ -89,16 +90,31 @@ export default function DeliveryEquipmentOrders() {
                     </div>
                   </div>
 
+                  {/* Pickup Address (if set — admin/warehouse) */}
+                  {order.pickupAddress && (
+                    <div className="flex gap-3">
+                      <div className="w-8 h-8 bg-orange-50 text-orange-600 rounded flex items-center justify-center flex-shrink-0 text-base">
+                        📦
+                      </div>
+                      <div>
+                        <div className="text-[10px] text-orange-500 font-black uppercase tracking-widest">Pickup From (Admin/Warehouse)</div>
+                        <div className="text-sm font-bold text-neutral-800">{order.pickupAddress}</div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Drop / Delivery Address */}
                   <div className="flex gap-3">
                     <div className="w-8 h-8 bg-teal-50 text-teal-600 rounded flex items-center justify-center flex-shrink-0">
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
                     </div>
                     <div>
-                      <div className="text-[10px] text-neutral-400 font-bold uppercase">Delivery Address</div>
-                      <div className="text-sm text-neutral-700">{order.sellerAddress}</div>
+                      <div className="text-[10px] text-teal-600 font-black uppercase tracking-widest">Drop / Deliver To</div>
+                      <div className="text-sm text-neutral-700">{order.sellerAddress || order.deliveryAddress?.address}</div>
                     </div>
                   </div>
 
+                  {/* Items */}
                   <div className="bg-neutral-50 p-3 rounded-lg border border-neutral-100">
                     <div className="text-[10px] text-neutral-400 font-bold uppercase mb-2">Items to Deliver</div>
                     <ul className="space-y-1">
@@ -121,6 +137,7 @@ export default function DeliveryEquipmentOrders() {
                   </div>
                 </div>
 
+
                 {order.status !== 'delivered' && (
                   <div className="p-4 bg-blue-50/50 border-t border-blue-100 flex flex-col gap-4">
                     <div className="flex justify-between items-center">
@@ -141,11 +158,26 @@ export default function DeliveryEquipmentOrders() {
                     <div className="flex gap-2">
                       {order.status === 'assigned' ? (
                         <div className="flex flex-col w-full gap-3">
-                           {order.estimatedCommission > 0 && (
-                             <div className="flex items-center justify-between bg-teal-50 px-4 py-2 rounded-lg border border-teal-100">
-                               <span className="text-[10px] font-black text-teal-600 uppercase">Expected Payout</span>
-                               <span className="text-sm font-black text-teal-800">₹{order.estimatedCommission}</span>
+                           {order.commissionConfig?.payMode === 'FIXED_SALARY' ? (
+                             <div className="flex items-center justify-between bg-teal-50 px-4 py-2 rounded-lg border border-teal-100 w-full mb-2">
+                               <span className="text-[10px] font-black text-teal-600 uppercase">💼 Salary Based</span>
+                               <span className="text-[10px] font-black text-teal-800 italic uppercase">({order.commissionConfig.salaryDays} Days Arrangement)</span>
                              </div>
+                           ) : order.commissionConfig?.payMode === 'DISTANCE_BASED' ? (
+                             <div className="flex items-center justify-between bg-teal-50 px-4 py-2 rounded-lg border border-teal-100 w-full mb-2">
+                               <span className="text-[10px] font-black text-teal-600 uppercase">📍 Distance Based</span>
+                               <div className="text-right">
+                                 <span className="text-[9px] block font-bold text-teal-700/60 uppercase tracking-tighter line-height-1 mt-[-2px]">Payout Rate: ₹{order.commissionConfig.kmRate}/km</span>
+                                 <span className="text-sm font-black text-teal-800 block mt-[-4px]">Est. ₹{order.estimatedCommission}</span>
+                               </div>
+                             </div>
+                           ) : (
+                             order.estimatedCommission > 0 && (
+                               <div className="flex items-center justify-between bg-teal-50 px-4 py-2 rounded-lg border border-teal-100 w-full mb-2">
+                                 <span className="text-[10px] font-black text-teal-600 uppercase">Expected Payout</span>
+                                 <span className="text-sm font-black text-teal-800">₹{order.estimatedCommission}</span>
+                               </div>
+                             )
                            )}
                            <Link
                              to="/delivery/scan"
@@ -161,11 +193,30 @@ export default function DeliveryEquipmentOrders() {
                         </div>
                       ) : (
                         <div className="flex flex-col w-full gap-3">
-                           {order.status === 'picked_up' && order.estimatedCommission > 0 && (
-                             <div className="flex items-center justify-between bg-teal-50 px-4 py-2 rounded-lg border border-teal-100">
-                               <span className="text-[10px] font-black text-teal-600 uppercase">Payout on Delivery</span>
-                               <span className="text-sm font-black text-teal-800">₹{order.estimatedCommission}</span>
-                             </div>
+                           {order.status === 'picked_up' && (
+                             <>
+                               {order.commissionConfig?.payMode === 'FIXED_SALARY' ? (
+                                 <div className="flex items-center justify-between bg-teal-50 px-4 py-2 rounded-lg border border-teal-100 w-full mb-2">
+                                   <span className="text-[10px] font-black text-teal-600 uppercase">💼 Salary Based</span>
+                                   <span className="text-[10px] font-black text-teal-800 italic uppercase">({order.commissionConfig.salaryDays} Days)</span>
+                                 </div>
+                               ) : order.commissionConfig?.payMode === 'DISTANCE_BASED' ? (
+                                 <div className="flex items-center justify-between bg-teal-50 px-4 py-2 rounded-lg border border-teal-100 w-full mb-2">
+                                   <div className="flex flex-col">
+                                     <span className="text-[10px] font-black text-teal-600 uppercase">📍 Distance Tracking</span>
+                                     <span className="text-[9px] font-bold text-teal-600/60 uppercase">₹{order.commissionConfig.kmRate}/km</span>
+                                   </div>
+                                   <span className="text-sm font-black text-teal-800">Est. ₹{order.estimatedCommission}</span>
+                                 </div>
+                               ) : (
+                                 order.estimatedCommission > 0 && (
+                                   <div className="flex items-center justify-between bg-teal-50 px-4 py-2 rounded-lg border border-teal-100 w-full mb-2">
+                                     <span className="text-[10px] font-black text-teal-600 uppercase">Payout on Delivery</span>
+                                     <span className="text-sm font-black text-teal-800">₹{order.estimatedCommission}</span>
+                                   </div>
+                                 )
+                               )}
+                             </>
                            )}
                            {order.status === 'delivered' && order.earnedCommission > 0 && (
                              <div className="flex items-center justify-between bg-green-50 px-4 py-2 rounded-lg border border-green-100">

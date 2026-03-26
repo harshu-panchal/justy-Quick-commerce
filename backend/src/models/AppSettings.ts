@@ -151,8 +151,10 @@ export interface IAppSettings extends Document {
   // Equipment Delivery Commission Settings
   equipmentDeliveryCommission?: {
     enabled: boolean;
-    payMode: 'FIXED_PER_ORDER' | 'FIXED_PER_ITEM' | 'PERCENTAGE';
+    payMode: 'FIXED_SALARY' | 'DISTANCE_BASED';
     amount: number;
+    salaryDays?: number;
+    kmRate?: number;
   };
 
   createdAt: Date;
@@ -472,13 +474,15 @@ const AppSettingsSchema = new Schema<IAppSettings>(
     },
     // Equipment Delivery Commission Settings
     equipmentDeliveryCommission: {
-      enabled: { type: Boolean, default: true },
+      enabled: { type: Boolean, default: false },
       payMode: { 
         type: String, 
-        enum: ['FIXED_PER_ORDER', 'FIXED_PER_ITEM', 'PERCENTAGE'], 
-        default: 'FIXED_PER_ORDER' 
+        enum: ['FIXED_SALARY', 'DISTANCE_BASED'], 
+        default: 'DISTANCE_BASED' 
       },
-      amount: { type: Number, default: 30 }
+      amount: { type: Number, default: 0 },
+      salaryDays: { type: Number, default: 30 },
+      kmRate: { type: Number, default: 0 }
     },
   },
   {

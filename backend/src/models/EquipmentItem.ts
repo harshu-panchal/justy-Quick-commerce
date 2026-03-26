@@ -10,6 +10,7 @@ export interface IEquipmentItem extends Document {
   minQuantity: number;
   deliveryCharge: number;
   platformFee: number;
+  pickupAddress?: string; // Admin/warehouse address for delivery boy pickup (hidden from sellers)
   createdAt: Date;
   updatedAt: Date;
 }
@@ -57,6 +58,10 @@ const EquipmentItemSchema = new Schema<IEquipmentItem>(
       type: Number,
       default: 0,
       min: [0, "Platform fee cannot be negative"],
+    },
+    pickupAddress: {
+      type: String,
+      trim: true,
     },
   },
   {

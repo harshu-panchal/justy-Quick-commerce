@@ -52,11 +52,16 @@ export const createEquipmentOrder = async (req: Request, res: Response) => {
             });
         }
 
+        // Copy pickupAddress from the first item (admin sets it per equipment item)
+        const firstItem = await EquipmentItem.findById(items[0]?.equipmentItem);
+        const pickupAddress = firstItem?.pickupAddress || '';
+
         const order = new EquipmentOrder({
             seller: sellerId,
             sellerName: seller.sellerName,
             sellerPhone: seller.mobile,
             sellerAddress: seller.address || 'N/A',
+            pickupAddress, // Hidden from seller — shown only to delivery boy
             deliveryAddress: deliveryAddress || {
                 address: seller.address || 'N/A',
                 city: seller.city || 'N/A',
@@ -126,6 +131,7 @@ export const getSellerEquipmentOrders = async (req: Request, res: Response) => {
     try {
         const orders = await EquipmentOrder.find({ seller: req.user!.userId })
             .populate('deliveryBoy', 'name mobile')
+            .select('-pickupAddress') // Hide pickup address from sellers — it's the admin warehouse location
             .sort({ createdAt: -1 });
         return res.status(200).json({ success: true, data: orders });
     } catch (error: any) {

@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { OrderNotificationData } from '../services/api/delivery/deliveryOrderNotificationService';
 import { acceptOrder, rejectOrder } from '../services/api/delivery/deliveryOrderNotificationService';
 import { getSocketBaseURL } from '../services/api/config';
+import { useToast } from '../context/ToastContext';
 
 interface NotificationState {
     currentNotification: OrderNotificationData | null;
@@ -17,6 +18,7 @@ const INITIAL_RECONNECT_DELAY = 2000;
 
 export const useDeliveryOrderNotifications = () => {
     const { isAuthenticated, user } = useAuth();
+    const { showToast } = useToast();
     const [state, setState] = useState<NotificationState>({
         currentNotification: null,
         notificationQueue: [],
@@ -110,9 +112,10 @@ export const useDeliveryOrderNotifications = () => {
         socket.on('delivery-notification', (data: any) => {
             console.log('🔔 Manual assignment notification received:', data);
             if (data.type === 'NEW_ASSIGNMENT') {
-                // For manual assignments, just show a simple alert or toast
-                // We could also add to queue with a special flag
-                alert(`New Order Assigned: ${data.orderNumber}\nFrom: ${data.seller.name}\nDest: ${data.address}`);
+                // For manual assignments, show a nice Toast instead of alert
+                showToast(`New Order Assigned: ${data.orderNumber} from ${data.seller.name}`, 'info');
+                
+                // Also play a sound if possible (optional improvement for user later)
             }
         });
 

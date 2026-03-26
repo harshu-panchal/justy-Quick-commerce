@@ -462,11 +462,11 @@ export default function DeliveryWallet() {
                         </p>
                       </div>
                       <p className="font-bold text-green-600">
-                        ₹{comm.amount.toFixed(2)}
+                        ₹{comm.amount?.toFixed(2) || "0.00"}
                       </p>
                     </div>
                     <div className="flex justify-between text-xs text-gray-500">
-                      <span>Order Amount: ₹{comm.orderAmount.toFixed(2)}</span>
+                      <span>Order Amount: ₹{comm.orderAmount?.toFixed(2) || "0.00"}</span>
                       <span>
                         {new Date(comm.createdAt).toLocaleDateString("en-IN")}
                       </span>

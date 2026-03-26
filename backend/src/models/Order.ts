@@ -469,7 +469,7 @@ const OrderSchema = new Schema<IOrder>(
         },
         scannedBy: {
           type: Schema.Types.ObjectId,
-          ref: "Delivery",
+          ref: "Admin",
         },
         location: {
           lat: Number,

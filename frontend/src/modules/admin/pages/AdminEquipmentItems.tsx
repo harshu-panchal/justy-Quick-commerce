@@ -32,6 +32,7 @@ export default function AdminEquipmentItems() {
     deliveryCharge: 0,
     platformFee: 0,
     imageUrl: "",
+    pickupAddress: "", // Admin/warehouse address — only delivery boy will see this
   });
 
   useEffect(() => {
@@ -81,7 +82,7 @@ export default function AdminEquipmentItems() {
       if (response.success) {
         alert(`Item ${editingItem ? "updated" : "added"} successfully!`);
         setEditingItem(null);
-        setFormData({ name: "", description: "", price: 0, stock: 0, minQuantity: 1, deliveryCharge: 0, platformFee: 0, imageUrl: "" });
+        setFormData({ name: "", description: "", price: 0, stock: 0, minQuantity: 1, deliveryCharge: 0, platformFee: 0, imageUrl: "", pickupAddress: "" });
         fetchData();
       }
     } catch (err: any) {
@@ -102,6 +103,7 @@ export default function AdminEquipmentItems() {
       deliveryCharge: item.deliveryCharge || 0,
       platformFee: item.platformFee || 0,
       imageUrl: item.imageUrl || "",
+      pickupAddress: (item as any).pickupAddress || "",
     });
     setShowAddForm(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -267,6 +269,21 @@ export default function AdminEquipmentItems() {
                 </div>
 
                 <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">
+                    🏭 Pickup Address <span className="text-[10px] text-teal-600 font-semibold">(Admin only — delivery boy pickup location)</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="pickupAddress"
+                    value={formData.pickupAddress}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-neutral-300 rounded focus:ring-2 focus:ring-teal-500 outline-none text-sm"
+                    placeholder="e.g. Admin Warehouse, 123 MG Road, Indore"
+                  />
+                  <p className="text-[10px] text-neutral-400 mt-1 italic">This address is shown to the delivery boy only — sellers cannot see it.</p>
+                </div>
+
+                <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-1">Upload Image (Local Machine)</label>
                   <div className="flex gap-4 items-center mb-2">
                     <div className="w-16 h-16 bg-neutral-100 rounded border border-neutral-200 flex-shrink-0 overflow-hidden">
@@ -311,7 +328,7 @@ export default function AdminEquipmentItems() {
                       type="button"
                       onClick={() => {
                           setEditingItem(null);
-                          setFormData({ name: "", description: "", price: 0, stock: 0, minQuantity: 1, deliveryCharge: 0, platformFee: 0, imageUrl: "" });
+                          setFormData({ name: "", description: "", price: 0, stock: 0, minQuantity: 1, deliveryCharge: 0, platformFee: 0, imageUrl: "", pickupAddress: "" });
                       }}
                       className="px-4 py-2 border border-neutral-300 rounded text-neutral-600 hover:bg-neutral-50"
                     >

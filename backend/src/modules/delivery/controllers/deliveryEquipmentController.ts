@@ -9,7 +9,7 @@ export const getMyEquipmentDeliveries = async (req: Request, res: Response) => {
     try {
         const orders = await EquipmentOrder.find({ 
             deliveryBoy: req.user!.userId,
-            status: { $in: ['assigned', 'delivered'] }
+            status: { $in: ['assigned', 'picked_up', 'delivered'] }
         })
         .populate('seller', 'sellerName mobile address')
         .sort({ assignedAt: -1 });
@@ -28,14 +28,18 @@ export const getMyEquipmentDeliveries = async (req: Request, res: Response) => {
             } else if (config && config.enabled) {
                 // Estimate based on current settings
                 let est = 0;
-                if (config.payMode === 'FIXED_PER_ORDER') est = config.amount;
-                else if (config.payMode === 'FIXED_PER_ITEM') {
-                    const totalQty = order.items.reduce((sum: number, item: any) => sum + (item.quantity || 1), 0);
-                    est = config.amount * totalQty;
-                } else if (config.payMode === 'PERCENTAGE') {
-                    est = (order.total * config.amount) / 100;
+                const { payMode, amount, salaryDays, kmRate: configKmRate } = config;
+                
+                if (payMode === 'FIXED_SALARY') {
+                    est = amount;
+                } else if (payMode === 'DISTANCE_BASED') {
+                    const kmRate = (configKmRate && configKmRate > 0) ? configKmRate : (settings.deliveryConfig?.deliveryBoyKmRate || 0);
+                    const distanceKm = (order as any).deliveryDistanceKm || 0;
+                    est = distanceKm > 0 && kmRate > 0 ? distanceKm * kmRate : amount;
                 }
+                
                 orderObj.estimatedCommission = Math.round(est * 100) / 100;
+                orderObj.commissionConfig = { payMode, salaryDays, kmRate: (configKmRate && configKmRate > 0) ? configKmRate : (settings.deliveryConfig?.deliveryBoyKmRate || 0) };
             }
             
             return orderObj;
@@ -56,8 +60,8 @@ export const markEquipmentDelivered = async (req: Request, res: Response) => {
             return res.status(403).json({ success: false, message: 'Unauthorized' });
         }
 
-        if (order.status !== 'assigned') {
-            return res.status(400).json({ success: false, message: 'Order must be in assigned state' });
+        if (!['assigned', 'picked_up'].includes(order.status)) {
+            return res.status(400).json({ success: false, message: 'Order must be in assigned or picked_up state to be delivered' });
         }
 
         order.status = 'delivered';

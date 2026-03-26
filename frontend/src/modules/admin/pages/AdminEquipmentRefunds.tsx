@@ -142,13 +142,13 @@ export default function AdminEquipmentRefunds() {
                   <tr key={req._id} className="hover:bg-neutral-50 transition-colors">
                     <td className="p-4">
                       <div className="flex flex-col">
-                        <span className="font-black text-neutral-800">{req.orderId.orderNumber}</span>
+                        <span className="font-black text-neutral-800">{req.orderId?.orderNumber || 'N/A'}</span>
                         <span className="text-[10px] text-neutral-400 uppercase font-bold">{new Date(req.createdAt).toLocaleDateString()}</span>
                       </div>
                     </td>
                     <td className="p-4">
-                      <div className="font-bold text-neutral-700">{req.sellerId.sellerName}</div>
-                      <div className="text-[10px] text-neutral-400">{req.sellerId.mobile}</div>
+                      <div className="font-bold text-neutral-700">{req.sellerId?.sellerName || 'Unknown Seller'}</div>
+                      <div className="text-[10px] text-neutral-400">{req.sellerId?.mobile || 'No Phone'}</div>
                     </td>
                     <td className="p-4">
                       <div className="text-[11px] space-y-0.5">
@@ -212,7 +212,7 @@ export default function AdminEquipmentRefunds() {
                 <div key={req._id} className="p-4 flex flex-col gap-4">
                   <div className="flex justify-between items-start">
                     <div>
-                      <div className="font-black text-neutral-800 text-base">{req.orderId.orderNumber}</div>
+                      <div className="font-black text-neutral-800 text-base">{req.orderId?.orderNumber || 'N/A'}</div>
                       <div className="text-[9px] text-neutral-400 font-bold uppercase">{new Date(req.createdAt).toLocaleDateString()}</div>
                     </div>
                     <div className="text-right">
@@ -269,7 +269,7 @@ export default function AdminEquipmentRefunds() {
             <div className="bg-neutral-800 text-white px-6 py-5 flex justify-between items-center text-center">
                <div className="w-full">
                   <h3 className="font-black text-lg uppercase tracking-tight">Process Bank Refund</h3>
-                  <p className="text-[10px] opacity-60 uppercase font-bold tracking-[0.2em] mt-0.5">Order {selectedRequest.orderId.orderNumber}</p>
+                  <p className="text-[10px] opacity-60 uppercase font-bold tracking-[0.2em] mt-0.5">Order {selectedRequest.orderId?.orderNumber || 'N/A'}</p>
                </div>
                <button onClick={() => setSelectedRequest(null)} className="absolute right-6 text-xl hover:scale-110 transition-transform">✕</button>
             </div>
@@ -343,7 +343,7 @@ export default function AdminEquipmentRefunds() {
                </div>
 
                 <div className="flex flex-col gap-3 mt-10">
-                   {selectedRequest.orderId.paymentStatus === 'Paid' && selectedRequest.orderId.status !== 'refunded' && (
+                   {selectedRequest.orderId?.paymentStatus === 'Paid' && selectedRequest.orderId?.status !== 'refunded' && (
                       <button
                         onClick={handleRazorpayTestRefund}
                         disabled={processing}

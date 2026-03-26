@@ -48,22 +48,11 @@ export default function WarehouseCOD() {
     fetchOrders();
   }, []);
 
-  const fetchOrders = async () => {
-    setIsLoading(true);
-    try {
-      const response = await getUnsettledCODOrders();
-      if (response.success && response.data) {
-        setOrders(response.data);
-      }
-    } catch (err) {
-      console.error('Failed to fetch unsettled COD orders:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const totalCollected = txList.filter(t => t.status === 'Received').reduce((acc, curr) => acc + curr.amount, 0);
+  const totalPending = txList.filter(t => t.status === 'Pending').reduce((acc, curr) => acc + curr.amount, 0);
 
-  const handleVerify = async () => {
-    if (enteredOtp.length !== 4 || !settlementOrder) return;
+  const handleVerify = () => {
+    if (enteredOtp.length !== 4) return;
     setIsVerifying(true);
     try {
       const response = await verifyOrderSettlement(settlementOrder._id, enteredOtp);
@@ -208,8 +197,8 @@ export default function WarehouseCOD() {
                   onClick={handleVerify}
                   disabled={enteredOtp.length !== 4 || isVerifying}
                   className={`w-full py-6 rounded-[32px] font-black text-xl transition-all shadow-xl active:scale-95 ${enteredOtp.length === 4 && !isVerifying
-                      ? 'bg-teal-600 text-white shadow-teal-500/30 -translate-y-1'
-                      : 'bg-neutral-100 text-neutral-300 cursor-not-allowed translate-y-0'
+                    ? 'bg-teal-600 text-white shadow-teal-500/30 -translate-y-1'
+                    : 'bg-neutral-100 text-neutral-300 cursor-not-allowed translate-y-0'
                     }`}
                 >
                   {isVerifying ? (

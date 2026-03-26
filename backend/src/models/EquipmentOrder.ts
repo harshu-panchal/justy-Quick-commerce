@@ -6,6 +6,7 @@ export interface IEquipmentOrder extends Document {
   sellerName: string;
   sellerPhone: string;
   sellerAddress: string;
+  pickupAddress?: string; // Warehouse/admin location for delivery boy pickup (hidden from sellers)
   deliveryAddress?: {
     address: string;
     city: string;
@@ -52,6 +53,7 @@ export interface IEquipmentOrder extends Document {
   isQrScanned?: boolean;
   qrGeneratedAt?: Date;
   expiresAt?: Date;
+  deliveryDistanceKm?: number;
   scanLogs?: Array<{
     scannedAt: Date;
     scannedBy: mongoose.Types.ObjectId;
@@ -78,6 +80,7 @@ const EquipmentOrderSchema = new Schema<IEquipmentOrder>(
     sellerName: { type: String, required: true },
     sellerPhone: { type: String, required: true },
     sellerAddress: { type: String, required: true },
+    pickupAddress: { type: String, trim: true }, // Admin/warehouse location — only visible to delivery boy
     deliveryAddress: {
       address: { type: String },
       city: { type: String },
@@ -176,6 +179,9 @@ const EquipmentOrderSchema = new Schema<IEquipmentOrder>(
     },
     expiresAt: {
       type: Date,
+    },
+    deliveryDistanceKm: {
+      type: Number,
     },
     scanLogs: [
       {

@@ -593,7 +593,8 @@ export default function SellerOrderDetail() {
         <InvoiceModal 
           isOpen={isInvoiceModalOpen} 
           onClose={() => setIsInvoiceModalOpen(false)} 
-          order={orderDetail} 
+          order={orderDetail}
+          onExportPDF={handleExportPDF}
         />
       )}
     </div>

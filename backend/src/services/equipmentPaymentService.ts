@@ -119,9 +119,9 @@ export const captureEquipmentPayment = async (
 
         // Idempotency check: if already paid, just return success
         if (order.paymentStatus === 'Paid') {
-             await session.commitTransaction();
-             return { 
-                success: true, 
+            await session.commitTransaction();
+            return {
+                success: true,
                 message: 'Payment already captured',
                 data: { orderId: order._id }
             };
@@ -131,7 +131,7 @@ export const captureEquipmentPayment = async (
         for (const item of order.items) {
             const equipmentItem = await EquipmentItem.findById(item.equipmentItem).session(session);
             if (!equipmentItem) throw new Error(`Item ${item.name} no longer exists`);
-            
+
             if (equipmentItem.stock < item.quantity) {
                 throw new Error(`Insufficient stock for ${item.name}. Available: ${equipmentItem.stock}`);
             }
@@ -146,7 +146,7 @@ export const captureEquipmentPayment = async (
         order.razorpayOrderId = razorpayOrderId;
         order.razorpayPaymentId = razorpayPaymentId;
         order.razorpaySignature = razorpaySignature;
-        
+
         await order.save({ session });
 
         await session.commitTransaction();
@@ -154,7 +154,7 @@ export const captureEquipmentPayment = async (
         return {
             success: true,
             message: 'Equipment payment captured successfully',
-            data: { 
+            data: {
                 orderId: order._id,
                 paymentStatus: 'Paid'
             }
@@ -182,12 +182,12 @@ export const refundEquipmentOrder = async (orderId: string, refundMethod: "WALLE
         const order = await EquipmentOrder.findById(orderId).session(session);
         if (!order) throw new Error('Order not found');
 
-        if (order.status === 'refunded' || order.paymentStatus === 'Refunded') {
-            throw new Error('Order already refunded');
-        }
-
         if (order.paymentStatus !== 'Paid') {
             throw new Error('Only paid orders can be refunded');
+        }
+
+        if (order.status === 'refunded' || order.paymentStatus === 'Refunded') {
+            throw new Error('Order already refunded');
         }
 
         // 1. Process Razorpay Refund if paymentId exists
@@ -203,7 +203,7 @@ export const refundEquipmentOrder = async (orderId: string, refundMethod: "WALLE
         // 2. Restore Stock
         for (const item of order.items) {
             await EquipmentItem.findByIdAndUpdate(
-                item.equipmentItem, 
+                item.equipmentItem,
                 { $inc: { stock: item.quantity } },
                 { session }
             );
@@ -214,7 +214,7 @@ export const refundEquipmentOrder = async (orderId: string, refundMethod: "WALLE
         order.paymentStatus = 'Refunded';
         order.refundStatus = 'REFUNDED';
         order.refundMethod = refundMethod.toUpperCase() as "WALLET" | "BANK";
-        
+
         await order.save({ session });
 
         await session.commitTransaction();
@@ -225,7 +225,9 @@ export const refundEquipmentOrder = async (orderId: string, refundMethod: "WALLE
             data: { orderId, refundTransactionId: order.refundTransactionId }
         };
     } catch (error: any) {
-        await session.abortTransaction();
+        if (session.inTransaction()) {
+            await session.abortTransaction();
+        }
         console.error('Error refunding equipment order:', error);
         return {
             success: false,

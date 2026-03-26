@@ -186,7 +186,7 @@ export const refundEquipmentOrder = async (orderId: string, refundMethod: "WALLE
             throw new Error('Only paid orders can be refunded');
         }
 
-        if (order.status === 'refunded' || order.paymentStatus === 'Refunded') {
+        if (order.status === 'refunded' || (order.paymentStatus as string) === 'Refunded') {
             throw new Error('Order already refunded');
         }
 

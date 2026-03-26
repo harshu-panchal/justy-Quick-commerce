@@ -44,18 +44,29 @@ export default function WarehouseCOD() {
   const [enteredOtp, setEnteredOtp] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
 
+  const fetchOrders = async () => {
+    try {
+      setIsLoading(true);
+      const res = await getUnsettledCODOrders();
+      if (res.success) {
+        setOrders(res.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch orders:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchOrders();
   }, []);
 
-  const totalCollected = txList.filter(t => t.status === 'Received').reduce((acc, curr) => acc + curr.amount, 0);
-  const totalPending = txList.filter(t => t.status === 'Pending').reduce((acc, curr) => acc + curr.amount, 0);
-
-  const handleVerify = () => {
+  const handleVerify = async () => {
     if (enteredOtp.length !== 4) return;
     setIsVerifying(true);
     try {
-      const response = await verifyOrderSettlement(settlementOrder._id, enteredOtp);
+      const response = await verifyOrderSettlement(settlementOrder!._id, enteredOtp);
       if (response.success) {
         alert('Deposit confirmed successfully!');
         setSettlementOrder(null);

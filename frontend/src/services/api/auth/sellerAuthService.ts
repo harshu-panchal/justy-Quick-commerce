@@ -47,6 +47,7 @@ export interface RegisterData {
   storeDescription?: string;
   storeBanner?: string;
   logo?: string;
+  isDeliveryByPlatform?: boolean;
 }
 
 export interface RegisterResponse {

@@ -1105,6 +1105,124 @@ export const processCODOrderDelivery = async (
 };
 
 /**
+ * Settle a specific COD order with the warehouse
+ * Marks seller commissions as Paid and credits their wallets
+ */
+export const settleSpecificCODOrder = async (
+  orderId: string,
+  session?: mongoose.ClientSession,
+): Promise<void> => {
+  const useExternalSession = !!session;
+  if (!session) {
+    session = await mongoose.startSession();
+    session.startTransaction();
+  }
+
+  try {
+    const order = await Order.findById(orderId).session(session);
+    if (!order) {
+      throw new Error("Order not found");
+    }
+
+    if (order.paymentMethod !== "COD") {
+      throw new Error("Only COD orders require settlement");
+    }
+
+    if (!order.deliveryBoy) {
+      throw new Error("No delivery boy assigned to this order");
+    }
+
+    // Find the delivery boy
+    const deliveryBoy = await Delivery.findById(order.deliveryBoy).session(session);
+    if (!deliveryBoy) {
+      throw new Error("Delivery boy not found");
+    }
+
+    // Calculate how much the delivery boy owes for this order
+    const deliveryComm = await Commission.findOne({
+      order: orderId,
+      type: "DELIVERY_BOY",
+    }).session(session);
+
+    if (!deliveryComm) {
+      throw new Error("Delivery commission not found for this order. It must be delivered first.");
+    }
+
+    // Amount delivery boy owes admin for this order = Order Total - Delivery Boy Commission
+    const orderAdminPayoutPart = Math.round((order.total - deliveryComm.commissionAmount) * 100) / 100;
+
+    // 1. Deduct from Delivery Boy's pending payouts
+    const currentPayout = deliveryBoy.pendingAdminPayout || 0;
+    deliveryBoy.pendingAdminPayout = Math.max(0, currentPayout - orderAdminPayoutPart);
+
+    // Deduct from cash collected (as they've handed it in)
+    const currentCash = deliveryBoy.cashCollected || 0;
+    deliveryBoy.cashCollected = Math.max(0, currentCash - order.total);
+
+    await deliveryBoy.save({ session });
+
+    // 2. Process Seller Commissions
+    const sellerCommissions = await Commission.find({
+      order: orderId,
+      type: "SELLER",
+      status: "Pending",
+    }).session(session);
+
+    const PlatformWallet = (await import("../models/PlatformWallet")).default;
+    let platformWallet = await PlatformWallet.findOne().session(session);
+
+    for (const comm of sellerCommissions) {
+      comm.status = "Paid";
+      comm.paidAt = new Date();
+      await comm.save({ session });
+
+      // Credit Seller Wallet
+      const netEarning = Math.round((comm.orderAmount - comm.commissionAmount) * 100) / 100;
+      if (comm.seller) {
+        await creditWallet(
+          comm.seller.toString(),
+          "SELLER",
+          netEarning,
+          `Sale proceeds for COD order ${order.orderNumber} (Warehouse deposit confirmed)`,
+          orderId,
+          comm._id.toString(),
+          session,
+        );
+
+        // 3. Update Platform Wallet (similar to processPendingCODPayouts)
+        if (platformWallet) {
+          // This part relies on breakdown calculation in processPendingCODPayouts logic
+          // For simplicity, we just reduce the pending counter
+          platformWallet.sellerPendingPayouts = Math.max(0, platformWallet.sellerPendingPayouts - netEarning);
+        }
+      }
+    }
+
+    if (platformWallet) {
+      // Also reduce the pending total from all delivery boys
+      platformWallet.pendingFromDeliveryBoy = Math.max(0, platformWallet.pendingFromDeliveryBoy - orderAdminPayoutPart);
+      await platformWallet.save({ session });
+    }
+
+    if (!useExternalSession) {
+      await session.commitTransaction();
+    }
+
+    console.log(`[Settlement] COD order ${order.orderNumber} settled. Delivery boy owed amount reduced by ${orderAdminPayoutPart}`);
+  } catch (error: any) {
+    if (!useExternalSession) {
+      await session.abortTransaction();
+    }
+    console.error("Error settling specific COD order:", error);
+    throw error;
+  } finally {
+    if (!useExternalSession) {
+      session.endSession();
+    }
+  }
+};
+
+/**
  * Process commission for a delivered equipment order
  */
 export const processEquipmentDeliveryCommission = async (equipmentOrderId: string) => {

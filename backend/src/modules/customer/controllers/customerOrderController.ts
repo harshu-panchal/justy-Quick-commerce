@@ -628,15 +628,18 @@ export const createOrder = async (req: Request, res: Response) => {
 
         // Delivery Type already determined above
 
-        // Get Seller Pincode (from the first seller for now)
+        // Get Seller Pincode and Delivery Preference (from the first seller for now)
         let sellerPincode = "";
+        let isDeliveryByPlatform = true;
+
         if (sellerIds.size > 0) {
             const firstSellerId = Array.from(sellerIds)[0];
             const firstSeller = session
-                ? await Seller.findById(firstSellerId).select('pincode').session(session)
-                : await Seller.findById(firstSellerId).select('pincode');
+                ? await Seller.findById(firstSellerId).select('pincode isDeliveryByPlatform').session(session)
+                : await Seller.findById(firstSellerId).select('pincode isDeliveryByPlatform');
 
             sellerPincode = firstSeller?.pincode || "";
+            isDeliveryByPlatform = firstSeller?.isDeliveryByPlatform !== undefined ? firstSeller.isDeliveryByPlatform : true;
 
             // Enforce pincode matching for quick delivery orders
             if (deliveryType === 'instant' && newOrder.deliveryAddress.pincode !== sellerPincode) {
@@ -676,6 +679,7 @@ export const createOrder = async (req: Request, res: Response) => {
 
         newOrder.deliveryType = deliveryType;
         newOrder.sellerPincode = sellerPincode;
+        newOrder.isDeliveryByPlatform = isDeliveryByPlatform;
 
         // --- Automatic Delivery Boy Assignment for Scheduled Orders ---
         if (deliveryType === 'scheduled') {
@@ -724,8 +728,8 @@ export const createOrder = async (req: Request, res: Response) => {
                 if (savedOrder) {
                     await notifySellersOfOrderUpdate(io, savedOrder, 'NEW_ORDER');
 
-                    // If it's an instant delivery, trigger broadcast to partners
-                    if (savedOrder.deliveryType === "instant") {
+                    // If it's an instant delivery and platform delivery is allowed, trigger broadcast
+                    if (savedOrder.deliveryType === "instant" && (savedOrder as any).isDeliveryByPlatform) {
                         const { InstantDeliveryService } = require("../../../services/instantDeliveryService");
                         const instantService = new InstantDeliveryService(io);
                         await instantService.broadcastOrder(savedOrder._id.toString());

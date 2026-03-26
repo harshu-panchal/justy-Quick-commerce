@@ -9,6 +9,12 @@ import {
   generateDeliveryOtp,
   verifyDeliveryOtp,
 } from "../../../services/deliveryOtpService";
+<<<<<<< Updated upstream
+=======
+import { generateSettlementOtp } from "../../../services/settlementService";
+import { generateHandoverOtp } from "../../../services/handoverService";
+import { processOrderStatusTransition } from "../../../services/orderService";
+>>>>>>> Stashed changes
 
 /**
  * Helper to map order items for response
@@ -999,4 +1005,92 @@ export const checkCustomerProximity = asyncHandler(
       },
     });
   },
+);
+
+/**
+ * Initiate Order Settlement with Warehouse
+ */
+export const initiateOrderSettlement = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const deliveryId = req.user?.userId;
+
+    const order = await Order.findById(id);
+    if (!order) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Order not found" });
+    }
+
+    if (order.deliveryBoy?.toString() !== deliveryId) {
+      return res
+        .status(403)
+        .json({ success: false, message: "This order is not assigned to you" });
+    }
+
+    if (order.status !== "Delivered") {
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "Order must be delivered before initiating settlement",
+        });
+    }
+
+    if (order.paymentMethod !== "COD") {
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "Settlement is only required for COD orders",
+        });
+    }
+
+    try {
+      const result = await generateSettlementOtp(id);
+
+      return res.status(200).json({
+        success: true,
+        message: result.message,
+        data: {
+          otp: result.otp,
+        },
+      });
+    } catch (error: any) {
+      return res.status(400).json({
+        success: false,
+        message: error.message || "Failed to initiate settlement",
+      });
+    }
+  },
+);
+/**
+ * Initiate Handover from Warehouse
+ * Generates an OTP for the warehouse to verify that the rider has taken the order
+ */
+export const initiateHandover = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const deliveryId = req.user?.userId;
+
+    const order = await Order.findById(id);
+    if (!order) {
+      return res.status(404).json({ success: false, message: "Order not found" });
+    }
+
+    if (order.deliveryBoy?.toString() !== deliveryId) {
+      return res.status(403).json({ success: false, message: "This order is not assigned to you" });
+    }
+
+    if (order.status !== "Processed") {
+      return res.status(400).json({ success: false, message: "Order must be 'Ready for Handover' (Processed) first" });
+    }
+
+    try {
+      const result = await generateHandoverOtp(id);
+      return res.status(200).json(result);
+    } catch (error: any) {
+      return res.status(400).json({ success: false, message: error.message });
+    }
+  }
 );

@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { getOrderById, updateOrderStatus, Order } from '../../../services/api/admin/adminOrderService';
+import { getOrderById, updateOrderStatus, verifyOrderSettlement, Order } from '../../../services/api/admin/adminOrderService';
 
 export default function AdminOrderDetail() {
   const { id } = useParams<{ id: string }>();
@@ -9,6 +9,8 @@ export default function AdminOrderDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [updating, setUpdating] = useState(false);
+  const [settlementOtp, setSettlementOtp] = useState('');
+  const [verifyingSettlement, setVerifyingSettlement] = useState(false);
 
   // Fetch order detail from API
   useEffect(() => {
@@ -51,6 +53,33 @@ export default function AdminOrderDetail() {
       alert(err.response?.data?.message || 'Failed to update order status');
     } finally {
       setUpdating(false);
+    }
+  };
+
+  const handleVerifySettlement = async () => {
+    if (!settlementOtp || settlementOtp.length !== 6) {
+      alert('Please enter a valid 6-digit OTP');
+      return;
+    }
+
+    setVerifyingSettlement(true);
+    try {
+      const response = await verifyOrderSettlement(order!._id, settlementOtp);
+      if (response.success) {
+        alert('Warehouse settlement confirmed successfully! Financial accounts updated.');
+        // Re-fetch order
+        const refreshResp = await getOrderById(id!);
+        if (refreshResp.success && refreshResp.data) {
+          setOrder(refreshResp.data);
+        }
+        setSettlementOtp('');
+      } else {
+        alert(response.message || 'OTP verification failed');
+      }
+    } catch (err: any) {
+      alert(err.response?.data?.message || err.message || 'Verification failed');
+    } finally {
+      setVerifyingSettlement(false);
     }
   };
 
@@ -174,6 +203,60 @@ export default function AdminOrderDetail() {
                 <span className="ml-2 font-medium capitalize">{order.paymentStatus}</span>
               </div>
             </div>
+            
+            {/* Settlement Verification Section (Admin/Warehouse) */}
+            {order.status === 'Delivered' && order.paymentMethod === 'COD' && (
+              <div className="mt-6 pt-6 border-t border-dashed border-neutral-200">
+                <div className="flex items-center gap-2 mb-4 text-orange-600">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                    <circle cx="8.5" cy="7" r="4" />
+                    <polyline points="17 11 19 13 23 9" />
+                  </svg>
+                  <h3 className="font-bold uppercase tracking-tight text-sm">Warehouse Settlement</h3>
+                </div>
+
+                {order.isSettledWithWarehouse ? (
+                  <div className="bg-green-50 border border-green-100 rounded-lg p-4 flex items-center gap-3">
+                    <div className="bg-green-500 text-white rounded-full p-1">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-green-800">Cash Received & Settled</p>
+                      <p className="text-xs text-green-600">Verified at: {formatDate(order.settledAt)}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-orange-50 border border-orange-100 rounded-lg p-5">
+                    <p className="text-sm text-neutral-700 font-medium mb-3">
+                      Enter the 6-digit OTP provided by the delivery boy to confirm cash collection of ₹{order.total.toFixed(2)}.
+                    </p>
+                    <div className="flex gap-3">
+                      <input
+                        type="text"
+                        value={settlementOtp}
+                        onChange={(e) => setSettlementOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                        placeholder="6-digit OTP"
+                        className="flex-1 px-4 py-2 border border-neutral-300 rounded-lg text-center font-bold tracking-widest text-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                        maxLength={6}
+                      />
+                      <button
+                        onClick={handleVerifySettlement}
+                        disabled={verifyingSettlement || settlementOtp.length !== 6}
+                        className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {verifyingSettlement ? 'Verifying...' : 'Clear Order'}
+                      </button>
+                    </div>
+                    <p className="text-[10px] text-neutral-500 mt-2 italic">
+                      Warning: Confirming this will update financial records and credit the seller.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Order Items */}

@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import OTPInput from '../../../components/OTPInput';
 import { useAuth } from '../../../context/AuthContext';
+import { sendOTP, verifyOTP } from '../../../services/api/auth/adminAuthService';
 
 export default function WarehouseLogin() {
   const navigate = useNavigate();
@@ -17,38 +18,45 @@ export default function WarehouseLogin() {
     setIsLoading(true);
     setError("");
     
-    // Simulate OTP Send
-    setTimeout(() => {
-      if (mobileNumber === "9111966732") {
+    try {
+      // Use real Admin OTP service
+      const response = await sendOTP(mobileNumber);
+      if (response.success) {
         setShowOTP(true);
       } else {
-        setError("Mobile number not registered in warehouse system.");
+        setError(response.message || "Failed to send OTP.");
       }
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Error connecting to server. Please try again.");
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
-  const handleOTPComplete = async (otp: string) => {
+  const handleOTPComplete = async (otpValue: string) => {
     setIsLoading(true);
     setError("");
     
-    // Simulate OTP Verify
-    setTimeout(() => {
-      if (otp === "1234") {
-        setIsLoading(false);
-        // Set Auth State before navigating
-        login("warehouse-token-simulation", {
-          id: "WH-9111966732",
-          name: "Warehouse Manager",
-          mobile: mobileNumber,
+    try {
+      // Use real Admin OTP verify service
+      const response = await verifyOTP(mobileNumber, otpValue);
+      if (response.success && response.data) {
+        const { token, user } = response.data;
+        login(token, {
+          id: user.id || (user as any)._id,
+          name: `${user.firstName} ${user.lastName}`,
+          mobile: user.mobile,
           userType: "Admin"
         });
         navigate("/warehouse/dashboard");
       } else {
-        setError("Invalid OTP. Hint: 1234");
-        setIsLoading(false);
+        setError(response.message || "Invalid OTP.");
       }
-    }, 1500);
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Verification failed. Please check your code.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -170,11 +178,6 @@ export default function WarehouseLogin() {
             )}
           </AnimatePresence>
 
-          <div className="pt-4 border-t border-neutral-100 text-center">
-            <p className="text-xs font-bold text-neutral-400 uppercase tracking-widest">
-              Don't have access? <Link to="/warehouse/signup" className="text-teal-600 hover:text-teal-700">Create Account</Link>
-            </p>
-          </div>
         </div>
       </motion.div>
 

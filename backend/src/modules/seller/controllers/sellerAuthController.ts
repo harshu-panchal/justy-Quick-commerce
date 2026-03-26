@@ -119,6 +119,7 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
     city,
     pincode,
     serviceableArea,
+    isDeliveryByPlatform,
   } = req.body;
 
   // Validation (password removed - sellers don't need password during signup)
@@ -227,6 +228,7 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
     commission: 0,
     balance: 0,
     categories: req.body.categories || [],
+    isDeliveryByPlatform: isDeliveryByPlatform !== undefined ? (isDeliveryByPlatform === 'true' || isDeliveryByPlatform === true) : true,
   });
 
   // Generate token

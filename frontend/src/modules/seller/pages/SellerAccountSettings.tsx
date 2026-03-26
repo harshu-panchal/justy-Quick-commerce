@@ -47,7 +47,8 @@ const SellerAccountSettings = () => {
         storeBanner: '',
         storeDescription: '',
         commission: 0,
-        status: ''
+        status: '',
+        isDeliveryByPlatform: true,
     });
 
     useEffect(() => {
@@ -81,7 +82,8 @@ const SellerAccountSettings = () => {
                     serviceAreaType: (data.serviceAreaGeo && data.serviceAreaGeo.coordinates && data.serviceAreaGeo.coordinates.length > 0) ? 'polygon' : 'radius',
                     serviceAreaCoordinates: (data.serviceAreaGeo?.coordinates && data.serviceAreaGeo.coordinates[0])
                         ? data.serviceAreaGeo.coordinates[0].map((p: number[]) => [p[0], p[1]])
-                        : [], // Flatten if needed, assumes [[lng, lat]]
+                        : [], 
+                    isDeliveryByPlatform: data.isDeliveryByPlatform !== undefined ? data.isDeliveryByPlatform : true,
                 });
             } else {
                 setError(response.message || 'Failed to fetch profile');
@@ -137,7 +139,8 @@ const SellerAccountSettings = () => {
                 serviceAreaGeo: sellerData.serviceAreaType === 'polygon' ? {
                     type: 'Polygon',
                     coordinates: [sellerData.serviceAreaCoordinates]
-                } : null
+                } : null,
+                isDeliveryByPlatform: sellerData.isDeliveryByPlatform,
             };
 
             const response = await updateSellerProfile(updateData);
@@ -400,6 +403,27 @@ const SellerAccountSettings = () => {
                                                 </div>
 
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                                    <div className="md:col-span-2">
+                                                        <div className="flex items-center justify-between p-4 bg-teal-50/50 rounded-xl border border-teal-100/50">
+                                                            <div className="flex-1 pr-4">
+                                                                <h4 className="text-sm font-bold text-teal-900 leading-tight">Delivery Partner</h4>
+                                                                <p className="text-[11px] text-teal-700 mt-1 leading-relaxed">
+                                                                    Use platform's delivery network for your orders. Disable if you'll handle deliveries yourself.
+                                                                </p>
+                                                            </div>
+                                                            <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                                                                <input 
+                                                                    type="checkbox" 
+                                                                    className="sr-only peer"
+                                                                    checked={sellerData.isDeliveryByPlatform}
+                                                                    onChange={(e) => setSellerData(prev => ({ ...prev, isDeliveryByPlatform: e.target.checked }))}
+                                                                    disabled={!isEditing}
+                                                                />
+                                                                <div className="w-11 h-6 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+
                                                     <InputGroup label="Store Name" name="storeName" value={sellerData.storeName} onChange={handleInputChange} disabled={!isEditing} />
 
                                                     <div className="space-y-1.5">

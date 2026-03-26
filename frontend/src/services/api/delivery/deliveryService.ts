@@ -301,3 +301,20 @@ export const markNotificationRead = async (id: string) => {
     throw handleApiError(error);
   }
 };
+
+export const initiateOrderSettlement = async (id: string) => {
+  try {
+    const response = await api.post(`${BASE_URL}/orders/${id}/initiate-settlement`);
+    return response.data;
+  } catch (error) {
+    throw handleApiError(error);
+  }
+};
+export const initiateOrderHandover = async (id: string) => {
+  try {
+    const response = await api.post(`${BASE_URL}/orders/${id}/initiate-handover`);
+    return response.data;
+  } catch (error) {
+    throw handleApiError(error);
+  }
+};

@@ -81,6 +81,7 @@ export default function SellerSignUp() {
     ifsc: '',
     storeBanner: '',
     logo: '',
+    isDeliveryByPlatform: true,
   });
   const [loading, setLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -220,6 +221,7 @@ export default function SellerSignUp() {
         storeDescription: formData.storeDescription,
         storeBanner: formData.storeBanner,
         logo: formData.logo,
+        isDeliveryByPlatform: formData.isDeliveryByPlatform,
       });
 
       if (response.success) {
@@ -484,6 +486,26 @@ export default function SellerSignUp() {
                   <span className="w-6 h-6 bg-teal-100 text-teal-700 rounded-full flex items-center justify-center mr-2 text-[10px]">4</span>
                   Optional Details
                 </h3>
+
+                {/* Delivery Partner Toggle */}
+                <div className="flex items-center justify-between p-4 bg-teal-50/50 rounded-xl border border-teal-100/50">
+                  <div className="flex-1 pr-4">
+                    <h4 className="text-sm font-bold text-teal-900 leading-tight">Delivery Partner</h4>
+                    <p className="text-[10px] text-teal-700 mt-1 leading-relaxed">
+                      Enable to allow platform delivery partners to fulfill your orders. Disable if you'll handle deliveries yourself.
+                    </p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                    <input 
+                      type="checkbox" 
+                      className="sr-only peer"
+                      checked={formData.isDeliveryByPlatform}
+                      onChange={(e) => setFormData(prev => ({ ...prev, isDeliveryByPlatform: e.target.checked }))}
+                      disabled={loading}
+                    />
+                    <div className="w-11 h-6 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
+                  </label>
+                </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>

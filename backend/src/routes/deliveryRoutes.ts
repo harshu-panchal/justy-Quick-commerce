@@ -43,6 +43,8 @@ router.post("/orders/:id/verify-delivery-otp", deliveryOrderController.verifyDel
 router.post("/orders/:id/check-seller-proximity", deliveryOrderController.checkSellerProximity);
 router.post("/orders/:id/confirm-seller-pickup", deliveryOrderController.confirmSellerPickup);
 router.post("/orders/:id/check-customer-proximity", deliveryOrderController.checkCustomerProximity);
+router.post("/orders/:id/initiate-handover", deliveryOrderController.initiateHandover);
+router.post("/orders/:id/initiate-settlement", deliveryOrderController.initiateOrderSettlement);
 
 // Quick Commerce (Instant Delivery)
 router.get("/available-requests", deliveryQuickCommerceController.getAvailableRequests);

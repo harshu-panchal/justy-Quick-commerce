@@ -170,11 +170,17 @@ router.put("/products/bulk-update", productController.bulkUpdateProducts);
 
 // ==================== Order Routes ====================
 router.get("/orders", orderController.getAllOrders);
+router.get("/orders/unsettled-cod", orderController.getUnsettledCODOrders);
+router.get("/orders/warehouse", orderController.getWarehouseOrders);
+router.get("/orders/warehouse/stats", orderController.getWarehouseDashboardStats);
 router.get("/orders/status/:status", orderController.getOrdersByStatus);
 router.get("/orders/:id", orderController.getOrderById);
 router.patch("/orders/:id/status", orderController.updateOrderStatus);
 router.patch("/orders/:id/assign-delivery", orderController.assignDeliveryBoy);
 router.post("/orders/:id/assign", deliveryController.assignOrderManually);
+router.post("/orders/:id/verify-settlement", orderController.verifyOrderSettlement);
+router.patch("/orders/:id/mark-packaged", orderController.markOrderAsPackaged);
+router.post("/orders/:id/verify-handover", orderController.verifyWarehouseHandover);
 router.get("/orders/export/csv", orderController.exportOrders);
 
 // ==================== Return Request Routes ====================

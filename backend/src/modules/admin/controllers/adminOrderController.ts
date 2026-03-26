@@ -6,8 +6,9 @@ import Delivery from "../../../models/Delivery";
 import DeliveryAssignment from "../../../models/DeliveryAssignment";
 import Return from "../../../models/Return";
 import { notifySellersOfOrderUpdate } from "../../../services/sellerNotificationService";
-import { notifyDeliveryBoyOfAssignment } from "../../../services/deliveryNotificationService";
 import { Server as SocketIOServer } from "socket.io";
+import { verifySettlementOtp } from "../../../services/settlementService";
+import { verifyHandoverOtp } from "../../../services/handoverService";
 
 /**
  * Get all orders with filters
@@ -241,12 +242,6 @@ export const assignDeliveryBoy = asyncHandler(
     order.deliveryBoyStatus = "Assigned";
     order.assignedAt = new Date();
     await order.save();
-
-    // Notify delivery boy
-    const io = req.app.get("io");
-    if (io) {
-      await notifyDeliveryBoyOfAssignment(io, deliveryBoyId, order, "ORDER");
-    }
 
     // Create or update delivery assignment
     await DeliveryAssignment.findOneAndUpdate(
@@ -602,3 +597,185 @@ export const exportOrders = asyncHandler(
     res.send(csvContent);
   }
 );
+
+/**
+ * Verify Order Settlement (Warehouse/Admin)
+ * Confirms that the delivery boy has deposited the cash
+ */
+export const verifyOrderSettlement = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { otp } = req.body;
+
+    if (!otp) {
+      return res.status(400).json({
+        success: false,
+        message: "Settlement OTP is required",
+      });
+    }
+
+    try {
+      const result = await verifySettlementOtp(id, otp);
+
+      return res.status(200).json({
+        success: true,
+        message: result.message,
+      });
+    } catch (error: any) {
+      return res.status(400).json({
+        success: false,
+        message: error.message || "Failed to verify settlement",
+      });
+    }
+  }
+);
+
+/**
+ * Get all COD orders that are delivered but not yet settled with the warehouse
+ */
+export const getUnsettledCODOrders = async (_req: Request, res: Response) => {
+  try {
+    const orders = await Order.find({
+      paymentMethod: "COD",
+      status: "Delivered",
+      isSettledWithWarehouse: { $ne: true },
+    })
+      .populate("deliveryBoy", "name mobile")
+      .sort({ deliveredAt: -1 });
+
+    return res.status(200).json({
+      success: true,
+      count: orders.length,
+      data: orders,
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to fetch unsettled COD orders",
+    });
+  }
+};
+
+/**
+ * Get stats for the warehouse dashboard
+ */
+export const getWarehouseDashboardStats = async (_req: Request, res: Response) => {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const [totalOrders, pendingFulfillment, completedToday] = await Promise.all([
+      Order.countDocuments({ status: { $ne: "Cancelled" } }),
+      Order.countDocuments({ status: { $in: ["Pending", "Accepted", "Processed"] } }),
+      Order.countDocuments({ 
+        status: { $in: ["Shipped", "Delivered"] },
+        updatedAt: { $gte: today } 
+      })
+    ]);
+
+    // Mock recent activities (real activity log doesn't exist yet, we can use recent orders)
+    const recentOrders = await Order.find({ 
+      status: { $in: ["Processed", "Shipped"] } 
+    })
+    .sort({ updatedAt: -1 })
+    .limit(5);
+
+    const activities = recentOrders.map(o => ({
+      id: o._id.toString().slice(-4).toUpperCase(),
+      time: 'recently',
+      status: o.status === 'Shipped' ? 'Success' : 'Warning'
+    }));
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        stats: {
+          total: totalOrders,
+          pending: pendingFulfillment,
+          completed: completedToday,
+          lowStock: 0 // Mock for now
+        },
+        activities,
+        chartData: [60, 80, 45, 90, 70, 55, 85] // Mock chart for now
+      }
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to fetch warehouse stats"
+    });
+  }
+};
+
+// Warehouse controllers
+
+/**
+ * Get all orders for the warehouse management panel
+ */
+export const getWarehouseOrders = async (_req: Request, res: Response) => {
+  try {
+    const orders = await Order.find({
+      status: { $in: ["Pending", "Accepted", "Processed", "Shipped"] },
+    })
+      .populate("items")
+      .populate("deliveryBoy", "name mobile")
+      .sort({ createdAt: -1 });
+
+    const formatted = orders.map(order => ({
+      id: order._id,
+      orderNumber: order._id.toString().slice(-6).toUpperCase(),
+      itemsCount: order.items?.length || 0,
+      amount: order.total,
+      location: order.deliveryAddress?.address || "N/A",
+      status: order.status === "Pending" ? "Pending" : 
+              (order.status === "Processed" || order.status === "Accepted") ? "Ready" : 
+              order.status === "Shipped" ? "Shipped" : "Unknown",
+      rawStatus: order.status
+    }));
+
+    return res.status(200).json({
+      success: true,
+      data: formatted
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to fetch warehouse orders"
+    });
+  }
+};
+
+/**
+ * Mark order as packaged/ready for handover
+ */
+export const markOrderAsPackaged = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const order = await Order.findById(id);
+    if (!order) return res.status(404).json({ success: false, message: "Order not found" });
+
+    order.status = "Processed";
+    await order.save();
+
+    return res.status(200).json({ success: true, message: "Order marked as Ready for handover" });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+/**
+ * Verify Handover OTP from rider
+ */
+export const verifyWarehouseHandover = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { otp } = req.body;
+    
+    if (!otp) return res.status(400).json({ success: false, message: "OTP is required" });
+
+    const result = await verifyHandoverOtp(id, otp);
+    return res.status(200).json(result);
+  } catch (error: any) {
+    return res.status(400).json({ success: false, message: error.message });
+  }
+};

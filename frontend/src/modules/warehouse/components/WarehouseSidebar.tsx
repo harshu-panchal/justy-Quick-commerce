@@ -1,5 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { logout } from '../../../services/api/auth/adminAuthService';
 
 const SidebarItem = ({ to, icon: Icon, label, active }: { to: string, icon: any, label: string, active: boolean }) => (
   <Link to={to}>
@@ -60,7 +61,7 @@ export default function WarehouseSidebar() {
   ];
 
   const handleLogout = () => {
-    // Clear any necessary session/storage
+    logout();
     navigate('/warehouse/login');
   };
 

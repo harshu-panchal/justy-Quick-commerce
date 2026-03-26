@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getWarehouseDashboardStats } from '../../../services/api/admin/adminOrderService';
 
 const StatCard = ({ title, value, icon: Icon, color, delay }: { title: string, value: string | number, icon: any, color: string, delay: number }) => (
   <motion.div
@@ -67,31 +68,18 @@ export default function WarehouseDashboard() {
     refreshData();
   }, [timeRange]);
 
-  const refreshData = () => {
+  const refreshData = async () => {
     setIsLoading(true);
-    // Simulate API fetch delay
-    setTimeout(() => {
-      const isToday = timeRange === 'Today';
-      setDashboardData({
-        stats: {
-          total: isToday ? 156 : 1284,
-          pending: isToday ? 8 : 42,
-          completed: isToday ? 148 : 156,
-          lowStock: 12
-        },
-        activities: [
-          { id: '8245', time: '2 mins ago', status: 'Success' },
-          { id: '8244', time: '15 mins ago', status: 'Success' },
-          { id: '8243', time: '1 hour ago', status: 'Success' },
-          { id: '8242', time: '3 hours ago', status: 'Warning' },
-          { id: '8241', time: '5 hours ago', status: 'Success' },
-        ],
-        chartData: isToday
-          ? [30, 45, 25, 60, 80, 55, 40] // Hourly or smaller range
-          : [60, 80, 45, 90, 70, 55, 85] // Daily range
-      });
+    try {
+      const response = await getWarehouseDashboardStats();
+      if (response.success) {
+        setDashboardData(response.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch warehouse stats:', err);
+    } finally {
       setIsLoading(false);
-    }, 800);
+    }
   };
 
   const statConfig = [

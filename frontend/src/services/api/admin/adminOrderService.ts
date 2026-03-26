@@ -74,6 +74,8 @@ export interface Order {
   cancellationReason?: string;
   cancelledAt?: string;
   cancelledBy?: string | { firstName: string; lastName: string };
+  isSettledWithWarehouse?: boolean;
+  settledAt?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -215,5 +217,62 @@ export const exportOrders = async (
     params,
     responseType: "blob",
   });
+  return response.data;
+};
+
+/**
+ * Verify Order Settlement (Warehouse/Admin)
+ */
+export const verifyOrderSettlement = async (
+  id: string,
+  otp: string
+): Promise<ApiResponse<any>> => {
+  const response = await api.post<ApiResponse<any>>(
+    `/admin/orders/${id}/verify-settlement`,
+    { otp }
+  );
+  return response.data;
+};
+
+/**
+ * Get all COD orders that are delivered but not yet settled with the warehouse
+ */
+/**
+ * Get all COD orders that are delivered but not yet settled with the warehouse
+ */
+export const getUnsettledCODOrders = async (): Promise<ApiResponse<Order[]>> => {
+  const response = await api.get<ApiResponse<Order[]>>('/admin/orders/unsettled-cod');
+  return response.data;
+};
+
+/**
+ * Get all orders for the warehouse panel
+ */
+export const getWarehouseOrders = async (): Promise<ApiResponse<any[]>> => {
+  const response = await api.get<ApiResponse<any[]>>('/admin/orders/warehouse');
+  return response.data;
+};
+
+/**
+ * Mark order as packaged (Pack Order)
+ */
+export const markOrderAsPackaged = async (id: string): Promise<ApiResponse<any>> => {
+  const response = await api.patch<ApiResponse<any>>(`/admin/orders/${id}/mark-packaged`);
+  return response.data;
+};
+
+/**
+ * Verify Handover OTP from rider
+ */
+export const verifyWarehouseHandover = async (id: string, otp: string): Promise<ApiResponse<any>> => {
+  const response = await api.post<ApiResponse<any>>(`/admin/orders/${id}/verify-handover`, { otp });
+  return response.data;
+};
+
+/**
+ * Get stats for the warehouse dashboard
+ */
+export const getWarehouseDashboardStats = async (): Promise<ApiResponse<any>> => {
+  const response = await api.get<ApiResponse<any>>('/admin/orders/warehouse/stats');
   return response.data;
 };

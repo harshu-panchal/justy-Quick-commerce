@@ -13,7 +13,6 @@ import {
   deleteImage,
   uploadProductImageAutoClean,
 } from "../services/cloudinaryService";
-import { enhanceProductMainImageWithGemini } from "../services/geminiImageEnhanceService";
 import { CLOUDINARY_FOLDERS } from "../config/cloudinary";
 import { asyncHandler } from "../utils/asyncHandler";
 
@@ -40,25 +39,13 @@ router.post(
     }
 
     const folder = (req.body.folder as string) || CLOUDINARY_FOLDERS.PRODUCTS;
+    const file = (req as any).file;
 
-    // Enhance ONLY main product images with Gemini (then upload to Cloudinary)
-    let result;
-    if (folder === CLOUDINARY_FOLDERS.PRODUCTS) {
-      const file = (req as any).file;
-      const enhanced = await enhanceProductMainImageWithGemini({
-        inputBuffer: file.buffer,
-        inputMimeType: file.mimetype,
-      });
-      result = await uploadImageFromBuffer(enhanced.buffer, {
-        folder,
-        resourceType: "image",
-      });
-    } else {
-      result = await uploadImageFromBuffer((req as any).file.buffer, {
-        folder,
-        resourceType: "image",
-      });
-    }
+    // Direct upload to Cloudinary (Gemini enhancement removed to avoid API key dependency)
+    const result = await uploadImageFromBuffer(file.buffer, {
+      folder,
+      resourceType: "image",
+    });
 
     return res.status(200).json({
       success: true,

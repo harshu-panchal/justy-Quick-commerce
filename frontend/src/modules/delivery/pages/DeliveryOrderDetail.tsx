@@ -1,6 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+<<<<<<< Updated upstream
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { getOrderDetails, updateOrderStatus, getSellerLocationsForOrder, sendDeliveryOtp, verifyDeliveryOtp, updateDeliveryLocation, checkSellerProximity, confirmSellerPickup, checkCustomerProximity } from '../../../services/api/delivery/deliveryService';
+=======
+import { useParams, useNavigate } from 'react-router-dom';
+import { getOrderDetails, updateOrderStatus, getSellerLocationsForOrder, sendDeliveryOtp, verifyDeliveryOtp, updateDeliveryLocation, checkSellerProximity, confirmSellerPickup, checkCustomerProximity, initiateOrderSettlement, initiateOrderHandover } from '../../../services/api/delivery/deliveryService';
+>>>>>>> Stashed changes
 import deliveryIcon from '@assets/deliveryboy/deliveryIcon.png';
 import GoogleMapsTracking from '../../../components/GoogleMapsTracking';
 
@@ -82,6 +87,13 @@ const Icons = {
             <line x1="12" y1="9" x2="12" y2="13" />
             <line x1="12" y1="17" x2="12.01" y2="17" />
         </svg>
+    ),
+    Package: ({ size = 24, className = "" }) => (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+            <path d="M21 7.5V16c0 1.1-.9 2-2 2H5c-1.1 0-2-.9-2-2V7.5L12 3l9 4.5z" />
+            <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+            <line x1="12" y1="22.08" x2="12" y2="12" />
+        </svg>
     )
 };
 
@@ -103,6 +115,10 @@ export default function DeliveryOrderDetail() {
     const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
     const [routeInfo, setRouteInfo] = useState<{ distance: string; duration: string } | null>(null);
     const [locationError, setLocationError] = useState<string | null>(null);
+    const [settlementOtp, setSettlementOtp] = useState<string | null>(null);
+    const [initiatingSettlement, setInitiatingSettlement] = useState(false);
+    const [handoverOtp, setHandoverOtp] = useState<string | null>(null);
+    const [initiatingHandover, setInitiatingHandover] = useState(false);
 
     // New state for seller proximity and pickup tracking
     const [sellerProximity, setSellerProximity] = useState<Record<string, { withinRange: boolean; distance: number }>>({});
@@ -186,6 +202,43 @@ export default function DeliveryOrderDetail() {
             alert(err.message || 'Failed to verify OTP');
         } finally {
             setOtpVerifying(false);
+        }
+    };
+
+    const handleInitiateSettlement = async () => {
+        if (!id) return;
+        try {
+            setInitiatingSettlement(true);
+            const result = await initiateOrderSettlement(id);
+            if (result.success && result.otp) {
+               setSettlementOtp(result.otp);
+            } else {
+               setSettlementOtp(result.data?.otp || null);
+            }
+            alert('Settlement OTP generated! Please show this to the warehouse manager.');
+            await fetchOrder();
+        } catch (err: any) {
+            alert(err.message || 'Failed to initiate settlement');
+        } finally {
+            setInitiatingSettlement(false);
+        }
+    };
+
+    const handleInitiateHandover = async () => {
+        if (!id) return;
+        setInitiatingHandover(true);
+        try {
+            const response = await initiateOrderHandover(id);
+            if (response.success) {
+                setHandoverOtp(response.otp);
+                alert('Handover OTP generated! Please show this to the warehouse manager.');
+                await fetchOrder();
+            }
+        } catch (error: any) {
+            console.error('Failed to initiate handover:', error);
+            alert(error.message || 'Failed to generate handover OTP. Please try again.');
+        } finally {
+            setInitiatingHandover(false);
         }
     };
 
@@ -926,6 +979,101 @@ export default function DeliveryOrderDetail() {
                         <div className="absolute inset-0 bg-gradient-to-tr from-white/5 to-transparent pointer-events-none"></div>
                     </button>
                 </div>
+            )}
+
+            {/* Warehouse Handover OTP Section (only when order is Processed/Packed) */}
+            {order.status === 'Processed' && (
+                <div className="fixed bottom-24 left-6 right-6 z-30">
+                    <div className="bg-white rounded-2xl p-5 shadow-2xl border-2 border-teal-200">
+                        <div className="flex items-center gap-2 mb-4">
+                            <Icons.Package className="text-teal-500" size={20} />
+                            <p className="text-sm font-bold text-neutral-900 uppercase tracking-tight">Warehouse Handover</p>
+                        </div>
+
+                        {!handoverOtp ? (
+                            <div className="space-y-3">
+                                <p className="text-xs text-neutral-500 leading-relaxed">
+                                    The order is packed and ready. Generate an OTP and show it to the warehouse manager to confirm pickup.
+                                </p>
+                                <button
+                                    onClick={handleInitiateHandover}
+                                    disabled={initiatingHandover}
+                                    className="w-full py-4 bg-teal-600 text-white rounded-xl font-bold hover:bg-teal-700 transition-colors shadow-lg shadow-teal-200"
+                                >
+                                    {initiatingHandover ? 'Generating OTP...' : 'Generate Handover OTP'}
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="text-center space-y-4">
+                                <p className="text-xs text-neutral-500">Show this OTP to the Warehouse Manager:</p>
+                                <div className="bg-neutral-100 py-4 px-6 rounded-2xl border border-neutral-200">
+                                    <span className="text-4xl font-extrabold tracking-[0.5em] text-neutral-900 ml-[0.5em]">{handoverOtp}</span>
+                                </div>
+                                <p className="text-[10px] text-teal-500 font-medium">Valid for 30 minutes</p>
+                                <button
+                                    onClick={() => setHandoverOtp(null)}
+                                    className="text-sm font-semibold text-neutral-500 hover:text-neutral-700"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* Warehouse Settlement OTP Section (only when order is Delivered and COD and NOT settled) */}
+            {order.status === 'Delivered' && order.paymentMethod === 'COD' && !order.isSettledWithWarehouse && (
+                <div className="fixed bottom-24 left-6 right-6 z-30">
+                    <div className="bg-white rounded-2xl p-5 shadow-2xl border-2 border-orange-200">
+                        <div className="flex items-center gap-2 mb-4">
+                            <Icons.Truck className="text-orange-500" size={20} />
+                            <p className="text-sm font-bold text-neutral-900 uppercase tracking-tight">Warehouse Settlement</p>
+                        </div>
+                        
+                        {!settlementOtp ? (
+                            <div className="space-y-3">
+                                <p className="text-xs text-neutral-500 leading-relaxed">
+                                    You have collected cash for this order. Please deposit it at the warehouse and generate an OTP for verification.
+                                </p>
+                                <button
+                                    onClick={handleInitiateSettlement}
+                                    disabled={initiatingSettlement}
+                                    className="w-full py-4 bg-orange-500 text-white rounded-xl font-bold hover:bg-orange-600 transition-colors shadow-lg shadow-orange-200"
+                                >
+                                    {initiatingSettlement ? 'Generating OTP...' : 'Generate Settlement OTP'}
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="text-center space-y-4">
+                                <p className="text-xs text-neutral-500">Show this OTP to the Warehouse Manager:</p>
+                                <div className="bg-neutral-100 py-4 px-6 rounded-2xl border border-neutral-200">
+                                    <span className="text-4xl font-extrabold tracking-[0.5em] text-neutral-900 ml-[0.5em]">{settlementOtp}</span>
+                                </div>
+                                <p className="text-[10px] text-red-500 font-medium">Expires in 30 minutes</p>
+                                <button
+                                    onClick={() => setSettlementOtp(null)}
+                                    className="text-sm font-semibold text-neutral-500 hover:text-neutral-700"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* Settled Success Indicator */}
+            {order.isSettledWithWarehouse && (
+                 <div className="px-4 mt-2">
+                    <div className="bg-green-50 border border-green-100 rounded-xl p-4 flex items-center gap-3">
+                        <Icons.CheckCircle className="text-green-500" size={24} />
+                        <div>
+                            <p className="text-sm font-bold text-green-800">Settled with Warehouse</p>
+                            <p className="text-xs text-green-600">Cash deposit confirmed by manager.</p>
+                        </div>
+                    </div>
+                 </div>
             )}
         </div>
     );

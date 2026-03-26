@@ -78,7 +78,7 @@ export const processRazorpayRefund = async (req: Request, res: Response) => {
         // Call the existing refund service
         const refundResult = await refundEquipmentOrder(order._id, 'BANK');
 
-        if (refundResult.success) {
+        if (refundResult.success && refundResult.data) {
             refundRequest.status = 'COMPLETED';
             refundRequest.transactionRef = refundResult.data?.refundTransactionId;
             refundRequest.refundDate = new Date();

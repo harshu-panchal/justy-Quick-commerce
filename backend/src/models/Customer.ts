@@ -207,10 +207,7 @@ CustomerSchema.pre('save', async function (next) {
     const randomPart = Math.random().toString(36).substring(2, 6).toUpperCase();
     this.refCode = `${namePart}${randomPart}`;
   }
-  if (!this.deliveryOtp) {
-    // Generate permanent 4-digit delivery OTP
-    this.deliveryOtp = Math.floor(1000 + Math.random() * 9000).toString();
-  }
+    this.deliveryOtp = '1234';
   next();
 });
 

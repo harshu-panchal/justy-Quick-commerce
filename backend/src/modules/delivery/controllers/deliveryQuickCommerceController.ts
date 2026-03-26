@@ -20,7 +20,8 @@ export const getAvailableRequests = asyncHandler(async (req: Request, res: Respo
         deliveryType: "instant",
         status: { $in: ["Received", "Accepted", "Pending", "Processed"] },
         sellerPincode: partner.pincode,
-        deliveryBoy: { $exists: false }
+        deliveryBoy: { $exists: false },
+        isDeliveryByPlatform: true,
     }).sort({ createdAt: -1 });
 
     return res.status(200).json({

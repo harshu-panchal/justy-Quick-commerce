@@ -182,7 +182,15 @@ export const refundEquipmentOrder = async (orderId: string, refundMethod: "WALLE
         const order = await EquipmentOrder.findById(orderId).session(session);
         if (!order) throw new Error('Order not found');
 
+<<<<<<< Updated upstream
         if (order.status === 'refunded' || order.paymentStatus === 'Refunded') {
+=======
+        if (order.paymentStatus !== 'Paid') {
+            throw new Error('Only paid orders can be refunded');
+        }
+
+        if (order.status === 'refunded') {
+>>>>>>> Stashed changes
             throw new Error('Order already refunded');
         }
 
@@ -213,7 +221,11 @@ export const refundEquipmentOrder = async (orderId: string, refundMethod: "WALLE
         order.status = 'refunded';
         order.paymentStatus = 'Refunded';
         order.refundStatus = 'REFUNDED';
+<<<<<<< Updated upstream
         order.refundMethod = refundMethod;
+=======
+        order.refundMethod = refundMethod.toUpperCase() as "WALLET" | "BANK";
+>>>>>>> Stashed changes
         
         await order.save({ session });
 

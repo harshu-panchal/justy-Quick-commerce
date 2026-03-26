@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { register } from '../../../services/api/auth/adminAuthService';
 
 export default function WarehouseSignUp() {
   const navigate = useNavigate();
@@ -13,17 +14,38 @@ export default function WarehouseSignUp() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError("");
     
-    // Simulate Registration
-    setTimeout(() => {
+    try {
+      const nameParts = formData.fullName.trim().split(/\s+/);
+      const firstName = nameParts[0];
+      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : ' ';
+
+      const response = await register({
+        firstName,
+        lastName,
+        mobile: formData.mobile,
+        email: formData.email,
+        password: formData.securityPin,
+        role: "Admin" // Required for Warehouse/Admin access
+      });
+
+      if (response.success) {
+        setSuccess(true);
+        setTimeout(() => navigate('/warehouse/login'), 2000);
+      } else {
+        setError(response.message || "Registration failed.");
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Error creating account. Please try again.");
+    } finally {
       setIsLoading(false);
-      setSuccess(true);
-      setTimeout(() => navigate('/warehouse/login'), 2000);
-    }, 1500);
+    }
   };
 
   return (
@@ -129,6 +151,8 @@ export default function WarehouseSignUp() {
                     placeholder="0000"
                   />
                 </div>
+
+                {error && <div className="text-xs font-bold text-red-500 bg-red-50 p-3 rounded-xl">{error}</div>}
 
                 <button
                   type="submit"

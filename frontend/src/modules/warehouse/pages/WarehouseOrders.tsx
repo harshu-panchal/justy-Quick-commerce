@@ -1,7 +1,17 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
+import { 
+  getWarehouseOrders, 
+  markOrderAsPackaged, 
+  verifyWarehouseHandover 
+} from '../../../services/api/admin/adminOrderService';
 
-const OrderItem = ({ order, delay, onHandover }: { order: any, delay: number, onHandover: (id: string) => void }) => (
+const OrderItem = ({ order, delay, onHandover, onPack }: { 
+  order: any, 
+  delay: number, 
+  onHandover: (id: string) => void,
+  onPack: (id: string) => void
+}) => (
   <motion.div
     initial={{ opacity: 0, y: 10 }}
     animate={{ opacity: 1, y: 0 }}
@@ -16,7 +26,7 @@ const OrderItem = ({ order, delay, onHandover }: { order: any, delay: number, on
         </div>
         <div>
           <div className="flex items-center gap-2">
-            <h3 className="font-black text-neutral-900 tracking-tight text-lg uppercase">{order.id}</h3>
+            <h3 className="font-black text-neutral-900 tracking-tight text-lg uppercase">#{order.orderNumber}</h3>
             <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-tighter ${order.status === 'Ready' ? 'bg-emerald-100 text-emerald-700' :
                 order.status === 'Shipped' ? 'bg-blue-100 text-blue-700' :
                   order.status === 'Pending' ? 'bg-amber-100 text-amber-700' : 'bg-neutral-100 text-neutral-600'
@@ -24,13 +34,13 @@ const OrderItem = ({ order, delay, onHandover }: { order: any, delay: number, on
               {order.status}
             </span>
           </div>
-          <p className="text-sm text-neutral-500 font-bold">{order.itemsCount} Items • <span className="text-teal-600">₹{order.amount}</span></p>
+          <p className="text-sm text-neutral-500 font-bold">{order.itemsCount} Items • <span className="text-teal-600">₹{order.amount.toFixed(2)}</span></p>
         </div>
       </div>
       <div className="flex items-center gap-2">
         <div className="text-right hidden md:block mr-2">
-          <p className="text-[10px] font-black text-neutral-400 uppercase tracking-widest leading-none">Status</p>
-          <p className="text-xs font-bold text-neutral-700">{order.status === 'Pending' ? 'Awaiting Pack' : 'Updated 10m ago'}</p>
+          <p className="text-[10px] font-black text-neutral-400 uppercase tracking-widest leading-none">Rider</p>
+          <p className="text-xs font-bold text-neutral-700">{order.deliveryBoy?.name || 'Searching...'}</p>
         </div>
         <button className="p-3 hover:bg-neutral-100 rounded-2xl transition-colors">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-neutral-400"><circle cx="12" cy="12" r="1" /><circle cx="19" cy="12" r="1" /><circle cx="5" cy="12" r="1" /></svg>
@@ -46,9 +56,6 @@ const OrderItem = ({ order, delay, onHandover }: { order: any, delay: number, on
         <p className="text-sm font-bold text-neutral-700 leading-relaxed">{order.location}</p>
       </div>
       <div className="flex gap-2 w-full md:w-auto">
-        <button className="flex-1 md:flex-none px-6 py-3 text-sm font-black text-neutral-600 hover:bg-neutral-100 rounded-2xl transition-all active:scale-95">
-          Order Info
-        </button>
         {order.status === 'Ready' ? (
           <button
             onClick={() => onHandover(order.id)}
@@ -61,7 +68,10 @@ const OrderItem = ({ order, delay, onHandover }: { order: any, delay: number, on
             Handed Over
           </button>
         ) : (
-          <button className="flex-1 md:flex-none px-8 py-3 text-sm font-black text-white bg-teal-600 hover:bg-teal-700 rounded-2xl shadow-xl shadow-teal-600/30 active:scale-95 transition-all">
+          <button 
+            onClick={() => onPack(order.id)}
+            className="flex-1 md:flex-none px-8 py-3 text-sm font-black text-white bg-teal-600 hover:bg-teal-700 rounded-2xl shadow-xl shadow-teal-600/30 active:scale-95 transition-all"
+          >
             Pack Order
           </button>
         )}
@@ -79,29 +89,38 @@ export default function WarehouseOrders() {
   const [riderOtp, setRiderOtp] = useState('');
   const [verifying, setVerifying] = useState(false);
 
-  const rawOrders = [
-    { id: '#JS-8241', itemsCount: 3, amount: 450, location: 'Building 4, Flat 201, Jubilee Hills', status: 'Pending' },
-    { id: '#JS-8242', itemsCount: 1, amount: 120, location: 'Highline Apts, Sector 45', status: 'Ready' },
-    { id: '#JS-8243', itemsCount: 5, amount: 1250, location: 'Villa 12, Palm Grove', status: 'Pending' },
-    { id: '#JS-8244', itemsCount: 2, amount: 320, location: 'Banjara Hills, Road No 12', status: 'Pending' },
-    { id: '#JS-8245', itemsCount: 4, amount: 980, location: 'Gachibowli, DLF Cyber City', status: 'Ready' },
-    { id: '#JS-8246', itemsCount: 2, amount: 210, location: 'Hitech City, Madhapur', status: 'Shipped' },
-  ];
-
   useEffect(() => {
     fetchOrders();
   }, [filter]);
 
-  const fetchOrders = () => {
+  const fetchOrders = async () => {
     setIsLoading(true);
-    setTimeout(() => {
-      let filtered = rawOrders;
-      if (filter !== 'All') {
-        filtered = rawOrders.filter(o => o.status === filter);
+    try {
+      const response = await getWarehouseOrders();
+      if (response.success) {
+        let items = response.data || [];
+        if (filter !== 'All') {
+          items = items.filter((o: any) => o.status === filter);
+        }
+        setOrderList(items);
       }
-      setOrderList(filtered);
+    } catch (err) {
+      console.error('Failed to fetch warehouse orders:', err);
+    } finally {
       setIsLoading(false);
-    }, 800);
+    }
+  };
+
+  const handlePack = async (id: string) => {
+    try {
+      const response = await markOrderAsPackaged(id);
+      if (response.success) {
+        alert('Order marked as Packed and ready for handover!');
+        fetchOrders();
+      }
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to pack order');
+    }
   };
 
   const handleHandover = (id: string) => {
@@ -109,23 +128,30 @@ export default function WarehouseOrders() {
     setRiderOtp('');
   };
 
-  const verifyHandover = () => {
-    if (riderOtp.length !== 4) return;
+  const verifyHandover = async () => {
+    if (riderOtp.length !== 4 || !handoverOrderId) return;
     setVerifying(true);
-    setTimeout(() => {
-      // Success feedback
-      setOrderList(prev => prev.map(o => o.id === handoverOrderId ? { ...o, status: 'Shipped' } : o));
-      setHandoverOrderId(null);
+    try {
+      const response = await verifyWarehouseHandover(handoverOrderId, riderOtp);
+      if (response.success) {
+        setHandoverOrderId(null);
+        setRiderOtp('');
+        alert(`Handover Successful! Order has been moved to Shipped.`);
+        fetchOrders();
+      } else {
+        alert(response.message || 'Verification failed');
+      }
+    } catch (err: any) {
+      alert(err.response?.data?.message || err.message || 'Verification failed');
+    } finally {
       setVerifying(false);
-      setRiderOtp('');
-      alert(`Handover Successful! Order has been moved to Shipped.`);
-    }, 1500);
+    }
   };
 
   const categories = ['All', 'Pending', 'Ready', 'Shipped'];
 
   const filteredDisplayOrders = orderList.filter(o =>
-    o.id.toLowerCase().includes(search.toLowerCase()) ||
+    o.orderNumber.toLowerCase().includes(search.toLowerCase()) ||
     o.location.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -133,7 +159,7 @@ export default function WarehouseOrders() {
     <div className="space-y-8 relative pb-20">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-black text-neutral-900 tracking-tight">Order Fulfillment</h1>
+          <h1 className="text-3xl font-black text-neutral-900 tracking-tight uppercase">Order Fulfillment</h1>
           <p className="text-neutral-500 mt-1 font-medium">Manage and track warehouse order processing.</p>
         </div>
 
@@ -202,6 +228,7 @@ export default function WarehouseOrders() {
                 order={order}
                 delay={index * 0.05}
                 onHandover={handleHandover}
+                onPack={handlePack}
               />
             ))
           ) : (
@@ -212,10 +239,10 @@ export default function WarehouseOrders() {
             >
               <div className="text-6xl text-neutral-200">🔎</div>
               <div className="space-y-1">
-                <h3 className="text-xl font-black text-neutral-800 tracking-tight">No orders found</h3>
+                <h3 className="text-xl font-black text-neutral-800 tracking-tight leading-none uppercase">No orders found</h3>
                 <p className="text-neutral-500 font-medium italic">Try adjusting your filters or search term</p>
               </div>
-              <button onClick={() => { setFilter('All'); setSearch(''); }} className="px-6 py-2 bg-neutral-900 text-white rounded-xl text-sm font-bold active:scale-95 transition-all">Clear All</button>
+              <button onClick={() => { setFilter('All'); setSearch(''); }} className="px-6 py-2 bg-neutral-900 text-white rounded-xl text-sm font-bold active:scale-95 transition-all uppercase tracking-widest">Clear All</button>
             </motion.div>
           )}
         </AnimatePresence>
@@ -236,7 +263,7 @@ export default function WarehouseOrders() {
               initial={{ y: "100%", opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: "100%", opacity: 0 }}
-              className="relative bg-white rounded-t-[48px] md:rounded-[48px] p-10 max-w-sm w-full shadow-2xl overflow-hidden"
+              className="relative bg-white rounded-t-[48px] md:rounded-[48px] p-10 max-w-sm w-full shadow-2xl overflow-hidden mt-[-10vh]"
             >
               <div className="w-12 h-1.5 bg-neutral-100 rounded-full mx-auto mb-8 md:hidden" />
 
@@ -244,24 +271,24 @@ export default function WarehouseOrders() {
                 <div className="w-24 h-24 bg-emerald-50 rounded-[40px] rotate-12 flex items-center justify-center mx-auto mb-6 text-5xl shadow-lg border-2 border-white">
                   <span className="-rotate-12">📦</span>
                 </div>
-                <h2 className="text-3xl font-black text-neutral-900 tracking-tight leading-none">Rider Handover</h2>
+                <h2 className="text-3xl font-black text-neutral-900 tracking-tight leading-none uppercase">Rider Handover</h2>
                 <p className="text-sm font-bold text-neutral-400 mt-3 flex items-center justify-center gap-2">
                   <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-                  Secure Verification: {handoverOrderId}
+                  Secure Verification: {handoverOrderId.slice(-6).toUpperCase()}
                 </p>
               </div>
 
               <div className="space-y-6">
                 <div className="space-y-3">
-                  <p className="text-[10px] font-black text-neutral-400 uppercase tracking-[0.2em] text-center">Ask Rider for OTP</p>
+                  <p className="text-[10px] font-black text-neutral-400 uppercase tracking-[0.2em] text-center">Ask Rider for 4-digit OTP</p>
                   <input
                     type="text"
                     maxLength={4}
                     value={riderOtp}
-                    onChange={(e) => setRiderOtp(e.target.value.replace(/\D/g, ''))}
-                    placeholder="0 0 0 0"
+                    onChange={(e) => setRiderOtp(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                    placeholder="      "
                     disabled={verifying}
-                    className="w-full text-center text-5xl font-black tracking-[12px] py-8 rounded-[32px] border-2 border-neutral-100 focus:border-emerald-500 outline-none transition-all placeholder:text-neutral-100 bg-neutral-50 shadow-inner"
+                    className="w-full text-center text-5xl font-black tracking-[16px] py-8 rounded-[32px] border-2 border-neutral-100 focus:border-emerald-500 outline-none transition-all placeholder:text-neutral-100 bg-neutral-50 shadow-inner"
                   />
                 </div>
 
@@ -284,7 +311,7 @@ export default function WarehouseOrders() {
                 <button
                   onClick={() => !verifying && setHandoverOrderId(null)}
                   disabled={verifying}
-                  className="w-full py-2 text-xs font-black text-neutral-400 hover:text-red-500 transition-colors uppercase tracking-widest"
+                  className="w-full py-2 text-xs font-black text-neutral-300 hover:text-red-500 transition-colors uppercase tracking-widest"
                 >
                   Dismiss Process
                 </button>

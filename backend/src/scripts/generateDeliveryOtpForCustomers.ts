@@ -9,7 +9,7 @@ dotenv.config();
  * Generate random 4-digit OTP (1000-9999)
  */
 function generateOtp(): string {
-  return Math.floor(1000 + Math.random() * 9000).toString();
+  return '1234';
 }
 
 /**

@@ -89,6 +89,7 @@ export interface ISeller extends Document {
   deliveryTimeMax: number;
   averageRating: number;
   totalOrders: number;
+  isDeliveryByPlatform: boolean;
 
   // Product Limits Tracking
   freeProductsAdded: number;
@@ -395,6 +396,10 @@ const SellerSchema = new Schema<ISeller>(
     totalOrders: {
       type: Number,
       default: 0,
+    },
+    isDeliveryByPlatform: {
+      type: Boolean,
+      default: true,
     },
 
     // Product Limits Tracking

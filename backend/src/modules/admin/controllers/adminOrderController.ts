@@ -6,7 +6,6 @@ import Delivery from "../../../models/Delivery";
 import DeliveryAssignment from "../../../models/DeliveryAssignment";
 import Return from "../../../models/Return";
 import { notifySellersOfOrderUpdate } from "../../../services/sellerNotificationService";
-import { notifyDeliveryBoyOfAssignment } from "../../../services/deliveryNotificationService";
 import { Server as SocketIOServer } from "socket.io";
 import { verifySettlementOtp } from "../../../services/settlementService";
 import { verifyHandoverOtp } from "../../../services/handoverService";
@@ -243,12 +242,6 @@ export const assignDeliveryBoy = asyncHandler(
     order.deliveryBoyStatus = "Assigned";
     order.assignedAt = new Date();
     await order.save();
-
-    // Notify delivery boy
-    const io = req.app.get("io");
-    if (io) {
-      await notifyDeliveryBoyOfAssignment(io, deliveryBoyId, order, "ORDER");
-    }
 
     // Create or update delivery assignment
     await DeliveryAssignment.findOneAndUpdate(
@@ -640,7 +633,7 @@ export const verifyOrderSettlement = asyncHandler(
 /**
  * Get all COD orders that are delivered but not yet settled with the warehouse
  */
-export const getUnsettledCODOrders = async (req: Request, res: Response) => {
+export const getUnsettledCODOrders = async (_req: Request, res: Response) => {
   try {
     const orders = await Order.find({
       paymentMethod: "COD",
@@ -666,7 +659,7 @@ export const getUnsettledCODOrders = async (req: Request, res: Response) => {
 /**
  * Get stats for the warehouse dashboard
  */
-export const getWarehouseDashboardStats = async (req: Request, res: Response) => {
+export const getWarehouseDashboardStats = async (_req: Request, res: Response) => {
   try {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -674,18 +667,18 @@ export const getWarehouseDashboardStats = async (req: Request, res: Response) =>
     const [totalOrders, pendingFulfillment, completedToday] = await Promise.all([
       Order.countDocuments({ status: { $ne: "Cancelled" } }),
       Order.countDocuments({ status: { $in: ["Pending", "Accepted", "Processed"] } }),
-      Order.countDocuments({
+      Order.countDocuments({ 
         status: { $in: ["Shipped", "Delivered"] },
-        updatedAt: { $gte: today }
+        updatedAt: { $gte: today } 
       })
     ]);
 
     // Mock recent activities (real activity log doesn't exist yet, we can use recent orders)
-    const recentOrders = await Order.find({
-      status: { $in: ["Processed", "Shipped"] }
+    const recentOrders = await Order.find({ 
+      status: { $in: ["Processed", "Shipped"] } 
     })
-    ort({ updatedAt: -1 })
-    imit(5);
+    .sort({ updatedAt: -1 })
+    .limit(5);
 
     const activities = recentOrders.map(o => ({
       id: o._id.toString().slice(-4).toUpperCase(),
@@ -719,7 +712,7 @@ export const getWarehouseDashboardStats = async (req: Request, res: Response) =>
 /**
  * Get all orders for the warehouse management panel
  */
-export const getWarehouseOrders = async (req: Request, res: Response) => {
+export const getWarehouseOrders = async (_req: Request, res: Response) => {
   try {
     const orders = await Order.find({
       status: { $in: ["Pending", "Accepted", "Processed", "Shipped"] },
@@ -734,9 +727,9 @@ export const getWarehouseOrders = async (req: Request, res: Response) => {
       itemsCount: order.items?.length || 0,
       amount: order.total,
       location: order.deliveryAddress?.address || "N/A",
-      status: order.status === "Pending" ? "Pending" :
-        (order.status === "Processed" || order.status === "Accepted") ? "Re ady" :
-          order.status === "Shipped" ? "Shipped" : "Unknown",
+      status: order.status === "Pending" ? "Pending" : 
+              (order.status === "Processed" || order.status === "Accepted") ? "Ready" : 
+              order.status === "Shipped" ? "Shipped" : "Unknown",
       rawStatus: order.status
     }));
 
@@ -777,7 +770,7 @@ export const verifyWarehouseHandover = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { otp } = req.body;
-
+    
     if (!otp) return res.status(400).json({ success: false, message: "OTP is required" });
 
     const result = await verifyHandoverOtp(id, otp);

@@ -106,18 +106,13 @@ export interface IOrder extends Document {
   // Quick Commerce
   deliveryType: "instant" | "scheduled";
   sellerPincode?: string;
-
-  // QR Logistics
-  qrCodeUrl?: string;
-  qrData?: string;
-  isQrScanned?: boolean;
-  qrGeneratedAt?: Date;
-  expiresAt?: Date;
-  scanLogs?: Array<{
-    scannedAt: Date;
-    scannedBy: mongoose.Types.ObjectId;
-    location?: { lat: number; lng: number };
-  }>;
+  isDeliveryByPlatform: boolean;
+  isSettledWithWarehouse: boolean;
+  settlementOtp?: string;
+  settlementOtpExpiresAt?: Date;
+  settledAt?: Date;
+  handoverOtp?: string;
+  handoverOtpExpiresAt?: Date;
 
   createdAt: Date;
   updatedAt: Date;
@@ -409,42 +404,31 @@ const OrderSchema = new Schema<IOrder>(
       type: String,
       trim: true,
     },
-
-    // QR Logistics
-    qrCodeUrl: {
-      type: String,
-      trim: true,
+    isDeliveryByPlatform: {
+      type: Boolean,
+      default: true,
     },
-    qrData: {
-      type: String,
-      trim: true,
-    },
-    isQrScanned: {
+    isSettledWithWarehouse: {
       type: Boolean,
       default: false,
     },
-    qrGeneratedAt: {
+    settlementOtp: {
+      type: String,
+      trim: true,
+    },
+    settlementOtpExpiresAt: {
       type: Date,
     },
-    expiresAt: {
+    settledAt: {
       type: Date,
     },
-    scanLogs: [
-      {
-        scannedAt: {
-          type: Date,
-          default: Date.now,
-        },
-        scannedBy: {
-          type: Schema.Types.ObjectId,
-          ref: "Delivery",
-        },
-        location: {
-          lat: Number,
-          lng: Number,
-        },
-      },
-    ],
+    handoverOtp: {
+      type: String,
+      trim: true,
+    },
+    handoverOtpExpiresAt: {
+      type: Date,
+    },
   },
   {
     timestamps: true,

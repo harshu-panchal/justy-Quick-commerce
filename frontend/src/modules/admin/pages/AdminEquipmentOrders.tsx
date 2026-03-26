@@ -41,7 +41,13 @@ export default function AdminEquipmentOrders() {
   
   // Commission Settings state
   const [showCommissionSettings, setShowCommissionSettings] = useState(false);
-  const [commissionConfig, setCommissionConfig] = useState({
+  const [commissionConfig, setCommissionConfig] = useState<{
+    enabled: boolean;
+    payMode: string;
+    amount: number;
+    salaryDays?: number;
+    kmRate?: number;
+  }>({
     enabled: true,
     payMode: 'FIXED_PER_ORDER',
     amount: 30
@@ -439,7 +445,7 @@ export default function AdminEquipmentOrders() {
                     <td className="p-4 align-top text-center space-y-2">
                        {getStatusBadge(order.status)}
                        <div className={`text-[10px] font-black uppercase ${order.paymentStatus === 'Paid' ? 'text-green-600' : order.paymentStatus === 'Refunded' ? 'text-orange-600' : 'text-neutral-400'}`}>
-                         {order.paymentStatus}
+                         {order.paymentStatus === 'Paid' ? (order.paymentMethod === 'COD' ? 'COD Paid' : 'Online Prepaid') : order.paymentStatus}
                        </div>
                        {(order.rejectionReason || order.cancellationReason) && (
                          <div className="text-[9px] text-red-500 font-medium italic max-w-[100px] mx-auto line-clamp-2">
@@ -481,10 +487,17 @@ export default function AdminEquipmentOrders() {
                           )
                         )}
 
-                         {order.deliveryBoy && order.status === 'assigned' && (
+                         {order.deliveryBoy && (order.status === 'assigned' || order.status === 'picked_up' || order.status === 'delivered') && (
                           <div className="text-right">
-                             <div className="text-[9px] text-neutral-400 font-bold uppercase mb-1">Partner Assigned</div>
+                             <div className="text-[9px] text-neutral-400 font-bold uppercase mb-1">
+                               {order.status === 'delivered' ? 'Delivered By' : 'Partner Assigned'}
+                             </div>
                              <div className="text-xs font-bold text-neutral-800">{order.deliveryBoy.name}</div>
+                             {order.status === 'delivered' && order.updatedAt && (
+                                <div className="text-[9px] text-neutral-500 mt-0.5">
+                                  {new Date(order.updatedAt).toLocaleString()}
+                                </div>
+                             )}
                           </div>
                         )}
 
@@ -604,9 +617,16 @@ export default function AdminEquipmentOrders() {
                       )
                     )}
 
-                    {order.deliveryBoy && order.status === 'assigned' && (
-                       <div className="w-full text-center p-2 bg-purple-50 rounded border border-purple-100">
-                          <span className="text-[9px] text-purple-600 font-black uppercase">Assigned: {order.deliveryBoy.name}</span>
+                    {order.deliveryBoy && (order.status === 'assigned' || order.status === 'picked_up' || order.status === 'delivered') && (
+                       <div className={`w-full text-center p-2 rounded border ${order.status === 'delivered' ? 'bg-teal-50 border-teal-100' : 'bg-purple-50 border-purple-100'}`}>
+                          <div className={`text-[9px] font-black uppercase ${order.status === 'delivered' ? 'text-teal-600' : 'text-purple-600'}`}>
+                            {order.status === 'delivered' ? 'Delivered By: ' : 'Assigned: '} {order.deliveryBoy.name}
+                          </div>
+                          {order.status === 'delivered' && order.updatedAt && (
+                            <div className="text-[8px] font-bold text-neutral-500 mt-0.5">
+                              {new Date(order.updatedAt).toLocaleString()}
+                            </div>
+                          )}
                        </div>
                     )}
                   </div>

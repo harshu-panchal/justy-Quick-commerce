@@ -229,31 +229,6 @@ export default function AdminEquipmentItems() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-1">Delivery Charge (₹)</label>
-                    <input
-                      type="number"
-                      name="deliveryCharge"
-                      value={formData.deliveryCharge}
-                      onChange={handleInputChange}
-                      min="0"
-                      className="w-full px-3 py-2 border border-neutral-300 rounded focus:ring-2 focus:ring-teal-500 outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-1">Platform Fee (₹)</label>
-                    <input
-                      type="number"
-                      name="platformFee"
-                      value={formData.platformFee}
-                      onChange={handleInputChange}
-                      min="0"
-                      className="w-full px-3 py-2 border border-neutral-300 rounded focus:ring-2 focus:ring-teal-500 outline-none"
-                    />
-                  </div>
-                </div>
-
                  <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-1">Minimum Buy Quantity (MOQ) *</label>
                   <input

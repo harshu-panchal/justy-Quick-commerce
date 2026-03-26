@@ -436,7 +436,7 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
       {/* 4. Sticky Category Header (Untouched as requested) - Mobile Only */}
       <div
         ref={stickyRef}
-        className="sticky top-0 z-50 bg-white shadow-md border-b border-gray-100 md:hidden"
+        className="sticky top-0 z-50 bg-white md:hidden"
       >
         <div className="w-full">
           <div

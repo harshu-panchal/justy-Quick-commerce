@@ -253,10 +253,12 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 }
               </motion.div>
             </AnimatePresence>
-          </main>
 
-          {/* Floating Cart Pill */}
-          <FloatingCartPill />
+            {/* Floating Cart Pill (Mobile only, hidden on cart/checkout) */}
+            {!(isCartPage || isCheckoutPage) && !isProductDetailPage && (
+              <FloatingCartPill />
+            )}
+          </main>
 
           {/* Location Permission Request Modal - Mandatory for all users */}
           {showLocationRequest && (

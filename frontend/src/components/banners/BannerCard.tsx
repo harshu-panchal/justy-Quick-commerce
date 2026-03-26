@@ -27,7 +27,7 @@ import { useNavigate } from "react-router-dom";
      return (
          <div
              onClick={handleClick}
-             className="relative w-full h-full cursor-pointer overflow-hidden rounded-2xl md:rounded-3xl shadow-lg border border-neutral-100 transition-transform duration-300 hover:scale-[1.01]"
+             className="relative w-full h-full cursor-pointer overflow-hidden transition-transform duration-300 hover:scale-[1.01]"
          >
             <img
                 src={banner.imageUrl}

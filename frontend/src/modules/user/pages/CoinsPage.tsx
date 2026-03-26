@@ -164,14 +164,16 @@ const CoinsPage: React.FC = () => {
             )}
           </AnimatePresence>
         </div>
-      </motion.div>
 
-      {/* Persistent Bottom Hint */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-gray-900/80 backdrop-blur-md px-6 py-2 rounded-full border border-white/10 shadow-2xl z-50 pointer-events-none">
-        <span className="text-white text-[10px] font-bold uppercase tracking-widest opacity-80 flex items-center gap-2">
-           More rewards coming soon! <span className="text-amber-400">⚡</span>
-        </span>
-      </div>
+        {/* Bottom Hint - Moved from fixed position to flow */}
+        <div className="mt-12 flex justify-center">
+          <div className="bg-white/50 backdrop-blur-sm px-6 py-3 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-2">
+            <span className="text-gray-400 text-[10px] font-bold uppercase tracking-widest flex items-center gap-2">
+              More rewards coming soon! <span className="text-amber-400">⚡</span>
+            </span>
+          </div>
+        </div>
+      </motion.div>
     </div>
   );
 };

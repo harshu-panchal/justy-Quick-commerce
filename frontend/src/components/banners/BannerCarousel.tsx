@@ -46,7 +46,7 @@ const BannerCarousel: React.FC<BannerCarouselProps> = ({ mode }) => {
 
     if (loading || banners.length === 0) {
         return (
-            <div className="w-full h-[160px] md:h-[240px] animate-pulse bg-neutral-100 rounded-2xl md:rounded-3xl border border-neutral-200" />
+            <div className="w-full h-[160px] md:h-[240px] animate-pulse bg-neutral-100 border-y border-neutral-200" />
         );
     }
 
@@ -99,7 +99,7 @@ const BannerCarousel: React.FC<BannerCarouselProps> = ({ mode }) => {
                             else if (swipe && offset.x < 0) nextSlide();
                         }}
                     >
-                        <div className="px-4 md:px-6 lg:px-8 h-full">
+                        <div className="w-full h-full">
                             <BannerCard banner={banners[currentIndex]} />
                         </div>
                     </motion.div>

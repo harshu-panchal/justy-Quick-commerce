@@ -57,7 +57,7 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
               const name = c.name.toLowerCase();
 
               // Determine deliveryType: use API field if present, fallback to keyword heuristic
-              const scheduledKeywords = ['fashion', 'electronics', 'beauty', 'wedding', 'sports', 'lux', 'home-decor', 'mobile'];
+              const scheduledKeywords = ['fashion', 'electronics', 'beauty', 'wedding', 'sports', 'lux', 'home-decor', 'mobile', 'toys', 'toy'];
               const isScheduledByKeyword = scheduledKeywords.some(word => slug.includes(word) || name.includes(word));
 
               const catDeliveryType = c.deliveryType || (isScheduledByKeyword ? 'scheduled' : 'quick');
@@ -79,10 +79,13 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
           setTabs(newTabs);
 
           // If current activeTab is not "all" and is no longer in the tabs list for the current deliveryMode,
-          // redirect the user back to "all" to avoid showing a category from the wrong delivery mode
+          // redirect the user back to "all" ONLY if they are NOT on a special page like store or product
           if (activeTab !== 'all' && !newTabs.some((t) => t.id === activeTab)) {
-            onTabChange?.('all');
-            navigate('/');
+            const isOnHeaderCategoryPage = window.location.pathname.includes('/header-category/');
+            if (isOnHeaderCategoryPage) {
+              onTabChange?.('all');
+              navigate('/');
+            }
           }
         }
       } catch (error) {
@@ -90,7 +93,7 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
       }
     };
     fetchHeaderCategories();
-  }, [deliveryMode]);
+  }, [deliveryMode, activeTab]);
 
   const navigate = useNavigate();
   const { totalCoins } = useCoins();
@@ -302,6 +305,8 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
   }, [activeTab]);
 
   const handleTabClick = (tabId: string) => {
+    if (tabId === activeTab) return; // Already on this tab
+
     onTabChange?.(tabId);
     if (tabId === 'all') {
       navigate('/');
@@ -436,7 +441,7 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
       {/* 4. Sticky Category Header (Untouched as requested) - Mobile Only */}
       <div
         ref={stickyRef}
-        className="sticky top-0 z-50 bg-white shadow-md border-b border-gray-100 md:hidden"
+        className="sticky top-0 z-50 bg-white md:hidden"
       >
         <div className="w-full">
           <div

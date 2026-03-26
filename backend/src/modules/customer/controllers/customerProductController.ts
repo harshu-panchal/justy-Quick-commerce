@@ -353,13 +353,6 @@ export const getProductsBySubcategory = async (req: Request, res: Response) => {
     const allApprovedSellers = await Seller.find({ status: "Approved" }).select("_id pincode").lean();
     const allApprovedSellerIds = allApprovedSellers.map(s => s._id);
     
-    let localSellerIds: string[] = [];
-    if (pincode) {
-      localSellerIds = allApprovedSellers
-        .filter(s => s.pincode === pincode)
-        .map(s => s._id.toString());
-    }
-
     // Use all approved sellers for the query to ensure products are visible globally
     const eligibleSellerIds = allApprovedSellerIds;
 

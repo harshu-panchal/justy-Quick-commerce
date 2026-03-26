@@ -1,108 +1,188 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import OTPInput from '../../../components/OTPInput';
+import { useAuth } from '../../../context/AuthContext';
 
 export default function WarehouseLogin() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const { login } = useAuth();
+  const [mobileNumber, setMobileNumber] = useState('');
+  const [showOTP, setShowOTP] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleMobileLogin = async () => {
+    if (mobileNumber.length !== 10) return;
     setIsLoading(true);
-    // Simulate login
+    setError("");
+    
+    // Simulate OTP Send
     setTimeout(() => {
+      if (mobileNumber === "9111966732") {
+        setShowOTP(true);
+      } else {
+        setError("Mobile number not registered in warehouse system.");
+      }
       setIsLoading(false);
-      navigate('/warehouse/dashboard');
+    }, 1000);
+  };
+
+  const handleOTPComplete = async (otp: string) => {
+    setIsLoading(true);
+    setError("");
+    
+    // Simulate OTP Verify
+    setTimeout(() => {
+      if (otp === "1234") {
+        setIsLoading(false);
+        // Set Auth State before navigating
+        login("warehouse-token-simulation", {
+          id: "WH-9111966732",
+          name: "Warehouse Manager",
+          mobile: mobileNumber,
+          userType: "Admin"
+        });
+        navigate("/warehouse/dashboard");
+      } else {
+        setError("Invalid OTP. Hint: 1234");
+        setIsLoading(false);
+      }
     }, 1500);
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50 flex items-center justify-center p-4">
-      {/* Background Decorative Elements */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-orange-100 rounded-full blur-[120px] opacity-60" />
-        <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-orange-100 rounded-full blur-[120px] opacity-60" />
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-teal-50 to-green-50 flex flex-col items-center justify-center px-4 py-8">
+      {/* Back Button */}
+      <button
+        onClick={() => navigate(-1)}
+        className="absolute top-4 left-4 z-10 w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center hover:bg-neutral-50 transition-colors"
+        aria-label="Back">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M15 18L9 12L15 6" />
+        </svg>
+      </button>
 
-      <motion.div
+      {/* Login Card */}
+      <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative bg-white/80 backdrop-blur-xl rounded-[40px] p-8 md:p-12 shadow-[0_32px_64px_-12px_rgba(234,88,12,0.15)] border border-white max-w-md w-full"
+        className="w-full max-w-md bg-white rounded-3xl shadow-[0_32px_64px_-12px_rgba(15,118,110,0.15)] border border-white overflow-hidden"
       >
-        <div className="text-center mb-10">
-          <div className="w-20 h-20 bg-orange-600 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-orange-600/30 rotate-12 group transition-transform hover:rotate-0">
-            <span className="text-4xl -rotate-12 group-hover:rotate-0 transition-transform">🏢</span>
+        {/* Header Section */}
+        <div className="px-6 py-8 text-center bg-gradient-to-br from-teal-700 to-teal-900">
+          <div className="flex justify-center mb-4">
+            <img
+              src="/assets/jyastiLogo.png"
+              alt="JYASTI builds trust"
+              className="h-28 w-auto object-contain bg-white/90 rounded-2xl p-2 shadow-sm"
+            />
           </div>
-          <h1 className="text-3xl font-black text-neutral-900 tracking-tight">Warehouse Portal</h1>
-          <p className="text-neutral-500 mt-2 font-medium">Log in to manage orders & inventory</p>
-        </div>
-
-        <form onSubmit={handleLogin} className="space-y-6">
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-neutral-400 uppercase tracking-[0.2em] ml-1">Staff ID / Email</label>
-            <div className="relative">
-              <input
-                type="text"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-neutral-100/50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none py-4 px-6 rounded-2xl font-bold transition-all placeholder:text-neutral-300"
-                placeholder="staff_001@warehouse.com"
-                required
-              />
-              <span className="absolute right-6 top-1/2 -translate-y-1/2 opacity-20">👤</span>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-neutral-400 uppercase tracking-[0.2em] ml-1">Secret Access Key</label>
-            <div className="relative">
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-neutral-100/50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none py-4 px-6 rounded-2xl font-bold transition-all placeholder:text-neutral-300"
-                placeholder="••••••••"
-                required
-              />
-              <span className="absolute right-6 top-1/2 -translate-y-1/2 opacity-20">🔑</span>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between px-1">
-            <label className="flex items-center gap-2 cursor-pointer group">
-              <input type="checkbox" className="w-5 h-5 rounded-lg border-2 border-neutral-200 checked:bg-orange-600 transition-all cursor-pointer" />
-              <span className="text-xs font-bold text-neutral-500 group-hover:text-neutral-700">Remember Me</span>
-            </label>
-            <button type="button" className="text-xs font-bold text-orange-600 hover:text-orange-700 transition-colors">Forgot Key?</button>
-          </div>
-
-          <button
-            type="submit"
-            disabled={isLoading}
-            className={`w-full py-5 rounded-2xl font-black text-lg shadow-[0_20px_40px_-10px_rgba(234,88,12,0.3)] hover:shadow-orange-600/40 active:scale-95 transition-all flex items-center justify-center gap-3 ${
-              isLoading ? 'bg-orange-500 text-white' : 'bg-orange-600 text-white'
-            }`}
-          >
-            {isLoading ? (
-              <>
-                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                <span>Authenticating...</span>
-              </>
-            ) : (
-              <span>Authorize Access</span>
-            )}
-          </button>
-        </form>
-
-        <div className="mt-12 text-center">
-          <p className="text-xs font-bold text-neutral-400 uppercase tracking-widest leading-relaxed">
-            Quick Commerce • Warehouse Management System<br />
-            Secure Node: Hyderabad_WH_01
+          <h1 className="text-2xl font-black text-white tracking-tight mb-1 uppercase">
+            Warehouse Login
+          </h1>
+          <p className="text-teal-100 text-sm font-medium">
+            Authorized Personnel Access Only
           </p>
         </div>
+
+        {/* Login Form */}
+        <div className="p-8 space-y-6">
+          <AnimatePresence mode="wait">
+            {!showOTP ? (
+              <motion.div 
+                key="mobile"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                className="space-y-6"
+              >
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-neutral-400 uppercase tracking-[0.2em] ml-1">
+                    Registered Mobile Number
+                  </label>
+                  <div className="flex items-center bg-neutral-50 border-2 border-neutral-100 rounded-2xl overflow-hidden focus-within:border-teal-500 focus-within:bg-white transition-all">
+                    <div className="px-5 py-4 text-sm font-bold text-neutral-400 border-r border-neutral-100">
+                      +91
+                    </div>
+                    <input
+                      type="tel"
+                      value={mobileNumber}
+                      onChange={(e) => setMobileNumber(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                      placeholder="Enter mobile number"
+                      className="flex-1 px-5 py-4 text-sm font-bold bg-transparent outline-none placeholder:text-neutral-300"
+                      maxLength={10}
+                      disabled={isLoading}
+                    />
+                  </div>
+                </div>
+
+                {error && <div className="text-xs font-bold text-red-500 bg-red-50 p-3 rounded-xl">{error}</div>}
+
+                <button
+                  onClick={handleMobileLogin}
+                  disabled={mobileNumber.length !== 10 || isLoading}
+                  className={`w-full py-5 rounded-2xl font-black text-lg shadow-[0_20px_40px_-10px_rgba(15,118,110,0.3)] active:scale-95 transition-all flex items-center justify-center gap-3 ${
+                    mobileNumber.length === 10 && !isLoading
+                    ? 'bg-gradient-to-r from-teal-700 to-teal-900 text-white shadow-teal-700/30'
+                    : 'bg-neutral-100 text-neutral-300 cursor-not-allowed shadow-none'
+                  }`}
+                >
+                  {isLoading ? "Sending..." : "Request Access OTP"}
+                </button>
+              </motion.div>
+            ) : (
+              <motion.div 
+                key="otp"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                className="space-y-6 text-center"
+              >
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-neutral-500">
+                    Verification code sent to
+                  </p>
+                  <p className="text-sm font-black text-neutral-900">+91 {mobileNumber}</p>
+                </div>
+
+                <OTPInput onComplete={handleOTPComplete} disabled={isLoading} />
+
+                {error && <div className="text-xs font-bold text-red-500 bg-red-50 p-3 rounded-xl">{error}</div>}
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => { setShowOTP(false); setError(""); }}
+                    disabled={isLoading}
+                    className="flex-1 py-4 rounded-xl font-bold text-xs bg-neutral-100 text-neutral-600 hover:bg-neutral-200 transition-colors"
+                  >
+                    Change Number
+                  </button>
+                  <button
+                    onClick={handleMobileLogin}
+                    disabled={isLoading}
+                    className="flex-1 py-4 rounded-xl font-bold text-xs bg-teal-50 text-teal-700 hover:bg-teal-100 transition-colors"
+                  >
+                    {isLoading ? "Verifying..." : "Resend"}
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <div className="pt-4 border-t border-neutral-100 text-center">
+            <p className="text-xs font-bold text-neutral-400 uppercase tracking-widest">
+              Don't have access? <Link to="/warehouse/signup" className="text-teal-600 hover:text-teal-700">Create Account</Link>
+            </p>
+          </div>
+        </div>
       </motion.div>
+
+      {/* Footer Text */}
+      <p className="mt-8 text-[10px] font-black text-neutral-400 uppercase tracking-[0.2em] text-center leading-relaxed">
+        Quick Commerce • Warehouse Management System<br />
+        Secure Protocol WH-HYD-01
+      </p>
     </div>
   );
 }

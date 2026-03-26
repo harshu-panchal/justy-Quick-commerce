@@ -32,7 +32,7 @@ export default function Header() {
 
           const slug = c.slug.toLowerCase();
           const name = c.name.toLowerCase();
-          const scheduledKeywords = ['fashion', 'electronics', 'beauty', 'wedding', 'sports', 'lux', 'home-decor', 'mobile'];
+          const scheduledKeywords = ['fashion', 'electronics', 'beauty', 'wedding', 'sports', 'lux', 'home-decor', 'mobile', 'toys', 'toy'];
           const isScheduledByKeyword = scheduledKeywords.some(word => slug.includes(word) || name.includes(word));
           const catDeliveryType = c.deliveryType || (isScheduledByKeyword ? 'scheduled' : 'quick');
 

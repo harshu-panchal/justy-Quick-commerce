@@ -17,17 +17,16 @@ const TransactionRow = ({ tx, delay, onVerify }: { tx: any, delay: number, onVer
     </td>
     <td className="py-4 px-4 font-bold text-neutral-900">₹{tx.amount}</td>
     <td className="py-4 px-4">
-      <span className={`inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${
-        tx.status === 'Received' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
-      }`}>
+      <span className={`inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${tx.status === 'Received' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+        }`}>
         {tx.status}
       </span>
     </td>
     <td className="py-4 px-4 text-right">
       {tx.status === 'Pending' ? (
-        <button 
+        <button
           onClick={() => onVerify(tx)}
-          className="bg-orange-600 text-white px-3 py-1.5 rounded-lg font-bold text-[10px] uppercase tracking-widest hover:bg-orange-700 transition-all shadow-md shadow-orange-600/20 active:scale-95"
+          className="bg-teal-600 text-white px-3 py-1.5 rounded-lg font-bold text-[10px] uppercase tracking-widest hover:bg-teal-700 transition-all shadow-md shadow-teal-600/20 active:scale-95"
         >
           Verify OTP
         </button>
@@ -77,19 +76,19 @@ export default function WarehouseCOD() {
   const handleSettleAll = () => {
     const pendingCount = txList.filter(t => t.status === 'Pending').length;
     if (pendingCount === 0) return;
-    
+
     setIsSettlingAll(true);
     setTimeout(() => {
-        setTxList(prev => prev.map(t => ({ ...t, status: 'Received' })));
-        setIsSettlingAll(false);
-        alert(`Successfully settled all ${pendingCount} pending collections!`);
+      setTxList(prev => prev.map(t => ({ ...t, status: 'Received' })));
+      setIsSettlingAll(false);
+      alert(`Successfully settled all ${pendingCount} pending collections!`);
     }, 2000);
   };
 
   const handleExportCSV = () => {
     alert('Generating CSV file for the current collection history...');
     setTimeout(() => {
-        alert('CSV Exported successfully! Check your downloads.');
+      alert('CSV Exported successfully! Check your downloads.');
     }, 1000);
   };
 
@@ -100,9 +99,9 @@ export default function WarehouseCOD() {
           <h1 className="text-3xl font-extrabold text-neutral-900 tracking-tight">COD Collections</h1>
           <p className="text-neutral-500 mt-1">Track and manage cash collections from delivery partners.</p>
         </div>
-        
+
         <div className="flex gap-4">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             className="bg-emerald-600 text-white p-4 rounded-2xl shadow-lg shadow-emerald-600/20 text-right min-w-[180px]"
@@ -110,7 +109,7 @@ export default function WarehouseCOD() {
             <p className="text-[10px] font-bold uppercase tracking-widest opacity-80">Total Collected Today</p>
             <h3 className="text-2xl font-black">₹ {totalCollected.toLocaleString()}</h3>
           </motion.div>
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
@@ -126,22 +125,21 @@ export default function WarehouseCOD() {
         <div className="p-8 border-b border-neutral-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <h2 className="text-xl font-black text-neutral-900 tracking-tight">Recent Collections</h2>
           <div className="flex gap-3">
-            <button 
-                onClick={handleExportCSV}
-                className="px-6 py-3 text-sm font-bold bg-neutral-50 text-neutral-600 rounded-2xl hover:bg-neutral-100 transition-all active:scale-95"
+            <button
+              onClick={handleExportCSV}
+              className="px-6 py-3 text-sm font-bold bg-neutral-50 text-neutral-600 rounded-2xl hover:bg-neutral-100 transition-all active:scale-95"
             >
-                Export CSV
+              Export CSV
             </button>
-            <button 
-                onClick={handleSettleAll}
-                disabled={isSettlingAll || totalPending === 0}
-                className={`px-8 py-3 text-sm font-bold rounded-2xl transition-all active:scale-95 shadow-lg ${
-                    totalPending === 0 
-                    ? 'bg-neutral-100 text-neutral-400 cursor-not-allowed shadow-none' 
-                    : 'bg-orange-600 text-white hover:bg-orange-700 shadow-orange-600/20'
+            <button
+              onClick={handleSettleAll}
+              disabled={isSettlingAll || totalPending === 0}
+              className={`px-8 py-3 text-sm font-bold rounded-2xl transition-all active:scale-95 shadow-lg ${totalPending === 0
+                  ? 'bg-neutral-100 text-neutral-400 cursor-not-allowed shadow-none'
+                  : 'bg-teal-600 text-white hover:bg-teal-700 shadow-teal-600/20'
                 }`}
             >
-                {isSettlingAll ? 'Settling All...' : 'Settle All Pending'}
+              {isSettlingAll ? 'Settling All...' : 'Settle All Pending'}
             </button>
           </div>
         </div>
@@ -159,22 +157,22 @@ export default function WarehouseCOD() {
             <tbody>
               <AnimatePresence mode="popLayout">
                 {isLoading ? (
-                    Array(5).fill(0).map((_, i) => (
-                        <tr key={`shimmer-${i}`} className="animate-pulse">
-                            <td colSpan={5} className="p-4"><div className="h-10 bg-neutral-50 rounded-xl" /></td>
-                        </tr>
-                    ))
-                ) : txList.length > 0 ? (
-                    txList.map((tx, index) => (
-                        <TransactionRow key={tx.orderId} tx={tx} delay={index * 0.05} onVerify={setSettlementTx} />
-                    ))
-                ) : (
-                    <tr>
-                        <td colSpan={5} className="py-20 text-center">
-                            <div className="text-4xl opacity-20 mb-4">💰</div>
-                            <p className="text-neutral-400 font-bold italic">No collection records found</p>
-                        </td>
+                  Array(5).fill(0).map((_, i) => (
+                    <tr key={`shimmer-${i}`} className="animate-pulse">
+                      <td colSpan={5} className="p-4"><div className="h-10 bg-neutral-50 rounded-xl" /></td>
                     </tr>
+                  ))
+                ) : txList.length > 0 ? (
+                  txList.map((tx, index) => (
+                    <TransactionRow key={tx.orderId} tx={tx} delay={index * 0.05} onVerify={setSettlementTx} />
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="py-20 text-center">
+                      <div className="text-4xl opacity-20 mb-4">💰</div>
+                      <p className="text-neutral-400 font-bold italic">No collection records found</p>
+                    </td>
+                  </tr>
                 )}
               </AnimatePresence>
             </tbody>
@@ -199,10 +197,10 @@ export default function WarehouseCOD() {
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
               className="relative bg-white rounded-[48px] p-10 max-w-md w-full shadow-2xl overflow-hidden"
             >
-              <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-orange-400 to-orange-600" />
-              
+              <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-teal-400 to-teal-600" />
+
               <div className="text-center mb-10">
-                <div className="w-24 h-24 bg-orange-50 rounded-[40px] rotate-12 flex items-center justify-center mx-auto mb-6 text-5xl shadow-lg border-2 border-white">
+                <div className="w-24 h-24 bg-teal-50 rounded-[40px] rotate-12 flex items-center justify-center mx-auto mb-6 text-5xl shadow-lg border-2 border-white">
                   <span className="-rotate-12">💰</span>
                 </div>
                 <h2 className="text-3xl font-black text-neutral-900 tracking-tight leading-none">Settlement</h2>
@@ -212,35 +210,34 @@ export default function WarehouseCOD() {
               <div className="space-y-6">
                 <div className="flex items-center justify-between p-6 bg-neutral-50 rounded-3xl border border-neutral-100 shadow-inner">
                   <span className="text-[10px] font-black text-neutral-400 uppercase tracking-widest">Amount to Collect</span>
-                  <span className="text-3xl font-black text-orange-600">₹ {settlementTx.amount.toLocaleString()}</span>
+                  <span className="text-3xl font-black text-teal-600">₹ {settlementTx.amount.toLocaleString()}</span>
                 </div>
 
                 <div className="space-y-4">
                   <p className="text-[10px] font-black text-neutral-400 uppercase tracking-[0.2em] text-center">Ask Rider for Settlement OTP</p>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     maxLength={4}
                     value={enteredOtp}
                     onChange={(e) => setEnteredOtp(e.target.value.replace(/\D/g, ''))}
                     placeholder="0 0 0 0"
                     disabled={isVerifying}
-                    className="w-full text-center text-5xl font-black tracking-[12px] py-8 rounded-[36px] border-2 border-neutral-100 focus:border-orange-500 outline-none transition-all placeholder:text-neutral-100 bg-neutral-50 shadow-inner"
+                    className="w-full text-center text-5xl font-black tracking-[12px] py-8 rounded-[36px] border-2 border-neutral-100 focus:border-teal-500 outline-none transition-all placeholder:text-neutral-100 bg-neutral-50 shadow-inner"
                   />
                 </div>
 
                 <button
                   onClick={handleVerify}
                   disabled={enteredOtp.length !== 4 || isVerifying}
-                  className={`w-full py-6 rounded-[32px] font-black text-xl transition-all shadow-xl active:scale-95 ${
-                    enteredOtp.length === 4 && !isVerifying
-                      ? 'bg-orange-600 text-white shadow-orange-500/30 -translate-y-1' 
+                  className={`w-full py-6 rounded-[32px] font-black text-xl transition-all shadow-xl active:scale-95 ${enteredOtp.length === 4 && !isVerifying
+                      ? 'bg-teal-600 text-white shadow-teal-500/30 -translate-y-1'
                       : 'bg-neutral-100 text-neutral-300 cursor-not-allowed translate-y-0'
-                  }`}
+                    }`}
                 >
                   {isVerifying ? (
                     <div className="flex items-center justify-center gap-3">
-                        <svg className="animate-spin h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                        <span>Verifying...</span>
+                      <svg className="animate-spin h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                      <span>Verifying...</span>
                     </div>
                   ) : 'Confirm Cash Deposit'}
                 </button>

@@ -7,7 +7,7 @@ const StatCard = ({ title, value, icon: Icon, color, delay }: { title: string, v
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ delay }}
-    className="bg-white rounded-2xl p-6 shadow-sm border border-orange-100/50 hover:shadow-md transition-shadow relative overflow-hidden group"
+    className="bg-white rounded-2xl p-6 shadow-sm border border-teal-100/50 hover:shadow-md transition-shadow relative overflow-hidden group"
   >
     <div className={`absolute top-0 right-0 w-32 h-32 -mr-8 -mt-8 rounded-full opacity-10 transition-transform group-hover:scale-110 ${color}`} />
     <div className="flex items-start justify-between">
@@ -86,7 +86,7 @@ export default function WarehouseDashboard() {
           { id: '8242', time: '3 hours ago', status: 'Warning' },
           { id: '8241', time: '5 hours ago', status: 'Success' },
         ],
-        chartData: isToday 
+        chartData: isToday
           ? [30, 45, 25, 60, 80, 55, 40] // Hourly or smaller range
           : [60, 80, 45, 90, 70, 55, 85] // Daily range
       });
@@ -95,7 +95,7 @@ export default function WarehouseDashboard() {
   };
 
   const statConfig = [
-    { title: 'Total Orders', key: 'total', icon: PackageIcon, color: 'bg-orange-500', delay: 0.1 },
+    { title: 'Total Orders', key: 'total', icon: PackageIcon, color: 'bg-teal-600', delay: 0.1 },
     { title: 'Pending Fulfillment', key: 'pending', icon: ClockIcon, color: 'bg-amber-500', delay: 0.2 },
     { title: 'Completed Today', key: 'completed', icon: CheckIcon, color: 'bg-emerald-500', delay: 0.3 },
     { title: 'Low Stock Alerts', key: 'lowStock', icon: AlertIcon, color: 'bg-rose-500', delay: 0.4 },
@@ -114,7 +114,7 @@ export default function WarehouseDashboard() {
           <h1 className="text-3xl font-extrabold text-neutral-900 tracking-tight">Warehouse Overview</h1>
           <p className="text-neutral-500 mt-1">Efficiency is the heartbeat of logistics.</p>
         </div>
-        <button 
+        <button
           onClick={refreshData}
           disabled={isLoading}
           className={`px-4 py-2 bg-white border border-neutral-200 rounded-xl text-sm font-bold text-neutral-600 hover:bg-neutral-50 transition-all flex items-center gap-2 shadow-sm ${isLoading ? 'opacity-50' : 'active:scale-95'}`}
@@ -126,13 +126,13 @@ export default function WarehouseDashboard() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {statConfig.map((stat, index) => (
-          <StatCard 
-            key={index} 
-            title={stat.title} 
-            value={isLoading ? '...' : (dashboardData.stats as any)[stat.key]} 
-            icon={stat.icon} 
-            color={stat.color} 
-            delay={stat.delay} 
+          <StatCard
+            key={index}
+            title={stat.title}
+            value={isLoading ? '...' : (dashboardData.stats as any)[stat.key]}
+            icon={stat.icon}
+            color={stat.color}
+            delay={stat.delay}
           />
         ))}
       </div>
@@ -147,14 +147,14 @@ export default function WarehouseDashboard() {
         >
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-bold text-neutral-900">Recent Fulfillment</h2>
-            <button 
+            <button
               onClick={() => navigate('/warehouse/orders')}
-              className="text-sm font-semibold text-orange-600 hover:text-orange-700 active:scale-95 transition-all"
+              className="text-sm font-semibold text-teal-600 hover:text-teal-700 active:scale-95 transition-all"
             >
               View All
             </button>
           </div>
-          
+
           <div className="space-y-4">
             <AnimatePresence mode="popLayout">
               {isLoading ? (
@@ -169,14 +169,14 @@ export default function WarehouseDashboard() {
                 ))
               ) : (
                 dashboardData.activities.map((act: any, i: number) => (
-                  <motion.div 
-                    key={act.id} 
+                  <motion.div
+                    key={act.id}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 * i }}
                     className="flex items-center gap-4 p-3 rounded-2xl hover:bg-neutral-50 transition-colors border border-transparent hover:border-neutral-100 group"
                   >
-                    <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                    <div className="w-10 h-10 rounded-xl bg-teal-100 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
                       <span className="text-xl">📦</span>
                     </div>
                     <div className="flex-1">
@@ -184,9 +184,8 @@ export default function WarehouseDashboard() {
                       <p className="text-xs text-neutral-500">Processed {act.time}</p>
                     </div>
                     <div className="text-right">
-                      <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${
-                        act.status === 'Success' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
-                      }`}>
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${act.status === 'Success' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                        }`}>
                         {act.status}
                       </span>
                     </div>
@@ -209,10 +208,10 @@ export default function WarehouseDashboard() {
               <h2 className="text-lg font-bold text-neutral-900">Avg. Processing Time</h2>
               <p className="text-xs text-neutral-500 font-medium">Performance metrics across warehouse</p>
             </div>
-            <select 
+            <select
               value={timeRange}
               onChange={(e) => setTimeRange(e.target.value)}
-              className="text-xs font-bold bg-neutral-50 border-neutral-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-orange-500 outline-none transition-all cursor-pointer"
+              className="text-xs font-bold bg-neutral-50 border-neutral-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-teal-500 outline-none transition-all cursor-pointer"
             >
               <option>Last 7 Days</option>
               <option>Today</option>
@@ -223,12 +222,12 @@ export default function WarehouseDashboard() {
             {dashboardData.chartData.map((h: number, i: number) => (
               <div key={i} className="flex-1 flex flex-col items-center gap-3 h-full justify-end">
                 <div className="relative w-full group flex flex-col justify-end h-full">
-                  <motion.div
-                    initial={{ height: 0 }}
-                    animate={{ height: isLoading ? 0 : `${h}%` }}
-                    transition={{ type: 'spring', damping: 15, stiffness: 100, delay: 0.1 * i }}
-                    className="w-full bg-gradient-to-t from-orange-600 to-orange-400 rounded-t-xl relative shadow-lg shadow-orange-600/10 cursor-help"
-                  />
+                    <motion.div
+                      initial={{ height: 0 }}
+                      animate={{ height: isLoading ? 0 : `${h}%` }}
+                      transition={{ type: 'spring', damping: 15, stiffness: 100, delay: 0.1 * i }}
+                      className="w-full bg-gradient-to-t from-teal-600 to-teal-400 rounded-t-xl relative shadow-lg shadow-teal-600/10 cursor-help"
+                    />
                   <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-neutral-900 text-white text-[10px] font-bold py-1.5 px-3 rounded-lg opacity-0 group-hover:opacity-100 transition-all scale-75 group-hover:scale-100 pointer-events-none z-10 whitespace-nowrap">
                     {h} mins
                   </div>
@@ -236,7 +235,7 @@ export default function WarehouseDashboard() {
               </div>
             ))}
           </div>
-          
+
           <div className="flex justify-between mt-6 px-1 border-t border-neutral-50 pt-4">
             {(timeRange === 'Today' ? ['8am', '10am', '12pm', '2pm', '4pm', '6pm', '8pm'] : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']).map(d => (
               <span key={d} className="text-[10px] font-bold text-neutral-400 uppercase tracking-tighter w-full text-center">{d}</span>

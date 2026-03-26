@@ -261,7 +261,7 @@ export default function Home() {
   return (
     <div className="bg-white min-h-screen pb-20 md:pb-0" ref={contentRef}>
       <HomeHero activeTab={activeTab} onTabChange={setActiveTab} />
-      <div className="w-full relative z-10 mt-2">
+      <div className="w-full relative z-10">
         <BannerCarousel mode={deliveryMode} />
       </div>
 
@@ -286,7 +286,7 @@ export default function Home() {
                   const slug = section.categorySlug?.toLowerCase() || '';
 
                   // Determine deliveryType: use section field if present, fallback to keyword heuristic
-                  const scheduledKeywords = ['fashion', 'electronics', 'beauty', 'makeup', 'cosmetic', 'wedding', 'sports', 'lux', 'home-decor', 'mobile'];
+                  const scheduledKeywords = ['fashion', 'electronics', 'beauty', 'makeup', 'cosmetic', 'wedding', 'sports', 'lux', 'home-decor', 'mobile', 'toys', 'toy'];
                   const isScheduledByKeyword = scheduledKeywords.some(word => title.includes(word) || slug.includes(word));
 
                   const sectionDeliveryType = section.deliveryType || (isScheduledByKeyword ? 'scheduled' : 'quick');
@@ -394,10 +394,10 @@ export default function Home() {
       <button
         type="button"
         onClick={() => navigate("/spin-wheel")}
-        className="fixed bottom-24 right-4 sm:right-6 z-[60] flex items-center gap-2 rounded-full bg-emerald-600 text-white px-4 py-3 shadow-lg hover:bg-emerald-700 active:bg-emerald-800"
+        className="fixed bottom-24 right-4 sm:right-6 z-[60] flex items-center gap-1.5 md:gap-2 rounded-full bg-emerald-600 text-white px-3 py-2 md:px-4 md:py-3 shadow-lg hover:bg-emerald-700 active:bg-emerald-800 transition-all"
         aria-label="Open Spin & Win"
       >
-        <span className="inline-flex items-center justify-center h-9 w-9 rounded-full bg-white/15">
+        <span className="inline-flex items-center justify-center h-7 w-7 md:h-9 md:w-9 rounded-full bg-white/15">
           <svg
             width="20"
             height="20"
@@ -415,18 +415,17 @@ export default function Home() {
             <path d="M3 12h3" />
           </svg>
         </span>
-        <span className="text-sm font-semibold leading-none">Spin &amp; Win</span>
+        <span className="text-xs md:text-sm font-semibold leading-none">Spin &amp; Win</span>
       </button>
 
-      {/* Refer & Earn floating button */}
       <button
         type="button"
         onClick={() => navigate("/refer-earn")}
-        className="fixed bottom-40 right-4 sm:right-6 z-[60] flex items-center gap-2 rounded-full bg-teal-600 text-white px-4 py-3 shadow-lg hover:bg-teal-700 active:bg-teal-800"
+        className="fixed bottom-40 right-4 sm:right-6 z-[60] flex items-center gap-1.5 md:gap-2 rounded-full bg-teal-600 text-white px-3 py-2 md:px-4 md:py-3 shadow-lg hover:bg-teal-700 active:bg-teal-800 transition-all"
         aria-label="Refer & Earn"
       >
-        <span className="inline-flex items-center justify-center h-9 w-9 rounded-full bg-white/15 text-lg">🎁</span>
-        <span className="text-sm font-semibold leading-none">Refer &amp; Earn</span>
+        <span className="inline-flex items-center justify-center h-7 w-7 md:h-9 md:w-9 rounded-full bg-white/15 text-sm md:text-lg">🎁</span>
+        <span className="text-xs md:text-sm font-semibold leading-none">Refer &amp; Earn</span>
       </button>
     </div>
   );

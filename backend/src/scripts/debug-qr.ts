@@ -1,7 +1,6 @@
 import connectDB from '../config/db';
 import { generateAndAttachQr } from '../services/qrService';
 import EquipmentOrder from '../models/EquipmentOrder';
-import mongoose from 'mongoose';
 
 const orderId = "69c4cba53077d843708f8cc7";
 

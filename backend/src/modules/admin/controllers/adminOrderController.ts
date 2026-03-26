@@ -6,6 +6,7 @@ import Delivery from "../../../models/Delivery";
 import DeliveryAssignment from "../../../models/DeliveryAssignment";
 import Return from "../../../models/Return";
 import { notifySellersOfOrderUpdate } from "../../../services/sellerNotificationService";
+import { notifyDeliveryBoyOfAssignment } from "../../../services/deliveryNotificationService";
 import { Server as SocketIOServer } from "socket.io";
 
 /**
@@ -240,6 +241,12 @@ export const assignDeliveryBoy = asyncHandler(
     order.deliveryBoyStatus = "Assigned";
     order.assignedAt = new Date();
     await order.save();
+
+    // Notify delivery boy
+    const io = req.app.get("io");
+    if (io) {
+      await notifyDeliveryBoyOfAssignment(io, deliveryBoyId, order, "ORDER");
+    }
 
     // Create or update delivery assignment
     await DeliveryAssignment.findOneAndUpdate(

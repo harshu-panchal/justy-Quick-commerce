@@ -38,7 +38,7 @@ const DeliveryQrScanner: React.FC = () => {
 
         if (videoRef.current) {
           await codeReader.decodeFromVideoDevice(
-            undefined, // undefined uses the default video device (usually back camera on mobile)
+            null, // null uses the default video device
             videoRef.current,
             (result, err) => {
               if (result) {

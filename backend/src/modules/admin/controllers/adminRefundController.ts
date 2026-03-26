@@ -76,11 +76,11 @@ export const processRazorpayRefund = async (req: Request, res: Response) => {
         }
 
         // Call the existing refund service
-        const refundResult = await refundEquipmentOrder(order._id, 'Bank');
+        const refundResult = await refundEquipmentOrder(order._id, 'BANK');
 
         if (refundResult.success) {
             refundRequest.status = 'COMPLETED';
-            refundRequest.transactionRef = refundResult.data.refundTransactionId;
+            refundRequest.transactionRef = refundResult.data?.refundTransactionId;
             refundRequest.refundDate = new Date();
             refundRequest.adminNote = (refundRequest.adminNote || "") + " | Processed via Razorpay Test Refund";
             await refundRequest.save();

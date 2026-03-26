@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import { EquipmentItem, EquipmentOrder, Delivery } from '../../../models';
-import * as paymentService from '../../../services/equipmentPaymentService';
 import { generateAndAttachQr } from '../../../services/qrService';
 
 /**
@@ -108,7 +107,7 @@ export const assignDeliveryBoy = async (req: Request, res: Response) => {
             await notifyDeliveryBoyOfAssignment(io, deliveryBoyId, order, "EQUIPMENT");
         }
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: "Delivery boy assigned successfully",
             data: order,
@@ -123,7 +122,11 @@ export const approveEquipmentOrder = async (req: Request, res: Response) => {
         const order = await EquipmentOrder.findById(req.params.id);
         if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
         
-        if (order.status !== 'pending' && order.status !== 'paid') {
+        if (order.status === 'refunded' || order.paymentStatus === 'Refunded') {
+            return res.status(400).json({ success: false, message: 'Order already refunded' });
+        }
+
+        if (order.paymentStatus !== 'Paid' && order.status !== 'pending') {
             return res.status(400).json({ success: false, message: 'Only pending or paid orders can be approved' });
         }
 

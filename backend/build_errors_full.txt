@@ -1,0 +1,9 @@
+﻿src/modules/admin/controllers/adminEquipmentController.ts(4,1): error TS6133: 'paymentService' is declared but its value is never read.
+src/modules/admin/controllers/adminEquipmentController.ts(81,34): error TS7030: Not all code paths return a value.
+src/modules/admin/controllers/adminRefundController.ts(83,44): error TS18048: 'refundResult.data' is possibly 'undefined'.
+src/scripts/debug-qr.ts(4,1): error TS6133: 'mongoose' is declared but its value is never read.
+src/services/equipmentPaymentService.ts(189,44): error TS2367: This comparison appears to be unintentional because the types '"Paid"' and '"Refunded"' have no overlap.
+src/services/equipmentPaymentService.ts(215,9): error TS2322: Type '"Processed"' is not assignable to type '"NONE" | "PENDING" | "REFUNDED" | "REJECTED"'.
+src/services/equipmentPaymentService.ts(216,9): error TS2322: Type '"Wallet" | "Bank"' is not assignable to type '"BANK"'.
+  Type '"Wallet"' is not assignable to type '"BANK"'.
+src/services/qrService.ts(4,1): error TS6133: 'mongoose' is declared but its value is never read.

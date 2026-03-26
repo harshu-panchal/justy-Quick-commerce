@@ -1,7 +1,6 @@
 import Order from '../models/Order';
 import EquipmentOrder from '../models/EquipmentOrder';
 import { createAndUploadQR, QRPayload } from '../utils/qrUtils';
-import mongoose from 'mongoose';
 
 /**
  * Generate and attach QR to an order (Normal or Equipment)

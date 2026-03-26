@@ -174,7 +174,7 @@ export const captureEquipmentPayment = async (
 /**
  * Refund a Razorpay payment for equipment purchase
  */
-export const refundEquipmentOrder = async (orderId: string, refundMethod: "Wallet" | "Bank" = "Wallet") => {
+export const refundEquipmentOrder = async (orderId: string, refundMethod: "WALLET" | "BANK" = "WALLET") => {
     const session = await mongoose.startSession();
     session.startTransaction();
 
@@ -182,12 +182,12 @@ export const refundEquipmentOrder = async (orderId: string, refundMethod: "Walle
         const order = await EquipmentOrder.findById(orderId).session(session);
         if (!order) throw new Error('Order not found');
 
-        if (order.paymentStatus !== 'Paid') {
-            throw new Error('Only paid orders can be refunded');
-        }
-
         if (order.status === 'refunded' || order.paymentStatus === 'Refunded') {
             throw new Error('Order already refunded');
+        }
+
+        if (order.paymentStatus !== 'Paid') {
+            throw new Error('Only paid orders can be refunded');
         }
 
         // 1. Process Razorpay Refund if paymentId exists
@@ -212,7 +212,7 @@ export const refundEquipmentOrder = async (orderId: string, refundMethod: "Walle
         // 3. Update Order Status
         order.status = 'refunded';
         order.paymentStatus = 'Refunded';
-        order.refundStatus = 'Processed';
+        order.refundStatus = 'REFUNDED';
         order.refundMethod = refundMethod;
         
         await order.save({ session });

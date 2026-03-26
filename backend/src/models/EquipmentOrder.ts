@@ -39,7 +39,7 @@ export interface IEquipmentOrder extends Document {
   rejectionReason?: string;
   cancellationReason?: string;
   refundStatus: "NONE" | "PENDING" | "REFUNDED" | "REJECTED";
-  refundMethod: "BANK";
+  refundMethod: "WALLET" | "BANK";
   refundRequestId?: mongoose.Types.ObjectId;
   refundTransactionId?: string;
 
@@ -143,7 +143,7 @@ const EquipmentOrderSchema = new Schema<IEquipmentOrder>(
     },
     refundMethod: { 
       type: String, 
-      enum: ["BANK"],
+      enum: ["WALLET", "BANK"],
       default: "BANK"
     },
     refundRequestId: {

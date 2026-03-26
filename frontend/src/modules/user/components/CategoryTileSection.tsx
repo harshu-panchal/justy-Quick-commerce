@@ -58,7 +58,14 @@ export default function CategoryTileSection({
       return;
     }
     if (tile.type === "category" || (!tile.subcategoryId && tile.categoryId)) {
-      navigate(`/category/${categoryId}`);
+      const scheduledKeywords = ['fashion', 'electronics', 'beauty', 'makeup', 'cosmetic', 'wedding', 'sports', 'lux', 'home-decor', 'mobile', 'toys', 'toy'];
+      const isScheduled = scheduledKeywords.some(word => categoryId.toLowerCase().includes(word));
+      
+      if (isScheduled) {
+        navigate(`/header-category/${categoryId}`);
+      } else {
+        navigate(`/category/${categoryId}`);
+      }
       return;
     }
     if (tile.productId) {
@@ -99,7 +106,7 @@ export default function CategoryTileSection({
   const gapClass = columns >= 8 ? "gap-2 md:gap-4" : columns >= 6 ? "gap-2.5 md:gap-5" : "gap-4 md:gap-6";
 
   return (
-    <div className="mb-6 md:mb-8 mt-0 overflow-visible">
+    <div className="mb-6 md:mb-8 mt-4 md:mt-6 overflow-visible">
       <h2 className="text-lg md:text-2xl font-semibold text-neutral-900 mb-3 md:mb-6 px-4 md:px-6 lg:px-8 tracking-tight">
         {title}
       </h2>
@@ -126,7 +133,13 @@ export default function CategoryTileSection({
                       : tile.productId
                         ? `/product/${tile.productId}`
                         : (tile.type === "category" || tile.categoryId)
-                          ? `/category/${getCategorySlug(tile)}`
+                          ? (() => {
+                              const slug = getCategorySlug(tile);
+                              const scheduledKeywords = ['fashion', 'electronics', 'beauty', 'makeup', 'cosmetic', 'wedding', 'sports', 'lux', 'home-decor', 'mobile', 'toys', 'toy'];
+                              return scheduledKeywords.some(word => slug.toLowerCase().includes(word)) 
+                                ? `/header-category/${slug}` 
+                                : `/category/${slug}`;
+                            })()
                           : (tile as any).sellerId
                             ? `/seller/${(tile as any).sellerId}`
                             : "#"

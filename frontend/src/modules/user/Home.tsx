@@ -286,7 +286,7 @@ export default function Home() {
                   const slug = section.categorySlug?.toLowerCase() || '';
 
                   // Determine deliveryType: use section field if present, fallback to keyword heuristic
-                  const scheduledKeywords = ['fashion', 'electronics', 'beauty', 'makeup', 'cosmetic', 'wedding', 'sports', 'lux', 'home-decor', 'mobile'];
+                  const scheduledKeywords = ['fashion', 'electronics', 'beauty', 'makeup', 'cosmetic', 'wedding', 'sports', 'lux', 'home-decor', 'mobile', 'toys', 'toy'];
                   const isScheduledByKeyword = scheduledKeywords.some(word => title.includes(word) || slug.includes(word));
 
                   const sectionDeliveryType = section.deliveryType || (isScheduledByKeyword ? 'scheduled' : 'quick');

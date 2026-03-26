@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Suspense, lazy } from "react";
 import { CartProvider } from "./context/CartContext";
 import { OrdersProvider } from "./context/OrdersContext";
@@ -170,6 +170,7 @@ const WarehouseDashboard = lazy(() => import("./modules/warehouse/pages/Warehous
 const WarehouseOrders = lazy(() => import("./modules/warehouse/pages/WarehouseOrders"));
 const WarehouseCOD = lazy(() => import("./modules/warehouse/pages/WarehouseCOD"));
 const WarehouseLogin = lazy(() => import("./modules/warehouse/pages/WarehouseLogin"));
+const WarehouseSignUp = lazy(() => import("./modules/warehouse/pages/WarehouseSignUp"));
 
 const AdminWithdrawals = lazy(() => import("./modules/admin/pages/AdminWithdrawals"));
 const AdminPayments = lazy(() => import("./modules/admin/pages/AdminPayments"));
@@ -450,6 +451,8 @@ function App() {
                               />
 
                               <Route path="/warehouse/login" element={<WarehouseLogin />} />
+                              <Route path="/warehouse/signup" element={<WarehouseSignUp />} />
+                              <Route path="/warehouse" element={<Navigate to="/warehouse/login" replace />} />
 
                               <Route
                                 path="/warehouse/*"

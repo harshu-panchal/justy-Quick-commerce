@@ -4,11 +4,10 @@ import { motion } from 'framer-motion';
 const SidebarItem = ({ to, icon: Icon, label, active }: { to: string, icon: any, label: string, active: boolean }) => (
   <Link to={to}>
     <motion.div
-      className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-        active 
-          ? 'bg-orange-600 text-white shadow-lg' 
-          : 'text-orange-100 hover:bg-orange-700/50 hover:text-white'
-      }`}
+      className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${active
+        ? 'bg-teal-600 text-white shadow-lg'
+        : 'text-teal-100 hover:bg-teal-600/50 hover:text-white'
+        }`}
       whileHover={{ x: 5 }}
       whileTap={{ scale: 0.95 }}
     >
@@ -66,14 +65,14 @@ export default function WarehouseSidebar() {
   };
 
   return (
-    <aside className="w-64 bg-orange-800 h-screen flex flex-col p-4 text-white shadow-xl flex-shrink-0 overflow-y-auto border-r border-orange-700/30">
+    <aside className="w-64 bg-teal-700 h-screen flex flex-col p-4 text-white shadow-xl flex-shrink-0 overflow-y-auto border-r border-teal-600/30 font-sans">
       <div className="flex items-center gap-3 px-2 mb-10">
         <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
           <span className="text-2xl">🏭</span>
         </div>
         <div>
           <h1 className="font-bold text-xl tracking-tight">Warehouse</h1>
-          <p className="text-xs text-orange-200 uppercase tracking-widest font-semibold">Management</p>
+          <p className="text-xs text-teal-200 uppercase tracking-widest font-semibold">Management</p>
         </div>
       </div>
 
@@ -89,12 +88,12 @@ export default function WarehouseSidebar() {
         ))}
       </nav>
 
-      <div className="mt-auto pt-6 border-t border-orange-700/50">
-        <button 
+      <div className="mt-auto pt-6 border-t border-teal-600/50">
+        <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-orange-100 hover:bg-red-600 hover:text-white transition-all group"
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-teal-100 hover:bg-teal-600 hover:text-white transition-all group"
         >
-          <LogoutIcon className="w-5 h-5 text-orange-300 group-hover:text-white" />
+          <LogoutIcon className="w-5 h-5 text-teal-300 group-hover:text-white" />
           <span className="font-medium">Logout</span>
         </button>
       </div>

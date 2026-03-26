@@ -129,7 +129,7 @@ export const getDashboardStats = asyncHandler(
       {
         $match: {
           deliveryBoy: objectId,
-          type: "DELIVERY_BOY",
+          type: { $in: ["DELIVERY_BOY", "EQUIPMENT_DELIVERY"] },
         },
       },
       {

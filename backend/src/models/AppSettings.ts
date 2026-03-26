@@ -148,6 +148,13 @@ export interface IAppSettings extends Document {
     }>;
   };
 
+  // Equipment Delivery Commission Settings
+  equipmentDeliveryCommission?: {
+    enabled: boolean;
+    payMode: 'FIXED_PER_ORDER' | 'FIXED_PER_ITEM' | 'PERCENTAGE';
+    amount: number;
+  };
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -463,6 +470,16 @@ const AppSettingsSchema = new Schema<IAppSettings>(
         probability: Number
       }]
     },
+    // Equipment Delivery Commission Settings
+    equipmentDeliveryCommission: {
+      enabled: { type: Boolean, default: true },
+      payMode: { 
+        type: String, 
+        enum: ['FIXED_PER_ORDER', 'FIXED_PER_ITEM', 'PERCENTAGE'], 
+        default: 'FIXED_PER_ORDER' 
+      },
+      amount: { type: Number, default: 30 }
+    },
   },
   {
     timestamps: true,
@@ -487,7 +504,12 @@ AppSettingsSchema.statics.getSettings = async function () {
           { id: '3', label: '20 Coins', value: 20, icon: '🪙', color: '#FEF3C7', type: 'coin' },
           { id: '4', label: '5 Coins', value: 5, icon: '🪙', color: '#FDE68A', type: 'coin' },
           { id: '5', label: '30 Coins', value: 30, icon: '💰', color: '#FEF3C7', type: 'coin' },
-        ]
+        ],
+      },
+      equipmentDeliveryCommission: {
+        enabled: true,
+        payMode: 'FIXED_PER_ORDER',
+        amount: 30
       }
     });
   } else if (!settings.spinnerSettings) {
@@ -503,6 +525,14 @@ AppSettingsSchema.statics.getSettings = async function () {
         { id: '4', label: '5 Coins', value: 5, icon: '🪙', color: '#FDE68A', type: 'coin' },
         { id: '5', label: '30 Coins', value: 30, icon: '💰', color: '#FEF3C7', type: 'coin' },
       ]
+    };
+    await settings.save();
+  } else if (!settings.equipmentDeliveryCommission) {
+    // Migration: Add default equipment commission settings if they don't exist
+    settings.equipmentDeliveryCommission = {
+      enabled: true,
+      payMode: 'FIXED_PER_ORDER',
+      amount: 30
     };
     await settings.save();
   }

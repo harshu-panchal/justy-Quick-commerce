@@ -140,25 +140,49 @@ export default function DeliveryEquipmentOrders() {
                     
                     <div className="flex gap-2">
                       {order.status === 'assigned' ? (
-                        <Link
-                          to="/delivery/scan"
-                          state={{ 
-                            expectedOrderId: order._id, 
-                            mode: 'pickup', 
-                            orderType: 'EQUIPMENT' 
-                          }}
-                          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-black shadow-lg shadow-blue-600/20 text-center transition-all active:scale-95"
-                        >
-                          START PICKUP
-                        </Link>
+                        <div className="flex flex-col w-full gap-3">
+                           {order.estimatedCommission > 0 && (
+                             <div className="flex items-center justify-between bg-teal-50 px-4 py-2 rounded-lg border border-teal-100">
+                               <span className="text-[10px] font-black text-teal-600 uppercase">Expected Payout</span>
+                               <span className="text-sm font-black text-teal-800">₹{order.estimatedCommission}</span>
+                             </div>
+                           )}
+                           <Link
+                             to="/delivery/scan"
+                             state={{ 
+                               expectedOrderId: order._id, 
+                               mode: 'pickup', 
+                               orderType: 'EQUIPMENT' 
+                             }}
+                             className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-black shadow-lg shadow-blue-600/20 text-center transition-all active:scale-95"
+                           >
+                             START PICKUP
+                           </Link>
+                        </div>
                       ) : (
-                        <button
-                          onClick={() => handleComplete(order._id)}
-                          disabled={completing === order._id}
-                          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-black shadow-lg shadow-blue-600/20 transition-all active:scale-95 disabled:bg-neutral-300"
-                        >
-                          {completing === order._id ? "PROCESSING..." : order.paymentMethod === 'COD' ? "COLLECT CASH & DELIVER" : "CONFIRM DELIVERY"}
-                        </button>
+                        <div className="flex flex-col w-full gap-3">
+                           {order.status === 'picked_up' && order.estimatedCommission > 0 && (
+                             <div className="flex items-center justify-between bg-teal-50 px-4 py-2 rounded-lg border border-teal-100">
+                               <span className="text-[10px] font-black text-teal-600 uppercase">Payout on Delivery</span>
+                               <span className="text-sm font-black text-teal-800">₹{order.estimatedCommission}</span>
+                             </div>
+                           )}
+                           {order.status === 'delivered' && order.earnedCommission > 0 && (
+                             <div className="flex items-center justify-between bg-green-50 px-4 py-2 rounded-lg border border-green-100">
+                               <span className="text-[10px] font-black text-green-600 uppercase">Earned Commission</span>
+                               <span className="text-sm font-black text-green-800">₹{order.earnedCommission}</span>
+                             </div>
+                           )}
+                           {order.status !== 'delivered' && (
+                             <button
+                               onClick={() => handleComplete(order._id)}
+                               disabled={completing === order._id}
+                               className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-black shadow-lg shadow-blue-600/20 transition-all active:scale-95 disabled:bg-neutral-300"
+                             >
+                               {completing === order._id ? "PROCESSING..." : order.paymentMethod === 'COD' ? "COLLECT CASH & DELIVER" : "CONFIRM DELIVERY"}
+                             </button>
+                           )}
+                        </div>
                       )}
                     </div>
                   </div>

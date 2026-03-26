@@ -190,6 +190,9 @@ export default function DeliveryEarnings() {
                     </p>
                     <p className="text-neutral-500 text-xs mt-1">
                       {day.deliveries} deliveries
+                      {day.hasEquipment && (
+                        <span className="ml-2 px-1.5 py-0.5 bg-blue-100 text-blue-600 rounded text-[9px] font-bold uppercase">Incl. Equipment</span>
+                      )}
                     </p>
                   </div>
                   <p className="text-neutral-900 text-lg font-bold">

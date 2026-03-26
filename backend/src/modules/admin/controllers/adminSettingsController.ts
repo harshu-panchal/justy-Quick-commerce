@@ -270,10 +270,66 @@ export const getAdminReferralStats = asyncHandler(
     const totalCoinsAwarded = topReferrers.reduce((s, c) => s + (c.referralEarnings || 0), 0);
     const totalReferrers = await Customer.countDocuments({ referralCount: { $gt: 0 } });
     const totalReferred = await Customer.countDocuments({ isReferralApplied: true });
-
-    return res.status(200).json({
-      success: true,
-      data: { topReferrers, totalReferrals, totalCoinsAwarded, totalReferrers, totalReferred },
-    });
-  }
-);
+ 
+     return res.status(200).json({
+       success: true,
+       data: { topReferrers, totalReferrals, totalCoinsAwarded, totalReferrers, totalReferred },
+     });
+   }
+ );
+ 
+ /**
+  * Get equipment delivery commission settings
+  */
+ export const getEquipmentCommissionSettings = asyncHandler(
+   async (_req: Request, res: Response) => {
+     const settings = await AppSettings.findOne().select("equipmentDeliveryCommission");
+     
+     const defaults = {
+       enabled: true,
+       payMode: 'FIXED_PER_ORDER',
+       amount: 30
+     };
+ 
+     return res.status(200).json({
+       success: true,
+       message: "Equipment commission settings fetched successfully",
+       data: settings?.equipmentDeliveryCommission || defaults,
+     });
+   }
+ );
+ 
+ /**
+  * Update equipment delivery commission settings
+  */
+ export const updateEquipmentCommissionSettings = asyncHandler(
+   async (req: Request, res: Response) => {
+     const { enabled, payMode, amount } = req.body;
+ 
+     let settings = await AppSettings.findOne();
+ 
+     const config = {
+       enabled: Boolean(enabled),
+       payMode: payMode || 'FIXED_PER_ORDER',
+       amount: Number(amount) || 0
+     };
+ 
+     if (!settings) {
+       settings = await AppSettings.create({
+         contactEmail: "contact@dhakadsnazzy.com",
+         contactPhone: "1234567890",
+         equipmentDeliveryCommission: config,
+       });
+     } else {
+       settings.equipmentDeliveryCommission = config;
+       settings.updatedBy = req.user?.userId as any;
+       await settings.save();
+     }
+ 
+     return res.status(200).json({
+       success: true,
+       message: "Equipment commission settings updated successfully",
+       data: settings.equipmentDeliveryCommission,
+     });
+   }
+ );

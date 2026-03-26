@@ -5,9 +5,10 @@ export interface ICommission extends Document {
   orderItem?: mongoose.Types.ObjectId; // Optional for delivery boy commissions
   seller?: mongoose.Types.ObjectId; // For seller commissions
   deliveryBoy?: mongoose.Types.ObjectId; // For delivery boy commissions
+  equipmentOrder?: mongoose.Types.ObjectId; // For equipment delivery commissions
 
   // Commission Type
-  type: "SELLER" | "DELIVERY_BOY";
+  type: "SELLER" | "DELIVERY_BOY" | "EQUIPMENT_DELIVERY";
 
   // Commission Info
   orderAmount: number;
@@ -44,11 +45,15 @@ const CommissionSchema = new Schema<ICommission>(
       type: Schema.Types.ObjectId,
       ref: "Delivery",
     },
+    equipmentOrder: {
+      type: Schema.Types.ObjectId,
+      ref: "EquipmentOrder",
+    },
 
     // Commission Type
     type: {
       type: String,
-      enum: ["SELLER", "DELIVERY_BOY"],
+      enum: ["SELLER", "DELIVERY_BOY", "EQUIPMENT_DELIVERY"],
       required: [true, "Commission type is required"],
     },
 

@@ -22,8 +22,8 @@ export const getEarningsHistory = asyncHandler(async (req: Request, res: Respons
         {
             $match: {
                 deliveryBoy: objectId,
-                type: "DELIVERY_BOY",
-                status: "Paid" // Only count paid commissions? Or all? Usually Paid.
+                type: { $in: ["DELIVERY_BOY", "EQUIPMENT_DELIVERY"] },
+                status: "Paid"
             }
         },
         {
@@ -32,11 +32,12 @@ export const getEarningsHistory = asyncHandler(async (req: Request, res: Respons
                     $dateToString: { format: "%Y-%m-%d", date: "$createdAt" }
                 },
                 amount: { $sum: '$commissionAmount' },
-                deliveries: { $sum: 1 }
+                deliveries: { $sum: 1 },
+                hasEquipment: { $sum: { $cond: [{ $eq: ["$type", "EQUIPMENT_DELIVERY"] }, 1, 0] } }
             }
         },
-        { $sort: { _id: -1 } }, // Sort by date descending
-        { $limit: 30 } // Last 30 days
+        { $sort: { _id: -1 } }, 
+        { $limit: 30 }
     ]);
 
     const formattedEarnings = earnings.map(day => {
@@ -55,12 +56,12 @@ export const getEarningsHistory = asyncHandler(async (req: Request, res: Respons
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
             if (diffDays <= 7) dateLabel = `${diffDays} days ago`;
         }
-
         return {
             date: dateLabel,
-            rawDate: day._id, // Keep raw date for sorting/logic if needed
+            rawDate: day._id, 
             amount: day.amount,
-            deliveries: day.deliveries
+            deliveries: day.deliveries,
+            hasEquipment: (day.hasEquipment || 0) > 0
         };
     });
 

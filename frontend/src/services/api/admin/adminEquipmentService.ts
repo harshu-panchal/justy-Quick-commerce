@@ -176,3 +176,14 @@ export const uploadEquipmentImage = async (file: File) => {
     });
     return response.data;
 };
+
+// Commission Settings
+export const getEquipmentCommissionSettings = async () => {
+    const response = await api.get('/admin/settings/equipment-commission');
+    return response.data;
+};
+
+export const updateEquipmentCommissionSettings = async (data: { enabled: boolean; payMode: string; amount: number }) => {
+    const response = await api.put('/admin/settings/equipment-commission', data);
+    return response.data;
+};

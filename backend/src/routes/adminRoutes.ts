@@ -241,6 +241,8 @@ router.put("/settings/spinner", settingsController.updateSpinnerSettings);
 // ==================== Referral Settings ====================
 router.get("/settings/referral", settingsController.getReferralSettings);
 router.put("/settings/referral", settingsController.updateReferralSettings);
+router.get("/settings/equipment-commission", settingsController.getEquipmentCommissionSettings);
+router.put("/settings/equipment-commission", settingsController.updateEquipmentCommissionSettings);
 router.get("/referral/stats", settingsController.getAdminReferralStats);
 
 // ==================== Coupon Routes ====================

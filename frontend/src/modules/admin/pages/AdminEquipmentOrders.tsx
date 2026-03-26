@@ -7,6 +7,8 @@ import {
   approveEquipmentOrder,
   rejectEquipmentOrder,
   regenerateEquipmentQR,
+  getEquipmentCommissionSettings,
+  updateEquipmentCommissionSettings,
   type EquipmentOrder,
 } from "../../../services/api/admin/adminEquipmentService";
 import { useAuth } from "../../../context/AuthContext";
@@ -36,10 +38,20 @@ export default function AdminEquipmentOrders() {
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
   const [invoiceOrder, setInvoiceOrder] = useState<OrderDetail | null>(null);
   const [isRegeneratingQR, setIsRegeneratingQR] = useState(false);
+  
+  // Commission Settings state
+  const [showCommissionSettings, setShowCommissionSettings] = useState(false);
+  const [commissionConfig, setCommissionConfig] = useState({
+    enabled: true,
+    payMode: 'FIXED_PER_ORDER',
+    amount: 30
+  });
+  const [savingSettings, setSavingSettings] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated && token) {
       fetchData();
+      fetchCommissionSettings();
 
       // Setup socket listener for real-time updates
       const socketUrl = getSocketBaseURL();
@@ -77,6 +89,30 @@ export default function AdminEquipmentOrders() {
       setError("Failed to fetch orders");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchCommissionSettings = async () => {
+    try {
+      const res = await getEquipmentCommissionSettings();
+      if (res.success) setCommissionConfig(res.data);
+    } catch (err) {
+      console.error("Failed to fetch commission settings", err);
+    }
+  };
+
+  const handleSaveCommissionSettings = async () => {
+    try {
+      setSavingSettings(true);
+      const res = await updateEquipmentCommissionSettings(commissionConfig);
+      if (res.success) {
+        alert("Commission settings updated!");
+        setShowCommissionSettings(false);
+      }
+    } catch (err: any) {
+      alert("Failed to update settings");
+    } finally {
+      setSavingSettings(false);
     }
   };
 
@@ -227,6 +263,84 @@ export default function AdminEquipmentOrders() {
             <span className="text-neutral-500">Equipment Orders</span>
           </div>
         </div>
+      </div>
+
+      {/* Commission Settings Panel */}
+      <div className="mb-6">
+        <button 
+          onClick={() => setShowCommissionSettings(!showCommissionSettings)}
+          className="flex items-center gap-2 text-xs font-black text-neutral-500 hover:text-teal-700 transition-colors uppercase tracking-widest"
+        >
+          <svg className={`w-4 h-4 transition-transform ${showCommissionSettings ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+          Delivery Partner Commission Settings
+        </button>
+
+        {showCommissionSettings && (
+          <div className="mt-3 bg-white border border-teal-100 rounded-xl p-6 shadow-sm animate-in slide-in-from-top-2 duration-300">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="space-y-3">
+                <label className="block text-[11px] font-black text-neutral-400 uppercase">System Status</label>
+                <div className="flex items-center gap-3">
+                  <button 
+                    onClick={() => setCommissionConfig({...commissionConfig, enabled: !commissionConfig.enabled})}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${commissionConfig.enabled ? 'bg-teal-600' : 'bg-neutral-200'}`}
+                  >
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${commissionConfig.enabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                  </button>
+                  <span className="text-sm font-bold text-neutral-700">{commissionConfig.enabled ? 'ENABLED' : 'DISABLED'}</span>
+                </div>
+                <p className="text-[10px] text-neutral-400 leading-relaxed">When enabled, delivery partners will receive a payout upon successful equipment delivery.</p>
+              </div>
+
+              <div className="space-y-3">
+                <label className="block text-[11px] font-black text-neutral-400 uppercase">Payout Mode</label>
+                <div className="flex flex-col gap-2">
+                  {['FIXED_PER_ORDER', 'FIXED_PER_ITEM', 'PERCENTAGE'].map(mode => (
+                    <label key={mode} className="flex items-center gap-2 cursor-pointer group">
+                      <input 
+                        type="radio" 
+                        name="payMode" 
+                        checked={commissionConfig.payMode === mode}
+                        onChange={() => setCommissionConfig({...commissionConfig, payMode: mode})}
+                        className="w-4 h-4 text-teal-600 focus:ring-teal-500 border-neutral-300"
+                      />
+                      <span className={`text-xs font-bold transition-colors ${commissionConfig.payMode === mode ? 'text-teal-700' : 'text-neutral-500 hover:text-neutral-700'}`}>
+                        {mode.replace(/_/g, ' ')}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <label className="block text-[11px] font-black text-neutral-400 uppercase">Commission Value</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 font-bold">
+                    {commissionConfig.payMode === 'PERCENTAGE' ? '%' : '₹'}
+                  </span>
+                  <input 
+                    type="number" 
+                    value={commissionConfig.amount}
+                    onChange={(e) => setCommissionConfig({...commissionConfig, amount: Number(e.target.value)})}
+                    className="w-full pl-8 pr-4 py-3 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-black text-neutral-700 focus:border-teal-600 outline-none"
+                    placeholder="Enter value..."
+                  />
+                </div>
+                <div className="flex justify-end pt-2">
+                  <button 
+                    onClick={handleSaveCommissionSettings}
+                    disabled={savingSettings}
+                    className="px-6 py-2.5 bg-teal-700 hover:bg-teal-800 text-white text-[10px] font-black rounded-lg shadow-lg shadow-teal-700/20 disabled:bg-neutral-300 transition-all active:scale-95 uppercase"
+                  >
+                    {savingSettings ? 'SAVING...' : 'SAVE SETTINGS'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden">

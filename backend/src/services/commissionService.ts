@@ -8,6 +8,7 @@ import { creditWallet } from "./walletManagementService";
 import mongoose from "mongoose";
 import Category from "../models/Category";
 import Product from "../models/Product";
+import EquipmentOrder from "../models/EquipmentOrder";
 import WalletTransaction from "../models/WalletTransaction";
 import SellerCategoryCommission from "../models/SellerCategoryCommission";
 
@@ -758,7 +759,7 @@ export const reverseCommissions = async (orderId: string) => {
           const { debitWallet } = await import("./walletManagementService");
           await debitWallet(
             userId.toString(),
-            userType,
+            userType as any,
             commission.commissionAmount,
             `Commission reversal for cancelled order`,
             orderId,
@@ -1100,5 +1101,88 @@ export const processCODOrderDelivery = async (
     if (!useExternalSession) {
       session.endSession();
     }
+  }
+};
+
+/**
+ * Process commission for a delivered equipment order
+ */
+export const processEquipmentDeliveryCommission = async (equipmentOrderId: string) => {
+  try {
+    const order = await EquipmentOrder.findById(equipmentOrderId);
+    if (!order || order.status !== 'delivered') {
+      console.warn(`[Equipment Commission] Order ${equipmentOrderId} not found or not delivered.`);
+      return null;
+    }
+
+    if (!order.deliveryBoy) return null;
+
+    // Check if commission already exists
+    const existing = await Commission.findOne({
+      equipmentOrder: equipmentOrderId,
+      type: 'EQUIPMENT_DELIVERY'
+    });
+
+    if (existing) {
+      console.log(`[Equipment Commission] Already processed for order ${equipmentOrderId}`);
+      return;
+    }
+
+    const settings = await AppSettings.getSettings();
+    const config = settings.equipmentDeliveryCommission;
+
+    if (!config || !config.enabled) {
+      console.log('[Equipment Commission] Feature disabled in settings.');
+      return;
+    }
+
+    let commissionAmount = 0;
+    const { payMode, amount } = config;
+
+    console.log(`[Equipment Commission] Calculating for order ${order.orderNumber}. Mode: ${payMode}, Amount: ${amount}`);
+
+    if (payMode === 'FIXED_PER_ORDER') {
+      commissionAmount = amount;
+    } else if (payMode === 'FIXED_PER_ITEM') {
+      const totalQty = order.items.reduce((sum: number, item: any) => sum + (item.quantity || 1), 0);
+      commissionAmount = amount * totalQty;
+      console.log(`[Equipment Commission] Item based: ${totalQty} items x ₹${amount}`);
+    } else if (payMode === 'PERCENTAGE') {
+      commissionAmount = (order.total * amount) / 100;
+      console.log(`[Equipment Commission] Percentage based: ${amount}% of ₹${order.total}`);
+    }
+
+    commissionAmount = Math.round(commissionAmount * 100) / 100;
+    console.log(`[Equipment Commission] Final Amount: ₹${commissionAmount}`);
+
+    // Create Commission Record
+    const commission = await Commission.create({
+      equipmentOrder: order._id,
+      order: order._id, // Backwards compatibility if needed
+      deliveryBoy: order.deliveryBoy,
+      type: 'EQUIPMENT_DELIVERY',
+      orderAmount: order.total,
+      commissionRate: payMode === 'PERCENTAGE' ? amount : 0,
+      commissionAmount,
+      status: 'Paid',
+      paidAt: new Date()
+    });
+
+    // Credit Wallet
+    await creditWallet(
+      order.deliveryBoy.toString(),
+      'DELIVERY_BOY',
+      commissionAmount,
+      `Equipment delivery earning for order #${order.orderNumber}`,
+      order._id.toString(),
+      commission._id.toString()
+    );
+
+    console.log(`[Equipment Commission] ₹${commissionAmount} credited to DB ${order.deliveryBoy} for order ${order.orderNumber}`);
+
+    return commission;
+  } catch (error) {
+    console.error("Error processing equipment delivery commission:", error);
+    return null;
   }
 };

@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
-import { EquipmentOrder } from '../../../models';
+import { EquipmentOrder, AppSettings, Commission } from '../../../models';
+import { processEquipmentDeliveryCommission } from '../../../services/commissionService';
 
 /**
  * Delivery Boy Equipment Assignments
@@ -13,7 +14,34 @@ export const getMyEquipmentDeliveries = async (req: Request, res: Response) => {
         .populate('seller', 'sellerName mobile address')
         .sort({ assignedAt: -1 });
 
-        return res.status(200).json({ success: true, data: orders });
+        // Enhance with commission info
+        const settings = await AppSettings.getSettings();
+        const config = settings.equipmentDeliveryCommission;
+
+        const enhancedOrders = await Promise.all(orders.map(async (order: any) => {
+            const orderObj = order.toObject();
+            
+            // If delivered, look up actual commission
+            if (order.status === 'delivered') {
+                const comm = await Commission.findOne({ equipmentOrder: order._id, type: 'EQUIPMENT_DELIVERY' });
+                orderObj.earnedCommission = comm?.commissionAmount || 0;
+            } else if (config && config.enabled) {
+                // Estimate based on current settings
+                let est = 0;
+                if (config.payMode === 'FIXED_PER_ORDER') est = config.amount;
+                else if (config.payMode === 'FIXED_PER_ITEM') {
+                    const totalQty = order.items.reduce((sum: number, item: any) => sum + (item.quantity || 1), 0);
+                    est = config.amount * totalQty;
+                } else if (config.payMode === 'PERCENTAGE') {
+                    est = (order.total * config.amount) / 100;
+                }
+                orderObj.estimatedCommission = Math.round(est * 100) / 100;
+            }
+            
+            return orderObj;
+        }));
+
+        return res.status(200).json({ success: true, data: enhancedOrders });
     } catch (error: any) {
         return res.status(500).json({ success: false, message: error.message });
     }
@@ -66,6 +94,9 @@ export const markEquipmentDelivered = async (req: Request, res: Response) => {
                 status: order.status
             });
         }
+
+        // Process Delivery Boy Commission
+        await processEquipmentDeliveryCommission(order._id.toString());
 
         return res.status(200).json({ success: true, message: 'Marked as delivered successfully' });
     } catch (error: any) {

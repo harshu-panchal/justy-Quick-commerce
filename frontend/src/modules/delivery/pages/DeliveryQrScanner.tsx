@@ -71,7 +71,33 @@ const DeliveryQrScanner: React.FC = () => {
     setIsScanning(false);
     
     try {
-      const response = await scanQrCode(decodedText);
+      let scanParams: { token?: string; orderId?: string; orderType?: string } = {};
+
+      // Detect if it's a URL (New System) or JWT (Old System)
+      if (decodedText.includes('/order/')) {
+        try {
+          // It's a URL, e.g., https://.../order/ID?type=T
+          const url = new URL(decodedText);
+          const pathParts = url.pathname.split('/');
+          const orderId = pathParts[pathParts.length - 1]; // Get ID from /order/ID
+          const orderType = url.searchParams.get('type') || 'ORDER';
+          
+          scanParams = { orderId, orderType };
+          console.log('[SCANNER] Parsed URL:', scanParams);
+        } catch (urlErr) {
+          // Fallback if URL parsing fails but contains magic string
+          const parts = decodedText.split('/order/');
+          const idAndQuery = parts[1].split('?');
+          const orderId = idAndQuery[0];
+          const typeMatch = idAndQuery[1]?.match(/type=([^&]+)/);
+          scanParams = { orderId, orderType: typeMatch ? typeMatch[1] : 'ORDER' };
+        }
+      } else {
+        // Assume old JWT token
+        scanParams = { token: decodedText };
+      }
+
+      const response = await scanQrCode(scanParams);
       if (response.success && response.data) {
         const data = response.data;
         

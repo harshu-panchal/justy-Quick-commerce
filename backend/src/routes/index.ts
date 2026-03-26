@@ -57,9 +57,13 @@ import {
   cancelOrderItem,
   requestReturn,
   updateOrderNotes,
+  getPublicOrderDetails,
 } from "../modules/customer/controllers/customerOrderController";
 
 const router = Router();
+
+// Public Order View (QR Scan)
+router.get("/public/orders/:id", getPublicOrderDetails);
 
 // Health check route
 router.get("/health", (_req, res) => {

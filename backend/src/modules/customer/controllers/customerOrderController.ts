@@ -798,50 +798,87 @@ export const getMyOrders = async (req: Request, res: Response) => {
         const skip = (Number(page) - 1) * Number(limit);
 
         const orders = await Order.find(query)
-            .populate({
-                path: 'items',
-                populate: { path: 'product', select: 'productName mainImage price' }
-            })
             .sort({ createdAt: -1 })
             .skip(skip)
-            .limit(Number(limit));
+            .limit(Number(limit))
+            .populate('items');
 
         const total = await Order.countDocuments(query);
 
-        // Transform orders to match frontend Order type
-        const transformedOrders = orders.map(order => {
-            const orderObj = order.toObject();
-            return {
-                ...orderObj,
-                id: orderObj._id.toString(),
-                totalItems: Array.isArray(orderObj.items) ? orderObj.items.length : 0,
-                totalAmount: orderObj.total,
-                fees: {
-                    platformFee: orderObj.platformFee || 0,
-                    deliveryFee: orderObj.shipping || 0
-                },
-                // Keep original fields for backward compatibility
-                subtotal: orderObj.subtotal,
-                address: orderObj.deliveryAddress
-            };
-        });
-
         return res.status(200).json({
             success: true,
-            data: transformedOrders,
+            data: orders,
             pagination: {
+                total,
                 page: Number(page),
                 limit: Number(limit),
-                total,
-                pages: Math.ceil(total / Number(limit)),
-            },
+                pages: Math.ceil(total / Number(limit))
+            }
         });
     } catch (error: any) {
-        return res.status(500).json({
-            success: false,
-            message: "Error fetching orders",
-            error: error.message,
-        });
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// Get limited order details for public view (via QR scan)
+export const getPublicOrderDetails = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { type } = req.query; // 'ORDER' or 'EQUIPMENT'
+
+        if (type === 'EQUIPMENT') {
+            const order = await (mongoose.model('EquipmentOrder')).findById(id)
+                .populate({
+                   path: 'items',
+                   populate: { path: 'equipmentItem' }
+                });
+            
+            if (!order) {
+                return res.status(404).json({ success: false, message: 'Order not found' });
+            }
+
+            return res.status(200).json({
+                success: true,
+                data: {
+                    orderNumber: order.orderNumber,
+                    status: order.status,
+                    sellerName: order.sellerName || 'Jaysti Merchant',
+                    items: (order.items || []).map((item: any) => ({
+                        productName: item.equipmentItem?.name || 'Equipment Item',
+                        quantity: item.quantity,
+                        image: item.equipmentItem?.imageUrl
+                    })),
+                    orderDate: order.createdAt
+                }
+            });
+        } else {
+            // Normal Order
+            const order = await Order.findById(id).populate({
+                path: 'items',
+                populate: { path: 'product' }
+            });
+
+            if (!order) {
+                return res.status(404).json({ success: false, message: 'Order not found' });
+            }
+
+            return res.status(200).json({
+                success: true,
+                data: {
+                    orderNumber: order.orderNumber,
+                    status: order.status,
+                    sellerName: order.items?.[0]?.soldBy || 'Jaysti Merchant',
+                    items: (order.items || []).map((item: any) => ({
+                        productName: item.productName || item.product?.productName || 'Product',
+                        quantity: item.quantity,
+                        image: item.productImage || item.product?.mainImage
+                    })),
+                    orderDate: order.createdAt
+                }
+            });
+        }
+    } catch (error: any) {
+        return res.status(500).json({ success: false, message: error.message });
     }
 };
 

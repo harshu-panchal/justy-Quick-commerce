@@ -62,7 +62,7 @@ const corsOptions = {
 
     // In development, allow localhost
     if (process.env.NODE_ENV !== "production") {
-      if (origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:") || origin.startsWith("http://192.168.1.44:")) {
+      if (origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:") || origin.startsWith("http://192.168.1.99:")) {
         return callback(null, true);
       }
     }

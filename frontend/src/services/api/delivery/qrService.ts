@@ -16,8 +16,8 @@ export interface ScanResponse {
 /**
  * Scan QR Code
  */
-export const scanQrCode = async (token: string): Promise<ApiResponse<ScanResponse>> => {
-  const response = await api.post<ApiResponse<ScanResponse>>('/delivery/qr/scan', { token });
+export const scanQrCode = async (params: { token?: string; orderId?: string; orderType?: string }): Promise<ApiResponse<ScanResponse>> => {
+  const response = await api.post<ApiResponse<ScanResponse>>('/delivery/qr/scan', params);
   return response.data;
 };
 

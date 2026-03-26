@@ -9,6 +9,8 @@ import {
   EquipmentItem,
   EquipmentOrder
 } from '../../../services/api/seller/sellerEquipmentService';
+import { io } from "socket.io-client";
+import { getSocketBaseURL } from "../../../services/api/config";
 
 export default function SellerEquipmentShop() {
   const navigate = useNavigate();
@@ -92,7 +94,28 @@ export default function SellerEquipmentShop() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+
+    if (user) {
+      const socketUrl = getSocketBaseURL();
+      const socket = io(socketUrl, {
+        auth: { token: localStorage.getItem('authToken') },
+        transports: ["websocket", "polling"],
+      });
+
+      socket.on("connect", () => {
+        socket.emit("join-seller-room", user.id);
+      });
+
+      socket.on("equipment-order-update", (data) => {
+        console.log("Real-time equipment update for seller received:", data);
+        fetchData();
+      });
+
+      return () => {
+        socket.disconnect();
+      };
+    }
+  }, [user]);
 
   // Pre-fill bank details from user profile when refund modal opens
   useEffect(() => {
@@ -178,6 +201,7 @@ export default function SellerEquipmentShop() {
       'rejected': 'bg-red-100 text-red-600',
       'cancelled': 'bg-neutral-100 text-neutral-500',
       'assigned': 'bg-blue-100 text-blue-600',
+      'picked_up': 'bg-blue-100 text-blue-600',
       'delivered': 'bg-teal-100 text-teal-600',
       'refunded': 'bg-orange-100 text-orange-600'
     };

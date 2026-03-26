@@ -4,15 +4,21 @@ import { uploadImageFromBuffer } from '../services/cloudinaryService';
 import { CLOUDINARY_FOLDERS } from '../config/cloudinary';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
+
+/**
+ * Construct public QR URL
+ */
+export function generateQRUrl(orderId: string, orderType: 'ORDER' | 'EQUIPMENT'): string {
+  // Ensure we don't have trailing slash in base URL
+  const baseUrl = FRONTEND_URL.endsWith('/') ? FRONTEND_URL.slice(0, -1) : FRONTEND_URL;
+  return `${baseUrl}/order/${orderId}?type=${orderType}`;
+}
 
 export interface QRPayload {
   orderId: string;
-  sellerId: string;
-  userId: string;
-  deliveryType: 'USER' | 'SUPPLY';
-  address: string;
-  timestamp: number;
   orderType: 'ORDER' | 'EQUIPMENT';
+  timestamp?: number;
 }
 
 /**
@@ -40,9 +46,9 @@ export function verifyQRToken(token: string): QRPayload | null {
 export async function generateQRBuffer(token: string): Promise<Buffer> {
   try {
     const qrDataUrl = await QRCode.toBuffer(token, {
-      errorCorrectionLevel: 'H',
+      errorCorrectionLevel: 'M',
       type: 'png',
-      margin: 2,
+      margin: 4,
       width: 600
     });
     return qrDataUrl;
@@ -57,7 +63,8 @@ export async function generateQRBuffer(token: string): Promise<Buffer> {
  */
 export async function createAndUploadQR(payload: QRPayload): Promise<{ url: string; token: string }> {
   const token = signQRPayload(payload);
-  const buffer = await generateQRBuffer(token);
+  const qrUrl = generateQRUrl(payload.orderId, payload.orderType);
+  const buffer = await generateQRBuffer(qrUrl);
   
   const uploadResult = await uploadImageFromBuffer(buffer, {
     folder: CLOUDINARY_FOLDERS.LOGISTICS,

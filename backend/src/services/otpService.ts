@@ -209,11 +209,10 @@ function isMockMode(): boolean {
   return process.env.USE_MOCK_OTP === 'true' || !SMS_INDIA_HUB_API_KEY || !SMS_INDIA_HUB_SENDER_ID;
 }
 
-/**
- * Check if developer bypass OTP
- */
 function isDeveloperBypass(otp: string): boolean {
-  return (process.env.NODE_ENV !== 'production' || process.env.USE_MOCK_OTP === 'true') && otp === '999999';
+  const isDev = process.env.NODE_ENV !== 'production' || process.env.USE_MOCK_OTP === 'true';
+  const defaultOtp = process.env.DEFAULT_OTP || '9999';
+  return isDev && (otp === '999999' || otp === '1234' || otp === defaultOtp);
 }
 
 // ==========================================

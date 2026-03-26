@@ -38,6 +38,7 @@ const Category = lazy(() => import("./modules/user/Category"));
 const SubCategoryPage = lazy(() => import("./modules/user/SubCategoryPage"));
 const HeaderCategoryPage = lazy(() => import("./modules/user/HeaderCategoryPage"));
 const Invoice = lazy(() => import("./modules/user/Invoice"));
+const PublicOrderView = lazy(() => import("./modules/user/pages/PublicOrderView"));
 const Login = lazy(() => import("./modules/user/Login"));
 
 const AboutUs = lazy(() => import("./modules/user/AboutUs"));
@@ -486,6 +487,7 @@ function App() {
                                         <Route path="/search" element={<Search />} />
                                         <Route path="/orders" element={<Orders />} />
                                         <Route path="/orders/:id" element={<OrderDetail />} />
+                                        <Route path="/order/:id" element={<PublicOrderView />} />
                                         <Route path="/order-again" element={<OrderAgain />} />
                                         <Route path="/account" element={<Account />} />
                                         <Route path="/coins" element={<CoinsPage />} />

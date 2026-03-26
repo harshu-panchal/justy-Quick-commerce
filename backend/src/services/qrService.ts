@@ -19,33 +19,18 @@ export async function generateAndAttachQr(orderId: string, orderType: 'ORDER' | 
       
       payload = {
         orderId: order._id.toString(),
-        sellerId: order.items?.[0]?.seller?.toString() || '', // Assuming items have seller or we get it from elsewhere
-        userId: order.customer?._id?.toString() || order.customer?.toString() || '',
-        deliveryType: 'USER',
-        address: order.deliveryAddress?.address || '',
-        timestamp: Date.now(),
-        orderType: 'ORDER'
+        orderType: 'ORDER',
+        timestamp: Date.now()
       };
-      
-      // If seller is not in items, we might need to find it differently.
-      // In Order.ts, sellerPickups might have the seller.
-      if (!payload.sellerId && order.sellerPickups?.length > 0) {
-        payload.sellerId = order.sellerPickups[0].seller.toString();
-      }
 
     } else {
       order = await EquipmentOrder.findById(orderId);
       if (!order) throw new Error('Equipment Order not found');
 
-      payload = {
-        orderId: order._id.toString(),
-        sellerId: order.seller?.toString() || '',
-        userId: 'ADMIN', // Equipment orders are FROM admin TO seller
-        deliveryType: 'SUPPLY',
-        address: order.sellerAddress || '',
-        timestamp: Date.now(),
-        orderType: 'EQUIPMENT'
-      };
+        payload = {
+          orderId: order._id.toString(),
+          orderType: 'EQUIPMENT'
+        };
     }
 
     const { url, token } = await createAndUploadQR(payload);

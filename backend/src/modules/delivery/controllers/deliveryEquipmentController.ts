@@ -38,6 +38,35 @@ export const markEquipmentDelivered = async (req: Request, res: Response) => {
         }
         await order.save();
 
+        // Notify via Sockets for real-time dashboard refresh
+        const io = (req.app as any).get("io");
+        if (io) {
+            // Notify specific order room
+            io.to(`order-${order._id}`).emit("order-delivered", {
+                orderId: order._id,
+                orderNumber: order.orderNumber,
+                message: "Equipment delivered successfully"
+            });
+
+            // Notify delivery boy room for history refresh
+            io.to(`delivery-${req.user!.userId}`).emit("order-delivered", {
+                orderId: order._id,
+                orderNumber: order.orderNumber
+            });
+
+            // Notify seller (customer/renter)
+            io.to(`seller-${order.seller}`).emit("equipment-order-update", {
+                orderId: order._id,
+                status: order.status
+            });
+
+            // Notify admin
+            io.to("admin-room").emit("equipment-order-update", {
+                orderId: order._id,
+                status: order.status
+            });
+        }
+
         return res.status(200).json({ success: true, message: 'Marked as delivered successfully' });
     } catch (error: any) {
         return res.status(400).json({ success: false, message: error.message });

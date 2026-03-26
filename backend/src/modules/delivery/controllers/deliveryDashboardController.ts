@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { asyncHandler } from "../../../utils/asyncHandler";
 import Delivery from "../../../models/Delivery";
 import Order from "../../../models/Order";
+import EquipmentOrder from "../../../models/EquipmentOrder";
 import mongoose from "mongoose";
 
 /**
@@ -31,129 +32,94 @@ export const getDashboardStats = asyncHandler(
     const todayEnd = new Date();
     todayEnd.setHours(23, 59, 59, 999);
 
-    // 2. Fetch Orders Assigned to this Partner
-    // We need:
-    // - Pending Orders (Ready for pickup, Out for delivery, Picked Up)
-    // - Today's All Orders (Created today OR Delivered today?) -> "Today's All Order" usually means active + completed today
-    // - Today's Delivered Orders (for Earnings & Collection)
-    // - Return Orders
-
+    // 2. Fetch Orders Combined Stats
     const objectId = new mongoose.Types.ObjectId(deliveryId);
 
-    // Aggregation to get counts in one go
-    const stats = await Order.aggregate([
-      {
-        $match: {
-          deliveryBoy: objectId,
-          // We consider orders active or touching today
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          // Pending: Active statuses
-          pendingOrders: {
-            $sum: {
-              $cond: [
-                {
-                  $in: [
-                    "$status",
-                    [
-                      "Ready for pickup",
-                      "Out for Delivery",
-                      "Picked Up",
-                      "Assigned",
-                      "In Transit",
-                    ],
-                  ],
-                },
-                1,
-                0,
-              ],
+    const [orderStats, equipmentStats] = await Promise.all([
+      Order.aggregate([
+        { $match: { deliveryBoy: objectId } },
+        {
+          $group: {
+            _id: null,
+            pendingOrders: {
+              $sum: {
+                $cond: [{ $in: ["$status", ["Ready for pickup", "Out for Delivery", "Picked Up", "Assigned", "In Transit"]] }, 1, 0],
+              },
             },
-          },
-          // All Orders Today: Created today OR Updated today
-          allOrdersToday: {
-            $sum: {
-              $cond: [
-                {
-                  $and: [
-                    { $gte: ["$updatedAt", todayStart] },
-                    { $lte: ["$updatedAt", todayEnd] },
-                  ],
-                },
-                1,
-                0,
-              ],
+            allOrdersToday: {
+              $sum: {
+                $cond: [{ $and: [{ $gte: ["$updatedAt", todayStart] }, { $lte: ["$updatedAt", todayEnd] }] }, 1, 0],
+              },
             },
-          },
-          // Return Orders Today
-          returnOrdersToday: {
-            $sum: {
-              $cond: [
-                {
-                  $and: [
-                    { $in: ["$status", ["Returned", "Cancelled"]] },
-                    { $gte: ["$updatedAt", todayStart] },
-                    { $lte: ["$updatedAt", todayEnd] },
-                  ],
-                },
-                1,
-                0,
-              ],
+            returnOrdersToday: {
+              $sum: {
+                $cond: [{ $and: [{ $in: ["$status", ["Returned", "Cancelled"]] }, { $gte: ["$updatedAt", todayStart] }, { $lte: ["$updatedAt", todayEnd] }] }, 1, 0],
+              },
             },
-          },
-          // Daily Collection: Cash collected from COD orders delivered TODAY
-          dailyCollection: {
-            $sum: {
-              $cond: [
-                {
-                  $and: [
-                    { $eq: ["$status", "Delivered"] },
-                    { $eq: ["$paymentMethod", "COD"] }, // Assuming 'COD' string for Cash on Delivery
-                    { $gte: ["$deliveredAt", todayStart] },
-                    { $lte: ["$deliveredAt", todayEnd] },
-                  ],
-                },
-                "$total", // Sum the order total
-                0,
-              ],
+            dailyCollection: {
+              $sum: {
+                $cond: [{ $and: [{ $eq: ["$status", "Delivered"] }, { $eq: ["$paymentMethod", "COD"] }, { $gte: ["$deliveredAt", todayStart] }, { $lte: ["$deliveredAt", todayEnd] }] }, "$total", 0],
+              },
             },
-          },
-          // Today's Earning: Commission earned today (Mock calculation: 40 per order)
-          // In real app, this should come from a Commission model or field on Order
-          todayDeliveredCount: {
-            $sum: {
-              $cond: [
-                {
-                  $and: [
-                    { $eq: ["$status", "Delivered"] },
-                    { $gte: ["$deliveredAt", todayStart] },
-                    { $lte: ["$deliveredAt", todayEnd] },
-                  ],
-                },
-                1,
-                0,
-              ],
+            todayDeliveredCount: {
+              $sum: {
+                $cond: [{ $and: [{ $eq: ["$status", "Delivered"] }, { $gte: ["$deliveredAt", todayStart] }, { $lte: ["$deliveredAt", todayEnd] }] }, 1, 0],
+              },
             },
-          },
-          // Total Completed Deliveries (Lifetime)
-          totalDeliveredCount: {
-            $sum: {
-              $cond: [{ $eq: ["$status", "Delivered"] }, 1, 0],
+            totalDeliveredCount: {
+              $sum: { $cond: [{ $eq: ["$status", "Delivered"] }, 1, 0] },
             },
           },
         },
-      },
+      ]),
+      EquipmentOrder.aggregate([
+        { $match: { deliveryBoy: objectId } },
+        {
+          $group: {
+            _id: null,
+            pendingOrders: {
+              $sum: {
+                $cond: [{ $in: ["$status", ["assigned", "picked_up"]] }, 1, 0],
+              },
+            },
+            allOrdersToday: {
+              $sum: {
+                $cond: [{ $and: [{ $gte: ["$updatedAt", todayStart] }, { $lte: ["$updatedAt", todayEnd] }] }, 1, 0],
+              },
+            },
+            returnOrdersToday: {
+              $sum: {
+                $cond: [{ $and: [{ $in: ["$status", ["cancelled", "rejected"]] }, { $gte: ["$updatedAt", todayStart] }, { $lte: ["$updatedAt", todayEnd] }] }, 1, 0],
+              },
+            },
+            dailyCollection: {
+              $sum: {
+                $cond: [{ $and: [{ $eq: ["$status", "delivered"] }, { $eq: ["$paymentMethod", "COD"] }, { $gte: ["$updatedAt", todayStart] }, { $lte: ["$updatedAt", todayEnd] }] }, "$total", 0],
+              },
+            },
+            todayDeliveredCount: {
+              $sum: {
+                $cond: [{ $and: [{ $eq: ["$status", "delivered"] }, { $gte: ["$updatedAt", todayStart] }, { $lte: ["$updatedAt", todayEnd] }] }, 1, 0],
+              },
+            },
+            totalDeliveredCount: {
+              $sum: { $cond: [{ $eq: ["$status", "delivered"] }, 1, 0] },
+            },
+          },
+        },
+      ])
     ]);
 
-    const result = stats[0] || {
-      pendingOrders: 0,
-      allOrdersToday: 0,
-      returnOrdersToday: 0,
-      dailyCollection: 0,
-      todayDeliveredCount: 0,
-      totalDeliveredCount: 0,
+    const s1 = orderStats[0] || { pendingOrders: 0, allOrdersToday: 0, returnOrdersToday: 0, dailyCollection: 0, todayDeliveredCount: 0, totalDeliveredCount: 0 };
+    const s2 = equipmentStats[0] || { pendingOrders: 0, allOrdersToday: 0, returnOrdersToday: 0, dailyCollection: 0, todayDeliveredCount: 0, totalDeliveredCount: 0 };
+
+    const result = {
+      pendingOrders: s1.pendingOrders + s2.pendingOrders,
+      allOrdersToday: s1.allOrdersToday + s2.allOrdersToday,
+      returnOrdersToday: s1.returnOrdersToday + s2.returnOrdersToday,
+      dailyCollection: s1.dailyCollection + s2.dailyCollection,
+      todayDeliveredCount: s1.todayDeliveredCount + s2.todayDeliveredCount,
+      totalDeliveredCount: s1.totalDeliveredCount + s2.totalDeliveredCount,
     };
 
     // Calculate Earnings (Real Logic from Commission Collection)
@@ -196,40 +162,50 @@ export const getDashboardStats = asyncHandler(
     const todayEarning = earningStats[0]?.today[0]?.total || 0;
     const totalEarning = earningStats[0]?.total[0]?.total || 0;
 
-    // Fetch list of Pending Orders for the "Today's Pending Order" section
-    const pendingOrdersList = await Order.find({
-      deliveryBoy: deliveryId,
-      status: {
-        $in: [
-          "Ready for pickup",
-          "Out for Delivery",
-          "Picked Up",
-          "Assigned",
-          "In Transit",
-        ],
-      },
-    })
-      .select(
-        "orderNumber customerName deliveryAddress status total estimatedDeliveryDate",
-      ) // Select necessary fields
+    // Fetch list of Pending Orders from both models
+    const [ordersList, eqOrdersList] = await Promise.all([
+      Order.find({
+        deliveryBoy: deliveryId,
+        status: { $in: ["Ready for pickup", "Out for Delivery", "Picked Up", "Assigned", "In Transit"] },
+      })
+      .select("orderNumber customerName deliveryAddress status total estimatedDeliveryDate")
       .sort({ createdAt: -1 })
-      .limit(5);
+      .limit(5),
+      
+      EquipmentOrder.find({
+        deliveryBoy: deliveryId,
+        status: { $in: ["assigned", "picked_up"] },
+      })
+      .select("orderNumber sellerName deliveryAddress sellerAddress status total")
+      .sort({ createdAt: -1 })
+      .limit(5)
+    ]);
 
-    // format pending list for Frontend
-    const formattedPendingList = pendingOrdersList.map((order) => ({
-      id: order._id,
-      orderId: order.orderNumber,
-      customerName: order.customerName,
-      status: order.status, // Map backend status to frontend status if needed
-      address: `${order.deliveryAddress.address}, ${order.deliveryAddress.city}`, // Simplify address
-      totalAmount: order.total,
-      estimatedDeliveryTime: order.estimatedDeliveryDate
-        ? new Date(order.estimatedDeliveryDate).toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        })
-        : "N/A",
-    }));
+    // Format and combine pending list for Frontend
+    const formattedPendingList = [
+      ...ordersList.map((order: any) => ({
+        id: order._id,
+        orderId: order.orderNumber,
+        customerName: order.customerName,
+        status: order.status,
+        address: `${order.deliveryAddress?.address || ""}, ${order.deliveryAddress?.city || ""}`,
+        totalAmount: order.total,
+        orderType: 'ORDER',
+        estimatedDeliveryTime: order.estimatedDeliveryDate
+          ? new Date(order.estimatedDeliveryDate).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+          : "N/A",
+      })),
+      ...eqOrdersList.map((order: any) => ({
+        id: order._id,
+        orderId: order.orderNumber,
+        customerName: order.sellerName,
+        status: order.status,
+        address: order.deliveryAddress?.address || order.sellerAddress || 'N/A',
+        totalAmount: order.total,
+        orderType: 'EQUIPMENT',
+        estimatedDeliveryTime: "N/A",
+      }))
+    ].sort((a, b) => (b as any).createdAt - (a as any).createdAt).slice(0, 5);
 
     // Fetch Wallet Balance
     let walletBalance = 0;

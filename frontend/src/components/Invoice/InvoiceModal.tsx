@@ -80,8 +80,10 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, order }) =
                 </div>
                 <div className="mb-4">
                   <p className="info-label">Order Date</p>
-                  <p className="info-value">{new Date(order.orderDate).toLocaleDateString('en-IN', { dateStyle: 'long' })}</p>
-                  <p className="text-sm text-gray-600">Slot: {order.timeSlot}</p>
+                  <p className="info-value">
+                    {order.orderDate ? new Date(order.orderDate).toLocaleDateString('en-IN', { dateStyle: 'long' }) : 'N/A'}
+                  </p>
+                  <p className="text-sm text-gray-600">Slot: {order.timeSlot || 'Anytime'}</p>
                 </div>
                 <div>
                   <p className="info-label">Payment Information</p>

@@ -132,3 +132,11 @@ export const regenerateOrderQR = async (id: string): Promise<ApiResponse<{ qrCod
   return response.data;
 };
 
+/**
+ * Get Limited Order Details (Public)
+ */
+export const getPublicOrderDetails = async (id: string, type: 'ORDER' | 'EQUIPMENT'): Promise<ApiResponse<any>> => {
+  const response = await api.get<ApiResponse<any>>(`/public/orders/${id}?type=${type}`);
+  return response.data;
+};
+

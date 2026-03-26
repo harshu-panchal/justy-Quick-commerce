@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { asyncHandler } from "../../../utils/asyncHandler";
 import Order from "../../../models/Order";
+import EquipmentOrder from "../../../models/EquipmentOrder";
 import { notifySellersOfOrderUpdate } from "../../../services/sellerNotificationService";
 import OrderItem from "../../../models/OrderItem";
 import Seller from "../../../models/Seller";
@@ -8,7 +9,6 @@ import {
   generateDeliveryOtp,
   verifyDeliveryOtp,
 } from "../../../services/deliveryOtpService";
-import { processOrderStatusTransition } from "../../../services/orderService";
 
 /**
  * Helper to map order items for response
@@ -34,17 +34,32 @@ export const getAllOrdersHistory = asyncHandler(
     const limit = parseInt(req.query.limit as string) || 20;
     const skip = (page - 1) * limit;
 
-    const orders = await Order.find({ deliveryBoy: deliveryId })
-      .populate("items") // Populate OrderItems
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit);
+    // Fetch both types of orders
+    const [orders, equipmentOrders] = await Promise.all([
+      Order.find({ deliveryBoy: deliveryId })
+        .populate("items")
+        .sort({ createdAt: -1 })
+        .limit(skip + limit), // Fetch enough to handle combined pagination for simple cases
+      EquipmentOrder.find({ deliveryBoy: deliveryId })
+        .populate({ path: "items.equipmentItem" })
+        .sort({ createdAt: -1 })
+        .limit(skip + limit)
+    ]);
 
-    const total = await Order.countDocuments({ deliveryBoy: deliveryId });
+    // Combine and sort
+    const allOrders = [
+      ...orders.map(o => ({ ...o.toObject(), orderType: 'ORDER' })),
+      ...equipmentOrders.map(o => ({ ...o.toObject(), orderType: 'EQUIPMENT' }))
+    ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-    // Batched Commission Fetch for Efficiency
+    // Paginate in-memory for now (since delivery history is usually manageable)
+    const paginatedOrders = allOrders.slice(skip, skip + limit);
+    const total = await Order.countDocuments({ deliveryBoy: deliveryId }) + 
+                  await EquipmentOrder.countDocuments({ deliveryBoy: deliveryId });
+
+    // Batched Commission Fetch
     const { default: Commission } = await import("../../../models/Commission");
-    const orderIds = orders.map((o) => o._id);
+    const orderIds = paginatedOrders.map((o) => o._id);
     const commissions = await Commission.find({
       order: { $in: orderIds },
       type: "DELIVERY_BOY",
@@ -56,26 +71,41 @@ export const getAllOrdersHistory = asyncHandler(
     });
 
     // Format orders for frontend
-    const formattedOrders = orders.map((order) => ({
-      id: order._id,
-      orderId: order.orderNumber,
-      customerName: order.customerName,
-      customerPhone: order.customerPhone,
-      status: order.status,
+    const formattedOrders = paginatedOrders.map((order: any) => {
+      const isEquipment = order.orderType === 'EQUIPMENT';
+      
+      return {
+        id: order._id,
+        orderId: order.orderNumber,
+        customerName: isEquipment ? (order.sellerName || 'Equipment Order') : order.customerName,
+        customerPhone: isEquipment ? (order.sellerPhone || '') : order.customerPhone,
+        status: order.status,
+        orderType: order.orderType,
 
-      address: `${order.deliveryAddress.address}, ${order.deliveryAddress.city}`,
-      deliveryAddress: order.deliveryAddress,
-      totalAmount: order.total,
-      deliveryEarning: commissionMap.get(order._id.toString()) || 0, // Add Earning
-      items: mapOrderItems(order.items),
-      createdAt: order.createdAt,
-      estimatedDeliveryTime: order.estimatedDeliveryDate
-        ? new Date(order.estimatedDeliveryDate).toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        })
-        : "N/A",
-    }));
+        address: isEquipment 
+          ? (order.deliveryAddress?.address || order.sellerAddress || 'N/A')
+          : `${order.deliveryAddress?.address}, ${order.deliveryAddress?.city}`,
+        deliveryAddress: order.deliveryAddress,
+        totalAmount: order.total || order.grandTotal || 0,
+        deliveryEarning: commissionMap.get(order._id.toString()) || 0,
+        items: isEquipment 
+          ? order.items.map((it: any) => ({
+              id: it.equipmentItem?._id || it._id,
+              name: it.name || it.equipmentItem?.name || 'Equipment',
+              quantity: it.quantity,
+              price: it.price,
+              image: it.imageUrl || it.equipmentItem?.imageUrl
+            }))
+          : mapOrderItems(order.items),
+        createdAt: order.createdAt,
+        estimatedDeliveryTime: order.estimatedDeliveryDate
+          ? new Date(order.estimatedDeliveryDate).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          })
+          : "N/A",
+      };
+    });
 
     res.status(200).json({
       success: true,
@@ -102,37 +132,70 @@ export const getTodayOrders = asyncHandler(
     const todayEnd = new Date();
     todayEnd.setHours(23, 59, 59, 999);
 
-    const orders = await Order.find({
-      deliveryBoy: deliveryId,
-      $or: [
-        { createdAt: { $gte: todayStart, $lte: todayEnd } }, // Created today
-        { updatedAt: { $gte: todayStart, $lte: todayEnd } }, // OR Updated today
-      ],
-    })
+    const [orders, equipmentOrders] = await Promise.all([
+      Order.find({
+        deliveryBoy: deliveryId,
+        $or: [
+          { createdAt: { $gte: todayStart, $lte: todayEnd } }, // Created today
+          { updatedAt: { $gte: todayStart, $lte: todayEnd } }, // OR Updated today
+        ],
+      })
       .populate("items")
-      .sort({ updatedAt: -1 });
+      .sort({ updatedAt: -1 }),
+      
+      EquipmentOrder.find({
+        deliveryBoy: deliveryId,
+        $or: [
+          { createdAt: { $gte: todayStart, $lte: todayEnd } },
+          { updatedAt: { $gte: todayStart, $lte: todayEnd } },
+        ],
+      })
+      .populate({ path: "items.equipmentItem" })
+      .sort({ updatedAt: -1 })
+    ]);
 
-    const formattedOrders = orders.map((order) => ({
-      id: order._id,
-      orderId: order.orderNumber,
-      customerName: order.customerName,
-      customerPhone: order.customerPhone,
-      status: order.status,
-
-      address: `${order.deliveryAddress?.address || ""}, ${order.deliveryAddress?.city || ""}`,
-      deliveryAddress: order.deliveryAddress,
-      items: mapOrderItems(order.items), // Real items
-      totalAmount: order.total,
-      estimatedDeliveryTime: order.estimatedDeliveryDate
-        ? new Date(order.estimatedDeliveryDate).toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        })
-        : "N/A",
-      createdAt: order.createdAt,
-      // Distance calculation to be implemented. sending null/undefined for now to avoid fake data
-      distance: null,
-    }));
+    const formattedOrders = [
+      ...orders.map((order) => ({
+        id: order._id,
+        orderId: order.orderNumber,
+        customerName: order.customerName,
+        customerPhone: order.customerPhone,
+        status: order.status,
+        orderType: 'ORDER',
+        address: `${order.deliveryAddress?.address || ""}, ${order.deliveryAddress?.city || ""}`,
+        deliveryAddress: order.deliveryAddress,
+        items: mapOrderItems(order.items),
+        totalAmount: order.total,
+        estimatedDeliveryTime: order.estimatedDeliveryDate
+          ? new Date(order.estimatedDeliveryDate).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          })
+          : "N/A",
+        createdAt: order.createdAt,
+        distance: null,
+      })),
+      ...equipmentOrders.map((order) => ({
+        id: order._id,
+        orderId: order.orderNumber,
+        customerName: order.sellerName,
+        customerPhone: order.sellerPhone,
+        status: order.status,
+        orderType: 'EQUIPMENT',
+        address: order.deliveryAddress?.address || order.sellerAddress || 'N/A',
+        deliveryAddress: order.deliveryAddress,
+        items: order.items.map((it: any) => ({
+          name: it.name || it.equipmentItem?.name || 'Equipment',
+          quantity: it.quantity,
+          price: it.price,
+          image: it.imageUrl || it.equipmentItem?.imageUrl
+        })),
+        totalAmount: order.total,
+        estimatedDeliveryTime: "N/A",
+        createdAt: order.createdAt,
+        distance: null,
+      }))
+    ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     return res.status(200).json({
       success: true,
@@ -148,40 +211,73 @@ export const getPendingOrders = asyncHandler(
   async (req: Request, res: Response) => {
     const deliveryId = req.user?.userId;
 
-    // Pending statuses: Ready for pickup, Out for delivery, Picked Up, Assigned, In Transit
-    const orders = await Order.find({
-      deliveryBoy: deliveryId,
-      status: {
-        $in: [
-          "Ready for pickup",
-          "Out for Delivery",
-          "Picked Up",
-          "Assigned",
-          "In Transit",
-        ],
-      },
-    })
+    // Pending statuses for both models
+    const [orders, equipmentOrders] = await Promise.all([
+      Order.find({
+        deliveryBoy: deliveryId,
+        status: {
+          $in: [
+            "Ready for pickup",
+            "Out for Delivery",
+            "Picked Up",
+            "Assigned",
+            "In Transit",
+          ],
+        },
+      })
       .populate("items")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 }),
 
-    const formattedOrders = orders.map((order) => ({
-      id: order._id,
-      orderId: order.orderNumber,
-      customerName: order.customerName,
-      customerPhone: order.customerPhone,
-      status: order.status,
-      address: `${order.deliveryAddress?.address || ""}, ${order.deliveryAddress?.city || ""}`,
-      items: mapOrderItems(order.items), // Real items
-      totalAmount: order.total,
-      estimatedDeliveryTime: order.estimatedDeliveryDate
-        ? new Date(order.estimatedDeliveryDate).toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        })
-        : "N/A",
-      createdAt: order.createdAt,
-      distance: null,
-    }));
+      EquipmentOrder.find({
+        deliveryBoy: deliveryId,
+        status: {
+          $in: ["assigned", "picked_up"]
+        }
+      })
+      .populate({ path: "items.equipmentItem" })
+      .sort({ createdAt: -1 })
+    ]);
+
+    const formattedOrders = [
+      ...orders.map((order) => ({
+        id: order._id,
+        orderId: order.orderNumber,
+        customerName: order.customerName,
+        customerPhone: order.customerPhone,
+        status: order.status,
+        orderType: 'ORDER',
+        address: `${order.deliveryAddress?.address || ""}, ${order.deliveryAddress?.city || ""}`,
+        items: mapOrderItems(order.items),
+        totalAmount: order.total,
+        estimatedDeliveryTime: order.estimatedDeliveryDate
+          ? new Date(order.estimatedDeliveryDate).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          })
+          : "N/A",
+        createdAt: order.createdAt,
+        distance: null,
+      })),
+      ...equipmentOrders.map((order) => ({
+        id: order._id,
+        orderId: order.orderNumber,
+        customerName: order.sellerName,
+        customerPhone: order.sellerPhone,
+        status: order.status,
+        orderType: 'EQUIPMENT',
+        address: order.deliveryAddress?.address || order.sellerAddress || 'N/A',
+        items: order.items.map((it: any) => ({
+          name: it.name || it.equipmentItem?.name || 'Equipment',
+          quantity: it.quantity,
+          price: it.price,
+          image: it.imageUrl || it.equipmentItem?.imageUrl
+        })),
+        totalAmount: order.total,
+        estimatedDeliveryTime: "N/A",
+        createdAt: order.createdAt,
+        distance: null,
+      }))
+    ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     return res.status(200).json({
       success: true,
@@ -197,12 +293,17 @@ export const getOrderDetails = asyncHandler(
   async (req: Request, res: Response) => {
     const { id } = req.params;
 
-    const order = await Order.findById(id).populate("items");
+    let order = await Order.findById(id).populate("items");
+    let isEquipment = false;
 
     if (!order) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Order not found" });
+      order = await EquipmentOrder.findById(id).populate({ path: "items.equipmentItem" }) as any;
+      if (!order) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Order not found" });
+      }
+      isEquipment = true;
     }
 
     // Fetch Delivery Earning for this order
@@ -215,16 +316,26 @@ export const getOrderDetails = asyncHandler(
     const formattedOrder = {
       id: order._id,
       orderId: order.orderNumber,
-      customerName: order.customerName,
-      customerPhone: order.customerPhone,
-      address: `${order.deliveryAddress?.address || ""}, ${order.deliveryAddress?.city || ""}`,
-      deliveryAddress: order.deliveryAddress,
+      customerName: isEquipment ? (order as any).sellerName : (order as any).customerName,
+      customerPhone: isEquipment ? (order as any).sellerPhone : (order as any).customerPhone,
+      address: isEquipment 
+        ? ((order as any).deliveryAddress?.address || (order as any).sellerAddress || 'N/A')
+        : `${(order as any).deliveryAddress?.address || ""}, ${(order as any).deliveryAddress?.city || ""}`,
+      deliveryAddress: (order as any).deliveryAddress,
       status: order.status,
-      items: mapOrderItems(order.items), // Real populated items
-      totalAmount: order.total,
+      items: isEquipment
+        ? (order as any).items.map((it: any) => ({
+            name: it.name || it.equipmentItem?.name || 'Equipment',
+            quantity: it.quantity,
+            price: it.price,
+            image: it.imageUrl || it.equipmentItem?.imageUrl
+          }))
+        : mapOrderItems((order as any).items),
+      totalAmount: (order as any).total || (order as any).grandTotal || 0,
       createdAt: order.createdAt,
       distance: null,
       deliveryEarning: commission ? commission.commissionAmount : 0,
+      orderType: isEquipment ? 'EQUIPMENT' : 'ORDER'
     };
 
     return res.status(200).json({
@@ -261,42 +372,9 @@ export const updateOrderStatus = asyncHandler(
 
     // Status transition logic
     if (status) order.status = status;
-
-    if (status === "Picked up" || status === "Out for Delivery") {
-      order.deliveryBoyStatus = "Picked Up";
-    } else if (status === "Delivered") {
-      order.deliveryBoyStatus = "Delivered";
-      order.deliveredAt = new Date();
-      order.paymentStatus = "Paid"; // Assume paid on delivery (or already paid)
-
-      // CASH COLLECTION AND COMMISSION LOGIC
-      if (order.paymentMethod === "COD") {
-        // Use new COD processing function
-        const { processCODOrderDelivery } =
-          await import("../../../services/commissionService");
-        try {
-          await processCODOrderDelivery(id);
-          console.log(`[COD] Order ${order.orderNumber} delivery processed successfully`);
-        } catch (codError: any) {
-          console.error("Error processing COD order delivery:", codError);
-          // Rollback order status if COD processing fails
-          return res.status(500).json({
-            success: false,
-            message: `Failed to process COD delivery: ${codError.message}`,
-          });
-        }
-      } else {
-        // For non-COD orders, use existing distribution logic
-        const { distributeCommissions } =
-          await import("../../../services/commissionService");
-        try {
-          await distributeCommissions(id);
-        } catch (commError: any) {
-          console.error("Error distributing commissions:", commError);
-          // Continue even if commission distribution fails
-        }
-      }
-    }
+    
+    // Use centralized transition logic for side effects (OrderItem sync, earnings, deliveryBoyStatus, notifications)
+    await processOrderStatusTransition(id, status, previousStatus);
 
     await order.save();
 
@@ -348,25 +426,55 @@ export const getReturnOrders = asyncHandler(
   async (req: Request, res: Response) => {
     const deliveryId = req.user?.userId;
 
-    const orders = await Order.find({
-      deliveryBoy: deliveryId,
-      status: { $in: ["Returned", "Cancelled", "Rejected"] },
-    })
+    const [orders, equipmentOrders] = await Promise.all([
+      Order.find({
+        deliveryBoy: deliveryId,
+        status: { $in: ["Returned", "Cancelled", "Rejected"] },
+      })
       .populate("items")
-      .sort({ updatedAt: -1 });
+      .sort({ updatedAt: -1 }),
 
-    const formattedOrders = orders.map((order) => ({
-      id: order._id,
-      orderId: order.orderNumber,
-      customerName: order.customerName,
-      customerPhone: order.customerPhone,
-      status: order.status,
-      address: `${order.deliveryAddress?.address || ""}, ${order.deliveryAddress?.city || ""}`,
-      items: mapOrderItems(order.items),
-      totalAmount: order.total,
-      createdAt: order.createdAt,
-      distance: null,
-    }));
+      EquipmentOrder.find({
+        deliveryBoy: deliveryId,
+        status: { $in: ["cancelled", "rejected", "refunded"] }
+      })
+      .populate({ path: "items.equipmentItem" })
+      .sort({ updatedAt: -1 })
+    ]);
+
+    const formattedOrders = [
+      ...orders.map((order) => ({
+        id: order._id,
+        orderId: order.orderNumber,
+        customerName: order.customerName,
+        customerPhone: order.customerPhone,
+        status: order.status,
+        orderType: 'ORDER',
+        address: `${order.deliveryAddress?.address || ""}, ${order.deliveryAddress?.city || ""}`,
+        items: mapOrderItems(order.items),
+        totalAmount: order.total,
+        createdAt: order.createdAt,
+        distance: null,
+      })),
+      ...equipmentOrders.map((order) => ({
+        id: order._id,
+        orderId: order.orderNumber,
+        customerName: order.sellerName,
+        customerPhone: order.sellerPhone,
+        status: order.status,
+        orderType: 'EQUIPMENT',
+        address: order.deliveryAddress?.address || order.sellerAddress || 'N/A',
+        items: order.items.map((it: any) => ({
+          name: it.name || it.equipmentItem?.name || 'Equipment',
+          quantity: it.quantity,
+          price: it.price,
+          image: it.imageUrl || it.equipmentItem?.imageUrl
+        })),
+        totalAmount: order.total,
+        createdAt: order.createdAt,
+        distance: null,
+      }))
+    ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     return res.status(200).json({
       success: true,

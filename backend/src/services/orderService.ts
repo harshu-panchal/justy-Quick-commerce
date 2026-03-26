@@ -34,10 +34,10 @@ export const processOrderStatusTransition = async (
       // In OrderItem.ts status can be: "Pending" | "Shipped" | "Delivered" | "Cancelled" | "Returned"
       let itemNewStatus = newStatus;
       
-      // Map Order statuses to OrderItem statuses if needed
-      if (["Processed", "Accepted", "Received"].includes(newStatus)) {
+      // Map Order statuses to OrderItem statuses
+      if (["Processed", "Accepted", "Received", "Ready for pickup", "Pending"].includes(newStatus)) {
         itemNewStatus = "Pending";
-      } else if (newStatus === "Out for Delivery") {
+      } else if (["Out for Delivery", "Picked up", "Shipped"].includes(newStatus)) {
         itemNewStatus = "Shipped";
       }
 
@@ -57,18 +57,23 @@ export const processOrderStatusTransition = async (
       }
       break;
 
-    case "Processed":
-      // Reserve inventory
-      await reserveInventory(order.items as any[]);
+    case "Picked up":
+    case "Out for Delivery":
+      order.deliveryBoyStatus = "Picked Up";
       break;
 
     case "Delivered":
+      order.deliveryBoyStatus = "Delivered";
+      order.deliveredAt = new Date();
+      order.paymentStatus = "Paid";
       // Create commissions for sellers
       await createCommissions(order.items as any[]);
       // Process referral rewards
       await processReferralReward(orderId);
       break;
   }
+
+  await order.save();
 
   return order;
 };

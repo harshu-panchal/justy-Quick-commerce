@@ -12,6 +12,8 @@ import {
 import { useAuth } from "../../../context/AuthContext";
 import InvoiceModal from "../../../components/Invoice/InvoiceModal";
 import { OrderDetail } from "../../../services/api/orderService";
+import { io } from "socket.io-client";
+import { getSocketBaseURL } from "../../../services/api/config";
 
 export default function AdminEquipmentOrders() {
   const { isAuthenticated, token } = useAuth();
@@ -38,6 +40,26 @@ export default function AdminEquipmentOrders() {
   useEffect(() => {
     if (isAuthenticated && token) {
       fetchData();
+
+      // Setup socket listener for real-time updates
+      const socketUrl = getSocketBaseURL();
+      const socket = io(socketUrl, {
+        auth: { token },
+        transports: ["websocket", "polling"],
+      });
+
+      socket.on("connect", () => {
+        socket.emit("join-admin-room");
+      });
+
+      socket.on("equipment-order-update", (data) => {
+        console.log("Real-time equipment update received:", data);
+        fetchData();
+      });
+
+      return () => {
+        socket.disconnect();
+      };
     }
   }, [isAuthenticated, token]);
 
@@ -130,36 +152,36 @@ export default function AdminEquipmentOrders() {
     // Transformer EquipmentOrder to OrderDetail for the InvoiceModal
     const orderDetail: OrderDetail = {
       id: order._id,
-      invoiceNumber: order.orderNumber,
-      orderDate: order.createdAt,
-      deliveryDate: order.createdAt, // Fallback
+      invoiceNumber: order.orderNumber || order._id.slice(-6).toUpperCase(),
+      orderDate: order.createdAt || new Date().toISOString(),
+      deliveryDate: order.createdAt || new Date().toISOString(), // Fallback
       timeSlot: 'Standard',
-      status: order.status as any,
-      customerName: order.sellerName,
-      customerEmail: order.seller.email,
-      customerPhone: order.sellerPhone,
+      status: (order.status as any) || 'Received',
+      customerName: order.sellerName || 'N/A',
+      customerEmail: order.seller?.email || 'N/A',
+      customerPhone: order.sellerPhone || 'N/A',
       deliveryBoyName: order.deliveryBoy?.name || '',
       deliveryBoyPhone: order.deliveryBoy?.mobile || '',
-      items: order.items.map((item, idx) => ({
+      items: (order.items || []).map((item, idx) => ({
         srNo: (idx + 1).toString(),
-        product: item.name,
+        product: item.name || 'Unknown Item',
         soldBy: 'Admin Inventory',
         unit: 'N/A',
-        price: item.price,
+        price: item.price || 0,
         tax: 0,
         taxPercent: 0,
-        qty: item.quantity,
-        subtotal: item.subtotal
+        qty: item.quantity || 1,
+        subtotal: item.subtotal || 0
       })),
-      subtotal: order.total,
+      subtotal: order.total || 0,
       tax: 0,
-      grandTotal: order.total,
-      paymentMethod: 'Online', // Assuming mostly online for admin orders or get from model
-      paymentStatus: order.paymentStatus,
+      grandTotal: order.total || 0,
+      paymentMethod: 'Online', 
+      paymentStatus: order.paymentStatus || 'Pending',
       deliveryAddress: {
-        name: order.sellerName,
-        phone: order.sellerPhone,
-        address: order.deliveryAddress?.address || order.sellerAddress,
+        name: order.sellerName || 'N/A',
+        phone: order.sellerPhone || 'N/A',
+        address: order.deliveryAddress?.address || order.sellerAddress || 'No Address Provided',
         city: order.deliveryAddress?.city || '',
         state: order.deliveryAddress?.state || '',
         pincode: order.deliveryAddress?.pincode || ''
@@ -177,6 +199,7 @@ export default function AdminEquipmentOrders() {
       rejected: "bg-red-100 text-red-700",
       cancelled: "bg-neutral-100 text-neutral-700",
       assigned: "bg-purple-100 text-purple-700",
+      picked_up: "bg-blue-100 text-blue-700",
       delivered: "bg-teal-100 text-teal-700",
       refunded: "bg-orange-100 text-orange-700",
     };
@@ -326,7 +349,7 @@ export default function AdminEquipmentOrders() {
                             <div className="flex gap-2">
                               <button
                                 onClick={() => openInvoice(order)}
-                                className="text-[9px] font-black text-blue-600 hover:underline uppercase"
+                                className="text-[9px] font-black text-blue-600 hover:underline cursor-pointer uppercase"
                               >
                                 VIEW INVOICE
                               </button>

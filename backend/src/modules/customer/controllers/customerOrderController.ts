@@ -859,7 +859,10 @@ export const getPublicOrderDetails = async (req: Request, res: Response) => {
             // Normal Order
             const order = await Order.findById(id).populate({
                 path: 'items',
-                populate: { path: 'product' }
+                populate: [
+                    { path: 'product' },
+                    { path: 'seller', select: 'storeName name' }
+                ]
             });
 
             if (!order) {
@@ -871,7 +874,7 @@ export const getPublicOrderDetails = async (req: Request, res: Response) => {
                 data: {
                     orderNumber: order.orderNumber,
                     status: order.status,
-                    sellerName: order.items?.[0]?.soldBy || 'Jaysti Merchant',
+                    sellerName: (order.items?.[0] as any)?.seller?.storeName || (order.items?.[0] as any)?.seller?.name || 'Jaysti Merchant',
                     items: (order.items || []).map((item: any) => ({
                         productName: item.productName || item.product?.productName || 'Product',
                         quantity: item.quantity,

@@ -63,7 +63,7 @@ export default function WarehouseCOD() {
   };
 
   const handleVerify = async () => {
-    if (enteredOtp.length !== 6 || !settlementOrder) return;
+    if (enteredOtp.length !== 4 || !settlementOrder) return;
     setIsVerifying(true);
     try {
       const response = await verifyOrderSettlement(settlementOrder._id, enteredOtp);
@@ -192,13 +192,13 @@ export default function WarehouseCOD() {
                 </div>
 
                 <div className="space-y-4">
-                  <p className="text-[10px] font-black text-neutral-400 uppercase tracking-[0.2em] text-center">Ask Rider for 6-digit Settlement OTP</p>
+                  <p className="text-[10px] font-black text-neutral-400 uppercase tracking-[0.2em] text-center">Ask Rider for 4-digit Settlement OTP</p>
                   <input
                     type="text"
-                    maxLength={6}
+                    maxLength={4}
                     value={enteredOtp}
-                    onChange={(e) => setEnteredOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                    placeholder="      "
+                    onChange={(e) => setEnteredOtp(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                    placeholder="    "
                     disabled={isVerifying}
                     className="w-full text-center text-4xl font-black tracking-[16px] py-8 rounded-[36px] border-2 border-neutral-100 focus:border-teal-500 outline-none transition-all placeholder:text-neutral-100 bg-neutral-50 shadow-inner"
                   />
@@ -206,8 +206,8 @@ export default function WarehouseCOD() {
 
                 <button
                   onClick={handleVerify}
-                  disabled={enteredOtp.length !== 6 || isVerifying}
-                  className={`w-full py-6 rounded-[32px] font-black text-xl transition-all shadow-xl active:scale-95 ${enteredOtp.length === 6 && !isVerifying
+                  disabled={enteredOtp.length !== 4 || isVerifying}
+                  className={`w-full py-6 rounded-[32px] font-black text-xl transition-all shadow-xl active:scale-95 ${enteredOtp.length === 4 && !isVerifying
                       ? 'bg-teal-600 text-white shadow-teal-500/30 -translate-y-1'
                       : 'bg-neutral-100 text-neutral-300 cursor-not-allowed translate-y-0'
                     }`}

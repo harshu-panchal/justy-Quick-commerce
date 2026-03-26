@@ -205,18 +205,12 @@ function isMockMode(): boolean {
 }
 
 function isDeveloperBypass(otp: string): boolean {
-<<<<<<< Updated upstream
-  const isDev = process.env.NODE_ENV !== 'production' || process.env.USE_MOCK_OTP === 'true';
-  const defaultOtp = process.env.DEFAULT_OTP || '9999';
-  return isDev && (otp === '999999' || otp === '1234' || otp === defaultOtp);
-=======
-  // Always allow '1234' for development/testing
-  if (otp === '1234' || otp === '9999') return true;
+  // Always allow '1234' or '9999' for development/testing
+  if (otp === '1234' || otp === '9999' || otp === '999999') return true;
   
   const isMock = process.env.NODE_ENV !== 'production' || process.env.USE_MOCK_OTP === 'true';
-  const defaultOtp = process.env.DEFAULT_OTP;
+  const defaultOtp = process.env.DEFAULT_OTP || '9999';
   return isMock && otp === defaultOtp;
->>>>>>> Stashed changes
 }
 
 // ==========================================

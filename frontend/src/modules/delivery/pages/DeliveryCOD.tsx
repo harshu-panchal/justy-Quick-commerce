@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { getDashboardStats, initiateOrderSettlement, getTodayOrders } from '../../../services/api/delivery/deliveryService';
 
 const ArrowLeftIcon = ({ className }: { className?: string }) => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -19,12 +20,12 @@ const TransactionItem = ({ tx }: { tx: any }) => (
         💰
       </div>
       <div>
-        <p className="font-bold text-neutral-900">Order {tx.orderId}</p>
-        <p className="text-xs text-neutral-500">{tx.time}</p>
+        <p className="font-bold text-neutral-900">Order {tx.orderId || tx.orderNumber}</p>
+        <p className="text-xs text-neutral-500">{new Date(tx.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
       </div>
     </div>
     <div className="text-right">
-      <p className="font-black text-neutral-900">₹{tx.amount}</p>
+      <p className="font-black text-neutral-900">₹{tx.totalAmount || tx.total}</p>
       <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Collected</span>
     </div>
   </motion.div>
@@ -34,18 +35,50 @@ export default function DeliveryCOD() {
   const navigate = useNavigate();
   const [showSettlementModal, setShowSettlementModal] = useState(false);
   const [settlementOtp, setSettlementOtp] = useState('');
+  const [cashInHand, setCashInHand] = useState(0);
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const transactions = [
-    { orderId: '#JS-8240', amount: 450, time: 'Today, 2:30 PM' },
-    { orderId: '#JS-8238', amount: 320, time: 'Today, 11:15 AM' },
-    { orderId: '#JS-8235', amount: 560, time: 'Yesterday, 8:45 PM' },
-  ];
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [stats, orders] = await Promise.all([
+          getDashboardStats(),
+          getTodayOrders()
+        ]);
+        setCashInHand(stats.cashBalance || 0);
+        // Filter only delivered COD orders that are not settled
+        const codOrders = orders.filter((o: any) => 
+          o.status === 'Delivered' && (o.paymentMethod === 'COD' || o.paymentMethod === 'cod')
+        );
+        setTransactions(codOrders);
+      } catch (err) {
+        console.error('Failed to fetch COD data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
-  const handleInitiateSettlement = () => {
-    // Generate a random 4-digit OTP
-    const otp = Math.floor(1000 + Math.random() * 9000).toString();
-    setSettlementOtp(otp);
-    setShowSettlementModal(true);
+  const handleInitiateSettlement = async () => {
+    if (transactions.length === 0) {
+        alert("No pending COD orders to settle");
+        return;
+    }
+    
+    try {
+      // For simplicity, we initiate settlement for the first unsettled order
+      // In a more robust version, we would allow selecting which orders to settle
+      const targetOrder = transactions[0];
+      const res = await initiateOrderSettlement(targetOrder.id || targetOrder._id);
+      if (res.success) {
+        setSettlementOtp(res.otp || '1234');
+        setShowSettlementModal(true);
+      }
+    } catch (err: any) {
+      alert(err.message || "Failed to initiate settlement");
+    }
   };
 
   return (
@@ -60,7 +93,7 @@ export default function DeliveryCOD() {
         
         <div className="bg-white/20 backdrop-blur-md rounded-2xl p-6 text-center shadow-lg border border-white/10">
           <p className="text-emerald-100 text-sm font-medium mb-1">Cash in Hand</p>
-          <h2 className="text-4xl font-black">₹ 770</h2>
+          <h2 className="text-4xl font-black">₹ {cashInHand.toLocaleString()}</h2>
           <p className="text-[10px] text-emerald-200 mt-2 font-bold uppercase tracking-widest">To be settled with warehouse</p>
         </div>
       </div>
@@ -71,14 +104,23 @@ export default function DeliveryCOD() {
           <button className="text-xs font-bold text-emerald-600" onClick={() => navigate('/delivery/settlement-history')}>History</button>
         </div>
         
-        {transactions.map((tx, idx) => (
-          <TransactionItem key={idx} tx={tx} />
-        ))}
+        {loading ? (
+           <div className="text-center py-10 text-neutral-400">Loading data...</div>
+        ) : transactions.length > 0 ? (
+          transactions.map((tx, idx) => (
+            <TransactionItem key={idx} tx={tx} />
+          ))
+        ) : (
+          <div className="bg-white p-8 rounded-2xl border border-dashed border-neutral-200 text-center">
+            <p className="text-neutral-400 text-sm italic">No pending cash collections</p>
+          </div>
+        )}
 
         <div className="pt-6">
           <button 
             onClick={handleInitiateSettlement}
-            className="w-full bg-neutral-900 text-white py-4 rounded-2xl font-bold shadow-xl active:scale-95 transition-all"
+            disabled={transactions.length === 0}
+            className={`w-full py-4 rounded-2xl font-bold shadow-xl active:scale-95 transition-all ${transactions.length > 0 ? 'bg-neutral-900 text-white' : 'bg-neutral-200 text-neutral-400 cursor-not-allowed'}`}
           >
             Initiate Settlement
           </button>
@@ -115,7 +157,7 @@ export default function DeliveryCOD() {
               <div className="bg-neutral-50 rounded-3xl p-6 border-2 border-dashed border-emerald-200 text-center mb-8">
                 <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-[0.2em] mb-4">Your Settlement OTP</p>
                 <div className="flex items-center justify-center gap-4">
-                  {settlementOtp.split('').map((digit, i) => (
+                  {(settlementOtp || '1234').split('').map((digit, i) => (
                     <div key={i} className="w-12 h-16 bg-white rounded-xl shadow-sm border border-emerald-100 flex items-center justify-center text-3xl font-black text-neutral-900">
                       {digit}
                     </div>
@@ -131,7 +173,7 @@ export default function DeliveryCOD() {
               </button>
               
               <p className="text-center text-[10px] text-neutral-400 mt-6 font-medium leading-relaxed px-4">
-                Please ensure you hand over the exact amount (₹770) before confirming the verification.
+                Please ensure you hand over the exact amount (₹{cashInHand}) before confirming the verification.
               </p>
             </motion.div>
           </div>

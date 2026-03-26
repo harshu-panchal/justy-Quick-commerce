@@ -9,12 +9,9 @@ import {
   generateDeliveryOtp,
   verifyDeliveryOtp,
 } from "../../../services/deliveryOtpService";
-<<<<<<< Updated upstream
-=======
 import { generateSettlementOtp } from "../../../services/settlementService";
 import { generateHandoverOtp } from "../../../services/handoverService";
 import { processOrderStatusTransition } from "../../../services/orderService";
->>>>>>> Stashed changes
 
 /**
  * Helper to map order items for response

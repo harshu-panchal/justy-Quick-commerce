@@ -1,0 +1,2 @@
+﻿src/scripts/verify-url-qr.ts(39,62): error TS2339: Property 'qrCodeUrl' does not exist on type 'Document<unknown, {}, IOrder, {}, {}> & IOrder & Required<{ _id: ObjectId; }> & { __v: number; }'.
+src/scripts/verify-url-qr.ts(41,23): error TS2339: Property 'qrCodeUrl' does not exist on type 'Document<unknown, {}, IOrder, {}, {}> & IOrder & Required<{ _id: ObjectId; }> & { __v: number; }'.

@@ -5,9 +5,11 @@ import {
   applyReferralCode,
   type ReferralStats,
 } from "../../services/api/customerReferralService";
+import { useAuth } from "../../context/AuthContext";
 
 export default function CustomerReferEarn() {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [loading,   setLoading]   = useState(false);
   const [stats,     setStats]     = useState<ReferralStats | null>(null);
   const [error,     setError]     = useState("");
@@ -24,11 +26,19 @@ export default function CustomerReferEarn() {
       if (res.success) setStats(res.data);
       else setError("Failed to load referral data");
     } catch (e: any) {
-      setError(e?.response?.data?.message || e?.message || "Failed to load");
+      if (e?.response?.status === 401) {
+        setError("Your session has expired. Please login again.");
+      } else {
+        setError(e?.response?.data?.message || e?.message || "Failed to load");
+      }
     } finally { setLoading(false); }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    if (isAuthenticated) {
+      load();
+    }
+  }, [isAuthenticated]);
 
   const copyCode = () => {
     if (!stats?.referralCode) return;
@@ -85,7 +95,28 @@ export default function CustomerReferEarn() {
 
         {error && <div className="rounded-2xl bg-red-50 border border-red-200 p-3 text-sm text-red-700">⚠️ {error}</div>}
 
-        {loading && !stats ? (
+        {!isAuthenticated ? (
+          <div className="rounded-3xl bg-white border border-neutral-200 shadow-xl p-8 text-center space-y-6">
+            <div className="w-20 h-20 bg-teal-50 rounded-full flex items-center justify-center mx-auto">
+              <span className="text-4xl text-teal-600">👤</span>
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-teal-900">Login Required</h2>
+              <p className="text-sm text-teal-700 mt-2">
+                Log in to start earning coins by referring friends to QickCommerce!
+              </p>
+            </div>
+            <button
+              onClick={() => navigate("/login")}
+              className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-teal-500 to-emerald-600 text-white font-extrabold text-sm shadow-lg hover:opacity-90 active:scale-[0.98] transition-all"
+            >
+              Login to Continue
+            </button>
+            <p className="text-xs text-neutral-400">
+              Not a member yet? <span className="text-teal-600 font-bold cursor-pointer" onClick={() => navigate("/login")}>Sign up now</span>
+            </p>
+          </div>
+        ) : loading && !stats ? (
           <div className="rounded-3xl bg-white border border-neutral-200 shadow p-10 text-center text-neutral-400 animate-pulse">
             Loading your referral data…
           </div>

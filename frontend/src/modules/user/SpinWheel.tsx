@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { getSpinWheelCampaign, spinNow, getCustomerCoinBalance, convertCustomerCoins, type SpinAttempt, type SpinCampaign } from "../../services/api/customerSpinWheelService";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 function getNextEligibleDate(mySpin: SpinAttempt | null): Date | null {
   const next = (mySpin as any)?.nextEligibleAt;
@@ -117,6 +118,7 @@ function SpinWheelSVG({ segments, wheelRef }: { segments: Segment[]; wheelRef: R
 
 export default function SpinWheel() {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [campaign, setCampaign] = useState<SpinCampaign | null>(null);
   const [mySpin, setMySpin] = useState<SpinAttempt | null>(null);
   const [loading, setLoading] = useState(false);
@@ -157,7 +159,11 @@ export default function SpinWheel() {
       }
       else setError(res.message || "Failed to load spin wheel");
     } catch (e: any) {
-      setError(e?.response?.data?.message || e?.message || "Failed to load");
+      if (e?.response?.status === 401) {
+        setError("Your session has expired. Please login again.");
+      } else {
+        setError(e?.response?.data?.message || e?.message || "Failed to load");
+      }
     } finally { setLoading(false); }
   };
 
@@ -168,7 +174,12 @@ export default function SpinWheel() {
     } catch {}
   };
 
-  useEffect(() => { load(); loadCoinBalance(); }, []);
+  useEffect(() => {
+    if (isAuthenticated) {
+      load();
+      loadCoinBalance();
+    }
+  }, [isAuthenticated]);
 
   const onSpin = async () => {
     if (!campaign || spinning || !segments.length) return;
@@ -274,13 +285,34 @@ export default function SpinWheel() {
             <style>{`@keyframes popIn { from { opacity:0; transform:scale(0.5); } to { opacity:1; transform:scale(1); } }`}</style>
           </div>
         )}
-        {!loading && !campaign && (
+        {!isAuthenticated ? (
+          <div className="rounded-3xl bg-white border border-amber-200 shadow-xl p-8 text-center space-y-6">
+            <div className="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center mx-auto">
+              <span className="text-4xl text-amber-600">🎡</span>
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-amber-900">Login Required</h2>
+              <p className="text-sm text-amber-700 mt-2">
+                Log in to spin the wheel and win exciting rewards like coins and mega prizes!
+              </p>
+            </div>
+            <button
+              onClick={() => navigate("/login")}
+              className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 text-white font-extrabold text-sm shadow-lg hover:opacity-90 active:scale-[0.98] transition-all"
+            >
+              Login to Continue
+            </button>
+            <p className="text-xs text-neutral-400">
+              New here? <span className="text-amber-600 font-bold cursor-pointer" onClick={() => navigate("/login")}>Create an account</span>
+            </p>
+          </div>
+        ) : !loading && !campaign ? (
           <div className="rounded-3xl border border-amber-200 bg-white shadow p-10 text-center">
             <div className="text-5xl mb-3">🎡</div>
             <div className="text-neutral-600 font-medium">No active spin campaign</div>
           </div>
-        )}
-        {campaign && (
+        ) : null}
+        {isAuthenticated && campaign && (
           <div className="rounded-3xl border-2 border-amber-300 bg-white shadow-xl overflow-hidden">
             <div className="bg-gradient-to-r from-amber-500 via-yellow-400 to-orange-400 px-5 py-3 flex items-center justify-between">
               <span className="text-base font-extrabold text-white drop-shadow tracking-wide">🏆 SPIN &amp; WIN!</span>

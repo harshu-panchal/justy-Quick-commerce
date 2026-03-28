@@ -39,6 +39,9 @@ export default function SellerEquipmentShop() {
     upiId: user?.upiId || ""
   });
 
+  // Product Detail State
+  const [selectedProduct, setSelectedProduct] = useState<EquipmentItem | null>(null);
+
   // Reset bank details when modal opens or user profile changes
   useEffect(() => {
     if (refundModal) {
@@ -254,18 +257,26 @@ export default function SellerEquipmentShop() {
           <div key={item._id} className="bg-white rounded-xl shadow-sm border border-neutral-100 overflow-hidden group hover:shadow-md transition-shadow">
                   <div className="w-full h-32 bg-neutral-50 flex items-center justify-center overflow-hidden border-b border-neutral-100 relative">
                     {item.imageUrl ? (
-                      <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
+                      <img 
+                        src={item.imageUrl} 
+                        alt={item.name} 
+                        className="w-full h-full object-cover transition-transform group-hover:scale-105 cursor-pointer" 
+                        onClick={() => setSelectedProduct(item)}
+                      />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-3xl">📦</div>
+                      <div 
+                        className="w-full h-full flex items-center justify-center text-3xl cursor-pointer"
+                        onClick={() => setSelectedProduct(item)}
+                      >📦</div>
                     )}
                     {item.stock === 0 && (
-                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-[10px] text-white font-bold uppercase tracking-widest">Out of Stock</div>
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-[10px] text-white font-bold uppercase tracking-widest pointer-events-none">Out of Stock</div>
                     )}
                   </div>
-                  <div className="flex-1 flex flex-col justify-between py-1">
-                    <div>
-                      <h3 className="font-bold text-neutral-800 leading-tight">{item.name}</h3>
-                      <p className="text-[11px] text-neutral-500 mt-1 line-clamp-2 leading-relaxed">{item.description}</p>
+                  <div className="flex-1 flex flex-col justify-between py-1 px-3">
+                    <div onClick={() => setSelectedProduct(item)} className="cursor-pointer">
+                      <h3 className="font-bold text-neutral-800 leading-tight group-hover:text-teal-600 transition-colors">{item.name}</h3>
+                      <p className="text-[11px] text-neutral-500 mt-1 line-clamp-1 leading-relaxed">{item.description}</p>
                     </div>
                     <div className="flex items-center justify-between mt-3">
                        <div className="flex flex-col">
@@ -317,26 +328,46 @@ export default function SellerEquipmentShop() {
               ))}
             </div>
 
-            {/* Float Cart Button */}
+            {/* Compact Float Cart Button - Matching User Panel Aesthetic */}
             {cartItems.length > 0 && (activeTab === 'shop') && (
-              <div className="fixed bottom-24 left-4 right-4 animate-in slide-in-from-bottom-6 duration-500">
+              <div className="fixed bottom-24 left-0 right-0 z-40 flex justify-center px-4 animate-in slide-in-from-bottom-6 duration-500">
                 <button
                   onClick={() => navigate('/seller/marketplace/cart')}
-                  className="w-full bg-teal-700 text-white p-5 rounded-2xl shadow-2xl flex justify-between items-center font-bold ring-4 ring-white/50"
+                  className="bg-gradient-to-r from-teal-700 via-teal-600 to-teal-700 text-white rounded-full shadow-xl shadow-teal-900/30 px-3 py-2 flex items-center gap-2 hover:from-teal-800 hover:via-teal-700 hover:to-teal-800 transition-all duration-300 pointer-events-auto border border-teal-800/30 backdrop-blur-sm"
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="bg-white/20 p-2 rounded-lg relative">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 1 2-1.61L23 6H6"/></svg>
-                      <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-[10px] flex items-center justify-center shadow-sm">{cartItems.length}</span>
-                    </div>
-                    <div className="text-left">
-                      <div className="text-[10px] opacity-70 uppercase tracking-tighter">View Your Cart</div>
-                      <div className="text-lg">₹{cartTotal}</div>
-                    </div>
+                  {/* Left: Product thumbnails (Show up to 3) */}
+                  <div className="flex items-center -space-x-4">
+                    {cartItems.slice(-3).reverse().map((item, idx) => (
+                      <div
+                        key={item._id || idx}
+                        className="w-7 h-7 rounded-full border-2 border-white/90 overflow-hidden bg-white flex-shrink-0 shadow-md"
+                      >
+                        {item.imageUrl ? (
+                          <img
+                            src={item.imageUrl}
+                            alt={item.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-neutral-200 text-neutral-400 text-[10px] font-bold">
+                            📦
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
-                  <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-xl group">
-                    CHECKOUT
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-hover:translate-x-1"><path d="m9 18 6-6-6-6"/></svg>
+
+                  {/* Middle: Text */}
+                  <div className="flex flex-col ml-1">
+                    <span className="text-xs font-bold leading-tight drop-shadow-sm">View cart</span>
+                    <span className="text-[10px] opacity-95 leading-tight font-medium">
+                      {cartItems.length} {cartItems.length === 1 ? 'item' : 'items'} • ₹{cartTotal}
+                    </span>
+                  </div>
+
+                  {/* Right: Arrow icon */}
+                  <div className="ml-auto bg-white/20 rounded-full p-1 backdrop-blur-sm">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
                   </div>
                 </button>
               </div>
@@ -641,6 +672,113 @@ export default function SellerEquipmentShop() {
                  </div>
               </div>
            </div>
+        </div>
+      )}
+
+      {/* Product Detail Modal */}
+      {selectedProduct && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-in slide-in-from-bottom-6 sm:zoom-in duration-300">
+            <div className="relative">
+              <button 
+                onClick={() => setSelectedProduct(null)}
+                className="absolute top-4 right-4 w-10 h-10 bg-white/80 backdrop-blur-md rounded-full flex items-center justify-center text-neutral-800 shadow-md z-10 transition-transform active:scale-90"
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              </button>
+              <div className="w-full h-64 bg-neutral-100 flex items-center justify-center overflow-hidden border-b border-neutral-100">
+                {selectedProduct.imageUrl ? (
+                  <img 
+                    src={selectedProduct.imageUrl} 
+                    alt={selectedProduct.name} 
+                    className="w-full h-full object-cover" 
+                  />
+                ) : (
+                  <div className="text-6xl">📦</div>
+                )}
+              </div>
+            </div>
+            <div className="p-8">
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <h3 className="text-2xl font-black text-neutral-800 leading-tight">{selectedProduct.name}</h3>
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className="text-teal-600 text-xl font-black">₹{selectedProduct.price}</span>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${selectedProduct.stock < 10 ? 'bg-red-50 text-red-500' : 'bg-neutral-50 text-neutral-500'}`}>
+                      {selectedProduct.stock === 0 ? 'Out of Stock' : `${selectedProduct.stock} units available`}
+                    </span>
+                  </div>
+                </div>
+                {selectedProduct.minQuantity > 1 && (
+                  <div className="text-[10px] bg-orange-50 text-orange-600 px-2 py-1 rounded font-black uppercase tracking-tighter border border-orange-100">
+                    Min: {selectedProduct.minQuantity}
+                  </div>
+                )}
+              </div>
+              
+              <div className="space-y-6">
+                <div>
+                  <p className="text-[11px] font-black text-neutral-400 uppercase tracking-widest mb-2">Description</p>
+                  <p className="text-sm text-neutral-600 leading-relaxed font-medium">
+                    {selectedProduct.description || "No description provided for this item."}
+                  </p>
+                </div>
+
+                <div className="bg-neutral-50 rounded-2xl p-4 border border-neutral-100 grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-1">Standard Delivery</p>
+                    <p className="text-sm font-bold text-neutral-700">{selectedProduct.deliveryCharge > 0 ? `₹${selectedProduct.deliveryCharge}` : 'FREE'}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-1">Platform Fee</p>
+                    <p className="text-sm font-bold text-neutral-700">₹{selectedProduct.platformFee}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-8 flex gap-3">
+                <div className="flex-1">
+                  {cart[selectedProduct._id] ? (
+                    <div className="flex items-center justify-between bg-teal-50 rounded-2xl p-1 border border-teal-100 h-14">
+                      <button 
+                        onClick={() => removeFromCart(selectedProduct._id)} 
+                        className="w-12 h-12 flex items-center justify-center text-teal-600 font-bold hover:bg-white rounded-xl transition-colors"
+                      >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/></svg>
+                      </button>
+                      <span className="text-lg font-black text-teal-700">{cart[selectedProduct._id]}</span>
+                      <button 
+                        onClick={() => addToCart(selectedProduct)} 
+                        disabled={cart[selectedProduct._id] >= selectedProduct.stock}
+                        className="w-12 h-12 flex items-center justify-center text-teal-600 font-bold hover:bg-white rounded-xl transition-colors disabled:opacity-30"
+                      >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => addToCart(selectedProduct)}
+                      disabled={selectedProduct.stock === 0}
+                      className="w-full bg-teal-600 text-white h-14 rounded-2xl font-black shadow-lg shadow-teal-600/20 active:scale-95 transition-all disabled:bg-neutral-200 disabled:shadow-none flex items-center justify-center gap-2"
+                    >
+                      ADD TO CART
+                    </button>
+                  )}
+                </div>
+                {cart[selectedProduct._id] && (
+                  <button 
+                    onClick={() => {
+                        setSelectedProduct(null);
+                        navigate('/seller/marketplace/cart');
+                    }}
+                    className="flex-1 bg-neutral-900 text-white h-14 rounded-2xl font-black shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
+                  >
+                    GO TO CART
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

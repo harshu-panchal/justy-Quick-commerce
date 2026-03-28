@@ -137,8 +137,33 @@ export default function Header() {
       {/* Top Row: Logo, Toggle, Search, Icons */}
       <div className="max-w-[1440px] mx-auto px-6 lg:px-10 py-3 flex items-center gap-8">
         {/* Logo */}
-        <Link to="/" onClick={() => setActiveCategory('all')} className="flex-shrink-0">
-          <img src={jyastiLogo} alt="JYASTI builds trust" className="h-20 lg:h-24 w-auto object-contain" />
+        <Link 
+          to="/" 
+          onClick={() => setActiveCategory('all')} 
+          className="flex-shrink-0 relative group transition-all duration-300"
+        >
+          {/* Organic Blob Background (India Map Style) */}
+          <div 
+            className="absolute inset-0 z-0 transition-transform duration-700 group-hover:rotate-6 scale-110" 
+            style={{ 
+              background: 'linear-gradient(135deg, #ffffff 20%, #ccfbf1 50%, #0d9488 100%)',
+              borderRadius: '60% 40% 70% 30% / 40% 50% 60% 50%',
+              animation: 'blobMorph 8s ease-in-out infinite alternate',
+              opacity: 0.95
+            }}
+          />
+          
+          {/* Shimmer Effect */}
+          <div className="absolute inset-0 z-[5] rounded-full overflow-hidden opacity-50 pointer-events-none">
+            <div className="h-full w-full animate-[shimmer_4s_linear_infinite] bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-[-20deg]" />
+          </div>
+          
+          <img
+            src={jyastiLogo}
+            alt="JYASTI builds trust"
+            className="h-20 lg:h-24 w-auto object-contain relative z-10 px-4 filter drop-shadow-[0_4px_8px_rgba(0,0,0,0.15)]"
+            style={{ animation: 'desktopLogoFloat 5s ease-in-out infinite' }}
+          />
         </Link>
 
         {/* Middle: Toggle & Search */}
@@ -220,6 +245,30 @@ export default function Header() {
           </Link>
         </div>
       </div>
+      <style>{`
+        @keyframes desktopLogoFloat {
+          0%, 100% { transform: translateY(0px) scale(1); }
+          40% { transform: translateY(-5px) scale(1.03); }
+          70% { transform: translateY(-2px) scale(1.015); }
+        }
+        @keyframes desktopLogoGlow {
+          0%, 100% { opacity: 0.5; transform: scale(1.25); }
+          50% { opacity: 1; transform: scale(1.4); }
+        }
+        @keyframes desktopLogoShimmer {
+          0% { transform: translateX(-100%) skewX(-20deg); }
+          55%, 100% { transform: translateX(400%) skewX(-20deg); }
+        }
+        @keyframes shimmer {
+          0% { transform: translateX(-100%) skewX(-20deg); }
+          100% { transform: translateX(200%) skewX(-20deg); }
+        }
+        @keyframes blobMorph {
+          0% { border-radius: 60% 40% 70% 30% / 40% 50% 60% 50%; }
+          50% { border-radius: 30% 60% 50% 70% / 50% 30% 70% 40%; }
+          100% { border-radius: 60% 40% 70% 30% / 40% 50% 60% 50%; }
+        }
+      `}</style>
     </header>
   );
 }

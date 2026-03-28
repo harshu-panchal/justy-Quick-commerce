@@ -37,7 +37,7 @@ export const processOrderStatusTransition = async (
       // Map Order statuses to OrderItem statuses
       if (["Processed", "Accepted", "Received", "Ready for pickup", "Pending"].includes(newStatus)) {
         itemNewStatus = "Pending";
-      } else if (["Out for Delivery", "Picked up", "Shipped"].includes(newStatus)) {
+      } else if (["Out for Delivery", "Picked Up", "Shipped"].includes(newStatus)) {
         itemNewStatus = "Shipped";
       }
 
@@ -57,7 +57,7 @@ export const processOrderStatusTransition = async (
       }
       break;
 
-    case "Picked up":
+    case "Picked Up":
     case "Out for Delivery":
       order.deliveryBoyStatus = "Picked Up";
       break;

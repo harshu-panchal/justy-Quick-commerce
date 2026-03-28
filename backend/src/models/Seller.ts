@@ -7,6 +7,7 @@ export interface ISeller extends Document {
   password: string;
   email: string;
   mobile: string;
+  alternateMobile?: string;
 
   // Store Info
   storeName: string;
@@ -15,9 +16,11 @@ export interface ISeller extends Document {
   taxName?: string;
   address: string;
   taxNumber?: string;
+  nearestLandmark: string;
   storeDescription?: string;
   storeBanner?: string;
   fssaiLicNo?: string;
+  gstNumber?: string;
   workingHours?: {
     open: string;
     close: string;
@@ -142,6 +145,16 @@ const SellerSchema = new Schema<ISeller>(
         message: 'Mobile number must be 10 digits',
       },
     },
+    alternateMobile: {
+      type: String,
+      trim: true,
+      validate: {
+        validator: function (v: string) {
+          return !v || /^[0-9]{10}$/.test(v);
+        },
+        message: 'Alternate mobile number must be 10 digits',
+      },
+    },
 
     // Store Info
     storeName: {
@@ -171,6 +184,11 @@ const SellerSchema = new Schema<ISeller>(
       type: String,
       trim: true,
     },
+    nearestLandmark: {
+      type: String,
+      required: [true, 'Nearest landmark is required'],
+      trim: true,
+    },
     storeDescription: {
       type: String,
       trim: true,
@@ -180,6 +198,10 @@ const SellerSchema = new Schema<ISeller>(
       trim: true,
     },
     fssaiLicNo: {
+      type: String,
+      trim: true,
+    },
+    gstNumber: {
       type: String,
       trim: true,
     },

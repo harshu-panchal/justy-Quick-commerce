@@ -67,6 +67,7 @@ export const createProduct = asyncHandler(
       subcategory: productData.subcategoryId,
       subcategoryModel: "SubCategory", // Default
       brand: productData.brandId,
+      brandName: productData.brandName,
       mainImage: productData.mainImageUrl, // Map mainImageUrl to mainImage
       galleryImages: productData.galleryImageUrls,
     };
@@ -131,6 +132,7 @@ export const createProduct = asyncHandler(
       subcategoryModel: newProductData.subcategoryModel
     }, null, 2));
     if (!newProductData.brand) delete newProductData.brand;
+    if (!newProductData.brandName) delete newProductData.brandName;
 
     // Handle Tax: Frontend sends taxId, Model expects 'tax' (string) or something else?
     // Checking SellerAddProduct.tsx sending taxId -> formData.tax
@@ -351,9 +353,12 @@ export const updateProduct = asyncHandler(
       updateData.subcategoryModel = isOldSub ? "SubCategory" : "Category";
       delete updateData.subcategoryId;
     }
-    if (updateData.brandId) {
-      updateData.brand = updateData.brandId;
+    if (updateData.brandId !== undefined) {
+      updateData.brand = updateData.brandId || null;
       delete updateData.brandId;
+    }
+    if (updateData.brandName !== undefined) {
+      updateData.brandName = updateData.brandName || null;
     }
     if (updateData.taxId) {
       updateData.tax = updateData.taxId;

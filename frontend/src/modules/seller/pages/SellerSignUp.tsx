@@ -5,6 +5,7 @@ import GoogleMapsAutocomplete from '../../../components/GoogleMapsAutocomplete';
 import { useAuth } from '../../../context/AuthContext';
 import LocationPickerMap from '../../../components/LocationPickerMap';
 import ServiceAreaMap from '../../../components/ServiceAreaMap';
+import { uploadPublicImage } from '../../../services/api/uploadService';
 import { getCategories, Category } from '../../../services/api/categoryService';
 import { getHeaderCategoriesPublic, HeaderCategory } from '../../../services/api/headerCategoryService';
 
@@ -56,8 +57,10 @@ export default function SellerSignUp() {
   const [formData, setFormData] = useState({
     sellerName: '',
     mobile: '',
+    alternateMobile: '',
     email: '',
     storeName: '',
+    nearestLandmark: '',
     category: '',
     categories: [] as string[],
     pincode: '',
@@ -79,10 +82,13 @@ export default function SellerSignUp() {
     branch: '',
     accountNumber: '',
     ifsc: '',
-    storeBanner: '',
-    logo: '',
+    upiId: '',
+    gstNumber: '',
     isDeliveryByPlatform: true,
+    fssaiImage: '',
   });
+  const [fssaiImageFile, setFssaiImageFile] = useState<File | null>(null);
+  const [fssaiImagePreview, setFssaiImagePreview] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState('');
@@ -102,6 +108,10 @@ export default function SellerSignUp() {
     };
     syncCategories();
   }, []);
+
+  const showFSSAI = formData.categories.some(cat => 
+    ['Vegetable & Fruits', 'Food', 'bakery'].includes(cat)
+  );
 
   const toggleCategory = (name: string) => {
     setFormData(prev => {
@@ -125,6 +135,18 @@ export default function SellerSignUp() {
   };
 
 
+
+  const handleFSSAIImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setFssaiImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFssaiImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -183,6 +205,10 @@ export default function SellerSignUp() {
       setError('Please enter your city');
       return;
     }
+    if (!formData.nearestLandmark) {
+      setError('Please enter the nearest landmark');
+      return;
+    }
     if (formData.mobile.length !== 10) {
       setError('Please enter a valid 10-digit mobile number');
       return;
@@ -197,6 +223,19 @@ export default function SellerSignUp() {
         setError('Please select your store location');
         setLoading(false);
         return;
+      }
+
+      let fssaiImageUrl = '';
+      if (showFSSAI && fssaiImageFile) {
+        try {
+          const uploadRes = await uploadPublicImage(fssaiImageFile, 'sellers/fssai');
+          fssaiImageUrl = uploadRes.secureUrl;
+        } catch (uploadErr) {
+          console.error('FSSAI Upload failed:', uploadErr);
+          setError('Failed to upload FSSAI image. Please try again.');
+          setLoading(false);
+          return;
+        }
       }
 
       const response = await register({
@@ -217,10 +256,15 @@ export default function SellerSignUp() {
           type: 'Polygon',
           coordinates: [formData.serviceAreaCoordinates]
         } : null,
-        fssaiLicNo: formData.fssaiLicNo,
+        fssaiLicNo: fssaiImageUrl, // Store image URL in the license number field for now, or use fssaiImage if you updated the model
         storeDescription: formData.storeDescription,
-        storeBanner: formData.storeBanner,
-        logo: formData.logo,
+        accountNumber: formData.accountNumber,
+        ifsc: formData.ifsc,
+        upiId: formData.upiId,
+        gstNumber: formData.gstNumber,
+        panCard: formData.panCard,
+        alternateMobile: formData.alternateMobile,
+        nearestLandmark: formData.nearestLandmark,
         isDeliveryByPlatform: formData.isDeliveryByPlatform,
       });
 
@@ -342,6 +386,27 @@ export default function SellerSignUp() {
 
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Alternate Contact Number (Optional)
+                  </label>
+                  <div className="flex items-center bg-white border border-neutral-300 rounded-xl overflow-hidden focus-within:border-teal-500 transition-all">
+                    <div className="px-3 py-3 text-sm font-medium text-neutral-600 border-r border-neutral-300 bg-neutral-50">
+                      +91
+                    </div>
+                    <input
+                      type="tel"
+                      name="alternateMobile"
+                      value={formData.alternateMobile}
+                      onChange={handleInputChange}
+                      placeholder="Enter alternate number"
+                      maxLength={10}
+                      className="flex-1 px-3 py-3 text-sm placeholder:text-neutral-400 focus:outline-none"
+                      disabled={loading}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
                     Email <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -406,7 +471,7 @@ export default function SellerSignUp() {
 
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Store Location <span className="text-red-500">*</span>
+                    Store Address <span className="text-red-500">*</span>
                   </label>
                   <div className="flex gap-2 items-start">
                     <div className="flex-1">
@@ -422,10 +487,26 @@ export default function SellerSignUp() {
                             city: components?.city || prev.city,
                           }));
                         }}
-                        placeholder="Search your store location..."
+                        placeholder="Search your store address..."
                         disabled={loading}
                       />
                     </div>
+                  </div>
+
+                  <div className="mt-4">
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      Nearest Landmark <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="nearestLandmark"
+                      value={formData.nearestLandmark}
+                      onChange={handleInputChange}
+                      placeholder="e.g. Near City Hospital or Landmark"
+                      required
+                      className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 transition-all"
+                      disabled={loading}
+                    />
                   </div>
 
                   {formData.latitude && formData.longitude ? (
@@ -520,40 +601,94 @@ export default function SellerSignUp() {
                       disabled={loading}
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">FSSAI License</label>
+                  {showFSSAI && (
+                    <div className="sm:col-span-2 space-y-3">
+                      <label className="block text-sm font-bold text-teal-900">
+                        FSSAI License Image <span className="text-red-500">*</span>
+                      </label>
+                      <div 
+                        className="relative group cursor-pointer"
+                        style={{ height: '160px' }}
+                      >
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleFSSAIImageChange}
+                          className="absolute inset-0 opacity-0 z-20 cursor-pointer"
+                          disabled={loading}
+                        />
+                        <div className={`absolute inset-0 z-10 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center transition-all ${fssaiImagePreview ? 'border-teal-500 bg-teal-50' : 'border-neutral-300 bg-neutral-50 group-hover:bg-neutral-100 group-hover:border-teal-400'}`}>
+                          {fssaiImagePreview ? (
+                            <div className="relative w-full h-full p-2">
+                              <img src={fssaiImagePreview} alt="FSSAI Preview" className="w-full h-full object-contain rounded-xl" />
+                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-xl">
+                                <span className="text-white text-xs font-bold">Change Image</span>
+                              </div>
+                            </div>
+                          ) : (
+                            <>
+                              <div className="w-12 h-12 bg-white rounded-full shadow-sm flex items-center justify-center mb-2 text-teal-600">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+                                </svg>
+                              </div>
+                              <p className="text-xs font-bold text-teal-800 tracking-tight">Upload FSSAI License</p>
+                              <p className="text-[10px] text-neutral-500 mt-1">Supports JPG, PNG (Max 2MB)</p>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="sm:col-span-2">
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">GST Number</label>
                     <input
                       type="text"
-                      name="fssaiLicNo"
-                      value={formData.fssaiLicNo}
+                      name="gstNumber"
+                      value={formData.gstNumber}
                       onChange={handleInputChange}
-                      placeholder="FSSAI License Number"
+                      placeholder="Enter 15-digit GST number"
+                      maxLength={15}
+                      className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 transition-all uppercase"
+                      disabled={loading}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">Account Number</label>
+                    <input
+                      type="text"
+                      name="accountNumber"
+                      value={formData.accountNumber}
+                      onChange={handleInputChange}
+                      placeholder="Bank Account Number"
                       className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 transition-all"
                       disabled={loading}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">Store Banner URL</label>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">IFSC Code</label>
                     <input
                       type="text"
-                      name="storeBanner"
-                      value={formData.storeBanner}
+                      name="ifsc"
+                      value={formData.ifsc}
                       onChange={handleInputChange}
-                      placeholder="Banner image URL"
-                      className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 transition-all"
+                      placeholder="Bank IFSC Code"
+                      className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 transition-all uppercase"
                       disabled={loading}
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">Store Logo URL</label>
+                  <div className="sm:col-span-2">
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">UPI ID</label>
                     <input
                       type="text"
-                      name="logo"
-                      value={formData.logo}
+                      name="upiId"
+                      value={formData.upiId}
                       onChange={handleInputChange}
-                      placeholder="Logo image URL"
+                      placeholder="Enter UPI ID (e.g. name@bank)"
                       className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 transition-all"
                       disabled={loading}
                     />

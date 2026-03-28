@@ -14,7 +14,8 @@ const DeliveryQrScanner: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
-  
+  const isScanningRef = useRef(false); // यह तुरंत अपडेट होगा
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const codeReaderRef = useRef<BrowserMultiFormatReader | null>(null);
 
@@ -64,6 +65,17 @@ const DeliveryQrScanner: React.FC = () => {
   }, [isScanning]);
 
   const onScanSuccess = async (decodedText: string) => {
+
+    if (videoRef.current && videoRef.current.srcObject) {
+    const stream = videoRef.current.srcObject as MediaStream;
+    stream.getTracks().forEach(track => track.stop()); // पक्का कैमरा बंद
+  }
+  
+      if (isScanningRef.current) return;
+    
+    // 2. तुरंत सिंक लॉक करें
+    isScanningRef.current = true;
+    
     // Stop scanning immediately
     if (codeReaderRef.current) {
       codeReaderRef.current.reset();

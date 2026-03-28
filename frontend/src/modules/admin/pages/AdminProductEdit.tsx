@@ -110,6 +110,9 @@ export default function AdminProductEdit() {
       ...prev,
       [name]: type === "checkbox" ? (e.target as any).checked : value,
     }));
+    if (name === "brand" && value !== "other") {
+      setManagedProduct(prev => ({ ...prev, brandName: "" }));
+    }
   };
 
   const handleSave = async () => {
@@ -273,8 +276,21 @@ export default function AdminProductEdit() {
                       {brands.map(b => (
                         <option key={b._id} value={b._id}>{b.name}</option>
                       ))}
+                      <option value="other">Other (Custom Brand)</option>
                     </select>
                   </div>
+                  {managedProduct.brand === "other" && (
+                    <div>
+                      <label className="block text-xs font-semibold text-neutral-700 mb-1 uppercase tracking-wider">Custom Brand Name</label>
+                      <input 
+                        type="text" 
+                        name="brandName"
+                        value={managedProduct.brandName || ""}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-neutral-300 rounded focus:ring-1 focus:ring-teal-500 focus:outline-none"
+                      />
+                    </div>
+                  )}
                   <div>
                     <label className="block text-xs font-semibold text-neutral-700 mb-1 uppercase tracking-wider">SKU (External ID)</label>
                     <input 
@@ -328,6 +344,46 @@ export default function AdminProductEdit() {
                     className="w-full px-3 py-2 border border-neutral-300 rounded focus:ring-1 focus:ring-teal-500 focus:outline-none"
                   />
                 </div>
+                <div>
+                  <label className="block text-xs font-semibold text-neutral-700 mb-1 uppercase tracking-wider">HSN Code</label>
+                  <input 
+                    type="text" 
+                    name="hsnCode"
+                    value={managedProduct.hsnCode || ""}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-neutral-300 rounded focus:ring-1 focus:ring-teal-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-neutral-700 mb-1 uppercase tracking-wider">Weight</label>
+                  <input 
+                    type="text" 
+                    name="weight"
+                    value={managedProduct.weight || ""}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-neutral-300 rounded focus:ring-1 focus:ring-teal-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-neutral-700 mb-1 uppercase tracking-wider">Color</label>
+                  <input 
+                    type="text" 
+                    name="color"
+                    value={managedProduct.color || ""}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-neutral-300 rounded focus:ring-1 focus:ring-teal-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-neutral-700 mb-1 uppercase tracking-wider">Size</label>
+                  <input 
+                    type="text" 
+                    name="size"
+                    value={managedProduct.size || ""}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-neutral-300 rounded focus:ring-1 focus:ring-teal-500 focus:outline-none"
+                  />
+                </div>
               </div>
               <hr className="my-6 border-neutral-100" />
               <div className="grid grid-cols-2 gap-6">
@@ -374,13 +430,15 @@ export default function AdminProductEdit() {
                     <img src={img} alt={`Gallery ${idx}`} className="w-full h-full object-cover" />
                   </div>
                 ))}
-                <button className="aspect-square border-2 border-dashed border-neutral-300 rounded flex flex-col items-center justify-center text-neutral-400 hover:text-neutral-600 hover:border-neutral-400 transition-all">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                  </svg>
-                  <span className="text-[10px] mt-1 font-bold">ADD IMAGE</span>
-                </button>
+                {(!managedProduct.galleryImages || managedProduct.galleryImages.length < 5) && (
+                  <button className="aspect-square border-2 border-dashed border-neutral-300 rounded flex flex-col items-center justify-center text-neutral-400 hover:text-neutral-600 hover:border-neutral-400 transition-all">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="12" y1="5" x2="12" y2="19"></line>
+                      <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    <span className="text-[10px] mt-1 font-bold">ADD IMAGE</span>
+                  </button>
+                )}
               </div>
             </div>
           </div>

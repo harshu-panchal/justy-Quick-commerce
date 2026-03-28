@@ -203,10 +203,10 @@ export default function OrderAgain() {
 
                     <div className="flex flex-col items-end gap-1 flex-shrink-0">
                       <div className="text-xs font-bold text-neutral-900">
-                        ₹{order.totalAmount.toFixed(0)}
+                        ₹{(order.totalAmount || 0).toFixed(0)}
                       </div>
                       <div className="text-[10px] text-neutral-500">
-                        {order.totalItems} {order.totalItems === 1 ? 'item' : 'items'}
+                        {order.totalItems || 0} {(order.totalItems || 0) === 1 ? 'item' : 'items'}
                       </div>
                       {/* Order Again Button */}
                       <button

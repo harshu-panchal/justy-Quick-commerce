@@ -12,6 +12,7 @@ export interface IOrder extends Document {
   customerName: string;
   customerEmail: string;
   customerPhone: string;
+  seller?: mongoose.Types.ObjectId;
 
   // Delivery Info
   deliveryAddress: {
@@ -52,14 +53,18 @@ export interface IOrder extends Document {
   | "Accepted"
   | "Pending"
   | "Processed"
+  | "Ready for pickup"
   | "Shipped"
-  | "Picked up"
+  | "Picked Up"
+  | "Assigned"
+  | "In Transit"
   | "On the way"
   | "Out for Delivery"
   | "Delivered"
   | "Cancelled"
   | "Rejected"
-  | "Returned";
+  | "Returned"
+  | "Picked up";
 
   // Delivery Assignment
   deliveryBoy?: mongoose.Types.ObjectId;
@@ -87,7 +92,7 @@ export interface IOrder extends Document {
   sellerPickups?: Array<{
     seller: mongoose.Types.ObjectId;
     pickedUpAt?: Date;
-    pickedUpBy?: mongoose.Types.ObjectId; // delivery boy who picked up
+    pickedUpBy?: mongoose.Types.ObjectId; // delivery boy who Picked Up
     latitude?: number; // location where pickup was confirmed
     longitude?: number;
   }>;
@@ -157,6 +162,10 @@ const OrderSchema = new Schema<IOrder>(
       type: Schema.Types.ObjectId,
       ref: "Customer",
       required: [true, "Customer is required"],
+    },
+    seller: {
+      type: Schema.Types.ObjectId,
+      ref: "Seller",
     },
     customerName: {
       type: String,
@@ -294,14 +303,18 @@ const OrderSchema = new Schema<IOrder>(
         "Accepted",
         "Pending",
         "Processed",
+        "Ready for pickup",
         "Shipped",
-        "Picked up",
+        "Picked Up",
+        "Assigned",
+        "In Transit",
         "On the way",
         "Out for Delivery",
         "Delivered",
         "Cancelled",
         "Rejected",
         "Returned",
+        "Picked up",
       ],
       default: "Received",
     },

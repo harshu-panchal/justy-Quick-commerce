@@ -33,6 +33,7 @@ export interface Product {
   subcategory?: string | any;
   subSubCategory?: string | any; // Added subSubCategory
   brand?: string | any; // Updated
+  brandName?: string;
   publish: boolean;
   popular: boolean;
   dealOfDay: boolean;
@@ -49,6 +50,10 @@ export interface Product {
   maxReturnDays?: number;
   totalAllowedQuantity: number;
   fssaiLicNo?: string;
+  hsnCode?: string;
+  weight?: string;
+  color?: string;
+  size?: string;
   mainImageUrl?: string;
   mainImage?: string; // Mapped directly from Product model
   galleryImageUrls: string[];
@@ -76,6 +81,7 @@ export interface CreateProductData {
   subcategoryId?: string;
   subSubCategoryId?: string;
   brandId?: string;
+  brandName?: string;
   publish: boolean;
   popular: boolean;
   dealOfDay: boolean;
@@ -92,6 +98,10 @@ export interface CreateProductData {
   maxReturnDays?: number;
   totalAllowedQuantity: number;
   fssaiLicNo?: string;
+  hsnCode?: string;
+  weight?: string;
+  color?: string;
+  size?: string;
   mainImageUrl?: string;
   galleryImageUrls?: string[];
   variations: ProductVariation[];

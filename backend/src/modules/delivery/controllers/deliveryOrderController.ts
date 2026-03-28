@@ -357,7 +357,7 @@ export const updateOrderStatus = asyncHandler(
     const { status } = req.body;
     const deliveryId = req.user?.userId;
 
-    const order = await Order.findById(id);
+    let order = await Order.findById(id);
     if (!order) {
       return res
         .status(404)
@@ -384,11 +384,11 @@ export const updateOrderStatus = asyncHandler(
     // Emit socket events for status changes
     const io = (req.app as any).get("io");
     if (io) {
-      if (status === "Picked up" && previousStatus !== "Picked up") {
+      if (status === "Picked Up" && previousStatus !== "Picked Up") {
         // Emit order-taken event
         io.to(`order-${id}`).emit("order-taken", {
           orderId: id,
-          message: "Order has been picked up from seller",
+          message: "Order has been Picked Up from seller",
         });
       }
 
@@ -411,6 +411,27 @@ export const updateOrderStatus = asyncHandler(
       // Trigger notification to sellers for payment status change or specific transitions
       if (order.paymentStatus === "Paid" || status === "Delivered") {
         notifySellersOfOrderUpdate(io, order, "STATUS_UPDATE");
+      }
+
+      // Auto-generate settlement OTP when order is delivered (for COD)
+      if (status === "Delivered" && order.paymentMethod === "Online") {
+        // No settlement needed for Online
+      } else if (status === "Delivered" && order.paymentMethod === "COD") {
+        try {
+          // Re-fetch to ensure we have latest version for saving
+          const latestOrder = await Order.findById(id);
+          if (latestOrder && !latestOrder.isSettledWithWarehouse) {
+            await generateSettlementOtp(id);
+            // Re-assign to get new OTP in response
+            const updated = await Order.findById(id).populate("items");
+            if (updated) {
+              order = updated;
+            }
+          }
+        } catch (otpError) {
+          console.error("Auto-settlement OTP generation failed:", otpError);
+          // Don't fail the primary request
+        }
       }
     }
 
@@ -567,12 +588,12 @@ export const sendDeliveryOtp = asyncHandler(
         .json({ success: false, message: "Order is already delivered" });
     }
 
-    if (order.status !== "Picked up" && order.status !== "Out for Delivery") {
+    if (order.status !== "Picked Up" && order.status !== "Out for Delivery") {
       return res
         .status(400)
         .json({
           success: false,
-          message: "Order must be picked up before sending delivery OTP",
+          message: "Order must be Picked Up before sending delivery OTP",
         });
     }
 
@@ -839,7 +860,7 @@ export const confirmSellerPickup = asyncHandler(
       });
     }
 
-    // Check if this seller is already picked up
+    // Check if this seller is already Picked Up
     const existingPickup = order.sellerPickups?.find(
       (pickup: any) => pickup.seller.toString() === sellerId,
     );
@@ -847,7 +868,7 @@ export const confirmSellerPickup = asyncHandler(
     if (existingPickup && existingPickup.pickedUpAt) {
       return res.status(400).json({
         success: false,
-        message: "This seller has already been picked up",
+        message: "This seller has already been Picked Up",
       });
     }
 
@@ -881,7 +902,7 @@ export const confirmSellerPickup = asyncHandler(
       order.sellerPickups.push(pickupData as any);
     }
 
-    // Check if all sellers have been picked up
+    // Check if all sellers have been Picked Up
     const pickedUpSellerIds = order.sellerPickups
       .filter((pickup: any) => pickup.pickedUpAt)
       .map((pickup: any) => pickup.seller.toString());
@@ -890,7 +911,7 @@ export const confirmSellerPickup = asyncHandler(
       pickedUpSellerIds.includes(sellerId),
     );
 
-    // If all sellers picked up, automatically change status to "Out for Delivery"
+    // If all sellers Picked Up, automatically change status to "Out for Delivery"
     if (
       allPickedUp &&
       order.status !== "Out for Delivery" &&
@@ -918,7 +939,7 @@ export const confirmSellerPickup = asyncHandler(
         io.to(`delivery-${deliveryId}`).emit("all-sellers-picked-up", {
           orderId: id,
           orderNumber: order.orderNumber,
-          message: "All items picked up. Order is now Out for Delivery.",
+          message: "All items Picked Up. Order is now Out for Delivery.",
         });
       }
     }
@@ -926,7 +947,7 @@ export const confirmSellerPickup = asyncHandler(
     return res.status(200).json({
       success: true,
       message: allPickedUp
-        ? "All sellers picked up! Order status changed to Out for Delivery."
+        ? "All sellers Picked Up! Order status changed to Out for Delivery."
         : `Pickup confirmed from ${seller.storeName}`,
       data: {
         order,

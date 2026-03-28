@@ -222,6 +222,10 @@ export const getOrderById = asyncHandler(
       paymentMethod: order.paymentMethod || 'N/A',
       paymentStatus: order.paymentStatus || 'Pending',
       deliveryAddress: order.deliveryAddress || {},
+      qrCodeUrl: order.qrCodeUrl,
+      qrData: order.qrData,
+
+
     };
 
     return res.status(200).json({
@@ -344,10 +348,7 @@ export const updateOrderStatus = asyncHandler(
     return res.status(200).json({
       success: true,
       message: "Order status updated successfully",
-      data: {
-        id: order._id,
-        status: order.status,
-      },
+      data: order,
     });
   }
 );

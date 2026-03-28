@@ -169,7 +169,7 @@ export default function SellerProductList() {
           product.mainImage ||
           product.mainImageUrl ||
           "/assets/product-placeholder.jpg",
-        brandName: (product.brand as any)?.name || "-",
+        brandName: (product.brand as any)?.name || product.brandName || "-",
         category: (product.category as any)?.name || "-",
         subCategory: (product.subcategory as any)?.name || "-",
         price: (product as any).price || 0,
@@ -188,7 +188,7 @@ export default function SellerProductList() {
         product.mainImage ||
         product.mainImageUrl ||
         "/assets/product-placeholder.jpg",
-      brandName: (product.brand as any)?.name || "-",
+      brandName: (product.brand as any)?.name || product.brandName || "-",
       category: (product.category as any)?.name || "-",
       subCategory: (product.subcategory as any)?.name || "-",
       price: variation.price,

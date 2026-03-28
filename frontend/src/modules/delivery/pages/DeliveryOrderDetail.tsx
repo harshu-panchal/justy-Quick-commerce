@@ -571,6 +571,7 @@ export default function DeliveryOrderDetail() {
             }
         } catch (err: any) {
             alert(err.message || "Failed to update status");
+        } finally {
             setLoading(false);
         }
     };
@@ -584,7 +585,10 @@ export default function DeliveryOrderDetail() {
 
     const nextStatus = getNextStatus();
     const isMapVisible = order.status === 'Out for Delivery' || order.status === 'Picked up' || (sellerLocations.length > 0 && order.status !== 'Delivered');
-    const showSellerLocations = sellerLocations.length > 0 && order.status !== 'Picked up' && order.status !== 'Out for Delivery' && order.status !== 'Delivered';
+    const showSellerLocations = sellerLocations.length > 0 && 
+    order.status.toLowerCase() !== 'picked up' && 
+    order.status.toLowerCase() !== 'out for delivery' && 
+    order.status.toLowerCase() !== 'delivered';
     const showCustomerLocation = order.status === 'Picked up' || order.status === 'Out for Delivery';
 
     // Check if we have valid customer coordinates
@@ -721,7 +725,7 @@ export default function DeliveryOrderDetail() {
                                             </div>
                                         </div>
 
-                                        {!isPickedUp && (
+                                        {(!isPickedUp && order.status.toLowerCase() !== 'picked up') && (
                                             <Link
                                                 to="/delivery/scan"
                                                 state={{
@@ -733,7 +737,7 @@ export default function DeliveryOrderDetail() {
                                                 className={`w-full py-3 rounded-xl font-black text-center transition-all bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.98] shadow-lg shadow-blue-600/20`}
                                             >
                                                 START PICKUP
-                                            </Link>
+                                            </Link> 
                                         )}
                                     </div>
                                 );
@@ -961,7 +965,7 @@ export default function DeliveryOrderDetail() {
 
             {/* Floating Glassmorphic Action Button Dock - Order Taken button or status update */}
             {/* Hide this button when order is "Out for Delivery" because OTP section is shown instead */}
-            {nextStatus && order.status !== 'Picked up' && order.status !== 'Out for Delivery' && !showOtpInput && (
+            {nextStatus && order.status !== 'Out for Delivery' && !showOtpInput && (
                 <div className="fixed bottom-24 left-6 right-6 z-30">
                     <button
                         onClick={() => handleStatusChange(nextStatus)}

@@ -1,10 +1,11 @@
 import { Server as SocketIOServer } from 'socket.io';
+import mongoose from 'mongoose';
 import Delivery from '../models/Delivery';
 import Order from '../models/Order';
 import Seller from '../models/Seller';
 import DeliveryTracking from '../models/DeliveryTracking';
+import DeliveryAssignment from '../models/DeliveryAssignment';
 import AppSettings from '../models/AppSettings';
-import mongoose from 'mongoose';
 import { notifySellersOfOrderUpdate } from './sellerNotificationService';
 
 /**
@@ -227,11 +228,16 @@ export async function findDeliveryBoysNearSellerLocations(
 ): Promise<mongoose.Types.ObjectId[]> {
     try {
         // Get unique seller IDs from order items
-        const sellerIds = [...new Set(
-            order.items
-                ?.map((item: any) => item.seller?.toString())
-                .filter((id: string) => id) || []
-        )];
+      const sellerIds = [...new Set(
+    order.items
+        ?.map((item: any) => {
+            const s = item.seller;
+            // अगर seller ओबजेक्ट है तो ._id लेगा, वरना toString()
+            return s && typeof s === 'object' ? s._id?.toString() : s?.toString();
+        })
+        .filter((id: string) => id) || []
+)];
+
 
         if (sellerIds.length === 0) {
             console.log('No sellers found in order, falling back to all available delivery boys');
@@ -463,6 +469,28 @@ export async function handleOrderAcceptance(
         order.status = 'Processed'; // Mark as processed when assigned
 
         await order.save();
+
+        // Create a DeliveryAssignment record to prevent auto-cancellation and track history
+        // This is crucial for InstantDeliveryService which checks for this record
+        try {
+            await DeliveryAssignment.findOneAndUpdate(
+                { order: orderId },
+                {
+                    order: orderId,
+                    deliveryBoy: normalizedDeliveryBoyId,
+                    status: 'Accepted',
+                    assignedAt: new Date(),
+                    acceptedAt: new Date(),
+                    assignedBy: normalizedDeliveryBoyId,
+                    assignedByModel: 'Delivery',
+                },
+                { upsert: true, new: true }
+            );
+            console.log(`📝 Created DeliveryAssignment for order ${orderId}`);
+        } catch (assignError) {
+            console.error(`❌ Error creating DeliveryAssignment for order ${orderId}:`, assignError);
+            // We continue as the Order model is already updated
+        }
 
         // Emit order-accepted event to stop notifications for all delivery boys
         io.to('delivery-notifications').emit('order-accepted', {

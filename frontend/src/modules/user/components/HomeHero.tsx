@@ -15,6 +15,7 @@ import { useDeliveryMode } from '../../../hooks/useDeliveryMode';
 import { useCart } from '../../../context/CartContext'; // Assuming CartContext exists
 import { useCoins } from '../../../context/CoinContext';
 import LocationModal from '../../../components/header/LocationModal';
+import jyastiLogo from '@assets/jyastiLogo.png';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -324,6 +325,42 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
         className="px-4 md:px-6 lg:px-8 pt-6 pb-3 transition-colors duration-500 md:hidden"
         style={{ backgroundColor: (activeTab === 'all' && deliveryMode === 'scheduled') ? '#00796B' : (theme.headerBg || '#007fb1') }}
       >
+        {/* Brand Row */}
+        <div className="mb-4 max-w-2xl mx-auto flex items-center justify-between gap-3">
+          <div className="relative group p-1">
+            {/* Organic Blob Background (India Map Style) */}
+            <div 
+              className="absolute inset-0 z-0" 
+              style={{ 
+                background: 'linear-gradient(135deg, #ffffff 10%, #ccfbf1 40%, #0d9488 100%)',
+                borderRadius: '60% 40% 70% 30% / 40% 50% 60% 50%',
+                animation: 'blobMorph 6s ease-in-out infinite alternate',
+                transform: 'scale(1.2)',
+                opacity: 0.95
+              }}
+            />
+            
+            <img
+              src={jyastiLogo}
+              alt="JYASTI builds trust"
+              className="h-14 w-auto object-contain relative z-10 px-3 filter drop-shadow-[0_4px_6px_rgba(0,0,0,0.12)]"
+              style={{ animation: 'logoFloat 4.2s ease-in-out infinite' }}
+            />
+          </div>
+
+          <div className="flex items-center gap-2 rounded-2xl border border-white/20 bg-white/12 px-3 py-2 text-white shadow-[0_10px_24px_rgba(0,0,0,0.14)] backdrop-blur-sm">
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#ffce10] text-neutral-900 shadow-inner">
+              <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4">
+                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+              </svg>
+            </span>
+            <div className="leading-none">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/75">Fast Delivery</p>
+              <p className="mt-1 text-sm font-black">10-15 mins</p>
+            </div>
+          </div>
+        </div>
+            
         {/* 1. Full-width Mode Toggle */}
         <div className="mb-4 max-w-2xl mx-auto">
           <DeliveryToggle />
@@ -437,6 +474,37 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
           </div>
         </div>
       </div>
+
+      <style>{`
+        @keyframes logoFloat {
+          0%, 100% {
+            transform: translateY(0px) scale(1);
+          }
+          33% {
+            transform: translateY(-6px) scale(1.04);
+          }
+          66% {
+            transform: translateY(-3px) scale(1.02);
+          }
+        }
+        @keyframes logoGlowRing {
+          0%, 100% { opacity: 0.55; transform: scale(1.2); }
+          50% { opacity: 1; transform: scale(1.35); }
+        }
+        @keyframes logoShimmer {
+          0% { transform: translateX(-100%) skewX(-20deg); }
+          60%, 100% { transform: translateX(350%) skewX(-20deg); }
+        }
+        @keyframes shimmer {
+          0% { transform: translateX(-100%) skewX(-20deg); }
+          100% { transform: translateX(200%) skewX(-20deg); }
+        }
+        @keyframes blobMorph {
+          0% { border-radius: 60% 40% 70% 30% / 40% 50% 60% 50%; }
+          50% { border-radius: 30% 60% 50% 70% / 50% 30% 70% 40%; }
+          100% { border-radius: 60% 40% 70% 30% / 40% 50% 60% 50%; }
+        }
+      `}</style>
 
       {/* 4. Sticky Category Header (Untouched as requested) - Mobile Only */}
       <div

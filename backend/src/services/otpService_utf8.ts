@@ -1,4 +1,4 @@
-﻿import axios from 'axios';
+import axios from 'axios';
 import Otp from '../models/Otp';
 
 // SMS India HUB Configuration

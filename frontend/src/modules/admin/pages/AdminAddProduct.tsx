@@ -43,6 +43,7 @@ export default function AdminAddProduct() {
     popular: "No",
     dealOfDay: "No",
     brand: "",
+    brandName: "",
     seller: "",
     tags: "",
     smallDescription: "",
@@ -57,6 +58,10 @@ export default function AdminAddProduct() {
     maxReturnDays: "",
     fssaiLicNo: "",
     totalAllowedQuantity: "10",
+    hsnCode: "",
+    weight: "",
+    color: "",
+    size: "",
     mainImageUrl: "",
     galleryImageUrls: [] as string[],
   });
@@ -194,8 +199,15 @@ export default function AdminAddProduct() {
   };
 
   const handleGalleryImagesChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const totalExisting = galleryImagePreviews.length;
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
+
+    if (totalExisting + files.length > 5) {
+      setUploadError("You can only upload a maximum of 5 gallery images.");
+      e.target.value = "";
+      return;
+    }
     const invalidFiles = files.filter((file) => !validateImageFile(file).valid);
     if (invalidFiles.length > 0) {
       setUploadError("Some files are invalid. Please check file types and sizes.");
@@ -297,7 +309,8 @@ export default function AdminAddProduct() {
         headerCategoryId: formData.headerCategory || undefined,
         category: formData.category || undefined,
         subcategory: formData.subcategory || undefined,
-        brand: formData.brand || undefined,
+        brand: formData.brand === "other" ? undefined : (formData.brand || undefined),
+        brandName: formData.brand === "other" ? formData.brandName : undefined,
         seller: formData.seller || undefined,
         publish: formData.publish === "Yes",
         popular: formData.popular === "Yes",
@@ -317,6 +330,10 @@ export default function AdminAddProduct() {
         maxReturnDays: formData.maxReturnDays ? parseInt(formData.maxReturnDays) : undefined,
         totalAllowedQuantity: parseInt(formData.totalAllowedQuantity || "10"),
         fssaiLicNo: formData.fssaiLicNo || undefined,
+        hsnCode: formData.hsnCode || undefined,
+        weight: formData.weight || undefined,
+        color: formData.color || undefined,
+        size: formData.size || undefined,
         mainImage: mainImageUrl || undefined,
         galleryImages: galleryImageUrls,
         variations: mappedVariations,
@@ -328,11 +345,16 @@ export default function AdminAddProduct() {
         setTimeout(() => {
           setFormData({
             productName: "", headerCategory: "", category: "", subcategory: "",
-            publish: "No", popular: "No", dealOfDay: "No", brand: "", seller: "",
+            publish: "No", popular: "No", dealOfDay: "No", brand: "", brandName: "", seller: "",
             tags: "", smallDescription: "", seoTitle: "", seoKeywords: "",
             seoImageAlt: "", seoDescription: "", manufacturer: "", madeIn: "",
             tax: "", isReturnable: "No", maxReturnDays: "", fssaiLicNo: "",
-            totalAllowedQuantity: "10", mainImageUrl: "", galleryImageUrls: [],
+            totalAllowedQuantity: "10",
+            hsnCode: "",
+            weight: "",
+            color: "",
+            size: "",
+            mainImageUrl: "", galleryImageUrls: [],
           });
           setVariations([]);
           setMainImageFile(null);
@@ -473,8 +495,22 @@ export default function AdminAddProduct() {
                     {brands.map((brand) => (
                       <option key={brand._id} value={brand._id}>{brand.name}</option>
                     ))}
+                    <option value="other">Other (Custom Brand)</option>
                   </select>
                 </div>
+                {formData.brand === "other" && (
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">Custom Brand Name</label>
+                    <input
+                      type="text"
+                      name="brandName"
+                      value={formData.brandName}
+                      onChange={handleChange}
+                      placeholder="Enter Brand Name"
+                      className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                    />
+                  </div>
+                )}
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-2">
                     Assign to Seller
@@ -731,6 +767,30 @@ export default function AdminAddProduct() {
                     className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500" />
                   <p className="text-xs text-neutral-500 mt-1">Keep blank if no such limit</p>
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">HSN Code</label>
+                  <input type="text" name="hsnCode" value={formData.hsnCode} onChange={handleChange}
+                    placeholder="Enter HSN Code"
+                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">Weight</label>
+                  <input type="text" name="weight" value={formData.weight} onChange={handleChange}
+                    placeholder="e.g. 500g, 1kg"
+                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">Color</label>
+                  <input type="text" name="color" value={formData.color} onChange={handleChange}
+                    placeholder="Enter Color (if applicable)"
+                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">Size</label>
+                  <input type="text" name="size" value={formData.size} onChange={handleChange}
+                    placeholder="Enter Size (if applicable)"
+                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500" />
+                </div>
               </div>
             </div>
           </div>
@@ -806,15 +866,17 @@ export default function AdminAddProduct() {
                             </button>
                           </div>
                         ))}
-                        <label htmlFor="gallery-image-upload-admin"
-                          className="w-full h-32 border-2 border-dashed border-neutral-300 rounded-lg flex flex-col items-center justify-center text-neutral-400 hover:text-teal-600 hover:border-teal-500 hover:bg-teal-50 transition-all bg-neutral-50 cursor-pointer">
-                          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mb-1">
-                            <line x1="12" y1="5" x2="12" y2="19"></line>
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                          </svg>
-                          <span className="text-xs font-semibold">Add Image</span>
-                        </label>
+                        {galleryImagePreviews.length < 5 && (
+                          <label htmlFor="gallery-image-upload-admin"
+                            className="w-full h-32 border-2 border-dashed border-neutral-300 rounded-lg flex flex-col items-center justify-center text-neutral-400 hover:text-teal-600 hover:border-teal-500 hover:bg-teal-50 transition-all bg-neutral-50 cursor-pointer">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                              strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mb-1">
+                              <line x1="12" y1="5" x2="12" y2="19"></line>
+                              <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            <span className="text-xs font-semibold">Add Image</span>
+                          </label>
+                        )}
                       </div>
                       <p className="text-sm text-neutral-600">{galleryImageFiles.length} image(s) selected</p>
                     </div>
@@ -829,7 +891,7 @@ export default function AdminAddProduct() {
                           <line x1="12" y1="3" x2="12" y2="15"></line>
                         </svg>
                         <p className="text-sm text-neutral-600 font-medium">Upload Other Product Images Here</p>
-                        <p className="text-xs text-neutral-500 mt-1">Max 5MB per image, up to 10 images</p>
+                        <p className="text-xs text-neutral-500 mt-1">Max 5MB per image, up to 5 images</p>
                       </div>
                     </label>
                   )}

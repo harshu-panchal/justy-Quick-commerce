@@ -123,11 +123,11 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
   } = req.body;
 
   // Validation (password removed - sellers don't need password during signup)
-  if (!sellerName || !mobile || !email || !storeName || !category || !pincode) {
+  if (!sellerName || !mobile || !email || !storeName || !category || !pincode || !req.body.nearestLandmark) {
     return res.status(400).json({
       success: false,
       message:
-        "Required fields (Name, Mobile, Email, Store Name, Category, Pincode) must be provided",
+        "Required fields (Name, Mobile, Email, Store Name, Category, Pincode, Nearest Landmark) must be provided",
     });
   }
 
@@ -217,11 +217,14 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
     searchLocation: req.body.searchLocation,
     // Only store lat/lng strings if they are real non-zero coordinates
     ...(latitude !== null && longitude !== null ? { latitude: latitude.toString(), longitude: longitude.toString() } : {}),
-    location, // GeoJSON location for geospatial queries
-    serviceRadiusKm, // Service radius in kilometers
+    fssaiLicNo: req.body.fssaiLicNo,
+    gstNumber: req.body.gstNumber,
+    storeDescription: req.body.storeDescription,
+    location,
+    serviceRadiusKm,
     serviceAreaGeo: (req.body.serviceAreaGeo && req.body.serviceAreaGeo.coordinates && Array.isArray(req.body.serviceAreaGeo.coordinates) && req.body.serviceAreaGeo.coordinates.length > 0)
       ? req.body.serviceAreaGeo
-      : undefined, // Custom polygon area
+      : undefined,
     status: "Pending",
     requireProductApproval: true,
     viewCustomerDetails: false,
@@ -229,6 +232,12 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
     balance: 0,
     categories: req.body.categories || [],
     isDeliveryByPlatform: isDeliveryByPlatform !== undefined ? (isDeliveryByPlatform === 'true' || isDeliveryByPlatform === true) : true,
+    accountNumber: req.body.accountNumber,
+    ifsc: req.body.ifsc,
+    upiId: req.body.upiId,
+    panCard: req.body.panCard,
+    alternateMobile: req.body.alternateMobile,
+    nearestLandmark: req.body.nearestLandmark,
   });
 
   // Generate token

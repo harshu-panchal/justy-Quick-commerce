@@ -74,9 +74,9 @@ export default function Orders() {
               <div className="flex items-start justify-between mb-3">
                 <div>
                   <div className="text-sm font-semibold text-neutral-900 mb-1">
-                    Order #{shortId}
+                    Order #{shortId || '...'}
                   </div>
-                  <div className="text-xs text-neutral-500">{formatDate(order.createdAt)}</div>
+                  <div className="text-xs text-neutral-500">{order.createdAt ? formatDate(order.createdAt) : 'N/A'}</div>
                 </div>
                 <span
                   className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
@@ -90,10 +90,10 @@ export default function Orders() {
               </div>
               <div className="flex items-center justify-between">
                 <div className="text-sm text-neutral-600">
-                  {order.totalItems} {order.totalItems === 1 ? 'item' : 'items'}
+                  {order.totalItems || 0} {(order.totalItems || 0) === 1 ? 'item' : 'items'}
                 </div>
                 <div className="text-lg font-bold text-neutral-900">
-                  ₹{order.totalAmount.toFixed(0)}
+                  ₹{(order.totalAmount || 0).toFixed(0)}
                 </div>
               </div>
             </Link>

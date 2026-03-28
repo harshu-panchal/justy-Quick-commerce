@@ -65,7 +65,7 @@ export async function scanQr(req: Request, res: Response) {
         status: order.status,
         orderType,
         nextAllowedStatus: orderType === 'ORDER' 
-          ? (order.status === 'Ready for pickup' ? ['PICKED_UP'] : (order.status === 'Picked up' ? ['DELIVERED'] : []))
+          ? (order.status === 'Ready for pickup' ? ['PICKED_UP'] : (order.status === 'Picked Up' ? ['DELIVERED'] : []))
           : (order.status === 'assigned' ? ['PICKED_UP'] : (order.status === 'picked_up' ? ['DELIVERED'] : [])),
         order
       }
@@ -101,7 +101,7 @@ export async function updateStatusViaQr(req: Request, res: Response) {
     let previousStatus = order.status;
     if (orderType === 'ORDER') {
       if (status === 'PICKED_UP') {
-        order.status = 'Picked up';
+        order.status = 'Picked Up';
       } else if (status === 'DELIVERED') {
         order.status = 'Delivered';
         order.deliveredAt = new Date();
@@ -137,7 +137,7 @@ export async function updateStatusViaQr(req: Request, res: Response) {
         io.to(`order-${orderId}`).emit("order-taken", {
           orderId: orderId,
           orderNumber: order.orderNumber,
-          message: `Order picked up from ${order.sellerName || 'seller'}`
+          message: `Order Picked Up from ${order.sellerName || 'seller'}`
         });
       } else if (status === 'DELIVERED') {
         io.to(`order-${orderId}`).emit("order-delivered", {

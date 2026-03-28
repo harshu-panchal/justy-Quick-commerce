@@ -42,20 +42,30 @@ export class InstantDeliveryService {
             }
 
             const orderData = {
-                orderId: order._id,
+                orderId: order._id.toString(),
                 orderNumber: order.orderNumber,
+                customerName: order.customerName,
+                customerPhone: order.customerPhone || '',
+                deliveryAddress: {
+                    address: order.deliveryAddress.address,
+                    city: order.deliveryAddress.city,
+                    state: order.deliveryAddress.state,
+                    pincode: order.deliveryAddress.pincode,
+                    landmark: order.deliveryAddress.landmark
+                },
                 total: order.total,
-                pincode: sellerPincode,
-                address: order.deliveryAddress.address,
+                subtotal: order.subtotal || order.total,
+                shipping: order.shipping || 0,
+                deliveryBoyEarning: order.total * 0.05, // fallback estimate
                 createdAt: order.createdAt,
             };
 
             // Broadcast to partners in the same pincode room or individually
             partners.forEach((partner) => {
-                this.io.to(`delivery-${partner._id}`).emit("new_delivery_request", orderData);
+                this.io.to(`delivery-${partner._id}`).emit("new-order", orderData);
             });
 
-            console.log(`[InstantDelivery] Broadcasted order ${order.orderNumber} to ${partners.length} partners in ${sellerPincode}`);
+            console.log(`[InstantDelivery] Broadcasted order ${order.orderNumber} to ${partners.length} partners in ${sellerPincode} via 'new-order' event`);
 
             // Set 2-minute timeout for auto-cancellation
             setTimeout(async () => {
@@ -131,7 +141,7 @@ export class InstantDeliveryService {
                 orderId,
                 {
                     deliveryBoy: deliveryBoyId,
-                    deliveryBoyStatus: "Accepted",
+                    deliveryBoyStatus: "Assigned",
                     status: "Processed",
                     assignedAt: new Date(),
                 },

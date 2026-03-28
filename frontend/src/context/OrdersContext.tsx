@@ -66,11 +66,18 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
     try {
       const response = await getMyOrders() as OrdersApiResponse;
       if (response && response.data) {
-        const orders: Order[] = response.data.map((o: ApiOrder) => ({
+        const mappedOrders: Order[] = response.data.map((o: ApiOrder) => ({
           ...o,
           id: o.id || o._id || '',
+          totalAmount: o.totalAmount ?? (o.total as number) ?? 0,
+          totalItems: o.totalItems ?? (Array.isArray(o.items) ? o.items.length : 0),
+          address: o.address || (o.deliveryAddress as any),
+          fees: o.fees || {
+            deliveryFee: (o.shipping as number) || 0,
+            platformFee: (o.platformFee as number) || 0
+          }
         } as Order));
-        setOrders(orders);
+        setOrders(mappedOrders);
       }
     } catch (error) {
       console.error("Failed to fetch orders", error);
@@ -164,10 +171,18 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
       );
       const response = await apiGetOrderById(id);
       if (response && response.data) {
-        const mappedOrder = {
-          ...response.data,
-          id: response.data._id || response.data.id,
-        };
+        const o = response.data as ApiOrder;
+        const mappedOrder: Order = {
+          ...o,
+          id: o.id || o._id || '',
+          totalAmount: o.totalAmount ?? (o.total as number) ?? 0,
+          totalItems: o.totalItems ?? (Array.isArray(o.items) ? o.items.length : 0),
+          address: o.address || (o.deliveryAddress as any),
+          fees: o.fees || {
+            deliveryFee: (o.shipping as number) || 0,
+            platformFee: (o.platformFee as number) || 0
+          }
+        } as Order;
         // Optionally update the orders list
         setOrders((prev) => {
           if (prev.find((o) => o.id === mappedOrder.id)) return prev;

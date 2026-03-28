@@ -13,6 +13,7 @@ export interface IProduct extends Document {
   subSubCategory?: mongoose.Types.ObjectId;
   headerCategoryId?: mongoose.Types.ObjectId;
   brand?: mongoose.Types.ObjectId;
+  brandName?: string;
 
   // Seller Info
   seller: mongoose.Types.ObjectId;
@@ -53,6 +54,10 @@ export interface IProduct extends Document {
   tax?: string;
   fssaiLicNo?: string;
   totalAllowedQuantity?: number;
+  hsnCode?: string;
+  weight?: string;
+  color?: string;
+  size?: string;
 
   // Return & Cancellation Policy
   isReturnable: boolean;
@@ -147,6 +152,10 @@ const ProductSchema = new Schema<IProduct>(
       type: Schema.Types.ObjectId,
       ref: "Brand",
     },
+    brandName: {
+      type: String,
+      trim: true,
+    },
 
     // Seller Info
     seller: {
@@ -163,6 +172,10 @@ const ProductSchema = new Schema<IProduct>(
     galleryImages: {
       type: [String],
       default: [],
+      validate: [
+        (val: string[]) => val.length <= 5,
+        "{PATH} exceeds the limit of 5 gallery images",
+      ],
     },
 
     // Pricing & Inventory
@@ -260,6 +273,22 @@ const ProductSchema = new Schema<IProduct>(
     totalAllowedQuantity: {
       type: Number,
       min: [0, "Total allowed quantity cannot be negative"],
+    },
+    hsnCode: {
+      type: String,
+      trim: true,
+    },
+    weight: {
+      type: String,
+      trim: true,
+    },
+    color: {
+      type: String,
+      trim: true,
+    },
+    size: {
+      type: String,
+      trim: true,
     },
 
     // Return & Cancellation Policy

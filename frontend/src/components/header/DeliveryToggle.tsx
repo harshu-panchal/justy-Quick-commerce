@@ -59,7 +59,7 @@ const DeliveryToggle: React.FC<DeliveryToggleProps> = ({ variant = 'default' }) 
                 style={{ color: deliveryMode === 'scheduled' ? activeTextColor : inactiveTextColor }}
             >
                 <span className={`${isCompact ? "text-xs font-bold" : "text-base font-bold tracking-tight"}`}>
-                    Scheduled
+                    Mall
                 </span>
             </button>
         </div>

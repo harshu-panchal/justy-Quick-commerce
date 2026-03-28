@@ -5,8 +5,8 @@
   "main": "dist/server.js",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/server.js",
-    "dev": "tsx watch src/server.ts",
+    "start": "npm run build && node dist/server.js",
+    "dev": "npm run build && tsx watch src/server.ts",
     "test": "tsx test-auth.ts",
     "test:auth": "tsx src/scripts/testAuth.ts",
     "test:integration": "tsx src/scripts/test-frontend-backend-auth.ts",

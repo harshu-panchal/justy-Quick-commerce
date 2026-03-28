@@ -18,8 +18,52 @@ import { asyncHandler } from "../utils/asyncHandler";
 
 const router = Router();
 
-// All upload routes require authentication
-router.use(authenticate);
+// Most upload routes require authentication
+// router.use(authenticate); // Removed global authentication to allow specific public routes
+
+/**
+ * POST /api/v1/upload/public-image
+ * Upload a single image without authentication (restricted to specific folders)
+ */
+router.post(
+  "/public-image",
+  uploadSingleImage.single("image"),
+  handleUploadError,
+  asyncHandler(async (req: Request, res: Response) => {
+    if (!(req as any).file) {
+      return res.status(400).json({
+        success: false,
+        message: "No image file provided",
+      });
+    }
+
+    const folder = (req.body.folder as string) || "public_uploads";
+    
+    // Safety check: Only allow specific folders for public uploads to prevent abuse
+    const allowedFolders = ["sellers/fssai", "delivery/documents", "public_assets", "sellers/registration"];
+    if (!allowedFolders.includes(folder)) {
+      return res.status(403).json({
+        success: false,
+        message: "Upload to this folder is restricted to authenticated users",
+      });
+    }
+
+    const file = (req as any).file;
+
+    const result = await uploadImageFromBuffer(file.buffer, {
+      folder,
+      resourceType: "image",
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: result,
+    });
+  })
+);
+
+// Protect remaining routes
+// router.use(authenticate); // We'll apply authenticate manually to the other routes below
 
 /**
  * POST /api/v1/upload/image
@@ -27,6 +71,7 @@ router.use(authenticate);
  */
 router.post(
   "/image",
+  authenticate,
   requireUserType("Admin", "Seller"),
   uploadSingleImage.single("image"),
   handleUploadError,
@@ -60,6 +105,7 @@ router.post(
  */
 router.post(
   "/images",
+  authenticate,
   requireUserType("Admin", "Seller"),
   uploadMultipleImages.array("images", 10), // Max 10 images
   handleUploadError,

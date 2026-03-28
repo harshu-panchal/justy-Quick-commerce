@@ -1,4 +1,6 @@
 import Order from '../models/Order';
+import Customer from '../models/Customer';
+import Seller from '../models/Seller';
 import EquipmentOrder from '../models/EquipmentOrder';
 import { createAndUploadQR, QRPayload } from '../utils/qrUtils';
 

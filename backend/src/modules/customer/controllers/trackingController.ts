@@ -102,7 +102,7 @@ export const updateDeliveryLocation = asyncHandler(
     if (!tracking) {
       // Determine initial status based on order status
       let initialStatus: 'idle' | 'picked_up' | 'in_transit' | 'nearby' = 'idle';
-      if (order.status === 'Picked up' || order.status === 'Out for Delivery') {
+      if (order.status === 'Picked Up' || order.status === 'Out for Delivery') {
         initialStatus = 'picked_up';
       } else {
         initialStatus = 'idle';
@@ -147,7 +147,7 @@ export const updateDeliveryLocation = asyncHandler(
     // Update status based on order status and distance
     if (order.status === 'Delivered') {
       tracking.status = "delivered";
-    } else if (order.status === 'Picked up' || order.status === 'Out for Delivery') {
+    } else if (order.status === 'Picked Up' || order.status === 'Out for Delivery') {
       if (distance < 100) {
         tracking.status = "nearby";
       } else if (distance < 5000) {
@@ -156,7 +156,7 @@ export const updateDeliveryLocation = asyncHandler(
         tracking.status = "picked_up";
       }
     } else {
-      // Order is still assigned but not picked up yet
+      // Order is still assigned but not Picked Up yet
       tracking.status = "idle";
     }
 

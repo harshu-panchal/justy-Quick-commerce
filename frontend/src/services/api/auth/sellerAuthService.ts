@@ -27,8 +27,10 @@ export interface VerifyOTPResponse {
 export interface RegisterData {
   sellerName: string;
   mobile: string;
+  alternateMobile?: string;
   email: string;
   storeName: string;
+  nearestLandmark?: string;
   category?: string; // primary category (optional if categories array provided)
   categories: string[]; // multiple categories
   address: string;
@@ -45,8 +47,10 @@ export interface RegisterData {
   } | null;
   fssaiLicNo?: string;
   storeDescription?: string;
-  storeBanner?: string;
-  logo?: string;
+  gstNumber?: string;
+  accountNumber?: string;
+  ifsc?: string;
+  upiId?: string;
   isDeliveryByPlatform?: boolean;
 }
 

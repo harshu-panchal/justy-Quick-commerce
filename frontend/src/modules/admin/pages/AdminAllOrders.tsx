@@ -2,9 +2,11 @@ import { useState, useMemo, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   getAllOrders,
+  getOrdersByStatus,
   type Order,
 } from "../../../services/api/admin/adminOrderService";
 import { useAuth } from "../../../context/AuthContext";
+import AssignDeliveryBoyModal from "../components/AssignDeliveryBoyModal";
 
 type SortField =
   | "orderId"
@@ -30,6 +32,8 @@ export default function AdminAllOrders() {
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
+  const [selectedOrderToAssign, setSelectedOrderToAssign] = useState<Order | null>(null);
 
   // Fetch orders on component mount
   useEffect(() => {
@@ -804,35 +808,55 @@ export default function AdminAllOrders() {
                         ?{order.total?.toFixed(2) || "0.00"}
                       </td>
                       <td className="px-4 sm:px-6 py-3">
-                        <Link to={`/admin/orders/${order._id}`}>
+                        <div className="flex items-center gap-2">
                           <button
-                            className="bg-teal-600 hover:bg-teal-700 text-white p-2 rounded transition-colors"
-                            aria-label="View order">
-                            <svg
-                              width="16"
-                              height="16"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              xmlns="http://www.w3.org/2000/svg">
-                              <path
-                                d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
-                              <circle
-                                cx="12"
-                                cy="12"
-                                r="3"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
-                            </svg>
+                            onClick={() => {
+                              setSelectedOrderToAssign(order);
+                              setAssignModalOpen(true);
+                            }}
+                            className={`px-2 py-1.5 text-xs font-medium rounded transition-colors ${order.deliveryBoyStatus === "Assigned"
+                                ? "bg-green-100 text-green-700 hover:bg-green-200"
+                                : "bg-blue-600 text-white hover:bg-blue-700"
+                              }`}
+                            title={
+                              order.deliveryBoyStatus === "Assigned"
+                                ? "Re-assign delivery boy"
+                                : "Assign delivery boy"
+                            }>
+                            {order.deliveryBoyStatus === "Assigned"
+                              ? "Re-assign"
+                              : "Assign"}
                           </button>
-                        </Link>
+                          <Link to={`/admin/orders/${order._id}`}>
+                            <button
+                              className="bg-teal-600 hover:bg-teal-700 text-white p-2 rounded transition-colors"
+                              aria-label="View order">
+                              <svg
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path
+                                  d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                />
+                                <circle
+                                  cx="12"
+                                  cy="12"
+                                  r="3"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                />
+                              </svg>
+                            </button>
+                          </Link>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -902,6 +926,48 @@ export default function AdminAllOrders() {
           JYASTI builds trust - 10 Minute App
         </Link>
       </div>
+
+      {/* Assign Delivery Boy Modal */}
+      {assignModalOpen && selectedOrderToAssign && (
+        <AssignDeliveryBoyModal
+          isOpen={assignModalOpen}
+          onClose={() => {
+            setAssignModalOpen(false);
+            setSelectedOrderToAssign(null);
+          }}
+          orderId={selectedOrderToAssign._id}
+          orderNumber={selectedOrderToAssign.orderNumber}
+          currentDeliveryBoy={
+            typeof selectedOrderToAssign.deliveryBoy === "string"
+              ? selectedOrderToAssign.deliveryBoy
+              : selectedOrderToAssign.deliveryBoy &&
+                typeof selectedOrderToAssign.deliveryBoy === "object"
+                ? (selectedOrderToAssign.deliveryBoy as any)._id || undefined
+                : undefined
+          }
+          onAssignSuccess={async () => {
+            // Refresh orders after successful assignment
+            try {
+              const params: any = {
+                page: currentPage,
+                limit: parseInt(entriesPerPage),
+              };
+              if (status !== "All Status" && status !== "Payment Pending") {
+                params.status = status;
+              }
+              if (searchQuery) params.search = searchQuery;
+              const response = await getAllOrders(params);
+              if (response.success) {
+                setOrders(response.data);
+              }
+            } catch (err) {
+              console.error("Error refreshing orders:", err);
+            }
+            setAssignModalOpen(false);
+            setSelectedOrderToAssign(null);
+          }}
+        />
+      )}
     </div>
   );
 }

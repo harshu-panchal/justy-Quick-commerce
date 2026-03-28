@@ -94,7 +94,7 @@ export const updateAssignmentStatus = asyncHandler(async (req: Request, res: Res
     const order = await Order.findById(assignment.order);
     if (order) {
         if (status === "Picked Up") {
-            order.status = "Picked up";
+            order.status = "Picked Up";
             order.deliveryBoyStatus = "Picked Up";
         } else if (status === "In Transit") {
             order.status = "On the way";

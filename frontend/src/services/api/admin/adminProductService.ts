@@ -112,6 +112,7 @@ export interface Product {
   category: string | Category;
   subcategory?: string | SubCategory;
   brand?: string | Brand;
+  brandName?: string;
   seller: string | { sellerName: string; storeName: string };
   mainImage?: string;
   galleryImages: string[];
@@ -137,6 +138,10 @@ export interface Product {
   tax?: string;
   fssaiLicNo?: string;
   totalAllowedQuantity?: number;
+  hsnCode?: string;
+  weight?: string;
+  color?: string;
+  size?: string;
   isReturnable: boolean;
   maxReturnDays?: number;
   seoTitle?: string;
@@ -161,6 +166,7 @@ export interface CreateProductData {
   category: string;
   subcategory?: string;
   brand?: string;
+  brandName?: string;
   seller?: string;
   mainImage?: string;
   galleryImages?: string[];
@@ -185,6 +191,10 @@ export interface CreateProductData {
   tax?: string;
   fssaiLicNo?: string;
   totalAllowedQuantity?: number;
+  hsnCode?: string;
+  weight?: string;
+  color?: string;
+  size?: string;
   isReturnable?: boolean;
   maxReturnDays?: number;
   seoTitle?: string;

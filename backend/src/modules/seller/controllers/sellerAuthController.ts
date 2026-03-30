@@ -3,9 +3,68 @@ import Seller from "../../../models/Seller";
 import {
   sendOTP as sendOTPService,
   verifyOTP as verifyOTPService,
+  sendEmailOtp,
+  verifyEmailOtp,
 } from "../../../services/otpService";
 import { generateToken } from "../../../services/jwtService";
 import { asyncHandler } from "../../../utils/asyncHandler";
+
+/**
+ * Send OTP to seller email
+ */
+export const sendEmailOTP = asyncHandler(async (req: Request, res: Response) => {
+  const { email } = req.body;
+
+  if (!email || !/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(email)) {
+    return res.status(400).json({
+      success: false,
+      message: "Valid email address is required",
+    });
+  }
+
+  // Check if seller already exists with this email
+  const existingSeller = await Seller.findOne({ email });
+  if (existingSeller) {
+    return res.status(409).json({
+      success: false,
+      message: "Seller already exists with this email address",
+    });
+  }
+
+  const result = await sendEmailOtp(email, "Seller");
+
+  return res.status(200).json({
+    success: true,
+    message: result.message,
+  });
+});
+
+/**
+ * Verify Email OTP
+ */
+export const verifyEmailOTP = asyncHandler(async (req: Request, res: Response) => {
+  const { email, otp } = req.body;
+
+  if (!email || !otp) {
+    return res.status(400).json({
+      success: false,
+      message: "Email and OTP are required",
+    });
+  }
+
+  const isValid = await verifyEmailOtp(email, otp, "Seller");
+  if (!isValid) {
+    return res.status(401).json({
+      success: false,
+      message: "Invalid or expired OTP",
+    });
+  }
+
+  return res.status(200).json({
+    success: true,
+    message: "Email verified successfully",
+  });
+});
 
 /**
  * Send OTP to seller mobile number
@@ -238,6 +297,11 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
     panCard: req.body.panCard,
     alternateMobile: req.body.alternateMobile,
     nearestLandmark: req.body.nearestLandmark,
+    cancelledCheque: req.body.cancelledChequeUrl,
+    shopEstablishment: req.body.shopEstablishmentUrl,
+    drivingLicense: req.body.drivingLicenseUrl,
+    businessLicense: req.body.businessLicenseUrl,
+    businessLicenseType: req.body.businessLicenseType,
   });
 
   // Generate token

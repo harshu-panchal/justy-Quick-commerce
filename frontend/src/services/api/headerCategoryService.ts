@@ -15,9 +15,11 @@ export interface HeaderCategory {
     assignedDeliveryBoy?: string;
 }
 
-export const getHeaderCategoriesPublic = async (skipLoader = false): Promise<HeaderCategory[]> => {
+export const getHeaderCategoriesPublic = async (includeAll = false): Promise<HeaderCategory[]> => {
     try {
-        const response = await api.get<HeaderCategory[]>('/header-categories');
+        const response = await api.get<HeaderCategory[]>('/header-categories', {
+            params: { all: includeAll }
+        });
         return response.data;
     } catch (error) {
         console.error('Failed to fetch public header categories', error);

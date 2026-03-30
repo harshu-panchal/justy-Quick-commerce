@@ -1,31 +1,32 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { register } from '../../../services/api/auth/sellerAuthService';
+import { register, sendEmailOTP, verifyEmailOTP } from '../../../services/api/auth/sellerAuthService';
 import GoogleMapsAutocomplete from '../../../components/GoogleMapsAutocomplete';
 import { useAuth } from '../../../context/AuthContext';
 import LocationPickerMap from '../../../components/LocationPickerMap';
 import ServiceAreaMap from '../../../components/ServiceAreaMap';
-import { uploadPublicImage } from '../../../services/api/uploadService';
+import { uploadPublicImage, uploadPublicDocument } from '../../../services/api/uploadService';
 import { getCategories, Category } from '../../../services/api/categoryService';
 import { getHeaderCategoriesPublic, HeaderCategory } from '../../../services/api/headerCategoryService';
 
 const StepIndicator = ({ currentStep }: { currentStep: number }) => {
   const steps = [
-    { id: 1, label: 'Register Store' },
-    { id: 2, label: 'Admin Approval' },
-    { id: 3, label: 'Pay Deposit' },
-    { id: 4, label: 'Start Selling' }
+    { id: 1, label: 'Basic Details' },
+    { id: 2, label: 'Verification' },
+    { id: 3, label: 'Approval' },
+    { id: 4, label: 'Deposit' },
+    { id: 5, label: 'Selling' }
   ];
 
   return (
-    <div className="mb-8 px-4">
+    <div className="mb-8 px-2">
       <div className="flex items-center justify-between max-w-sm mx-auto relative">
         <div className="absolute top-1/2 left-0 w-full h-0.5 bg-neutral-200 -translate-y-1/2 z-0" />
         {steps.map((step, idx) => {
           const isActive = step.id === currentStep;
           const isCompleted = step.id < currentStep;
           return (
-            <div key={step.id} className="flex flex-col items-center relative z-10 w-1/4">
+            <div key={step.id} className="flex flex-col items-center relative z-10 w-1/5">
               <div
                 className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold border-2 transition-all duration-300 ${isActive
                   ? 'bg-teal-600 border-teal-600 text-white scale-110'
@@ -89,28 +90,77 @@ export default function SellerSignUp() {
   });
   const [fssaiImageFile, setFssaiImageFile] = useState<File | null>(null);
   const [fssaiImagePreview, setFssaiImagePreview] = useState<string>('');
+  const [cancelledChequeFile, setCancelledChequeFile] = useState<File | null>(null);
+  const [cancelledChequePreview, setCancelledChequePreview] = useState<string>('');
+  const [shopEstablishmentFile, setShopEstablishmentFile] = useState<File | null>(null);
+  const [shopEstablishmentPreview, setShopEstablishmentPreview] = useState<string>('');
+  const [drivingLicenseFile, setDrivingLicenseFile] = useState<File | null>(null);
+  const [drivingLicensePreview, setDrivingLicensePreview] = useState<string>('');
+  const [businessLicenseType, setBusinessLicenseType] = useState<'Brand' | 'Distributor' | 'Dealer'>('Brand');
+  const [businessLicenseFile, setBusinessLicenseFile] = useState<File | null>(null);
+  const [businessLicensePreview, setBusinessLicensePreview] = useState<string>('');
+  const [formStep, setFormStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState('');
   const [categories, setCategories] = useState<Category[]>([]);
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
+  const [emailOtpSent, setEmailOtpSent] = useState(false);
+  const [emailOtp, setEmailOtp] = useState('');
+  const [emailSending, setEmailSending] = useState(false);
+  const [emailVerifying, setEmailVerifying] = useState(false);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
 
   useEffect(() => {
-    // Sync with Home Page categories by fetching from API
+    // Sync with Home Page categories (Header Categories) by fetching from API
     const syncCategories = async () => {
-      const headerCategories = await getHeaderCategoriesPublic();
-      const mappedCategories = headerCategories.map((cat: HeaderCategory) => ({
-        _id: cat._id,
-        name: cat.name,
-        isBestseller: false,
-        hasWarning: false
-      })) as Category[];
-      setCategories(mappedCategories);
+      setCategoriesLoading(true);
+      try {
+        const headerCategories = await getHeaderCategoriesPublic(true);
+        if (headerCategories && headerCategories.length > 0) {
+          const mappedCategories = headerCategories.map((cat: HeaderCategory) => ({
+            _id: cat._id,
+            name: cat.name,
+            isBestseller: false,
+            hasWarning: false
+          })) as Category[];
+          setCategories(mappedCategories);
+        } else {
+          setCategories([]);
+        }
+      } catch (err) {
+        console.error('Failed to sync header categories:', err);
+        setCategories([]);
+      } finally {
+        setCategoriesLoading(false);
+      }
     };
     syncCategories();
   }, []);
 
   const showFSSAI = formData.categories.some(cat => 
     ['Vegetable & Fruits', 'Food', 'bakery'].includes(cat)
+  );
+
+  const showAdditionalDocs = formData.categories.length > 0;
+
+  const showShopCertificate = false;
+
+  const showCheque = formData.categories.some(cat => 
+    cat && !['Pan Corner', 'pan corner'].includes(cat)
+  );
+
+  const showGST = !formData.categories.some(cat => 
+    ['Pan Corner', 'pan corner'].includes(cat)
+  );
+
+  const showDrivingLicense = formData.categories.some(cat => 
+    ['Pharmacy', 'pharmacy'].includes(cat)
+  );
+
+  const quickCategories = ['Food', 'bakery', 'Pharmacy', 'pharmacy', 'Vegetable & Fruits', 'Pan Corner', 'pan corner'];
+  const showScheduledDocs = formData.categories.some(cat => 
+    cat && !quickCategories.includes(cat)
   );
 
   const toggleCategory = (name: string) => {
@@ -140,11 +190,75 @@ export default function SellerSignUp() {
     const file = e.target.files?.[0];
     if (file) {
       setFssaiImageFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFssaiImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      if (file.type === 'application/pdf') {
+        setFssaiImagePreview('pdf_icon');
+      } else {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setFssaiImagePreview(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+  };
+
+  const handleDocumentChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'cheque' | 'shop' | 'driving' | 'license') => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (type === 'cheque') {
+        setCancelledChequeFile(file);
+        if (file.type === 'application/pdf') setCancelledChequePreview('pdf_icon');
+        else {
+          const reader = new FileReader();
+          reader.onloadend = () => setCancelledChequePreview(reader.result as string);
+          reader.readAsDataURL(file);
+        }
+      } else if (type === 'shop') {
+        setShopEstablishmentFile(file);
+        if (file.type === 'application/pdf') setShopEstablishmentPreview('pdf_icon');
+        else {
+          const reader = new FileReader();
+          reader.onloadend = () => setShopEstablishmentPreview(reader.result as string);
+          reader.readAsDataURL(file);
+        }
+      } else if (type === 'driving') {
+        setDrivingLicenseFile(file);
+        if (file.type === 'application/pdf') setDrivingLicensePreview('pdf_icon');
+        else {
+          const reader = new FileReader();
+          reader.onloadend = () => setDrivingLicensePreview(reader.result as string);
+          reader.readAsDataURL(file);
+        }
+      } else if (type === 'license') {
+        setBusinessLicenseFile(file);
+        if (file.type === 'application/pdf') setBusinessLicensePreview('pdf_icon');
+        else {
+          const reader = new FileReader();
+          reader.onloadend = () => setBusinessLicensePreview(reader.result as string);
+          reader.readAsDataURL(file);
+        }
+      }
+    }
+  };
+
+  const clearDocument = (e: React.MouseEvent, type: 'fssai' | 'cheque' | 'shop' | 'driving' | 'license') => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (type === 'fssai') {
+      setFssaiImageFile(null);
+      setFssaiImagePreview('');
+    } else if (type === 'cheque') {
+      setCancelledChequeFile(null);
+      setCancelledChequePreview('');
+    } else if (type === 'shop') {
+      setShopEstablishmentFile(null);
+      setShopEstablishmentPreview('');
+    } else if (type === 'driving') {
+      setDrivingLicenseFile(null);
+      setDrivingLicensePreview('');
+    } else if (type === 'license') {
+      setBusinessLicenseFile(null);
+      setBusinessLicensePreview('');
     }
   };
 
@@ -172,6 +286,63 @@ export default function SellerSignUp() {
   };
 
 
+
+  const handleSendEmailOTP = async () => {
+    if (!formData.email || !/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(formData.email)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+    setEmailSending(true);
+    setError('');
+    try {
+      const res = await sendEmailOTP(formData.email);
+      if (res.success) {
+        setEmailOtpSent(true);
+      } else {
+        setError(res.message);
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to send OTP');
+    } finally {
+      setEmailSending(false);
+    }
+  };
+
+  const handleVerifyEmailOTP = async () => {
+    if (!emailOtp || emailOtp.length !== 6) {
+      setError('Please enter 6-digit OTP');
+      return;
+    }
+    setEmailVerifying(true);
+    setError('');
+    try {
+      const res = await verifyEmailOTP(formData.email, emailOtp);
+      if (res.success) {
+        setIsEmailVerified(true);
+        setEmailOtpSent(false);
+      } else {
+        setError(res.message);
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Verification failed');
+    } finally {
+      setEmailVerifying(false);
+    }
+  };
+
+  const handleNextStep = () => {
+    if (!formData.sellerName || !formData.email || !formData.storeName) {
+      setError('Please fill in all required fields');
+      return;
+    }
+    if (!isEmailVerified) {
+      setError('Please verify your email address first');
+      return;
+    }
+    setError('');
+    setFormStep(2);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -209,10 +380,11 @@ export default function SellerSignUp() {
       setError('Please enter the nearest landmark');
       return;
     }
-    if (formData.mobile.length !== 10) {
-      setError('Please enter a valid 10-digit mobile number');
+    if (!formData.upiId) {
+      setError('Please enter your UPI ID');
       return;
     }
+    setError('');
 
     setLoading(true);
     setError('');
@@ -228,13 +400,53 @@ export default function SellerSignUp() {
       let fssaiImageUrl = '';
       if (showFSSAI && fssaiImageFile) {
         try {
-          const uploadRes = await uploadPublicImage(fssaiImageFile, 'sellers/fssai');
+          const uploadRes = await uploadPublicDocument(fssaiImageFile, 'sellers/fssai');
           fssaiImageUrl = uploadRes.secureUrl;
         } catch (uploadErr) {
           console.error('FSSAI Upload failed:', uploadErr);
-          setError('Failed to upload FSSAI image. Please try again.');
+          setError('Failed to upload FSSAI document. Please try again.');
           setLoading(false);
           return;
+        }
+      }
+
+      let cancelledChequeUrl = '';
+      if (showAdditionalDocs && cancelledChequeFile) {
+        try {
+          const uploadRes = await uploadPublicDocument(cancelledChequeFile, 'sellers/verification');
+          cancelledChequeUrl = uploadRes.secureUrl;
+        } catch (uploadErr) {
+          console.error('Cheque Upload failed:', uploadErr);
+        }
+      }
+
+      let shopEstablishmentUrl = '';
+      if (showShopCertificate && shopEstablishmentFile) {
+        try {
+          const uploadRes = await uploadPublicDocument(shopEstablishmentFile, 'sellers/verification');
+          shopEstablishmentUrl = uploadRes.secureUrl;
+        } catch (uploadErr) {
+          console.error('Shop Cert Upload failed:', uploadErr);
+        }
+      }
+
+      let drivingLicenseUrl = '';
+      if (showDrivingLicense && drivingLicenseFile) {
+        try {
+          const uploadRes = await uploadPublicDocument(drivingLicenseFile, 'sellers/verification');
+          drivingLicenseUrl = uploadRes.secureUrl;
+        } catch (uploadErr) {
+          console.error('Driving License Upload failed:', uploadErr);
+        }
+      }
+
+      let businessLicenseUrl = '';
+      if (showScheduledDocs && businessLicenseFile) {
+        try {
+          const uploadRes = await uploadPublicDocument(businessLicenseFile, 'sellers/verification');
+          businessLicenseUrl = uploadRes.secureUrl;
+        } catch (uploadErr) {
+          console.error('Business License Upload failed:', uploadErr);
         }
       }
 
@@ -266,6 +478,11 @@ export default function SellerSignUp() {
         alternateMobile: formData.alternateMobile,
         nearestLandmark: formData.nearestLandmark,
         isDeliveryByPlatform: formData.isDeliveryByPlatform,
+        cancelledChequeUrl,
+        shopEstablishmentUrl,
+        drivingLicenseUrl,
+        businessLicenseUrl,
+        businessLicenseType,
       });
 
       if (response.success) {
@@ -293,7 +510,13 @@ export default function SellerSignUp() {
     <div className="min-h-screen bg-gradient-to-br from-teal-50 to-green-50 flex flex-col items-center justify-center px-4 py-8">
       {/* Back Button */}
       <button
-        onClick={() => navigate(-1)}
+        onClick={() => {
+          if (formStep === 2) {
+            setFormStep(1);
+          } else {
+            navigate(-1);
+          }
+        }}
         className="absolute top-4 left-4 z-10 w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center hover:bg-neutral-50 transition-colors"
         aria-label="Back"
       >
@@ -319,7 +542,7 @@ export default function SellerSignUp() {
 
         {/* Form Body */}
         <div className="p-6">
-          <StepIndicator currentStep={isSuccess ? 2 : 1} />
+          <StepIndicator currentStep={isSuccess ? 3 : formStep} />
 
           {isSuccess ? (
             <div className="py-12 text-center animate-fadeIn">
@@ -340,387 +563,678 @@ export default function SellerSignUp() {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Step 1: Basic Details */}
-              <div className="space-y-4">
-                <h3 className="text-sm font-bold text-teal-800 uppercase tracking-wider flex items-center">
-                  <span className="w-6 h-6 bg-teal-100 text-teal-700 rounded-full flex items-center justify-center mr-2 text-[10px]">1</span>
-                  Basic Details
-                </h3>
+              {formStep === 1 && (
+                <div className="space-y-4 animate-fadeIn">
+                  <h3 className="text-sm font-bold text-teal-800 uppercase tracking-wider flex items-center">
+                    <span className="w-6 h-6 bg-teal-100 text-teal-700 rounded-full flex items-center justify-center mr-2 text-[10px]">1</span>
+                    Basic Details
+                  </h3>
 
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Seller Name <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="sellerName"
-                    value={formData.sellerName}
-                    onChange={handleInputChange}
-                    placeholder="Enter your name"
-                    required
-                    className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 transition-all"
-                    disabled={loading}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Mobile Number <span className="text-red-500">*</span>
-                  </label>
-                  <div className="flex items-center bg-white border border-neutral-300 rounded-xl overflow-hidden focus-within:border-teal-500 transition-all">
-                    <div className="px-3 py-3 text-sm font-medium text-neutral-600 border-r border-neutral-300 bg-neutral-50">
-                      +91
-                    </div>
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      Seller Name <span className="text-red-500">*</span>
+                    </label>
                     <input
-                      type="tel"
-                      name="mobile"
-                      value={formData.mobile}
+                      type="text"
+                      name="sellerName"
+                      value={formData.sellerName}
                       onChange={handleInputChange}
-                      placeholder="Enter mobile number"
+                      placeholder="Enter your name"
                       required
-                      maxLength={10}
-                      className="flex-1 px-3 py-3 text-sm placeholder:text-neutral-400 focus:outline-none"
+                      className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 transition-all"
                       disabled={loading}
                     />
                   </div>
-                </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Alternate Contact Number (Optional)
-                  </label>
-                  <div className="flex items-center bg-white border border-neutral-300 rounded-xl overflow-hidden focus-within:border-teal-500 transition-all">
-                    <div className="px-3 py-3 text-sm font-medium text-neutral-600 border-r border-neutral-300 bg-neutral-50">
-                      +91
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-neutral-700">
+                      Email <span className="text-red-500">*</span>
+                    </label>
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <input
+                          type="email"
+                          name="email"
+                          value={formData.email}
+                          onChange={handleInputChange}
+                          placeholder="Enter email address"
+                          required
+                          readOnly={isEmailVerified}
+                          className={`w-full px-4 py-3 text-sm border rounded-xl focus:outline-none transition-all ${isEmailVerified ? 'bg-green-50 border-green-200 text-green-700 mt-0' : 'border-neutral-300 focus:border-teal-500'}`}
+                          disabled={loading || emailSending}
+                        />
+                        {isEmailVerified && (
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-green-600">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                              <path d="M20 6L9 17L4 12" />
+                            </svg>
+                          </div>
+                        )}
+                      </div>
+                      {!isEmailVerified && (
+                        <button
+                          type="button"
+                          onClick={handleSendEmailOTP}
+                          disabled={emailSending || !formData.email}
+                          className="px-4 py-2 bg-teal-50 text-teal-700 border border-teal-200 rounded-xl text-xs font-bold hover:bg-teal-100 disabled:opacity-50 transition-colors whitespace-nowrap"
+                        >
+                          {emailSending ? 'Sending...' : emailOtpSent ? 'Resend OTP' : 'Send OTP'}
+                        </button>
+                      )}
                     </div>
+                  </div>
+
+                  {emailOtpSent && !isEmailVerified && (
+                    <div className="p-4 bg-teal-50 border border-teal-100 rounded-xl animate-scaleIn">
+                      <label className="block text-xs font-bold text-teal-800 uppercase mb-2">Enter Verification Code</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={emailOtp}
+                          onChange={(e) => setEmailOtp(e.target.value.replace(/\D/g, ''))}
+                          placeholder="6-digit OTP"
+                          maxLength={6}
+                          className="flex-1 px-4 py-2 text-center text-lg font-bold tracking-widest border border-teal-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleVerifyEmailOTP}
+                          disabled={emailVerifying || emailOtp.length !== 6}
+                          className="px-6 py-2 bg-teal-700 text-white rounded-lg text-sm font-bold hover:bg-teal-800 disabled:bg-teal-300 transition-colors"
+                        >
+                          {emailVerifying ? '...' : 'Verify'}
+                        </button>
+                      </div>
+                      <p className="mt-2 text-[10px] text-teal-600">Please check your inbox (and spam) for the code.</p>
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      Store Name <span className="text-red-500">*</span>
+                    </label>
                     <input
-                      type="tel"
-                      name="alternateMobile"
-                      value={formData.alternateMobile}
+                      type="text"
+                      name="storeName"
+                      value={formData.storeName}
                       onChange={handleInputChange}
-                      placeholder="Enter alternate number"
-                      maxLength={10}
-                      className="flex-1 px-3 py-3 text-sm placeholder:text-neutral-400 focus:outline-none"
+                      placeholder="Enter store name"
+                      required
+                      className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 transition-all"
                       disabled={loading}
                     />
                   </div>
-                </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Email <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    placeholder="Enter email address"
-                    required
-                    className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 transition-all"
-                    disabled={loading}
-                  />
+                  <button
+                    type="button"
+                    onClick={handleNextStep}
+                    className="w-full mt-6 py-4 bg-gradient-to-r from-teal-700 to-teal-900 text-white rounded-xl font-bold text-base transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center justify-center"
+                  >
+                    Continue to Verification
+                    <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
                 </div>
+              )}
 
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Store Name <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="storeName"
-                    value={formData.storeName}
-                    onChange={handleInputChange}
-                    placeholder="Enter store name"
-                    required
-                    className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 transition-all"
-                    disabled={loading}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Categories <span className="text-red-500">*</span>
-                  </label>
-                  {categories.length === 0 ? (
-                    <div className="text-sm text-neutral-500 py-2">
-                      Loading categories...
+              {/* Step 2: Document Verification */}
+              {formStep === 2 && (
+                <div className="space-y-6 animate-fadeIn">
+                  <h3 className="text-sm font-bold text-teal-800 uppercase tracking-wider flex items-center">
+                    <span className="w-6 h-6 bg-teal-100 text-teal-700 rounded-full flex items-center justify-center mr-2 text-[10px]">2</span>
+                    Document Verification
+                  </h3>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-2">
+                        Mobile Number <span className="text-red-500">*</span>
+                      </label>
+                      <div className="flex items-center bg-white border border-neutral-300 rounded-xl overflow-hidden focus-within:border-teal-500 transition-all">
+                        <div className="px-3 py-3 text-sm font-medium text-neutral-600 border-r border-neutral-300 bg-neutral-50">
+                          +91
+                        </div>
+                        <input
+                          type="tel"
+                          name="mobile"
+                          value={formData.mobile}
+                          onChange={handleInputChange}
+                          placeholder="Mobile number"
+                          required
+                          maxLength={10}
+                          className="flex-1 px-3 py-3 text-sm placeholder:text-neutral-400 focus:outline-none"
+                          disabled={loading}
+                        />
+                      </div>
                     </div>
-                  ) : (
-                    <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto p-2 border border-neutral-200 rounded-lg">
-                      {categories.map((cat) => {
-                        const checked = formData.categories.includes(cat.name);
-                        return (
-                          <label key={cat._id} className="flex items-center gap-2 text-sm text-neutral-700">
+
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-2">
+                        Alternate Contact (Optional)
+                      </label>
+                      <div className="flex items-center bg-white border border-neutral-300 rounded-xl overflow-hidden focus-within:border-teal-500 transition-all">
+                        <div className="px-3 py-3 text-sm font-medium text-neutral-600 border-r border-neutral-300 bg-neutral-50">
+                          +91
+                        </div>
+                        <input
+                          type="tel"
+                          name="alternateMobile"
+                          value={formData.alternateMobile}
+                          onChange={handleInputChange}
+                          placeholder="Alternate number"
+                          maxLength={10}
+                          className="flex-1 px-3 py-3 text-sm placeholder:text-neutral-400 focus:outline-none"
+                          disabled={loading}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <label className="block text-sm font-medium text-neutral-700 mb-1">
+                      Categories <span className="text-red-500">*</span>
+                    </label>
+                    {categoriesLoading ? (
+                      <div className="flex items-center gap-3 py-4 text-teal-600 bg-teal-50/50 rounded-xl px-4 border border-teal-100/50">
+                        <div className="w-4 h-4 border-2 border-teal-600 border-t-transparent rounded-full animate-spin"></div>
+                        <span className="text-sm font-medium">Fetching categories...</span>
+                      </div>
+                    ) : categories.length === 0 ? (
+                      <div className="text-sm text-neutral-500 py-3 text-center bg-neutral-50 rounded-xl border border-dashed border-neutral-300">
+                        No categories found.
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-3 p-1">
+                        {categories.map((cat) => (
+                          <label key={cat._id} className="flex items-center gap-2 text-sm text-neutral-700 cursor-pointer hover:text-teal-700 p-2 rounded-lg hover:bg-teal-50 transition-colors">
                             <input
                               type="checkbox"
-                              checked={checked}
+                              checked={formData.categories.includes(cat.name)}
                               onChange={() => toggleCategory(cat.name)}
                               disabled={loading}
                               className="h-4 w-4 text-teal-600 border-neutral-300 rounded focus:ring-teal-500"
                             />
                             <span>{cat.name}</span>
                           </label>
-                        );
-                      })}
-                    </div>
-                  )}
-                  {formData.categories.length === 0 && categories.length > 0 && (
-                    <p className="text-xs text-red-600 mt-1">Select at least one category</p>
-                  )}
-                </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Store Address <span className="text-red-500">*</span>
-                  </label>
-                  <div className="flex gap-2 items-start">
-                    <div className="flex-1">
-                      <GoogleMapsAutocomplete
-                        value={formData.searchLocation}
-                        onChange={(address: string, lat: number, lng: number, placeName: string, components?: { city?: string; state?: string }) => {
-                          setFormData(prev => ({
-                            ...prev,
-                            searchLocation: address,
-                            latitude: lat.toString(),
-                            longitude: lng.toString(),
-                            address: address,
-                            city: components?.city || prev.city,
-                          }));
-                        }}
-                        placeholder="Search your store address..."
+                  <div className="space-y-4">
+                    <label className="block text-sm font-medium text-neutral-700 mb-1">
+                      Store Location <span className="text-red-500">*</span>
+                    </label>
+                    <GoogleMapsAutocomplete
+                      value={formData.searchLocation}
+                      onChange={(address: string, lat: number, lng: number, placeName: string, components?: { city?: string; state?: string }) => {
+                        setFormData(prev => ({
+                          ...prev,
+                          searchLocation: address,
+                          latitude: lat.toString(),
+                          longitude: lng.toString(),
+                          address: address,
+                          city: components?.city || prev.city,
+                        }));
+                      }}
+                      placeholder="Search store location..."
+                      disabled={loading}
+                    />
+
+                    <div className="mt-4">
+                      <label className="block text-sm font-medium text-neutral-700 mb-2">Nearest Landmark *</label>
+                      <input
+                        type="text"
+                        name="nearestLandmark"
+                        value={formData.nearestLandmark}
+                        onChange={handleInputChange}
+                        placeholder="e.g. Near City Hospital"
+                        required
+                        className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 transition-all font-medium"
+                        disabled={loading}
+                      />
+                    </div>
+
+                    {formData.latitude && formData.longitude && (
+                      <div className="relative h-48 rounded-2xl overflow-hidden border border-neutral-200">
+                        <LocationPickerMap
+                          initialLat={parseFloat(formData.latitude)}
+                          initialLng={parseFloat(formData.longitude)}
+                          onLocationSelect={(lat, lng) => {
+                            setFormData(prev => ({
+                              ...prev,
+                              latitude: lat.toString(),
+                              longitude: lng.toString()
+                            }));
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-2">City *</label>
+                      <input
+                        type="text"
+                        name="city"
+                        value={formData.city}
+                        onChange={handleInputChange}
+                        placeholder="City"
+                        required
+                        className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500"
+                        disabled={loading}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-2">Pincode *</label>
+                      <input
+                        type="text"
+                        name="pincode"
+                        value={formData.pincode}
+                        onChange={handleInputChange}
+                        placeholder="Pincode"
+                        required
+                        maxLength={6}
+                        className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500"
                         disabled={loading}
                       />
                     </div>
                   </div>
 
-                  <div className="mt-4">
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">
-                      Nearest Landmark <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="nearestLandmark"
-                      value={formData.nearestLandmark}
-                      onChange={handleInputChange}
-                      placeholder="e.g. Near City Hospital or Landmark"
-                      required
-                      className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 transition-all"
-                      disabled={loading}
-                    />
-                  </div>
+                  <div className="pt-6 border-t border-neutral-100">
+                    <h4 className="text-sm font-bold text-teal-800 uppercase tracking-wider mb-4">Verification Documents</h4>
+                    
+                    <div className="grid grid-cols-1 gap-4">
+                      <div className="flex items-center justify-between p-4 bg-teal-50/50 rounded-xl border border-teal-100/50">
+                        <div className="flex-1 pr-4">
+                          <h5 className="text-sm font-bold text-teal-900">Delivery Partner</h5>
+                          <p className="text-[10px] text-teal-700">Allow platform delivery partners</p>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input 
+                            type="checkbox" 
+                            className="sr-only peer"
+                            checked={formData.isDeliveryByPlatform}
+                            onChange={(e) => setFormData(prev => ({ ...prev, isDeliveryByPlatform: e.target.checked }))}
+                            disabled={loading}
+                          />
+                          <div className="w-11 h-6 bg-neutral-200 rounded-full peer peer-checked:bg-teal-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+                        </label>
+                      </div>
 
-                  {formData.latitude && formData.longitude ? (
-                    <div className="mt-4 animate-fadeIn">
-                      <LocationPickerMap
-                        initialLat={parseFloat(formData.latitude)}
-                        initialLng={parseFloat(formData.longitude)}
-                        onLocationSelect={(lat, lng) => {
-                          setFormData(prev => ({
-                            ...prev,
-                            latitude: lat.toString(),
-                            longitude: lng.toString()
-                          }));
-                        }}
-                      />
-                    </div>
-                  ) : null}
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">
-                      City <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="city"
-                      value={formData.city}
-                      onChange={handleInputChange}
-                      placeholder="Enter city"
-                      required
-                      className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 transition-all"
-                      disabled={loading}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">
-                      Pincode <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="pincode"
-                      value={formData.pincode}
-                      onChange={handleInputChange}
-                      placeholder="6-digit pincode"
-                      required
-                      maxLength={6}
-                      className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 transition-all"
-                      disabled={loading}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Step 4: Optional Details */}
-              <div className="space-y-4 pt-4 border-t border-neutral-100">
-                <h3 className="text-sm font-bold text-teal-800 uppercase tracking-wider flex items-center">
-                  <span className="w-6 h-6 bg-teal-100 text-teal-700 rounded-full flex items-center justify-center mr-2 text-[10px]">4</span>
-                  Optional Details
-                </h3>
-
-                {/* Delivery Partner Toggle */}
-                <div className="flex items-center justify-between p-4 bg-teal-50/50 rounded-xl border border-teal-100/50">
-                  <div className="flex-1 pr-4">
-                    <h4 className="text-sm font-bold text-teal-900 leading-tight">Delivery Partner</h4>
-                    <p className="text-[10px] text-teal-700 mt-1 leading-relaxed">
-                      Enable to allow platform delivery partners to fulfill your orders. Disable if you'll handle deliveries yourself.
-                    </p>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
-                    <input 
-                      type="checkbox" 
-                      className="sr-only peer"
-                      checked={formData.isDeliveryByPlatform}
-                      onChange={(e) => setFormData(prev => ({ ...prev, isDeliveryByPlatform: e.target.checked }))}
-                      disabled={loading}
-                    />
-                    <div className="w-11 h-6 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
-                  </label>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">PAN Card</label>
-                    <input
-                      type="text"
-                      name="panCard"
-                      value={formData.panCard}
-                      onChange={handleInputChange}
-                      placeholder="PAN Card Number"
-                      className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 transition-all"
-                      disabled={loading}
-                    />
-                  </div>
-                  {showFSSAI && (
-                    <div className="sm:col-span-2 space-y-3">
-                      <label className="block text-sm font-bold text-teal-900">
-                        FSSAI License Image <span className="text-red-500">*</span>
-                      </label>
-                      <div 
-                        className="relative group cursor-pointer"
-                        style={{ height: '160px' }}
-                      >
+                      <div>
+                        <label className="block text-sm font-medium text-neutral-700 mb-2">PAN Card</label>
                         <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleFSSAIImageChange}
-                          className="absolute inset-0 opacity-0 z-20 cursor-pointer"
+                          type="text"
+                          name="panCard"
+                          value={formData.panCard}
+                          onChange={handleInputChange}
+                          placeholder="PAN Card Number"
+                          className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 uppercase"
                           disabled={loading}
                         />
-                        <div className={`absolute inset-0 z-10 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center transition-all ${fssaiImagePreview ? 'border-teal-500 bg-teal-50' : 'border-neutral-300 bg-neutral-50 group-hover:bg-neutral-100 group-hover:border-teal-400'}`}>
-                          {fssaiImagePreview ? (
-                            <div className="relative w-full h-full p-2">
-                              <img src={fssaiImagePreview} alt="FSSAI Preview" className="w-full h-full object-contain rounded-xl" />
-                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-xl">
-                                <span className="text-white text-xs font-bold">Change Image</span>
+                      </div>
+
+                      {showFSSAI && (
+                        <div className="space-y-3">
+                          <label className="block text-sm font-bold text-teal-900 text-center">FSSAI License Document *</label>
+                          <div className="relative h-32 border-2 border-dashed border-neutral-300 rounded-2xl flex flex-col items-center justify-center bg-neutral-50 hover:bg-neutral-100 transition-all overflow-hidden group">
+                            <input
+                              type="file"
+                              accept="image/*,.pdf"
+                              onChange={handleFSSAIImageChange}
+                              className="absolute inset-0 opacity-0 z-10 cursor-pointer"
+                              disabled={loading}
+                            />
+                            {fssaiImagePreview ? (
+                              <div className="relative w-full h-full">
+                                {fssaiImagePreview === 'pdf_icon' ? (
+                                  <div className="flex flex-col items-center justify-center h-full text-teal-600 bg-teal-50/30">
+                                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                      <polyline points="14 2 14 8 20 8"></polyline>
+                                      <line x1="16" y1="13" x2="8" y2="13"></line>
+                                      <line x1="16" y1="17" x2="8" y2="17"></line>
+                                      <polyline points="10 9 9 9 8 9"></polyline>
+                                    </svg>
+                                    <span className="mt-2 text-[10px] font-bold uppercase tracking-widest">PDF Document</span>
+                                  </div>
+                                ) : (
+                                  <img src={fssaiImagePreview} alt="FSSAI Preview" className="w-full h-full object-contain" />
+                                )}
+                                {/* Remove Button */}
+                                <button
+                                  type="button"
+                                  onClick={(e) => clearDocument(e, 'fssai')}
+                                  className="absolute top-2 right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-red-600 transition-colors z-20"
+                                >
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                  </svg>
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="text-center">
+                                <p className="text-xs font-bold text-teal-800">Upload FSSAI License</p>
+                                <p className="text-[10px] text-neutral-500">JPG, PNG, PDF (Max 2MB)</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {showDrivingLicense && (
+                        // ... existing driving license UI ...
+                        <div className="space-y-3">
+                          <label className="block text-sm font-bold text-teal-900 text-center">Driving License Document *</label>
+                          <div className="relative h-32 border-2 border-dashed border-neutral-300 rounded-2xl flex flex-col items-center justify-center bg-neutral-50 hover:bg-neutral-100 transition-all overflow-hidden group">
+                            <input
+                              type="file"
+                              accept="image/*,.pdf"
+                              onChange={(e) => handleDocumentChange(e, 'driving')}
+                              className="absolute inset-0 opacity-0 z-10 cursor-pointer"
+                              disabled={loading}
+                            />
+                            {drivingLicensePreview ? (
+                              <div className="relative w-full h-full">
+                                {drivingLicensePreview === 'pdf_icon' ? (
+                                  <div className="flex flex-col items-center justify-center h-full text-teal-600 bg-teal-50/30">
+                                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                      <polyline points="14 2 14 8 20 8"></polyline>
+                                    </svg>
+                                    <span className="mt-2 text-[10px] font-bold uppercase tracking-widest">PDF</span>
+                                  </div>
+                                ) : (
+                                  <img src={drivingLicensePreview} alt="Driving License" className="w-full h-full object-contain" />
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={(e) => clearDocument(e, 'driving')}
+                                  className="absolute top-2 right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-red-600 transition-colors z-20"
+                                >
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                  </svg>
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="text-center">
+                                <p className="text-xs font-bold text-teal-800">Upload Driving License</p>
+                                <p className="text-[10px] text-neutral-500">JPG, PNG, PDF (Max 2MB)</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {showScheduledDocs && (
+                        <div className="space-y-4 pt-2 border-t border-neutral-100">
+                          <div>
+                            <label className="block text-sm font-bold text-teal-900 mb-2">Business License Type</label>
+                            <select
+                              value={businessLicenseType}
+                              onChange={(e) => setBusinessLicenseType(e.target.value as any)}
+                              className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 bg-white shadow-sm"
+                              disabled={loading}
+                            >
+                              <option value="Brand">Brand License (Trademark)</option>
+                              <option value="Distributor">Distributor License</option>
+                              <option value="Dealer">Dealer License</option>
+                            </select>
+                          </div>
+
+                          <div className="space-y-3">
+                            <label className="block text-sm font-bold text-teal-900 text-center">
+                              {businessLicenseType === 'Brand' ? 'Trademark License' : 
+                               businessLicenseType === 'Distributor' ? 'Distributor License' : 
+                               'Dealer License'} *
+                            </label>
+                            <div className="relative h-32 border-2 border-dashed border-neutral-300 rounded-2xl flex flex-col items-center justify-center bg-neutral-50 hover:bg-neutral-100 transition-all overflow-hidden group">
+                              <input
+                                type="file"
+                                accept="image/*,.pdf"
+                                onChange={(e) => handleDocumentChange(e, 'license')}
+                                className="absolute inset-0 opacity-0 z-10 cursor-pointer"
+                                disabled={loading}
+                              />
+                              {businessLicensePreview ? (
+                                <div className="relative w-full h-full">
+                                  {businessLicensePreview === 'pdf_icon' ? (
+                                    <div className="flex flex-col items-center justify-center h-full text-teal-600 bg-teal-50/30">
+                                      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                      </svg>
+                                      <span className="mt-2 text-[10px] font-bold uppercase tracking-widest">PDF</span>
+                                    </div>
+                                  ) : (
+                                    <img src={businessLicensePreview} alt="License" className="w-full h-full object-contain" />
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={(e) => clearDocument(e, 'license')}
+                                    className="absolute top-2 right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-red-600 transition-colors z-20"
+                                  >
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                                    </svg>
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="text-center">
+                                  <p className="text-xs font-bold text-teal-800">
+                                    Upload {businessLicenseType === 'Brand' ? 'Trademark' : 
+                                            businessLicenseType === 'Distributor' ? 'Distributor' : 
+                                            'Dealer'} License
+                                  </p>
+                                  <p className="text-[10px] text-neutral-500">JPG, PNG, PDF (Max 2MB)</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {showAdditionalDocs && (
+                        <div className="grid grid-cols-2 gap-4">
+                          {showCheque && (
+                            <div className="space-y-3">
+                              <label className="block text-xs font-bold text-teal-900 text-center">Cancelled Cheque *</label>
+                              <div className="relative h-28 border-2 border-dashed border-neutral-300 rounded-2xl flex flex-col items-center justify-center bg-neutral-50 hover:bg-neutral-100 transition-all overflow-hidden group">
+                                <input
+                                  type="file"
+                                  accept="image/*,.pdf"
+                                  onChange={(e) => handleDocumentChange(e, 'cheque')}
+                                  className="absolute inset-0 opacity-0 z-10 cursor-pointer"
+                                  disabled={loading}
+                                />
+                                {cancelledChequePreview ? (
+                                  <div className="relative w-full h-full">
+                                    {cancelledChequePreview === 'pdf_icon' ? (
+                                      <div className="flex flex-col items-center justify-center h-full text-teal-600 bg-teal-50/30">
+                                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                          <polyline points="14 2 14 8 20 8"></polyline>
+                                        </svg>
+                                        <span className="mt-1 text-[8px] font-bold uppercase">PDF</span>
+                                      </div>
+                                    ) : (
+                                      <img src={cancelledChequePreview} alt="Cheque" className="w-full h-full object-contain" />
+                                    )}
+                                    <button
+                                      type="button"
+                                      onClick={(e) => clearDocument(e, 'cheque')}
+                                      className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center shadow-md hover:bg-red-600 transition-colors z-20"
+                                    >
+                                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                                      </svg>
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <div className="text-center">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mx-auto mb-1 text-teal-600">
+                                      <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7" />
+                                      <line x1="16" y1="5" x2="22" y2="5" />
+                                      <line x1="19" y1="2" x2="19" y2="8" />
+                                    </svg>
+                                    <p className="text-[8px] font-bold text-teal-800">Cheque/Bank</p>
+                                  </div>
+                                )}
                               </div>
                             </div>
-                          ) : (
-                            <>
-                              <div className="w-12 h-12 bg-white rounded-full shadow-sm flex items-center justify-center mb-2 text-teal-600">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
-                                </svg>
-                              </div>
-                              <p className="text-xs font-bold text-teal-800 tracking-tight">Upload FSSAI License</p>
-                              <p className="text-[10px] text-neutral-500 mt-1">Supports JPG, PNG (Max 2MB)</p>
-                            </>
                           )}
+
+                          {showShopCertificate && (
+                            <div className={showCheque ? "space-y-3" : "space-y-3 col-span-2"}>
+                              <label className="block text-xs font-bold text-teal-900 text-center">Shop Establishment Certificate *</label>
+                              <div className="relative h-28 border-2 border-dashed border-neutral-300 rounded-2xl flex flex-col items-center justify-center bg-neutral-50 hover:bg-neutral-100 transition-all overflow-hidden group">
+                                <input
+                                  type="file"
+                                  accept="image/*,.pdf"
+                                  onChange={(e) => handleDocumentChange(e, 'shop')}
+                                  className="absolute inset-0 opacity-0 z-10 cursor-pointer"
+                                  disabled={loading}
+                                />
+                                {shopEstablishmentPreview ? (
+                                  <div className="relative w-full h-full">
+                                    {shopEstablishmentPreview === 'pdf_icon' ? (
+                                      <div className="flex flex-col items-center justify-center h-full text-teal-600 bg-teal-50/30">
+                                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                          <polyline points="14 2 14 8 20 8"></polyline>
+                                        </svg>
+                                        <span className="mt-1 text-[8px] font-bold uppercase tracking-widest">PDF</span>
+                                      </div>
+                                    ) : (
+                                      <img src={shopEstablishmentPreview} alt="Shop Cert" className="w-full h-full object-contain" />
+                                    )}
+                                    <button
+                                      type="button"
+                                      onClick={(e) => clearDocument(e, 'shop')}
+                                      className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center shadow-md hover:bg-red-600 transition-colors z-20"
+                                    >
+                                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                                      </svg>
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <div className="text-center">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mx-auto mb-1 text-teal-600">
+                                      <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7" />
+                                      <line x1="16" y1="5" x2="22" y2="5" />
+                                      <line x1="19" y1="2" x2="19" y2="8" />
+                                    </svg>
+                                    <p className="text-[8px] font-bold text-teal-800">Certificate</p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-2 gap-4">
+                          {showGST && (
+                            <div className="col-span-2">
+                              <label className="block text-sm font-medium text-neutral-700 mb-2">GST Number</label>
+                              <input
+                                type="text"
+                                name="gstNumber"
+                                value={formData.gstNumber}
+                                onChange={handleInputChange}
+                                placeholder="15-digit GST Number"
+                                maxLength={15}
+                                className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 uppercase"
+                                disabled={loading}
+                              />
+                              <p className="mt-1 px-1">
+                                <a 
+                                  href="https://reg.gst.gov.in/registration/" 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="text-[10px] text-teal-600 hover:text-teal-800 font-medium underline"
+                                >
+                                  Don't have a GST number? Click here for enrollment
+                                </a>
+                              </p>
+                            </div>
+                          )}
+                        <div>
+                          <label className="block text-sm font-medium text-neutral-700 mb-2">Bank Account</label>
+                          <input
+                            type="text"
+                            name="accountNumber"
+                            value={formData.accountNumber}
+                            onChange={handleInputChange}
+                            placeholder="Acc Number"
+                            className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500"
+                            disabled={loading}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-neutral-700 mb-2">IFSC Code</label>
+                          <input
+                            type="text"
+                            name="ifsc"
+                            value={formData.ifsc}
+                            onChange={handleInputChange}
+                            placeholder="IFSC"
+                            className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 uppercase"
+                            disabled={loading}
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <label className="block text-sm font-medium text-neutral-700 mb-2">UPI ID *</label>
+                          <input
+                            type="text"
+                            name="upiId"
+                            value={formData.upiId}
+                            onChange={handleInputChange}
+                            placeholder="e.g., username@bank"
+                            className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500"
+                            required
+                            disabled={loading}
+                          />
                         </div>
                       </div>
                     </div>
-                  )}
-
-                  <div className="sm:col-span-2">
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">GST Number</label>
-                    <input
-                      type="text"
-                      name="gstNumber"
-                      value={formData.gstNumber}
-                      onChange={handleInputChange}
-                      placeholder="Enter 15-digit GST number"
-                      maxLength={15}
-                      className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 transition-all uppercase"
-                      disabled={loading}
-                    />
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">Account Number</label>
-                    <input
-                      type="text"
-                      name="accountNumber"
-                      value={formData.accountNumber}
-                      onChange={handleInputChange}
-                      placeholder="Bank Account Number"
-                      className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 transition-all"
-                      disabled={loading}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">IFSC Code</label>
-                    <input
-                      type="text"
-                      name="ifsc"
-                      value={formData.ifsc}
-                      onChange={handleInputChange}
-                      placeholder="Bank IFSC Code"
-                      className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 transition-all uppercase"
-                      disabled={loading}
-                    />
-                  </div>
-
-                  <div className="sm:col-span-2">
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">UPI ID</label>
-                    <input
-                      type="text"
-                      name="upiId"
-                      value={formData.upiId}
-                      onChange={handleInputChange}
-                      placeholder="Enter UPI ID (e.g. name@bank)"
-                      className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 transition-all"
-                      disabled={loading}
-                    />
-                  </div>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className={`w-full py-4 rounded-xl font-bold text-base transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center justify-center ${!loading
+                      ? 'bg-gradient-to-r from-teal-700 to-teal-900 text-white'
+                      : 'bg-neutral-300 text-neutral-500 cursor-not-allowed'
+                      }`}
+                  >
+                    {loading ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-3" />
+                        Processing...
+                      </>
+                    ) : (
+                      'Create Seller Account'
+                    )}
+                  </button>
                 </div>
-              </div>
+              )}
 
               {error && (
                 <div className="text-sm text-red-600 bg-red-50 p-3 rounded-xl text-center border border-red-100">
                   {error}
                 </div>
               )}
-
-
-
-              <button
-                type="submit"
-                disabled={loading}
-                className={`w-full py-4 rounded-xl font-bold text-base transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center justify-center ${!loading
-                  ? 'bg-gradient-to-r from-teal-700 to-teal-900 text-white'
-                  : 'bg-neutral-300 text-neutral-500 cursor-not-allowed'
-                  }`}
-              >
-                {loading ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-3" />
-                    Processing...
-                  </>
-                ) : (
-                  'Create Seller Account'
-                )}
-              </button>
 
               {/* Login Link */}
               <div className="text-center pt-4 border-t border-neutral-100">

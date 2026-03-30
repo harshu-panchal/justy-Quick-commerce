@@ -62,6 +62,49 @@ router.post(
   })
 );
 
+/**
+ * POST /api/v1/upload/public-document
+ * Upload a single document (image or PDF) without authentication
+ */
+router.post(
+  "/public-document",
+  uploadDocument.single("document"),
+  handleUploadError,
+  asyncHandler(async (req: Request, res: Response) => {
+    if (!(req as any).file) {
+      return res.status(400).json({
+        success: false,
+        message: "No document file provided",
+      });
+    }
+
+    const folder = (req.body.folder as string) || "public_uploads";
+    
+    // Safety check: Only allow specific folders for public uploads
+    const allowedFolders = ["sellers/fssai", "delivery/documents", "public_assets", "sellers/registration"];
+    if (!allowedFolders.includes(folder)) {
+      return res.status(403).json({
+        success: false,
+        message: "Upload to this folder is restricted to authenticated users",
+      });
+    }
+
+    const file = (req as any).file;
+    const isImage = file.mimetype.startsWith("image/");
+    const resourceType = isImage ? "image" : "raw";
+
+    const result = await uploadDocumentFromBuffer(file.buffer, {
+      folder,
+      resourceType,
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: result,
+    });
+  })
+);
+
 // Protect remaining routes
 // router.use(authenticate); // We'll apply authenticate manually to the other routes below
 

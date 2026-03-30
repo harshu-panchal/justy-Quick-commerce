@@ -22,9 +22,12 @@ export const getAdminHeaderCategories = async (
 // @desc    Get published header categories (Public)
 // @route   GET /api/v1/header-categories
 // @access  Public
-export const getHeaderCategories = async (_req: Request, res: Response) => {
+export const getHeaderCategories = async (req: Request, res: Response) => {
   try {
-    const categories = await HeaderCategory.find({ status: "Published" }).sort({
+    const { all } = req.query;
+    const filter = all === "true" ? {} : { status: "Published" };
+    
+    const categories = await HeaderCategory.find(filter).sort({
       order: 1,
       createdAt: -1,
     });

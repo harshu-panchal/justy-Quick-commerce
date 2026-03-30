@@ -73,6 +73,34 @@ export async function uploadPublicImage(
 }
 
 /**
+ * Upload a single document (image or PDF) to Cloudinary via backend (Public route for signups)
+ */
+export async function uploadPublicDocument(
+  file: File,
+  folder?: string
+): Promise<UploadResult> {
+  const formData = new FormData();
+  formData.append("document", file);
+  if (folder) {
+    formData.append("folder", folder);
+  }
+
+  const response = await api.post<UploadResponse>("/upload/public-document", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+
+  if (response.data.success && response.data.data) {
+    return Array.isArray(response.data.data)
+      ? response.data.data[0]
+      : response.data.data;
+  }
+
+  throw new Error(response.data.message || "Failed to upload document");
+}
+
+/**
  * Upload multiple images to Cloudinary via backend
  */
 export async function uploadImages(

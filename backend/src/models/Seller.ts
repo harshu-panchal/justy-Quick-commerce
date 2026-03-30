@@ -63,6 +63,11 @@ export interface ISeller extends Document {
   profile?: string;
   idProof?: string;
   addressProof?: string;
+  cancelledCheque?: string;
+  shopEstablishment?: string;
+  drivingLicense?: string;
+  businessLicense?: string;
+  businessLicenseType?: string;
 
   // Settings
   requireProductApproval: boolean;
@@ -303,6 +308,26 @@ const SellerSchema = new Schema<ISeller>(
       trim: true,
     },
     addressProof: {
+      type: String,
+      trim: true,
+    },
+    cancelledCheque: {
+      type: String,
+      trim: true,
+    },
+    shopEstablishment: {
+      type: String,
+      trim: true,
+    },
+    drivingLicense: {
+      type: String,
+      trim: true,
+    },
+    businessLicense: {
+      type: String,
+      trim: true,
+    },
+    businessLicenseType: {
       type: String,
       trim: true,
     },

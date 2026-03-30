@@ -5,11 +5,13 @@ import { authenticate } from "../middleware/auth";
 
 const router = Router();
 
-// Send OTP route
+// Send OTP routes
 router.post("/send-otp", otpRateLimiter, sellerAuthController.sendOTP);
+router.post("/send-email-otp", otpRateLimiter, sellerAuthController.sendEmailOTP);
 
-// Verify OTP and login route
+// Verify OTP routes
 router.post("/verify-otp", loginRateLimiter, sellerAuthController.verifyOTP);
+router.post("/verify-email-otp", loginRateLimiter, sellerAuthController.verifyEmailOTP);
 
 // Register route
 router.post("/register", sellerAuthController.register);

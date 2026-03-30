@@ -51,7 +51,13 @@ export interface RegisterData {
   accountNumber?: string;
   ifsc?: string;
   upiId?: string;
+  panCard?: string;
   isDeliveryByPlatform?: boolean;
+  cancelledChequeUrl?: string;
+  shopEstablishmentUrl?: string;
+  drivingLicenseUrl?: string;
+  businessLicenseUrl?: string;
+  businessLicenseType?: string;
 }
 
 export interface RegisterResponse {
@@ -84,6 +90,22 @@ export const sendOTP = async (mobile: string): Promise<SendOTPResponse> => {
  */
 export const verifyOTP = async (mobile: string, otp: string): Promise<VerifyOTPResponse> => {
   const response = await api.post<VerifyOTPResponse>('/auth/seller/verify-otp', { mobile, otp });
+  return response.data;
+};
+
+/**
+ * Send OTP to seller email
+ */
+export const sendEmailOTP = async (email: string): Promise<SendOTPResponse> => {
+  const response = await api.post<SendOTPResponse>('/auth/seller/send-email-otp', { email });
+  return response.data;
+};
+
+/**
+ * Verify Email OTP
+ */
+export const verifyEmailOTP = async (email: string, otp: string): Promise<{ success: boolean; message: string }> => {
+  const response = await api.post<{ success: boolean; message: string }>('/auth/seller/verify-email-otp', { email, otp });
   return response.data;
 };
 

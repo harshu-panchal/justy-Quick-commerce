@@ -307,6 +307,8 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
     gstCertificate: req.body.gstCertificateUrl,
   });
 
+  await seller.save();
+
   // Generate token
   const token = generateToken(seller._id.toString(), "Seller", undefined, seller._id.toString());
 
@@ -494,12 +496,17 @@ export const toggleShopStatus = asyncHandler(
       }
     }
 
-    await seller.save();
+    // Use findByIdAndUpdate to bypass full document validation (avoids "nearestLandmark mandatory" errors for old records)
+    const updatedSeller = await Seller.findByIdAndUpdate(
+      sellerId,
+      { $set: { isShopOpen: seller.isShopOpen } },
+      { new: true, runValidators: false }
+    );
 
     return res.status(200).json({
       success: true,
-      message: `Shop is now ${seller.isShopOpen ? "Open" : "Closed"}`,
-      data: { isShopOpen: seller.isShopOpen },
+      message: `Shop is now ${updatedSeller?.isShopOpen ? "Open" : "Closed"}`,
+      data: { isShopOpen: updatedSeller?.isShopOpen ?? true },
     });
   },
 );

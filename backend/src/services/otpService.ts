@@ -39,10 +39,6 @@ type UserType = 'Customer' | 'Delivery' | 'Seller' | 'Admin';
  * Generate numeric OTP
  */
 function generateOTP(length: number = 4): string {
-  if (process.env.USE_MOCK_OTP === 'true') {
-    return length === 4 ? '1234' : '123456';
-  }
-  
   const digits = '0123456789';
   let otp = '';
   for (let i = 0; i < length; i++) {
@@ -146,25 +142,6 @@ async function verifyOtpFromDb(identifier: { mobile?: string; email?: string }, 
   return true;
 }
 
-/**
- * Check if special bypass should be used
- */
-function isSpecialBypass(id: string): boolean {
-  return id === '9111966732' || id === 'test@speeup.com';
-}
-
-/**
- * Check if mock mode should be used
- */
-function isMockMode(): boolean {
-  return process.env.USE_MOCK_OTP === 'true';
-}
-
-function isDeveloperBypass(otp: string): boolean {
-  if (process.env.USE_MOCK_OTP !== 'true') return false;
-  return otp === '1234' || otp === '9999' || otp === '123456';
-}
-
 // ==========================================
 // EMAIL OTP
 // ==========================================
@@ -175,12 +152,6 @@ export async function sendEmailOtp(
 ): Promise<OtpResponse> {
   try {
     const otp = generateOTP(6);
-
-    if (isSpecialBypass(email) || isMockMode()) {
-      await saveOtpToDb({ email }, otp, userType);
-      console.log(`[VERIFIED] Mock Email OTP for ${email}: ${otp}`);
-      return { success: true, message: 'OTP sent successfully' };
-    }
 
     const success = await sendEmail(email, 'Your Verification Code', otp);
     if (!success) throw new Error('Email sending failed');
@@ -197,7 +168,6 @@ export async function verifyEmailOtp(
   otp: string,
   userType: UserType = 'Seller'
 ): Promise<boolean> {
-  if (isDeveloperBypass(otp)) return true;
   return verifyOtpFromDb({ email }, otp, userType);
 }
 
@@ -212,11 +182,6 @@ export async function sendOTP(
 ): Promise<OtpResponse> {
   try {
     const otp = generateOTP(4);
-
-    if (isSpecialBypass(mobile) || isMockMode()) {
-      await saveOtpToDb({ mobile }, otp, userType);
-      return { success: true, message: 'OTP sent successfully' };
-    }
 
     await saveOtpToDb({ mobile }, otp, userType);
     const message = buildOtpMessage(otp);
@@ -233,7 +198,6 @@ export async function verifyOTP(
   otp: string,
   userType: UserType
 ): Promise<boolean> {
-  if (isDeveloperBypass(otp)) return true;
   return verifyOtpFromDb({ mobile }, otp, userType);
 }
 

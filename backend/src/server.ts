@@ -49,6 +49,9 @@ const httpServer = createServer(app);
 const allowedOrigins = [
   "https://www.dhakadsnazzy.com",
   "https://dhakadsnazzy.com",
+  "https://jyasti.com",
+  "https://www.jyasti.com",
+  "https://api.jyasti.com",
   // Add more origins from environment variable if needed
   ...(process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(",").map(url => url.trim()) : [])
 ];

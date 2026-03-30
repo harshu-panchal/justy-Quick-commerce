@@ -34,6 +34,7 @@ export interface ISeller extends Document {
 
   // Store Location Info
   city: string;
+  state?: string;
   serviceableArea?: string;
   searchLocation?: string;
   latitude?: string;
@@ -68,6 +69,7 @@ export interface ISeller extends Document {
   drivingLicense?: string;
   businessLicense?: string;
   businessLicenseType?: string;
+  gstCertificate?: string;
 
   // Settings
   requireProductApproval: boolean;
@@ -227,6 +229,11 @@ const SellerSchema = new Schema<ISeller>(
       required: false,
       trim: true,
     },
+    state: {
+      type: String,
+      required: false,
+      trim: true,
+    },
     serviceableArea: {
       type: String,
       trim: true,
@@ -328,6 +335,10 @@ const SellerSchema = new Schema<ISeller>(
       trim: true,
     },
     businessLicenseType: {
+      type: String,
+      trim: true,
+    },
+    gstCertificate: {
       type: String,
       trim: true,
     },

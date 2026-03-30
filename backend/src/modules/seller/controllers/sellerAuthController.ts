@@ -176,6 +176,7 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
     category,
     address,
     city,
+    state,
     pincode,
     serviceableArea,
     isDeliveryByPlatform,
@@ -271,6 +272,7 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
     category,
     address,
     city,
+    state,
     pincode,
     ...(serviceableArea && { serviceableArea }),
     searchLocation: req.body.searchLocation,
@@ -302,6 +304,7 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
     drivingLicense: req.body.drivingLicenseUrl,
     businessLicense: req.body.businessLicenseUrl,
     businessLicenseType: req.body.businessLicenseType,
+    gstCertificate: req.body.gstCertificateUrl,
   });
 
   // Generate token
@@ -321,6 +324,7 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
         status: seller.status,
         address: seller.address,
         city: seller.city,
+        state: seller.state,
         categories: seller.categories,
         depositPaid: seller.depositPaid,
         securityDepositStatus: seller.securityDepositStatus,

@@ -67,6 +67,7 @@ export default function SellerSignUp() {
     pincode: '',
     address: '',
     city: '',
+    state: '',
     panCard: '',
     fssaiLicNo: '',
     storeDescription: '',
@@ -85,6 +86,7 @@ export default function SellerSignUp() {
     ifsc: '',
     upiId: '',
     gstNumber: '',
+    gstCertificateUrl: '',
     isDeliveryByPlatform: true,
     fssaiImage: '',
   });
@@ -99,6 +101,8 @@ export default function SellerSignUp() {
   const [businessLicenseType, setBusinessLicenseType] = useState<'Brand' | 'Distributor' | 'Dealer'>('Brand');
   const [businessLicenseFile, setBusinessLicenseFile] = useState<File | null>(null);
   const [businessLicensePreview, setBusinessLicensePreview] = useState<string>('');
+  const [gstCertificateFile, setGstCertificateFile] = useState<File | null>(null);
+  const [gstCertificatePreview, setGstCertificatePreview] = useState<string>('');
   const [formStep, setFormStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -118,12 +122,17 @@ export default function SellerSignUp() {
       try {
         const headerCategories = await getHeaderCategoriesPublic(true);
         if (headerCategories && headerCategories.length > 0) {
-          const mappedCategories = headerCategories.map((cat: HeaderCategory) => ({
-            _id: cat._id,
-            name: cat.name,
-            isBestseller: false,
-            hasWarning: false
-          })) as Category[];
+          // Filter out categories that shouldn't be show for seller registration
+          const excludedCategories = ['Grocery', '99 to199 offers'];
+          
+          const mappedCategories = headerCategories
+            .filter((cat: HeaderCategory) => !excludedCategories.includes(cat.name))
+            .map((cat: HeaderCategory) => ({
+              _id: cat._id,
+              name: cat.name,
+              isBestseller: false,
+              hasWarning: false
+            })) as Category[];
           setCategories(mappedCategories);
         } else {
           setCategories([]);
@@ -144,7 +153,9 @@ export default function SellerSignUp() {
 
   const showAdditionalDocs = formData.categories.length > 0;
 
-  const showShopCertificate = false;
+  const showShopCertificate = formData.categories.some(cat => 
+    ['Food', 'food', 'bakery'].includes(cat)
+  );
 
   const showCheque = formData.categories.some(cat => 
     cat && !['Pan Corner', 'pan corner'].includes(cat)
@@ -164,24 +175,11 @@ export default function SellerSignUp() {
   );
 
   const toggleCategory = (name: string) => {
-    setFormData(prev => {
-      const isSelected = prev.categories.includes(name);
-      if (isSelected) {
-        return {
-          ...prev,
-          categories: prev.categories.filter(c => c !== name),
-          // Also clear the main category if it was this one
-          category: prev.category === name ? (prev.categories.length > 1 ? prev.categories.filter(c => c !== name)[0] : '') : prev.category
-        };
-      } else {
-        return {
-          ...prev,
-          categories: [...prev.categories, name],
-          // If no main category is selected, use this one
-          category: prev.category ? prev.category : name
-        };
-      }
-    });
+    setFormData(prev => ({
+      ...prev,
+      categories: [name],
+      category: name
+    }));
   };
 
 
@@ -202,7 +200,7 @@ export default function SellerSignUp() {
     }
   };
 
-  const handleDocumentChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'cheque' | 'shop' | 'driving' | 'license') => {
+  const handleDocumentChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'cheque' | 'shop' | 'driving' | 'license' | 'gst') => {
     const file = e.target.files?.[0];
     if (file) {
       if (type === 'cheque') {
@@ -237,11 +235,19 @@ export default function SellerSignUp() {
           reader.onloadend = () => setBusinessLicensePreview(reader.result as string);
           reader.readAsDataURL(file);
         }
+      } else if (type === 'gst') {
+        setGstCertificateFile(file);
+        if (file.type === 'application/pdf') setGstCertificatePreview('pdf_icon');
+        else {
+          const reader = new FileReader();
+          reader.onloadend = () => setGstCertificatePreview(reader.result as string);
+          reader.readAsDataURL(file);
+        }
       }
     }
   };
 
-  const clearDocument = (e: React.MouseEvent, type: 'fssai' | 'cheque' | 'shop' | 'driving' | 'license') => {
+  const clearDocument = (e: React.MouseEvent, type: 'fssai' | 'cheque' | 'shop' | 'driving' | 'license' | 'gst') => {
     e.preventDefault();
     e.stopPropagation();
     if (type === 'fssai') {
@@ -259,6 +265,9 @@ export default function SellerSignUp() {
     } else if (type === 'license') {
       setBusinessLicenseFile(null);
       setBusinessLicensePreview('');
+    } else if (type === 'gst') {
+      setGstCertificateFile(null);
+      setGstCertificatePreview('');
     }
   };
 
@@ -449,6 +458,16 @@ export default function SellerSignUp() {
           console.error('Business License Upload failed:', uploadErr);
         }
       }
+      
+      let gstCertificateUrl = '';
+      if (showGST && gstCertificateFile) {
+        try {
+          const uploadRes = await uploadPublicDocument(gstCertificateFile, 'sellers/verification');
+          gstCertificateUrl = uploadRes.secureUrl;
+        } catch (uploadErr) {
+          console.error('GST Certificate Upload failed:', uploadErr);
+        }
+      }
 
       const response = await register({
         sellerName: formData.sellerName,
@@ -459,6 +478,7 @@ export default function SellerSignUp() {
         categories: formData.categories,
         address: formData.address || formData.searchLocation,
         city: formData.city,
+        state: formData.state,
         pincode: formData.pincode,
         searchLocation: formData.searchLocation,
         latitude: formData.latitude,
@@ -474,6 +494,7 @@ export default function SellerSignUp() {
         ifsc: formData.ifsc,
         upiId: formData.upiId,
         gstNumber: formData.gstNumber,
+        gstCertificateUrl: gstCertificateUrl,
         panCard: formData.panCard,
         alternateMobile: formData.alternateMobile,
         nearestLandmark: formData.nearestLandmark,
@@ -750,20 +771,20 @@ export default function SellerSignUp() {
                         No categories found.
                       </div>
                     ) : (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 p-1">
+                      <select
+                        value={formData.categories[0] || ''}
+                        onChange={(e) => toggleCategory(e.target.value)}
+                        required
+                        className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 bg-white shadow-sm font-medium"
+                        disabled={loading}
+                      >
+                        <option value="" disabled>Select Category</option>
                         {categories.map((cat) => (
-                          <label key={cat._id} className="flex items-center gap-3 text-sm text-neutral-700 cursor-pointer hover:text-teal-700 p-2.5 rounded-lg hover:bg-teal-50 transition-colors border border-transparent hover:border-teal-100">
-                            <input
-                              type="checkbox"
-                              checked={formData.categories.includes(cat.name)}
-                              onChange={() => toggleCategory(cat.name)}
-                              disabled={loading}
-                              className="h-4.5 w-4.5 text-teal-600 border-neutral-300 rounded focus:ring-teal-500"
-                            />
-                            <span className="font-medium">{cat.name}</span>
-                          </label>
+                          <option key={cat._id} value={cat.name}>
+                            {cat.name}
+                          </option>
                         ))}
-                      </div>
+                      </select>
                     )}
                   </div>
 
@@ -781,6 +802,7 @@ export default function SellerSignUp() {
                           longitude: lng.toString(),
                           address: address,
                           city: components?.city || prev.city,
+                          state: components?.state || prev.state,
                         }));
                       }}
                       placeholder="Search store location..."
@@ -818,7 +840,7 @@ export default function SellerSignUp() {
                     )}
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-neutral-700 mb-2">City *</label>
                       <input
@@ -827,6 +849,19 @@ export default function SellerSignUp() {
                         value={formData.city}
                         onChange={handleInputChange}
                         placeholder="City"
+                        required
+                        className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 bg-white"
+                        disabled={loading}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-2">State *</label>
+                      <input
+                        type="text"
+                        name="state"
+                        value={formData.state}
+                        onChange={handleInputChange}
+                        placeholder="State"
                         required
                         className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 bg-white"
                         disabled={loading}
@@ -934,7 +969,7 @@ export default function SellerSignUp() {
                       {showDrivingLicense && (
                         // ... existing driving license UI ...
                         <div className="space-y-3">
-                          <label className="block text-sm font-bold text-teal-900 text-center">Driving License Document *</label>
+                          <label className="block text-sm font-bold text-teal-900 text-center">Drug License Document *</label>
                           <div className="relative h-32 border-2 border-dashed border-neutral-300 rounded-2xl flex flex-col items-center justify-center bg-neutral-50 hover:bg-neutral-100 transition-all overflow-hidden group">
                             <input
                               type="file"
@@ -1148,9 +1183,9 @@ export default function SellerSignUp() {
                         </div>
                       )}
 
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-4">
                           {showGST && (
-                            <div className="col-span-2">
+                            <div>
                               <label className="block text-sm font-medium text-neutral-700 mb-2">GST Number</label>
                               <input
                                 type="text"
@@ -1172,6 +1207,49 @@ export default function SellerSignUp() {
                                   Don't have a GST number? Click here for enrollment
                                 </a>
                               </p>
+
+                              <div className="mt-4 space-y-3">
+                                <label className="block text-sm font-bold text-teal-900 text-center">GST Certificate</label>
+                                <div className="relative h-32 border-2 border-dashed border-neutral-300 rounded-2xl flex flex-col items-center justify-center bg-neutral-50 hover:bg-neutral-100 transition-all overflow-hidden group">
+                                  <input
+                                    type="file"
+                                    accept="image/*,.pdf"
+                                    onChange={(e) => handleDocumentChange(e, 'gst')}
+                                    className="absolute inset-0 opacity-0 z-10 cursor-pointer"
+                                    disabled={loading}
+                                  />
+                                  {gstCertificatePreview ? (
+                                    <div className="relative w-full h-full">
+                                      {gstCertificatePreview === 'pdf_icon' ? (
+                                        <div className="flex flex-col items-center justify-center h-full text-teal-600 bg-teal-50/30">
+                                          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                            <polyline points="14 2 14 8 20 8"></polyline>
+                                          </svg>
+                                          <span className="mt-2 text-[10px] font-bold uppercase tracking-widest">PDF</span>
+                                        </div>
+                                      ) : (
+                                        <img src={gstCertificatePreview} alt="GST Cert" className="w-full h-full object-contain" />
+                                      )}
+                                      <button
+                                        type="button"
+                                        onClick={(e) => clearDocument(e, 'gst')}
+                                        className="absolute top-2 right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-red-600 transition-colors z-20"
+                                      >
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                                          <line x1="18" y1="6" x2="6" y2="18"></line>
+                                          <line x1="6" y1="6" x2="18" y2="18"></line>
+                                        </svg>
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <div className="text-center">
+                                      <p className="text-xs font-bold text-teal-800">Upload GST Certificate</p>
+                                      <p className="text-[10px] text-neutral-500">JPG, PNG, PDF (Max 2MB)</p>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
                             </div>
                           )}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1200,7 +1278,7 @@ export default function SellerSignUp() {
                             />
                           </div>
                         </div>
-                        <div className="col-span-2">
+                        <div>
                           <label className="block text-sm font-medium text-neutral-700 mb-2">UPI ID *</label>
                           <input
                             type="text"

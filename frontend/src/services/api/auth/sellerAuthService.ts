@@ -35,6 +35,7 @@ export interface RegisterData {
   categories: string[]; // multiple categories
   address: string;
   city: string;
+  state?: string;
   pincode: string;
   serviceableArea?: string;
   searchLocation?: string;
@@ -58,6 +59,7 @@ export interface RegisterData {
   drivingLicenseUrl?: string;
   businessLicenseUrl?: string;
   businessLicenseType?: string;
+  gstCertificateUrl?: string;
 }
 
 export interface RegisterResponse {

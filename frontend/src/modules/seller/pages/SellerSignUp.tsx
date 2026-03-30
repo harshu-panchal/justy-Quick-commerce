@@ -28,7 +28,7 @@ const StepIndicator = ({ currentStep }: { currentStep: number }) => {
           return (
             <div key={step.id} className="flex flex-col items-center relative z-10 w-1/5">
               <div
-                className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold border-2 transition-all duration-300 ${isActive
+                className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-bold border-2 transition-all duration-300 ${isActive
                   ? 'bg-teal-600 border-teal-600 text-white scale-110'
                   : isCompleted
                     ? 'bg-teal-500 border-teal-500 text-white'
@@ -41,7 +41,7 @@ const StepIndicator = ({ currentStep }: { currentStep: number }) => {
                   </svg>
                 ) : step.id}
               </div>
-              <span className={`text-[9px] mt-1.5 font-semibold text-center leading-tight whitespace-nowrap transition-colors duration-300 ${isActive ? 'text-teal-700' : 'text-neutral-400'}`}>
+              <span className={`text-[8px] sm:text-[9px] mt-1.5 font-bold text-center leading-tight transition-colors duration-300 ${isActive ? 'text-teal-700' : 'text-neutral-400'}`}>
                 {step.label}
               </span>
             </div>
@@ -507,7 +507,7 @@ export default function SellerSignUp() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-teal-50 to-green-50 flex flex-col items-center justify-center px-4 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-teal-50 to-green-50 flex flex-col items-center justify-center px-4 sm:px-6 py-12 sm:py-8">
       {/* Back Button */}
       <button
         onClick={() => {
@@ -533,7 +533,7 @@ export default function SellerSignUp() {
             <img
               src="/assets/jyastiLogo.png"
               alt="JYASTI builds trust"
-              className="h-28 w-auto object-contain bg-white/90 rounded-xl p-2 shadow-sm"
+              className="h-20 sm:h-28 w-auto object-contain bg-white/90 rounded-xl p-2 shadow-sm"
             />
           </div>
           <h1 className="text-2xl font-bold text-white mb-1">Seller Sign Up</h1>
@@ -590,7 +590,7 @@ export default function SellerSignUp() {
                     <label className="block text-sm font-medium text-neutral-700">
                       Email <span className="text-red-500">*</span>
                     </label>
-                    <div className="flex gap-2">
+                    <div className="flex flex-row gap-2">
                       <div className="relative flex-1">
                         <input
                           type="email"
@@ -616,9 +616,9 @@ export default function SellerSignUp() {
                           type="button"
                           onClick={handleSendEmailOTP}
                           disabled={emailSending || !formData.email}
-                          className="px-4 py-2 bg-teal-50 text-teal-700 border border-teal-200 rounded-xl text-xs font-bold hover:bg-teal-100 disabled:opacity-50 transition-colors whitespace-nowrap"
+                          className="px-4 py-2 bg-teal-50 text-teal-700 border border-teal-200 rounded-xl text-xs font-bold hover:bg-teal-100 disabled:opacity-50 transition-colors whitespace-nowrap min-w-[90px]"
                         >
-                          {emailSending ? 'Sending...' : emailOtpSent ? 'Resend OTP' : 'Send OTP'}
+                          {emailSending ? '...' : emailOtpSent ? 'Resend' : 'Send'}
                         </button>
                       )}
                     </div>
@@ -627,22 +627,27 @@ export default function SellerSignUp() {
                   {emailOtpSent && !isEmailVerified && (
                     <div className="p-4 bg-teal-50 border border-teal-100 rounded-xl animate-scaleIn">
                       <label className="block text-xs font-bold text-teal-800 uppercase mb-2">Enter Verification Code</label>
-                      <div className="flex gap-2">
+                      <div className="flex flex-col sm:flex-row gap-2">
                         <input
                           type="text"
                           value={emailOtp}
                           onChange={(e) => setEmailOtp(e.target.value.replace(/\D/g, ''))}
                           placeholder="6-digit OTP"
                           maxLength={6}
-                          className="flex-1 px-4 py-2 text-center text-lg font-bold tracking-widest border border-teal-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                          className="w-full sm:flex-1 px-4 py-3 text-center text-lg font-bold tracking-[0.5em] border border-teal-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
                         />
                         <button
                           type="button"
                           onClick={handleVerifyEmailOTP}
                           disabled={emailVerifying || emailOtp.length !== 6}
-                          className="px-6 py-2 bg-teal-700 text-white rounded-lg text-sm font-bold hover:bg-teal-800 disabled:bg-teal-300 transition-colors"
+                          className="w-full sm:w-auto px-6 py-3 bg-teal-700 text-white rounded-xl text-sm font-bold hover:bg-teal-800 disabled:bg-teal-300 transition-all active:scale-95 shadow-md shadow-teal-100"
                         >
-                          {emailVerifying ? '...' : 'Verify'}
+                          {emailVerifying ? (
+                             <div className="flex items-center justify-center gap-2">
+                               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                               <span>Verifying...</span>
+                             </div>
+                          ) : 'Verify OTP'}
                         </button>
                       </div>
                       <p className="mt-2 text-[10px] text-teal-600">Please check your inbox (and spam) for the code.</p>
@@ -687,8 +692,8 @@ export default function SellerSignUp() {
                   </h3>
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-neutral-700">
                         Mobile Number <span className="text-red-500">*</span>
                       </label>
                       <div className="flex items-center bg-white border border-neutral-300 rounded-xl overflow-hidden focus-within:border-teal-500 transition-all">
@@ -709,8 +714,8 @@ export default function SellerSignUp() {
                       </div>
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-neutral-700">
                         Alternate Contact (Optional)
                       </label>
                       <div className="flex items-center bg-white border border-neutral-300 rounded-xl overflow-hidden focus-within:border-teal-500 transition-all">
@@ -745,17 +750,17 @@ export default function SellerSignUp() {
                         No categories found.
                       </div>
                     ) : (
-                      <div className="grid grid-cols-2 gap-x-4 gap-y-3 p-1">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 p-1">
                         {categories.map((cat) => (
-                          <label key={cat._id} className="flex items-center gap-2 text-sm text-neutral-700 cursor-pointer hover:text-teal-700 p-2 rounded-lg hover:bg-teal-50 transition-colors">
+                          <label key={cat._id} className="flex items-center gap-3 text-sm text-neutral-700 cursor-pointer hover:text-teal-700 p-2.5 rounded-lg hover:bg-teal-50 transition-colors border border-transparent hover:border-teal-100">
                             <input
                               type="checkbox"
                               checked={formData.categories.includes(cat.name)}
                               onChange={() => toggleCategory(cat.name)}
                               disabled={loading}
-                              className="h-4 w-4 text-teal-600 border-neutral-300 rounded focus:ring-teal-500"
+                              className="h-4.5 w-4.5 text-teal-600 border-neutral-300 rounded focus:ring-teal-500"
                             />
-                            <span>{cat.name}</span>
+                            <span className="font-medium">{cat.name}</span>
                           </label>
                         ))}
                       </div>
@@ -813,7 +818,7 @@ export default function SellerSignUp() {
                     )}
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-neutral-700 mb-2">City *</label>
                       <input
@@ -823,7 +828,7 @@ export default function SellerSignUp() {
                         onChange={handleInputChange}
                         placeholder="City"
                         required
-                        className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500"
+                        className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 bg-white"
                         disabled={loading}
                       />
                     </div>
@@ -837,7 +842,7 @@ export default function SellerSignUp() {
                         placeholder="Pincode"
                         required
                         maxLength={6}
-                        className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500"
+                        className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 bg-white"
                         disabled={loading}
                       />
                     </div>
@@ -1042,7 +1047,7 @@ export default function SellerSignUp() {
                       )}
 
                       {showAdditionalDocs && (
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           {showCheque && (
                             <div className="space-y-3">
                               <label className="block text-xs font-bold text-teal-900 text-center">Cancelled Cheque *</label>
@@ -1169,29 +1174,31 @@ export default function SellerSignUp() {
                               </p>
                             </div>
                           )}
-                        <div>
-                          <label className="block text-sm font-medium text-neutral-700 mb-2">Bank Account</label>
-                          <input
-                            type="text"
-                            name="accountNumber"
-                            value={formData.accountNumber}
-                            onChange={handleInputChange}
-                            placeholder="Acc Number"
-                            className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500"
-                            disabled={loading}
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-neutral-700 mb-2">IFSC Code</label>
-                          <input
-                            type="text"
-                            name="ifsc"
-                            value={formData.ifsc}
-                            onChange={handleInputChange}
-                            placeholder="IFSC"
-                            className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 uppercase"
-                            disabled={loading}
-                          />
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-neutral-700 mb-2">Account Number</label>
+                            <input
+                              type="text"
+                              name="accountNumber"
+                              value={formData.accountNumber}
+                              onChange={handleInputChange}
+                              placeholder="Account Number"
+                              className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 bg-white"
+                              disabled={loading}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-neutral-700 mb-2">IFSC Code</label>
+                            <input
+                              type="text"
+                              name="ifsc"
+                              value={formData.ifsc}
+                              onChange={handleInputChange}
+                              placeholder="IFSC Code"
+                              className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 uppercase bg-white"
+                              disabled={loading}
+                            />
+                          </div>
                         </div>
                         <div className="col-span-2">
                           <label className="block text-sm font-medium text-neutral-700 mb-2">UPI ID *</label>

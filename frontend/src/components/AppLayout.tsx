@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-do
 import { motion, AnimatePresence } from 'framer-motion';
 import FloatingCartPill from './FloatingCartPill';
 import Header from './header/Header';
+import Footer from './footer/Footer';
 import { useLocation as useLocationContext } from '../hooks/useLocation';
 import LocationPermissionRequest from './LocationPermissionRequest';
 import { useThemeContext } from '../context/ThemeContext';
@@ -253,6 +254,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 }
               </motion.div>
             </AnimatePresence>
+
+            {/* Website Footer - Desktop/Mobile (scrollable) - Hidden on home, cart, checkout and product detail pages */}
+            {!(location.pathname === '/' || location.pathname === '/user/home' || isCartPage || isCheckoutPage || isProductDetailPage) && (
+              <Footer />
+            )}
 
             {/* Floating Cart Pill (Mobile only, hidden on cart/checkout) */}
             {!(isCartPage || isCheckoutPage) && !isProductDetailPage && (

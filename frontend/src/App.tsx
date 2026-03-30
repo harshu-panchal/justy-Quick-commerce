@@ -56,6 +56,10 @@ const ToyStore = lazy(() => import("./modules/user/ToyStore"));
 const HobbyStore = lazy(() => import("./modules/user/HobbyStore"));
 const StorePage = lazy(() => import("./modules/user/StorePage"));
 const OfferPage = lazy(() => import("./modules/user/pages/offers/OfferPage"));
+const TermsAndConditions = lazy(() => import("./modules/user/TermsAndConditions"));
+const PrivacyPolicy = lazy(() => import("./modules/user/PrivacyPolicy"));
+const RefundPolicy = lazy(() => import("./modules/user/RefundPolicy"));
+const ContactUs = lazy(() => import("./modules/user/ContactUs"));
 
 // Lazy load delivery routes
 const DeliveryLayout = lazy(() => import("./modules/delivery/components/DeliveryLayout"));
@@ -495,7 +499,11 @@ function App() {
                                         <Route path="/refer-earn" element={<CustomerReferEarn />} />
                                         <Route path="/spin-wheel" element={<SpinWheel />} />
                                         <Route path="/about-us" element={<AboutUs />} />
+                                        <Route path="/contact-us" element={<ContactUs />} />
                                         <Route path="/faq" element={<FAQ />} />
+                                        <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
+                                        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                                        <Route path="/refund-policy" element={<RefundPolicy />} />
                                         <Route path="/wishlist" element={<Wishlist />} />
                                         <Route path="/categories" element={<Categories />} />
                                         <Route path="/category/:slug" element={<Category />} />

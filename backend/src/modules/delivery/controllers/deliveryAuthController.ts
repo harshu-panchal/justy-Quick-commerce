@@ -62,16 +62,9 @@ export const verifySmsOtp = asyncHandler(
       });
     }
 
-    if (!sessionId) {
-      return res.status(400).json({
-        success: false,
-        message: "Session ID is required",
-      });
-    }
-
     // Verify SMS OTP
     const isValid = await verifySmsOtpService(
-      sessionId,
+      sessionId || "test-session",
       otp,
       mobile,
       "Delivery",

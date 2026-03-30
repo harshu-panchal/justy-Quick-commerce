@@ -163,8 +163,8 @@ async function startServer() {
   initializeFirebaseAdmin();
 
   // Cron: periodic Razorpay subscription sync (backup for missed webhooks)
-  // Every 1 minute so seller subscription activates quickly.
-  cron.schedule("*/1 * * * *", async () => {
+  // Every 12 hours to reduce server load while maintaining sync.
+  cron.schedule("0 */12 * * *", async () => {
     try {
       const stats = await syncRazorpaySubscriptionsOnce({ limit: 50 });
       lastRazorpaySubCronRunAt = new Date();
@@ -179,8 +179,8 @@ async function startServer() {
     }
   });
 
-  // Cron: customer subscription sync
-  cron.schedule("*/1 * * * *", async () => {
+  // Cron: customer subscription sync (every 12 hours)
+  cron.schedule("0 */12 * * *", async () => {
     try {
       const stats = await syncRazorpayCustomerSubscriptionsOnce({ limit: 50 });
       console.log(
@@ -191,8 +191,8 @@ async function startServer() {
     }
   });
 
-  // Cron: delivery subscription sync
-  cron.schedule("*/1 * * * *", async () => {
+  // Cron: delivery subscription sync (every 12 hours)
+  cron.schedule("0 */12 * * *", async () => {
     try {
       const stats = await syncRazorpayDeliverySubscriptionsOnce({ limit: 50 });
       console.log(

@@ -39,7 +39,7 @@ type UserType = 'Customer' | 'Delivery' | 'Seller' | 'Admin';
  * Generate numeric OTP
  */
 function generateOTP(length: number = 4): string {
-  if (process.env.USE_MOCK_OTP === 'true' || process.env.NODE_ENV !== 'production') {
+  if (process.env.USE_MOCK_OTP === 'true') {
     return length === 4 ? '1234' : '123456';
   }
   
@@ -161,6 +161,7 @@ function isMockMode(): boolean {
 }
 
 function isDeveloperBypass(otp: string): boolean {
+  if (process.env.USE_MOCK_OTP !== 'true') return false;
   return otp === '1234' || otp === '9999' || otp === '123456';
 }
 

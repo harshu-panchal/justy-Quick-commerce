@@ -322,63 +322,50 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
     <div ref={heroRef} className="pb-0 mb-0">
       {/* Top Header Section - Mobile Only */}
       <div
-        className="px-4 md:px-6 lg:px-8 pt-6 pb-3 transition-colors duration-500 md:hidden"
+        className="px-4 md:px-6 lg:px-8 pt-2 pb-1.5 transition-colors duration-500 md:hidden"
         style={{ backgroundColor: (activeTab === 'all' && deliveryMode === 'scheduled') ? '#00796B' : (theme.headerBg || '#007fb1') }}
       >
         {/* Brand Row */}
-        <div className="mb-4 max-w-2xl mx-auto flex items-center justify-between gap-3">
-          <div className="relative group p-1">
-            {/* Organic Blob Background (India Map Style) */}
-            <div 
-              className="absolute inset-0 z-0" 
-              style={{ 
-                background: 'linear-gradient(135deg, #ffffff 10%, #ccfbf1 40%, #0d9488 100%)',
-                borderRadius: '60% 40% 70% 30% / 40% 50% 60% 50%',
-                animation: 'blobMorph 6s ease-in-out infinite alternate',
-                transform: 'scale(1.2)',
-                opacity: 0.95
-              }}
-            />
-            
+        <div className="mb-0.5 max-w-2xl mx-auto flex items-center justify-between gap-3">
+          <div className="relative group p-0">
             <img
               src={jyastiLogo}
               alt="JYASTI builds trust"
-              className="h-14 w-auto object-contain relative z-10 px-3 filter drop-shadow-[0_4px_6px_rgba(0,0,0,0.12)]"
-              style={{ animation: 'logoFloat 4.2s ease-in-out infinite' }}
+              className="h-20 md:h-12 w-auto object-contain relative z-10 px-2 filter drop-shadow-[0_4px_6px_rgba(0,0,0,0.12)]"
             />
           </div>
 
-          <div className="flex items-center gap-2 rounded-2xl border border-white/20 bg-white/12 px-3 py-2 text-white shadow-[0_10px_24px_rgba(0,0,0,0.14)] backdrop-blur-sm">
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#ffce10] text-neutral-900 shadow-inner">
-              <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4">
+          <div className="flex items-center gap-2 rounded-xl border border-white/20 bg-white/12 px-3 py-1.5 text-white shadow-[0_8px_20px_rgba(0,0,0,0.12)] backdrop-blur-sm">
+            <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[#ffce10] text-neutral-900 shadow-inner">
+              <svg viewBox="0 0 24 24" fill="currentColor" className="h-3.5 w-3.5">
                 <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
               </svg>
             </span>
             <div className="leading-none">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/75">Fast Delivery</p>
-              <p className="mt-1 text-sm font-black">10-15 mins</p>
+              <p className="text-[9px] font-semibold uppercase tracking-[0.15em] text-white/75">Fast Delivery</p>
+              <p className="mt-0.5 text-xs font-black">10-15 mins</p>
             </div>
           </div>
         </div>
-            
+
         {/* 1. Full-width Mode Toggle */}
-        <div className="mb-4 max-w-2xl mx-auto">
+        <div className="mb-1 max-w-2xl mx-auto scale-90 origin-center -mt-2">
           <DeliveryToggle />
         </div>
 
         {/* 2. Row: Search + Cart + Profile */}
-        <div className="flex items-center gap-3 mb-4 max-w-2xl mx-auto">
+        <div className="flex items-center gap-2 mb-1.5 max-w-2xl mx-auto">
           {/* Search Bar - Pill shape */}
           <div
             onClick={() => navigate('/search')}
-            className="flex-1 rounded-full h-12 flex items-center px-4 gap-3 cursor-pointer border border-white/10 transition-colors duration-500"
+            className="flex-1 rounded-full h-10 flex items-center px-4 gap-3 cursor-pointer border border-white/10 transition-colors duration-500"
             style={{ backgroundColor: (activeTab === 'all' && deliveryMode === 'scheduled') ? '#00695C' : (theme.searchBarBg || '#004e6e') }}
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-white/70">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-white/70">
               <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2.5" />
               <path d="m21 21-4.35-4.35" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
             </svg>
-            <div className="flex-1 relative h-5 overflow-hidden">
+            <div className="flex-1 relative h-4 overflow-hidden">
               {searchSuggestions.map((suggestion, index) => {
                 const isActive = index === currentSearchIndex;
                 const prevIndex = (currentSearchIndex - 1 + searchSuggestions.length) % searchSuggestions.length;
@@ -394,7 +381,7 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
                         : 'translate-y-full opacity-0'
                       }`}
                   >
-                    <span className="text-white/90 text-sm font-medium">
+                    <span className="text-white/90 text-xs font-medium">
                       Search in {deliveryMode === 'quick' ? 'Quick' : 'Scheduled'}
                     </span>
                   </div>
@@ -404,14 +391,14 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
           </div>
 
           {/* Cart Icon */}
-          <div className="relative cursor-pointer" onClick={() => navigate('/cart')}>
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-white">
+          <div className="relative cursor-pointer p-1.5" onClick={() => navigate('/cart')}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-white">
               <path d="M6 2L3 6V20C3 20.5304 3.21071 21.0391 3.58579 21.4142C3.96086 21.7893 4.46957 22 5 22H19C19.5304 22 20.0391 21.7893 20.4142 21.4142C20.7893 21.0391 21 20.5304 21 20V6L18 2H6Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               <path d="M3 6H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               <path d="M16 10C16 11.0609 15.5786 12.0783 14.8284 12.8284C14.0783 13.5786 13.0609 14 12 14C10.9391 14 9.92172 13.5786 9.17157 12.8284C8.42143 12.0783 8 11.0609 8 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             <span
-              className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center border-2"
+              className="absolute top-0 right-0 bg-red-500 text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center border border-white/20"
               style={{ borderColor: theme.headerBg || '#007fb1' }}
             >
               {cartCount}
@@ -419,31 +406,31 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
           </div>
 
           {/* Wallet Balance Chip */}
-          <div 
+          <div
             id="wallet-balance-header"
-            className={`flex items-center gap-1 bg-white border border-[#9d794d] px-0.5 py-0.5 rounded-full cursor-pointer transition-all active:scale-95 group shadow-sm scale-90 ${animateBalance ? 'animate-pulse ring-2 ring-yellow-400' : ''}`}
+            className={`flex items-center gap-1 bg-white border border-[#9d794d] px-0.5 py-0.5 rounded-full cursor-pointer transition-all active:scale-95 group shadow-sm scale-[0.85] origin-right ${animateBalance ? 'animate-pulse ring-2 ring-yellow-400' : ''}`}
             onClick={() => navigate('/coins')}
           >
             <div className={`w-5 h-5 bg-[#ffce10] rounded-full flex items-center justify-center shadow-inner ${animateBalance ? 'scale-125 transition-transform' : ''}`}>
-               <svg viewBox="0 0 24 24" fill="white" className="w-3.5 h-3.5">
-                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-               </svg>
+              <svg viewBox="0 0 24 24" fill="white" className="w-3.5 h-3.5">
+                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+              </svg>
             </div>
-            <span className={`text-sm font-bold text-gray-900 pr-1.5 leading-none transition-all ${animateBalance ? 'scale-110 text-yellow-600' : ''}`}>
+            <span className={`text-xs font-bold text-gray-900 pr-1.5 leading-none transition-all ${animateBalance ? 'scale-110 text-yellow-600' : ''}`}>
               {totalCoins}
             </span>
           </div>
         </div>
 
         {/* 3. Redesigned Location & Delivery Strip */}
-        <div className="max-w-2xl mx-auto flex flex-col gap-1 px-1">
+        <div className="max-w-2xl mx-auto flex flex-col gap-0 px-1">
           {/* Top Row: Delivery To text */}
           <div className="flex items-center justify-between text-white/95">
             <div className="flex items-center gap-1.5 flex-1 min-w-0">
-              <span className="font-semibold text-xs opacity-90">Delivery To:</span>
-              <span className="truncate font-bold text-sm tracking-tight">{locationDisplayText || 'Select Location'}</span>
+              <span className="font-semibold text-[10px] opacity-90">Delivery To:</span>
+              <span className="truncate font-bold text-xs tracking-tight">{locationDisplayText || 'Select Location'}</span>
             </div>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-white/80 ml-2">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-white/80 ml-2">
               <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </div>
@@ -453,20 +440,20 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
             <div className="flex items-center">
               {deliveryMode === 'quick' ? (
                 <>
-                  <span className="text-white font-black italic text-lg tracking-tighter mr-2">
+                  <span className="text-white font-black italic text-base tracking-tighter mr-2">
                     <span className="text-white/60">⎯ </span>Quick
                   </span>
-                  <div className="bg-[#e8f5e9] border border-[#2e7d32] px-3 py-1 rounded-lg">
-                    <span className="text-[#1b5e20] text-xs font-bold whitespace-nowrap">Quick Delivery</span>
+                  <div className="bg-[#e8f5e9] border border-[#2e7d32]/20 px-2.5 py-0.5 rounded-lg">
+                    <span className="text-[#1b5e20] text-[10px] font-bold whitespace-nowrap">Quick Delivery</span>
                   </div>
                 </>
               ) : (
                 <>
-                  <span className="text-white font-bold text-base tracking-tight mr-2">
+                  <span className="text-white font-bold text-sm tracking-tight mr-2">
                     Scheduled
                   </span>
-                  <div className="bg-amber-50 border border-amber-600 px-3 py-1 rounded-lg">
-                    <span className="text-amber-800 text-xs font-bold whitespace-nowrap">Scheduled Delivery</span>
+                  <div className="bg-amber-50 border border-amber-600/20 px-2.5 py-0.5 rounded-lg">
+                    <span className="text-amber-800 text-[10px] font-bold whitespace-nowrap">Scheduled Delivery</span>
                   </div>
                 </>
               )}
@@ -476,17 +463,6 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
       </div>
 
       <style>{`
-        @keyframes logoFloat {
-          0%, 100% {
-            transform: translateY(0px) scale(1);
-          }
-          33% {
-            transform: translateY(-6px) scale(1.04);
-          }
-          66% {
-            transform: translateY(-3px) scale(1.02);
-          }
-        }
         @keyframes logoGlowRing {
           0%, 100% { opacity: 0.55; transform: scale(1.2); }
           50% { opacity: 1; transform: scale(1.35); }
@@ -498,11 +474,6 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
         @keyframes shimmer {
           0% { transform: translateX(-100%) skewX(-20deg); }
           100% { transform: translateX(200%) skewX(-20deg); }
-        }
-        @keyframes blobMorph {
-          0% { border-radius: 60% 40% 70% 30% / 40% 50% 60% 50%; }
-          50% { border-radius: 30% 60% 50% 70% / 50% 30% 70% 40%; }
-          100% { border-radius: 60% 40% 70% 30% / 40% 50% 60% 50%; }
         }
       `}</style>
 

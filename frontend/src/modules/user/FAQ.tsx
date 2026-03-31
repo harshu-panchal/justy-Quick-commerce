@@ -85,33 +85,36 @@ export default function FAQ() {
   };
 
   return (
-    <div className="pb-24 md:pb-8 bg-white min-h-screen">
+    <div className="pb-12 bg-white min-h-screen">
       {/* Header */}
-      <div className="bg-gradient-to-b from-green-200 via-green-100 to-white pb-6 md:pb-8 pt-12 md:pt-16">
-        <div className="px-4 md:px-6 lg:px-8">
-          <button
-            onClick={() => navigate(-1)}
-            className="mb-4 text-neutral-900"
-            aria-label="Back"
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M15 18L9 12L15 6"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </button>
-          <div className="flex flex-col items-center mb-4 md:mb-6">
-            <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-white flex items-center justify-center mb-3 md:mb-4 border-2 border-white shadow-sm">
+      <div className="bg-gradient-to-b from-green-100 via-green-50 to-white pb-4 pt-8 sticky top-0 z-10 border-b border-green-50">
+        <div className="px-4 md:px-6 lg:px-8 max-w-3xl mx-auto">
+          <div className="flex items-center gap-3 mb-4">
+            <button
+              onClick={() => navigate(-1)}
+              className="text-neutral-900 p-1 hover:bg-white/50 rounded-full transition-colors"
+              aria-label="Back"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M15 18L9 12L15 6"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+            <h1 className="text-lg font-bold text-neutral-900">FAQ</h1>
+          </div>
+          <div className="flex flex-col items-center">
+            <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center mb-3 border-2 border-white shadow-sm">
               <svg
-                width="40"
-                height="40"
+                width="28"
+                height="28"
                 viewBox="0 0 24 24"
                 fill="none"
-                className="text-green-600 md:w-12 md:h-12"
+                className="text-green-600"
               >
                 <path
                   d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
@@ -122,10 +125,10 @@ export default function FAQ() {
                 />
               </svg>
             </div>
-            <h1 className="text-xl md:text-2xl font-bold text-neutral-900 mb-2">
+            <h2 className="text-base font-bold text-neutral-900 mb-1">
               Frequently Asked Questions
-            </h1>
-            <p className="text-sm md:text-base text-neutral-600 text-center px-4">
+            </h2>
+            <p className="text-xs text-neutral-500 text-center px-4 max-w-md">
               Find answers to common questions about our services
             </p>
           </div>
@@ -133,29 +136,29 @@ export default function FAQ() {
       </div>
 
       {/* FAQ Content */}
-      <div className="px-4 md:px-6 lg:px-8 py-6">
+      <div className="px-4 md:px-6 lg:px-8 py-4">
         <div className="max-w-3xl mx-auto">
-          <div className="space-y-3">
+          <div className="space-y-2">
             {faqData.map((item) => {
               const isOpen = openItems.has(item.id);
               return (
                 <div
                   key={item.id}
-                  className="bg-white rounded-lg border border-neutral-200 overflow-hidden transition-all"
+                  className="bg-white rounded-xl border border-neutral-100 overflow-hidden transition-all shadow-sm"
                 >
                   <button
                     onClick={() => toggleItem(item.id)}
-                    className="w-full flex items-center justify-between px-4 py-4 hover:bg-neutral-50 transition-colors text-left"
+                    className="w-full flex items-center justify-between px-4 py-3 hover:bg-neutral-50 transition-colors text-left"
                   >
-                    <span className="text-sm md:text-base font-semibold text-neutral-900 pr-4">
+                    <span className="text-sm font-semibold text-neutral-800 pr-4 leading-snug">
                       {item.question}
                     </span>
                     <svg
-                      width="20"
-                      height="20"
+                      width="18"
+                      height="18"
                       viewBox="0 0 24 24"
                       fill="none"
-                      className={`flex-shrink-0 text-neutral-500 transition-transform ${
+                      className={`flex-shrink-0 text-neutral-400 transition-transform ${
                         isOpen ? 'rotate-180' : ''
                       }`}
                     >
@@ -169,8 +172,8 @@ export default function FAQ() {
                     </svg>
                   </button>
                   {isOpen && (
-                    <div className="px-4 pb-4 pt-0">
-                      <p className="text-sm md:text-base text-neutral-600 leading-relaxed">
+                    <div className="px-4 pb-3 pt-0">
+                      <p className="text-xs text-neutral-500 leading-relaxed">
                         {item.answer}
                       </p>
                     </div>
@@ -181,14 +184,14 @@ export default function FAQ() {
           </div>
 
           {/* Contact Support Section */}
-          <div className="mt-8 bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-6 border border-green-200">
+          <div className="mt-6 bg-gradient-to-br from-green-50 to-white rounded-2xl p-5 border border-green-100/50 shadow-sm">
             <div className="text-center">
               <svg
-                width="48"
-                height="48"
+                width="32"
+                height="32"
                 viewBox="0 0 24 24"
                 fill="none"
-                className="mx-auto mb-4 text-green-600"
+                className="mx-auto mb-3 text-green-600"
               >
                 <path
                   d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
@@ -197,65 +200,24 @@ export default function FAQ() {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 />
-                <path
-                  d="M13 8H7M17 12H7M17 16H7"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
               </svg>
-              <h3 className="text-lg font-bold text-neutral-900 mb-2">
+              <h3 className="text-base font-bold text-neutral-900 mb-1">
                 Still have questions?
               </h3>
-              <p className="text-sm text-neutral-600 mb-4">
-                Our customer support team is here to help you 24/7
+              <p className="text-[10px] text-neutral-500 mb-4 font-medium">
+                Our support team is here to help you 24/7
               </p>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <div className="flex flex-col sm:flex-row gap-2 justify-center">
                 <a
                   href="mailto:help@justi.com"
-                  className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors text-sm"
+                  className="inline-flex items-center justify-center gap-2 px-5 py-2 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 transition-colors text-xs shadow-md shadow-green-200"
                 >
-                  <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                  >
-                    <path
-                      d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <polyline
-                      points="22,6 12,13 2,6"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
                   Email Us
                 </a>
                 <a
                   href="tel:+91-XXXXX-XXXXX"
-                  className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white text-green-600 border-2 border-green-600 rounded-lg font-semibold hover:bg-green-50 transition-colors text-sm"
+                  className="inline-flex items-center justify-center gap-2 px-5 py-2 bg-white text-green-600 border border-green-200 rounded-xl font-bold hover:bg-green-50 transition-colors text-xs"
                 >
-                  <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                  >
-                    <path
-                      d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
                   Call Us
                 </a>
               </div>

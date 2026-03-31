@@ -150,6 +150,7 @@ export interface GetProductsParams {
   stock?: "inStock" | "outOfStock";
   page?: number;
   limit?: number;
+  sellerId?: string;
 }
 
 export const createProduct = async (data: CreateProductData): Promise<ApiResponse<Product>> => {
@@ -172,12 +173,22 @@ export const updateProduct = async (id: string, data: UpdateProductData): Promis
   return response.data;
 };
 
+export const updateStock = async (id: string, variationId: string, stock: number): Promise<ApiResponse<Product>> => {
+  const response = await api.patch(`/products/${id}/stock`, { variationId, stock });
+  return response.data;
+};
+
 export const deleteProduct = async (id: string): Promise<ApiResponse<void>> => {
   const response = await api.delete(`/products/${id}`);
   return response.data;
 };
 
-export const generateProductDescriptionAI = async (data: { name: string; category?: string }): Promise<ApiResponse<{ description: string }>> => {
+export const generateProductDescriptionAI = async (data: { 
+  name: string; 
+  category?: string; 
+  tags?: string[]; 
+  existingDescription?: string; 
+}): Promise<ApiResponse<{ description: string }>> => {
   const response = await api.post("/products/generate-description", data);
   return response.data;
 };

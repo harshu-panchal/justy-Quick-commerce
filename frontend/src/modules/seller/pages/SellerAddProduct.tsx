@@ -55,8 +55,8 @@ export default function SellerAddProduct() {
     isJain: "No",
     spicyLevel: "None" as "None" | "Mild" | "Medium" | "Hot",
     hsnCode: "",
+    fssaiLicNo: "",
     weight: "",
-    totalAllowedQuantity: "10",
   });
 
   const [showProposalField, setShowProposalField] = useState(false);
@@ -139,8 +139,8 @@ export default function SellerAddProduct() {
               isJain: product.isJain ? "Yes" : "No",
               spicyLevel: product.spicyLevel || "None",
               hsnCode: product.hsnCode || "",
+              fssaiLicNo: product.fssaiLicNo || "",
               weight: product.weight || "",
-              totalAllowedQuantity: product.totalAllowedQuantity?.toString() || "10",
             });
             setVariations(product.variations || []);
             setAddons(product.addons || []);
@@ -227,12 +227,17 @@ export default function SellerAddProduct() {
         popular: formData.popular === "Yes", 
         dealOfDay: formData.dealOfDay === "Yes", 
         isJain: formData.isJain === "Yes",
+        spicyLevel: formData.spicyLevel,
         price: variations[0].price, 
         stock: variations[0].stock, 
         preparationTime: parseInt(formData.preparationTime), 
         packagingPrice: parseFloat(formData.packagingPrice), 
         variations: variations.map(v => ({ ...v, name: v.title })), 
         addons: addons, 
+        fssaiLicNo: formData.fssaiLicNo,
+        hsnCode: formData.hsnCode,
+        weight: formData.weight,
+        totalAllowedQuantity: parseInt(formData.totalAllowedQuantity),
         mainImageUrl: uploadedUrls[0] || "", 
         galleryImageUrls: uploadedUrls.slice(1), 
         tags: formData.tags.split(",").map(t => t.trim()).filter(Boolean), 
@@ -383,14 +388,16 @@ export default function SellerAddProduct() {
                 </div>
              </section>
 
-             {/* Logistics & Compliance */}
              <section className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm space-y-6">
                 <div className="flex items-center gap-3"><div className="w-1.5 h-8 bg-neutral-800 rounded-full"></div><h2 className="text-lg font-black text-neutral-800 tracking-tight">Compliance & Limits</h2></div>
                 <div className="grid grid-cols-2 gap-6">
                    <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">HSN Code</label><input type="text" name="hsnCode" value={formData.hsnCode} onChange={handleChange} placeholder="8 digits" className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-bold focus:bg-white transition-all outline-none" /></div>
-                   <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">Weight (e.g. 500g)</label><input type="text" name="weight" value={formData.weight} onChange={handleChange} placeholder="Size/Weight" className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-bold focus:bg-white transition-all outline-none" /></div>
+                   <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">FSSAI License No.</label><input type="text" name="fssaiLicNo" value={formData.fssaiLicNo} onChange={handleChange} placeholder="14 digits" className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-bold focus:bg-white transition-all outline-none" /></div>
                 </div>
-                <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">Max Order Quantity (Per Order)</label><input type="number" name="totalAllowedQuantity" value={formData.totalAllowedQuantity} onChange={handleChange} className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-bold focus:bg-white transition-all outline-none" /></div>
+                <div className="grid grid-cols-2 gap-6">
+                   <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">Weight (e.g. 500g)</label><input type="text" name="weight" value={formData.weight} onChange={handleChange} placeholder="Size/Weight" className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-bold focus:bg-white transition-all outline-none" /></div>
+                   <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">Max Order limit</label><input type="number" name="totalAllowedQuantity" value={formData.totalAllowedQuantity} onChange={handleChange} className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-bold focus:bg-white transition-all outline-none" /></div>
+                </div>
                 <p className="text-[8px] font-medium text-neutral-400 uppercase tracking-widest mt-2 leading-relaxed opacity-60">Mandatory for GST compliance and shipping calculations.</p>
              </section>
           </div>

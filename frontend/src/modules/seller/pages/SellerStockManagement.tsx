@@ -11,9 +11,11 @@ interface StockItem {
     image: string;
     variation: string;
     stock: number | 'Unlimited';
-    status: 'Published' | 'Unpublished';
+    status: 'Published' | 'Unpublished' | 'Pending';
     category: string;
 }
+
+import { toast } from 'react-hot-toast';
 
 export default function SellerStockManagement() {
     const [stockItems, setStockItems] = useState<StockItem[]>([]);
@@ -107,7 +109,7 @@ export default function SellerStockManagement() {
                                 image: resolveImageUrl(product.mainImage || product.mainImageUrl),
                                 variation: variation.title || variation.value || variation.name || 'Default',
                                 stock: variation.stock,
-                                status: product.publish ? 'Published' : 'Unpublished',
+                                status: product.publish ? 'Published' : (product.status === 'Pending' ? 'Pending' : 'Unpublished'),
                                 category: (product.category as any)?.name || 'Uncategorized',
                             });
                         });
@@ -137,9 +139,11 @@ export default function SellerStockManagement() {
     // Handle stock update
     const handleStockUpdate = async (productId: string, variationId: string, newStock: number) => {
         setUpdatingStock(variationId);
+        const stockToast = toast.loading('Updating inventory...');
         try {
             const response = await updateStock(productId, variationId, newStock);
             if (response.success) {
+                toast.success('Inventory Updated!', { id: stockToast });
                 // Update local state
                 setStockItems(prev => prev.map(item =>
                     item.variationId === variationId
@@ -147,10 +151,10 @@ export default function SellerStockManagement() {
                         : item
                 ));
             } else {
-                alert(response.message || 'Failed to update stock');
+                toast.error(response.message || 'Update failed', { id: stockToast });
             }
         } catch (err: any) {
-            alert(err.response?.data?.message || err.message || 'Failed to update stock');
+            toast.error(err.response?.data?.message || err.message || 'Critical failure', { id: stockToast });
         } finally {
             setUpdatingStock(null);
         }
@@ -163,6 +167,7 @@ export default function SellerStockManagement() {
         const matchesCategory = categoryFilter === 'All Category' || item.category === categoryFilter;
         const matchesStatus = statusFilter === 'All Products' ||
             (statusFilter === 'Published' && item.status === 'Published') ||
+            (statusFilter === 'Pending' && item.status === 'Pending') ||
             (statusFilter === 'Unpublished' && item.status === 'Unpublished');
         const matchesStock = stockFilter === 'All Products' ||
             (stockFilter === 'In Stock' && (typeof item.stock === 'number' && item.stock > 0)) ||
@@ -248,6 +253,7 @@ export default function SellerStockManagement() {
                             >
                                 <option value="All Products">All Products</option>
                                 <option value="Published">Published</option>
+                                <option value="Pending">Pending Review</option>
                                 <option value="Unpublished">Unpublished</option>
                             </select>
                         </div>
@@ -387,6 +393,14 @@ export default function SellerStockManagement() {
                                         Current Stock <SortIcon column="stock" />
                                     </div>
                                 </th>
+                                <th
+                                    className="p-4 border border-neutral-200 cursor-pointer hover:bg-neutral-100 transition-colors"
+                                    onClick={() => handleSort('status')}
+                                >
+                                    <div className="flex items-center justify-between">
+                                        Status <SortIcon column="status" />
+                                    </div>
+                                </th>
                                 <th className="p-4 border border-neutral-200 w-32">Action</th>
                             </tr>
                         </thead>
@@ -421,6 +435,15 @@ export default function SellerStockManagement() {
                                         </div>
                                     </td>
                                     <td className="p-4 align-middle border border-neutral-200">
+                                        {item.status === 'Published' ? (
+                                            <span className="px-2 py-1 bg-emerald-50 text-emerald-600 rounded text-[9px] font-black uppercase tracking-widest border border-emerald-100">Active</span>
+                                        ) : item.status === 'Pending' ? (
+                                            <span className="px-2 py-1 bg-amber-50 text-amber-600 rounded text-[9px] font-black uppercase tracking-widest border border-amber-100/50">Pending </span>
+                                        ) : (
+                                            <span className="px-2 py-1 bg-neutral-50 text-neutral-400 rounded text-[9px] font-black uppercase tracking-widest border border-neutral-100">Draft</span>
+                                        )}
+                                    </td>
+                                    <td className="p-4 align-middle border border-neutral-200 w-44">
                                         <div className="flex items-center gap-2">
                                             <input
                                                 type="number"

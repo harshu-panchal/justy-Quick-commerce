@@ -121,32 +121,41 @@ export default function SellerOrders() {
   const [activeTab, setActiveTab] = useState('New');
 
   const tabs = [
-    { label: 'New', count: orders.filter(o => o.status === 'Pending').length },
-    { label: 'Preparing', count: orders.filter(o => o.status === 'Accepted').length },
-    { label: 'Ready', count: orders.filter(o => o.status === 'Ready').length },
-    { label: 'Picked Up', count: orders.filter(o => o.status === 'On the way').length },
-    { label: 'Past Orders', count: orders.filter(o => ['Delivered', 'Cancelled'].includes(o.status)).length },
+    { label: 'New', count: orders.filter(o => ['Received', 'Pending'].includes(o.status)).length },
+    { label: 'Preparing', count: orders.filter(o => ['Accepted', 'Processed'].includes(o.status)).length },
+    { label: 'Ready', count: orders.filter(o => ['Ready', 'Ready for pickup'].includes(o.status)).length },
+    { label: 'Picked Up', count: orders.filter(o => ['Shipped', 'Picked Up', 'In Transit', 'On the way', 'Out for Delivery'].includes(o.status)).length },
+    { label: 'Past Orders', count: orders.filter(o => ['Delivered', 'Cancelled', 'Rejected', 'Returned'].includes(o.status)).length },
   ];
 
   const filteredOrders = orders.filter(order => {
     switch (activeTab) {
-      case 'New': return order.status === 'Pending';
-      case 'Preparing': return order.status === 'Accepted';
-      case 'Ready': return order.status === 'Ready';
-      case 'Picked Up': return order.status === 'On the way';
-      case 'Past Orders': return ['Delivered', 'Cancelled'].includes(order.status);
+      case 'New': return ['Received', 'Pending'].includes(order.status);
+      case 'Preparing': return ['Accepted', 'Processed'].includes(order.status);
+      case 'Ready': return ['Ready', 'Ready for pickup'].includes(order.status);
+      case 'Picked Up': return ['Shipped', 'Picked Up', 'In Transit', 'On the way', 'Out for Delivery'].includes(order.status);
+      case 'Past Orders': return ['Delivered', 'Cancelled', 'Rejected', 'Returned'].includes(order.status);
       default: return true;
     }
   });
 
   const getStatusColor = (status: string) => {
     switch (status) {
+      case 'Received':
       case 'Pending': return 'bg-orange-100 text-orange-600 border-orange-200';
-      case 'Accepted': return 'bg-blue-100 text-blue-600 border-blue-200';
-      case 'Ready': return 'bg-teal-100 text-teal-600 border-teal-200';
-      case 'On the way': return 'bg-purple-100 text-purple-600 border-purple-200';
+      case 'Accepted':
+      case 'Processed': return 'bg-blue-100 text-blue-600 border-blue-200';
+      case 'Ready':
+      case 'Ready for pickup': return 'bg-teal-100 text-teal-600 border-teal-200';
+      case 'Shipped':
+      case 'Picked Up':
+      case 'In Transit':
+      case 'On the way':
+      case 'Out for Delivery': return 'bg-purple-100 text-purple-600 border-purple-200';
       case 'Delivered': return 'bg-green-100 text-green-600 border-green-200';
-      case 'Cancelled': return 'bg-red-100 text-red-600 border-red-200';
+      case 'Cancelled':
+      case 'Rejected':
+      case 'Returned': return 'bg-red-100 text-red-600 border-red-200';
       default: return 'bg-neutral-100 text-neutral-600 border-neutral-200';
     }
   };

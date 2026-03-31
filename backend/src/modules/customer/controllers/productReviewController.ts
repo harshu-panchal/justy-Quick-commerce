@@ -58,45 +58,45 @@ export const addReview = async (req: Request, res: Response) => {
         const userId = req.user?.userId;
         const { productId, orderId, rating, comment, title, images } = req.body;
 
-        // Verify purchase
-        const order = await Order.findOne({
-            _id: orderId,
+        // Try to find a delivered order to mark as Verified Purchase
+        let query: any = {
             customer: userId,
             'items.product': productId,
             status: 'Delivered'
-        });
-
-        if (!order) {
-            return res.status(400).json({
-                success: false,
-                message: 'You can only review products from delivered orders.'
-            });
+        };
+        
+        if (orderId) {
+            query._id = orderId;
         }
 
-        // Check if already reviewed
+        const order = await Order.findOne(query).sort({ createdAt: -1 });
+        const finalOrderId = order?._id;
+        const isVerifiedPurchase = !!order;
+
+        // Check if already reviewed for this product 
+        // (Prevent duplicate reviews for the same product by the same customer)
         const existingReview = await Review.findOne({
             customer: userId,
-            product: productId,
-            order: orderId
+            product: productId
         });
 
         if (existingReview) {
             return res.status(400).json({
                 success: false,
-                message: 'You have already reviewed this product for this order.'
+                message: 'You have already reviewed this product.'
             });
         }
 
         const review = await Review.create({
             customer: userId,
             product: productId,
-            order: orderId,
+            order: finalOrderId,
             rating,
             comment,
             title,
             images,
             status: 'Pending', // pending moderation
-            isVerifiedPurchase: true
+            isVerifiedPurchase
         });
 
         return res.status(201).json({

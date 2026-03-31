@@ -10,7 +10,7 @@ export interface ICategory extends Document {
   groupCategory?: string;
   totalSubcategories?: number;
   commissionRate?: number;
-  status: "Active" | "Inactive";
+  status: "Active" | "Inactive" | "Unpublished";
   parentId?: mongoose.Types.ObjectId;
   headerCategoryId?: mongoose.Types.ObjectId;
   createdAt: Date;
@@ -73,7 +73,7 @@ const CategorySchema = new Schema<ICategory>(
     },
     status: {
       type: String,
-      enum: ["Active", "Inactive"],
+      enum: ["Active", "Inactive", "Unpublished"],
       default: "Active",
     },
     parentId: {

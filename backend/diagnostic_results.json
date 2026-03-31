@@ -1,0 +1,56 @@
+{
+  "foodHeader": {
+    "_id": "69b13f5764b2b9715d4cea47",
+    "name": "Food",
+    "iconLibrary": "Custom",
+    "iconName": "fast-food",
+    "slug": "food",
+    "deliveryType": "quick",
+    "order": 0,
+    "status": "Published",
+    "createdAt": "2026-03-11T10:09:27.687Z",
+    "updatedAt": "2026-03-11T10:09:27.687Z",
+    "__v": 0
+  },
+  "junkCategory": {
+    "_id": "69cba791c20cf95df4bdf40b",
+    "name": "Junk Food",
+    "image": "https://res.cloudinary.com/dqfjfsojx/image/upload/v1774954386/categories/cs1il6gjtjuizfn3h3za.jpg",
+    "order": 0,
+    "isBestseller": false,
+    "hasWarning": false,
+    "totalSubcategories": 0,
+    "commissionRate": 0,
+    "status": "Active",
+    "parentId": null,
+    "headerCategoryId": "69b13f5764b2b9715d4cea47",
+    "createdAt": "2026-03-31T10:53:05.393Z",
+    "updatedAt": "2026-03-31T10:54:57.883Z",
+    "slug": "junk-food",
+    "__v": 0,
+    "id": "69cba791c20cf95df4bdf40b"
+  },
+  "sections": [
+    {
+      "title": "Fast Foods",
+      "displayType": "categories",
+      "categories": [
+        "69b1444364b2b9715d4cf1d8"
+      ]
+    },
+    {
+      "title": "Vegetarian food",
+      "displayType": "categories",
+      "categories": [
+        "69b1567064b2b9715d4d2618"
+      ]
+    },
+    {
+      "title": "Non-Vegetarian food",
+      "displayType": "categories",
+      "categories": [
+        "69b1568264b2b9715d4d2828"
+      ]
+    }
+  ]
+}

@@ -2,7 +2,7 @@ import mongoose, { Document, Schema } from "mongoose";
 
 export interface IReview extends Document {
   product: mongoose.Types.ObjectId;
-  order: mongoose.Types.ObjectId;
+  order?: mongoose.Types.ObjectId;
   customer: mongoose.Types.ObjectId;
 
   // Review Content
@@ -18,6 +18,10 @@ export interface IReview extends Document {
   // Helpful
   helpfulCount: number;
 
+  // Seller Response
+  sellerReply?: string;
+  sellerRepliedAt?: Date;
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -32,7 +36,6 @@ const ReviewSchema = new Schema<IReview>(
     order: {
       type: Schema.Types.ObjectId,
       ref: "Order",
-      required: [true, "Order is required"],
     },
     customer: {
       type: Schema.Types.ObjectId,
@@ -76,6 +79,15 @@ const ReviewSchema = new Schema<IReview>(
       type: Number,
       default: 0,
       min: [0, "Helpful count cannot be negative"],
+    },
+
+    // Seller Response
+    sellerReply: {
+      type: String,
+      trim: true,
+    },
+    sellerRepliedAt: {
+      type: Date,
     },
   },
   {

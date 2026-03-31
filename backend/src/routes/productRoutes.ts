@@ -46,7 +46,10 @@ router.put("/:id", updateProduct);
 // Delete product
 router.delete("/:id", deleteProduct);
 
-// Update stock for a product variation
+// Update stock for a product variation (Frontend service compatible)
+router.patch("/:id/stock", updateStock);
+
+// Update stock for a product variation (Alternative route)
 router.patch("/:id/variations/:variationId/stock", updateStock);
 
 // Bulk update stock

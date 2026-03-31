@@ -467,3 +467,37 @@ export const getSubSubCategories = asyncHandler(
     });
   }
 );
+
+/**
+ * Create a new category request (from seller)
+ */
+export const createCategory = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { name, image, headerCategoryId, parentId } = req.body;
+
+    if (!name || !headerCategoryId) {
+      return res.status(400).json({
+        success: false,
+        message: "Category name and parent category are required",
+      });
+    }
+
+    // When a seller creates a category, it's always "Unpublished" (Pending Admin Approval)
+    const category = await Category.create({
+      name,
+      image,
+      headerCategoryId,
+      parentId: parentId || null,
+      status: "Unpublished", // Mandatory for seller requests
+      order: 0,
+      isBestseller: false,
+      hasWarning: false,
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: "Category request submitted for admin approval",
+      data: category,
+    });
+  }
+);

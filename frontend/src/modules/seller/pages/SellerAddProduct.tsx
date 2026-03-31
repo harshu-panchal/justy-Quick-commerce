@@ -19,6 +19,7 @@ import api from "../../../services/api/config";
 import { uploadImage } from "../../../services/api/uploadService";
 import { validateImageFile, createImagePreview } from "../../../utils/imageUpload";
 import { useAuth } from "../../../context/AuthContext";
+import toast from 'react-hot-toast';
 
 interface ImageSlot {
   file: File | null;
@@ -80,8 +81,6 @@ export default function SellerAddProduct() {
   const [addonForm, setAddonForm] = useState({ name: "", price: "0" });
 
   const [uploading, setUploading] = useState(false);
-  const [uploadError, setUploadError] = useState<string>("");
-  const [successMessage, setSuccessMessage] = useState<string>("");
   const [aiLoading, setAiLoading] = useState(false);
   const [aiSuggestion, setAiSuggestion] = useState<string>("");
 
@@ -97,16 +96,44 @@ export default function SellerAddProduct() {
           getActiveTaxes(),
           getHeaderCategoriesPublic(),
         ]);
-        if (results[0].status === "fulfilled" && results[0].value.success) setCategories(results[0].value.data);
+        
+        let fetchedCategories: Category[] = [];
+        if (results[0].status === "fulfilled" && results[0].value.success) {
+           fetchedCategories = results[0].value.data;
+           setCategories(fetchedCategories);
+        }
+        
         if (results[1].status === "fulfilled" && results[1].value.success) setTaxes(results[1].value.data);
+        
         if (results[2].status === "fulfilled") {
            const hRes = results[2].value;
-           setHeaderCategories(hRes.filter((hc: HeaderCategory) => hc.deliveryType === "quick" && hc.status === "Published"));
+           // Filter by seller's category
+           const filtered = hRes.filter((hc: HeaderCategory) => 
+             hc.deliveryType === "quick" && 
+             hc.status === "Published" &&
+             hc.name === user?.category
+           );
+           setHeaderCategories(filtered);
+           
+           if (filtered.length > 0 && !id) {
+              const headId = filtered[0]._id;
+              setFormData(p => ({ ...p, headerCategory: headId }));
+              
+              // Also auto-select first subcategory if available
+              const subCats = fetchedCategories.filter(c => 
+                ((c as any).headerCategoryId?._id === headId || 
+                (c as any).headerCategoryId === headId) &&
+                c.status === "Active"
+              );
+              if (subCats.length > 0) {
+                setFormData(p => ({ ...p, headerCategory: headId, category: subCats[0]._id }));
+              }
+           }
         }
       } catch (err) { console.error("Error fetching data:", err); }
     };
     fetchData();
-  }, []);
+  }, [user?.category, id]);
 
   useEffect(() => {
     if (id) {
@@ -144,8 +171,18 @@ export default function SellerAddProduct() {
             });
             setVariations(product.variations || []);
             setAddons(product.addons || []);
-            const allImages = [product.mainImageUrl || product.mainImage || "", ...(product.galleryImageUrls || [])].filter(Boolean).slice(0, 5);
-            setImageSlots(prev => { const newSlots = [...prev]; allImages.forEach((url, i) => { newSlots[i] = { file: null, preview: url as string, url: url as string }; }); return newSlots; });
+            const allImages = [
+              product.mainImage || product.mainImageUrl || "", 
+              ...(product.galleryImages || product.galleryImageUrls || [])
+            ].filter(Boolean).slice(0, 5);
+            
+            setImageSlots(prev => { 
+              const newSlots = [...prev]; 
+              allImages.forEach((url, i) => { 
+                if (i < 5) newSlots[i] = { file: null, preview: url as string, url: url as string }; 
+              }); 
+              return newSlots; 
+            });
           }
         } catch (err) { console.error("Error fetching product:", err); }
       };
@@ -164,22 +201,21 @@ export default function SellerAddProduct() {
     setProposalLoading(true);
     try {
       await api.post("/header-categories/propose", { name: proposalName, deliveryType: "quick" });
-      setSuccessMessage("Requested! 📩");
+      toast.success("Proposal Sent Successfully! 📩");
       setProposalName("");
       setShowProposalField(false);
-      setTimeout(() => setSuccessMessage(""), 2000);
-    } catch (err: any) { setUploadError("Failed."); } finally { setProposalLoading(false); }
+    } catch (err: any) { toast.error("Failed to propose category."); } finally { setProposalLoading(false); }
   };
 
   const handleImageSlotChange = async (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const validation = validateImageFile(file);
-    if (!validation.valid) { setUploadError(validation.error || "Invalid file"); return; }
+    if (!validation.valid) { toast.error(validation.error || "Invalid file"); return; }
     try {
       const preview = await createImagePreview(file);
       setImageSlots(prev => { const newSlots = [...prev]; newSlots[index] = { file, preview, url: "" }; return newSlots; });
-    } catch (error) { setUploadError("Process failed"); }
+    } catch (error) { toast.error("Process failed"); }
   };
 
   const clearImageSlot = (index: number) => {
@@ -205,20 +241,55 @@ export default function SellerAddProduct() {
     if (!formData.productName) return;
     setAiLoading(true);
     try {
-      const res = await generateProductDescriptionAI({ name: formData.productName, category: formData.category || undefined });
+      const res = await generateProductDescriptionAI({ name: formData.productName, category: categories.find(c => c._id === formData.category)?.name });
       if (res.success && res.data?.description) setAiSuggestion(res.data.description);
-    } catch (err) { setUploadError("AI Busy."); } finally { setAiLoading(false); }
+    } catch (err) { toast.error("AI is busy right now. Ensure GEMINI_API_KEY is set in your backend .env file."); } finally { setAiLoading(false); }
+  };
+
+  const applyAiSuggestion = () => {
+    if (!aiSuggestion) return;
+    setFormData(prev => ({ ...prev, smallDescription: aiSuggestion }));
+    setAiSuggestion("");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.productName.trim() || !formData.headerCategory || !formData.category || variations.length === 0) {
-      setUploadError("Missing ingredients."); return;
-    }
+    if (!formData.productName.trim()) { toast.error("Product name is required."); return; }
+    if (!formData.headerCategory) { toast.error("Parent category is required."); return; }
+    if (!formData.category) { toast.error("Sub category is required."); return; }
+    if (variations.length === 0) { toast.error("Please add at least one configuration (Size/Price)."); return; }
+    
     setUploading(true);
+    const idToast = toast.loading(id ? "Updating product..." : "Uploading product...");
+    
     try {
-      const uploadPromises = imageSlots.map(async (slot) => { if (slot.file) { const res = await uploadImage(slot.file, "products"); return res.secureUrl; } return slot.url || ""; });
-      const uploadedUrls = (await Promise.all(uploadPromises)).filter(Boolean);
+      // 1. Upload Images
+      const uploadedUrls: string[] = [];
+      for (let i = 0; i < imageSlots.length; i++) {
+        const slot = imageSlots[i];
+        if (slot.file) {
+          try {
+            const res = await uploadImage(slot.file, "products");
+            if (res && res.secureUrl) {
+              uploadedUrls.push(res.secureUrl);
+            }
+          } catch (err) {
+            console.error(`Failed to upload image at slot ${i+1}:`, err);
+            toast.error(`Image ${i+1} failed to upload.`);
+          }
+        } else if (slot.url) {
+          uploadedUrls.push(slot.url);
+        }
+      }
+
+      if (uploadedUrls.length === 0) {
+        toast.dismiss(idToast);
+        toast.error("At least one product image is required.");
+        setUploading(false);
+        return;
+      }
+
+      // 2. Prepare Product Data
       const productData: any = { 
         ...formData, 
         headerCategoryId: formData.headerCategory, 
@@ -230,23 +301,37 @@ export default function SellerAddProduct() {
         spicyLevel: formData.spicyLevel,
         price: variations[0].price, 
         stock: variations[0].stock, 
-        preparationTime: parseInt(formData.preparationTime), 
-        packagingPrice: parseFloat(formData.packagingPrice), 
+        preparationTime: parseInt(formData.preparationTime) || 20, 
+        packagingPrice: parseFloat(formData.packagingPrice) || 0, 
         variations: variations.map(v => ({ ...v, name: v.title })), 
         addons: addons, 
         fssaiLicNo: formData.fssaiLicNo,
         hsnCode: formData.hsnCode,
         weight: formData.weight,
-        totalAllowedQuantity: parseInt(formData.totalAllowedQuantity),
-        mainImageUrl: uploadedUrls[0] || "", 
+        totalAllowedQuantity: parseInt(formData.totalAllowedQuantity) || 10,
+        mainImageUrl: uploadedUrls[0], 
         galleryImageUrls: uploadedUrls.slice(1), 
         tags: formData.tags.split(",").map(t => t.trim()).filter(Boolean), 
         taxId: formData.tax || undefined 
       };
+
+      // 3. Submit to Backend
       const response = id ? await updateProduct(id, productData) : await createProduct(productData);
-      if (response.success) { setSuccessMessage(id ? "Updated!" : "Dish Live!"); setTimeout(() => navigate("/seller/product/list"), 1500); }
-      else setUploadError(response.message || "Failed.");
-    } catch (error: any) { setUploadError(error.message); } finally { setUploading(false); }
+      
+      toast.dismiss(idToast);
+      if (response.success) { 
+        toast.success(id ? "Product Updated Successfully! 🪄" : "Product Submitted for Approval! ⏳"); 
+        setTimeout(() => navigate("/seller/product/list"), 1500); 
+      } else {
+        toast.error(response.message || "Submission failed.");
+      }
+    } catch (error: any) { 
+      toast.dismiss(idToast);
+      console.error("Submission Error:", error);
+      toast.error(error.response?.data?.message || error.message || "An unexpected error occurred."); 
+    } finally { 
+      setUploading(false); 
+    }
   };
 
   return (
@@ -282,8 +367,8 @@ export default function SellerAddProduct() {
                    <button type="button" onClick={() => setFormData(p => ({ ...p, dealOfDay: p.dealOfDay === "Yes" ? "No" : "Yes" }))} className={`w-11 h-5.5 rounded-full transition-all flex items-center px-1 shadow-inner ${formData.dealOfDay === "Yes" ? "bg-orange-500" : "bg-neutral-200"}`}><motion.div animate={{ x: formData.dealOfDay === "Yes" ? 22 : 0 }} className="w-3.5 h-3.5 bg-white rounded-full shadow-md" /></button>
                 </div>
                 <div className="flex flex-col gap-1.5 border-r border-neutral-100 pr-6">
-                   <p className="text-[8px] font-black text-neutral-400 uppercase tracking-[0.2em] ml-0.5">Visibility</p>
-                   <button type="button" onClick={() => setFormData(p => ({ ...p, publish: p.publish === "Yes" ? "No" : "Yes" }))} className={`w-11 h-5.5 rounded-full transition-all flex items-center px-1 shadow-inner ${formData.publish === "Yes" ? "bg-teal-500" : "bg-neutral-200"}`}><motion.div animate={{ x: formData.publish === "Yes" ? 22 : 0 }} className="w-3.5 h-3.5 bg-white rounded-full shadow-md" /></button>
+                   <p className="text-[8px] font-black text-neutral-400 uppercase tracking-[0.2em] ml-0.5">Approval Status</p>
+                   <div className="px-3 py-1 bg-amber-50 text-amber-600 rounded-lg text-[9px] font-black uppercase tracking-widest border border-amber-100">Pending 🔍</div>
                 </div>
                 <div className="flex flex-col gap-1.5">
                    <p className="text-[8px] font-black text-neutral-400 uppercase tracking-[0.2em] ml-0.5">Jain Friendly</p>
@@ -307,7 +392,32 @@ export default function SellerAddProduct() {
                    <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Preparation Time (Mins)</label><input type="number" name="preparationTime" value={formData.preparationTime} onChange={handleChange} className="w-full h-11 px-5 bg-neutral-50 border border-neutral-100 rounded-xl text-[14px] font-black tabular-nums transition-all outline-none focus:border-teal-500" /></div>
                    <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Spicy Level</label><select name="spicyLevel" value={formData.spicyLevel} onChange={handleChange} className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-[12px] font-black uppercase outline-none focus:border-teal-500"><option value="None">Not Spicy</option><option value="Mild">Mild 🔥</option><option value="Medium">Medium 🔥🔥</option><option value="Hot">Extra Hot 🔥🔥🔥</option></select></div>
                 </div>
-                <div className="space-y-1.5"><div className="flex justify-between items-center"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">Description</label></div><textarea name="smallDescription" value={formData.smallDescription} onChange={handleChange} rows={3} placeholder="Tell your customers about the taste, texture, and secret ingredients..." className="w-full p-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-medium focus:bg-white transition-all outline-none resize-none"></textarea></div>
+                <div className="space-y-1.5">
+                   <div className="flex justify-between items-center">
+                      <label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">Description</label>
+                      <button 
+                        type="button" 
+                        onClick={handleGenerateAI} 
+                        disabled={aiLoading || !formData.productName}
+                        className="flex items-center gap-1.5 px-3 py-1 bg-teal-50 text-teal-600 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-teal-100 transition-all disabled:opacity-50"
+                      >
+                        {aiLoading ? "Thinking..." : "✨ Magic AI"}
+                      </button>
+                   </div>
+                   <textarea name="smallDescription" value={formData.smallDescription} onChange={handleChange} rows={3} placeholder="Tell your customers about the taste, texture, and secret ingredients..." className="w-full p-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-medium focus:bg-white transition-all outline-none resize-none"></textarea>
+                   <AnimatePresence>
+                      {aiSuggestion && (
+                         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="p-4 bg-teal-50 border border-teal-100 rounded-xl space-y-3">
+                            <div className="flex items-center justify-between">
+                               <p className="text-[10px] font-black text-teal-700 uppercase tracking-widest">AI Suggestion</p>
+                               <button type="button" onClick={() => setAiSuggestion("")} className="text-teal-400 text-xs font-black">×</button>
+                            </div>
+                            <p className="text-xs text-teal-900 leading-relaxed italic">{aiSuggestion}</p>
+                            <button type="button" onClick={applyAiSuggestion} className="px-4 py-1.5 bg-teal-600 text-white rounded-lg text-[9px] font-black uppercase tracking-widest shadow-lg shadow-teal-600/20 active:scale-95 transition-all">Apply Suggestion</button>
+                         </motion.div>
+                      )}
+                   </AnimatePresence>
+                </div>
              </div>
           </section>
 
@@ -316,9 +426,8 @@ export default function SellerAddProduct() {
              <section className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm space-y-4">
                 <div className="flex items-center gap-3"><div className="w-1.5 h-6 bg-teal-600 rounded-full"></div><h2 className="text-md font-black text-neutral-800 tracking-tight">Categories</h2></div>
                 <div className="space-y-4">
-                   <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-[0.2em]">Parent Category</label><select name="headerCategory" value={formData.headerCategory} onChange={handleChange} className="w-full h-11 px-4 bg-neutral-50 rounded-xl text-[12px] font-bold border border-neutral-100 focus:bg-white focus:border-teal-500 transition-all outline-none cursor-pointer"><option value="">Selection Required</option>{headerCategories.map(hc => <option key={hc._id} value={hc._id}>{hc.name}</option>)}<option value="propose_new" className="text-teal-600">+ Propose New</option></select></div>
-                   {showProposalField && (<div className="p-3 bg-teal-50 rounded-xl flex gap-2"><input type="text" value={proposalName} onChange={e => setProposalName(e.target.value)} className="flex-1 h-9 px-3 text-xs rounded-lg bg-white border-none" /><button type="button" onClick={handleProposeCategory} className="px-3 bg-teal-600 text-white rounded-lg text-[9px] font-black uppercase">Send</button></div>)}
-                   <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-[0.2em]">Sub Category</label><select name="category" value={formData.category} onChange={handleChange} className="w-full h-11 px-4 bg-neutral-50 rounded-xl text-[12px] font-bold border border-neutral-100 focus:bg-white focus:border-teal-500 transition-all outline-none cursor-pointer disabled:opacity-40">{categories.filter(c => (c as any).headerCategoryId?._id === formData.headerCategory || (c as any).headerCategoryId === formData.headerCategory).map((cat: any) => <option key={cat._id} value={cat._id}>{cat.name}</option>)}</select></div>
+                   <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-[0.2em]">Parent Category</label><select name="headerCategory" value={formData.headerCategory} onChange={handleChange} className="w-full h-11 px-4 bg-neutral-50 rounded-xl text-[12px] font-bold border border-neutral-100 focus:bg-white focus:border-teal-500 transition-all outline-none cursor-pointer"><option value="">Selection Required</option>{headerCategories.map(hc => <option key={hc._id} value={hc._id}>{hc.name}</option>)}</select></div>
+                   <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-[0.2em]">Sub Category</label><select name="category" value={formData.category} onChange={handleChange} className="w-full h-11 px-4 bg-neutral-50 rounded-xl text-[12px] font-bold border border-neutral-100 focus:bg-white focus:border-teal-500 transition-all outline-none cursor-pointer disabled:opacity-40">{categories.filter(c => ((c as any).headerCategoryId?._id === formData.headerCategory || (c as any).headerCategoryId === formData.headerCategory) && (c as any).status === "Active").map((cat: any) => <option key={cat._id} value={cat._id}>{cat.name}</option>)}</select></div>
                 </div>
              </section>
              <section className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm space-y-4 flex flex-col justify-between">
@@ -343,9 +452,11 @@ export default function SellerAddProduct() {
              <section className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm space-y-6">
                 <div className="flex items-center gap-3"><div className="w-1.5 h-8 bg-teal-600 rounded-full"></div><h2 className="text-lg font-black text-neutral-800 tracking-tight">Sizes & Pricing</h2></div>
                 <div className="space-y-4">
-                   <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">Regular Price (₹)</label><input type="number" value={variationForm.price} onChange={e => setVariationForm(p => ({ ...p, price: e.target.value }))} className="w-full h-10 px-4 bg-neutral-50 rounded-lg text-xs font-bold border-none" placeholder="0" /></div>
-                      <div className="space-y-1"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">Discounted Price (₹)</label><input type="number" value={variationForm.discPrice} onChange={e => setVariationForm(p => ({ ...p, discPrice: e.target.value }))} className="w-full h-10 px-4 bg-neutral-50 rounded-lg text-xs font-bold border-none" placeholder="0" /></div>
+                   <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Variant/Size Name (e.g. Regular, 500g, Half)</label><input type="text" value={variationForm.title} onChange={e => setVariationForm(p => ({ ...p, title: e.target.value }))} className="w-full h-11 px-4 bg-neutral-50 rounded-xl text-[13px] font-bold border border-neutral-100 focus:bg-white focus:border-teal-500 transition-all outline-none" placeholder="e.g. Regular" /></div>
+                   <div className="grid grid-cols-3 gap-4">
+                      <div className="space-y-1"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Regular Price (₹)</label><input type="number" value={variationForm.price} onChange={e => setVariationForm(p => ({ ...p, price: e.target.value }))} className="w-full h-10 px-4 bg-neutral-50 rounded-lg text-xs font-bold border border-neutral-100 focus:bg-white transition-all outline-none" placeholder="0" /></div>
+                      <div className="space-y-1"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Discount (₹)</label><input type="number" value={variationForm.discPrice} onChange={e => setVariationForm(p => ({ ...p, discPrice: e.target.value }))} className="w-full h-10 px-4 bg-neutral-50 rounded-lg text-xs font-bold border border-neutral-100 focus:bg-white transition-all outline-none" placeholder="0" /></div>
+                      <div className="space-y-1"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Stock</label><input type="number" value={variationForm.stock} onChange={e => setVariationForm(p => ({ ...p, stock: e.target.value }))} className="w-full h-10 px-4 bg-neutral-50 rounded-lg text-xs font-bold border border-neutral-100 focus:bg-white transition-all outline-none" placeholder="999" /></div>
                    </div>
                    <button type="button" onClick={addVariation} className="w-full h-10 bg-slate-900 text-white rounded-lg text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all">Add Configuration Node</button>
                    <div className="space-y-2 max-h-[140px] overflow-y-auto pr-2 custom-scrollbar">
@@ -375,16 +486,25 @@ export default function SellerAddProduct() {
              {/* Imagery */}
              <section className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm space-y-6">
                 <div className="flex items-center justify-between"><div className="flex items-center gap-3"><div className="w-1.5 h-8 bg-teal-600 rounded-full"></div><h2 className="text-lg font-black text-neutral-800 tracking-tight">Product Images</h2></div><span className="text-[8px] font-black text-neutral-400 uppercase bg-neutral-50 px-3 py-1 rounded-full">Max 5 Photos</span></div>
-                <div className="grid grid-cols-5 gap-3 h-32 md:h-40">
-                   {imageSlots.map((slot, index) => (
-                      <div key={index} className={`relative rounded-xl overflow-hidden border-2 border-dashed border-neutral-200 hover:border-teal-500 transition-all ${index === 0 ? 'col-span-2' : ''} bg-neutral-50 group`}>
-                         {slot.preview ? (
-                            <><img src={slot.preview} className="w-full h-full object-cover group-hover:scale-105 transition-all" alt="" /><div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"><button type="button" onClick={() => clearImageSlot(index)} className="bg-white text-rose-500 w-8 h-8 rounded-lg font-black">×</button></div></>
-                         ) : (
-                            <label className="absolute inset-0 flex flex-col items-center justify-center gap-1 cursor-pointer hover:bg-neutral-100 transition-all"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><polyline points="21 15 16 10 5 21"/></svg><span className="text-[7px] font-black text-neutral-400 uppercase">{index === 0 ? "Cover" : index+1}</span><input type="file" onChange={e => handleImageSlotChange(index, e)} className="hidden" accept="image/*" /></label>
-                         )}
-                      </div>
-                   ))}
+                <div className="grid grid-cols-4 gap-4">
+                   <div className="col-span-4 lg:col-span-2 aspect-video lg:aspect-auto h-48 lg:h-40 rounded-2xl overflow-hidden border-2 border-dashed border-neutral-200 hover:border-teal-500 transition-all bg-neutral-50 group relative">
+                      {imageSlots[0].preview ? (
+                         <><img src={imageSlots[0].preview} className="w-full h-full object-cover group-hover:scale-105 transition-all" alt="" /><div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"><button type="button" onClick={() => clearImageSlot(0)} className="bg-white text-rose-500 w-8 h-8 rounded-lg font-black text-lg">×</button></div></>
+                      ) : (
+                         <label className="absolute inset-0 flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-neutral-100 transition-all"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><polyline points="21 15 16 10 5 21"/></svg><div className="flex flex-col items-center"><span className="text-[10px] font-black text-neutral-800 uppercase tracking-widest">Cover Image</span><span className="text-[8px] font-bold text-neutral-400 uppercase">Primary Display</span></div><input type="file" onChange={e => handleImageSlotChange(0, e)} className="hidden" accept="image/*" /></label>
+                      )}
+                   </div>
+                   <div className="col-span-4 lg:col-span-2 grid grid-cols-4 gap-3 lg:h-40">
+                      {imageSlots.slice(1).map((slot, index) => (
+                         <div key={index+1} className="aspect-square rounded-xl overflow-hidden border-2 border-dashed border-neutral-200 hover:border-teal-500 transition-all bg-neutral-50 group relative">
+                            {slot.preview ? (
+                               <><img src={slot.preview} className="w-full h-full object-cover group-hover:scale-105 transition-all" alt="" /><div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"><button type="button" onClick={() => clearImageSlot(index+1)} className="bg-white text-rose-500 w-6 h-6 rounded-md font-black text-sm">×</button></div></>
+                            ) : (
+                               <label className="absolute inset-0 flex flex-col items-center justify-center gap-1 cursor-pointer hover:bg-neutral-100 transition-all"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><polyline points="21 15 16 10 5 21"/></svg><span className="text-[7px] font-black text-neutral-400 uppercase">Slot {index+2}</span><input type="file" onChange={e => handleImageSlotChange(index+1, e)} className="hidden" accept="image/*" /></label>
+                            )}
+                         </div>
+                      ))}
+                   </div>
                 </div>
              </section>
 
@@ -412,8 +532,6 @@ export default function SellerAddProduct() {
              </div>
           </div>
         </form>
-
-        <AnimatePresence>{successMessage && (<div className="fixed inset-0 z-[150] bg-slate-900/40 backdrop-blur-2xl flex items-center justify-center"><motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-white rounded-3xl p-12 text-center shadow-2xl"><div className="w-20 h-20 bg-emerald-500 text-white rounded-full flex items-center justify-center text-4xl mx-auto mb-6 animate-bounce">✓</div><h3 className="text-2xl font-black text-slate-900">{successMessage}</h3></motion.div></div>)}</AnimatePresence>
       </div>
     </div>
   );

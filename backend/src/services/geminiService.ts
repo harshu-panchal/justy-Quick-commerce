@@ -17,7 +17,7 @@ export async function generateProductDescription(input: {
     throw new Error("GEMINI_API_KEY is not configured on the server");
   }
 
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
   const prompt = `
 You are helping a seller on an Indian quick‑commerce marketplace to write a clear, attractive product description.

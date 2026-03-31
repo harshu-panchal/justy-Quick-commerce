@@ -18,6 +18,7 @@ import PublicRoute from "./components/PublicRoute";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { useEffect } from "react";
 import { initializePushNotifications, setupForegroundNotificationHandler } from "./services/pushNotificationService";
+import { Toaster } from 'react-hot-toast';
 
 // Critical routes - load immediately (Home, Cart, Checkout)
 import Home from "./modules/user/Home";
@@ -227,6 +228,7 @@ function App() {
       <LoadingProvider>
         <AxiosLoadingInterceptor>
           <IconLoader />
+          <Toaster position="top-center" reverseOrder={false} />
           <AuthProvider>
             <CoinProvider>
               <ThemeProvider>

@@ -13,6 +13,7 @@ export default function SellerProductList() {
   const navigate = useNavigate();
   const { user } = useAuth();
   
+  const [statusTab, setStatusTab] = useState<"all" | "active" | "pending">("all");
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -38,10 +39,17 @@ export default function SellerProductList() {
 
   useEffect(() => { fetchData(); }, []);
 
-  const filteredProducts = products.filter(p => 
-    p.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (p.headerCategoryId as any)?.name?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredProducts = products.filter(p => {
+    const matchesSearch = p.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (p.headerCategoryId as any)?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesTab = 
+      statusTab === "all" ? true :
+      statusTab === "active" ? p.publish === true :
+      statusTab === "pending" ? p.status === "Pending" : true;
+
+    return matchesSearch && matchesTab;
+  });
 
   const totalPages = Math.ceil(filteredProducts.length / rowsPerPage);
   const paginatedData = filteredProducts.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
@@ -88,8 +96,24 @@ export default function SellerProductList() {
               <svg className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
            </div>
            <div className="flex items-center gap-2 bg-neutral-100 p-1 rounded-xl">
-              <button className="px-5 py-2 bg-white text-neutral-900 rounded-lg text-[9px] font-black uppercase tracking-widest shadow-sm">All</button>
-              <button className="px-5 py-2 text-neutral-400 rounded-lg text-[9px] font-black uppercase tracking-widest hover:text-neutral-600 transition-all">Archived</button>
+              <button 
+                onClick={() => { setStatusTab("all"); setCurrentPage(1); }}
+                className={`px-5 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${statusTab === "all" ? "bg-white text-neutral-900 shadow-sm" : "text-neutral-400 hover:text-neutral-600"}`}
+              >
+                All
+              </button>
+              <button 
+                onClick={() => { setStatusTab("active"); setCurrentPage(1); }}
+                className={`px-5 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${statusTab === "active" ? "bg-white text-emerald-600 shadow-sm" : "text-neutral-400 hover:text-neutral-600"}`}
+              >
+                Active
+              </button>
+              <button 
+                onClick={() => { setStatusTab("pending"); setCurrentPage(1); }}
+                className={`px-5 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${statusTab === "pending" ? "bg-white text-amber-600 shadow-sm" : "text-neutral-400 hover:text-neutral-600"}`}
+              >
+                Pending
+              </button>
            </div>
         </div>
 
@@ -101,11 +125,19 @@ export default function SellerProductList() {
                     <div className="flex gap-5 items-start mb-5">
                        <div className="w-24 h-32 bg-neutral-50 rounded-xl overflow-hidden border border-neutral-100/50 relative shadow-inner group-hover:scale-105 transition-all">
                           <img src={p.mainImageUrl || p.mainImage || "https://placehold.co/200x300?text=Dish"} className="w-full h-full object-cover" alt={p.productName} />
-                          <div className="absolute top-2 left-2"><span className={`px-2 py-0.5 rounded-md text-[7px] font-black uppercase tracking-widest shadow-xl border border-white/20 ${p.publish ? "bg-teal-500 text-white" : "bg-neutral-800 text-neutral-200"}`}>{p.publish ? "✓ Live" : "Draft"}</span></div>
                        </div>
                        <div className="flex-1 space-y-4 pt-1">
                           <div className="space-y-0.5">
-                             <p className="text-[9px] font-black text-teal-600 uppercase tracking-widest opacity-80">{(p.headerCategoryId as any)?.name || "DOMAIN"}</p>
+                             <div className="flex items-center justify-between gap-2">
+                                <p className="text-[9px] font-black text-teal-600 uppercase tracking-widest opacity-80">{(p.headerCategoryId as any)?.name || "DOMAIN"}</p>
+                                {p.publish ? (
+                                  <span className="px-1.5 py-0.5 rounded bg-teal-500 text-white text-[7px] font-black uppercase tracking-widest">Live ✓</span>
+                                ) : p.status === "Pending" ? (
+                                  <span className="px-1.5 py-0.5 rounded bg-amber-500 text-white text-[7px] font-black uppercase tracking-widest">Pending</span>
+                                ) : (
+                                  <span className="px-1.5 py-0.5 rounded bg-neutral-200 text-neutral-600 text-[7px] font-black uppercase tracking-widest">Draft</span>
+                                )}
+                             </div>
                              <h3 className="text-base font-black text-neutral-900 tracking-tight leading-tight group-hover:text-teal-600 transition-colors uppercase italic">{p.productName}</h3>
                           </div>
                           <div className="space-y-0.5">

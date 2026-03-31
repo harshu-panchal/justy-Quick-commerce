@@ -5,6 +5,7 @@ import { getHeaderCategoriesPublic, HeaderCategory } from "../../../services/api
 import api from "../../../services/api/config";
 import { uploadImage } from "../../../services/api/uploadService";
 import { useAuth } from "../../../context/AuthContext";
+import toast from 'react-hot-toast';
 
 export default function SellerCategory() {
   const { user } = useAuth();
@@ -25,7 +26,6 @@ export default function SellerCategory() {
     preview: ""
   });
   const [submitting, setSubmitting] = useState(false);
-  const [successMsg, setSuccessMsg] = useState("");
 
   const fetchData = async () => {
     setLoading(true);
@@ -36,11 +36,22 @@ export default function SellerCategory() {
       ]);
       const quickH = hRes.filter(h => 
         h.deliveryType === 'quick' && 
-        h.name.toLowerCase() !== 'grocery' && 
-        h.name.toLowerCase() !== '99 to199 offers'
+        h.name === user?.category
       );
       setHeaderCategories(quickH);
-      if (sRes.success) setSubCategories(sRes.data);
+      
+      const matchingHeader = quickH.find(h => h.name === user?.category);
+      if (matchingHeader) {
+        setFormData(prev => ({ ...prev, headerCategoryId: matchingHeader._id }));
+      }
+      
+      if (sRes.success) {
+        // Filter subcategories by the seller's registered header category
+        const filteredBySeller = sRes.data.filter((cat: any) => 
+          cat.headerCategoryId?.name === user?.category
+        );
+        setSubCategories(filteredBySeller);
+      }
     } catch (err) {
       setError("Sync failed.");
     } finally {
@@ -74,9 +85,15 @@ export default function SellerCategory() {
           imageUrl = uploadRes.secureUrl;
       }
       await api.post("/categories", { name: formData.name, headerCategoryId: formData.headerCategoryId, image: imageUrl, status: "Unpublished" });
-      setSuccessMsg("Submitted! ✨");
-      setTimeout(() => { setIsModalOpen(false); setSuccessMsg(""); setFormData({ name: "", headerCategoryId: "", image: null, preview: "" }); fetchData(); }, 2000);
-    } catch (err: any) { setError(err.response?.data?.message || "Submit failed."); } finally { setSubmitting(false); }
+      toast.success("Category added successfully! ✨");
+      setIsModalOpen(false);
+      setFormData({ name: "", headerCategoryId: "", image: null, preview: "" });
+      fetchData();
+    } catch (err: any) { 
+      toast.error(err.response?.data?.message || "Sync failed."); 
+    } finally { 
+      setSubmitting(false); 
+    }
   };
 
   return (
@@ -165,12 +182,23 @@ export default function SellerCategory() {
                    <form onSubmit={handleAddSubmit} className="space-y-6">
                       <div className="space-y-1"><h3 className="text-xl font-black text-slate-900 tracking-tight">Create New Category</h3></div>
                       <div className="space-y-4">
-                         <div className="space-y-2"><label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Parent Category</label><select value={formData.headerCategoryId} onChange={e => setFormData(p => ({ ...p, headerCategoryId: e.target.value }))} className="w-full h-12 px-5 bg-slate-50 border border-slate-100 rounded-2xl text-[12px] font-black outline-none"><option value="">Select Category</option>{headerCategories.map(h => <option key={h._id} value={h._id}>{h.name}</option>)}</select></div>
+                         <div className="space-y-2">
+                           <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Parent Category</label>
+                           <select 
+                             value={formData.headerCategoryId} 
+                             onChange={e => setFormData(p => ({ ...p, headerCategoryId: e.target.value }))} 
+                             className="w-full h-12 px-5 bg-slate-50 border border-slate-100 rounded-2xl text-[12px] font-black outline-none"
+                           >
+                             <option value="">Select Category</option>
+                             {headerCategories.filter(h => h.name === user?.category).map(h => (
+                               <option key={h._id} value={h._id}>{h.name}</option>
+                             ))}
+                           </select>
+                         </div>
                          <div className="space-y-2"><label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Category</label><input type="text" value={formData.name} onChange={e => setFormData(p => ({ ...p, name: e.target.value }))} placeholder="Category Name" className="w-full h-12 px-6 bg-slate-50 border border-slate-100 rounded-2xl text-[14px] font-black outline-none" /></div>
                          <div className="space-y-2"><label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Category Image</label><div className="relative h-32 bg-slate-50 border-2 border-dashed border-slate-200 rounded-[1.5rem] overflow-hidden cursor-pointer" onClick={() => document.getElementById('cat-img-final')?.click()}>{formData.preview ? <img src={formData.preview} className="w-full h-full object-cover" /> : <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-slate-300"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span className="text-[8px] font-black uppercase">Upload</span></div>}<input id="cat-img-final" type="file" onChange={handleImageChange} className="hidden" /></div></div>
                       </div>
                       <button type="submit" disabled={submitting} className="w-full h-14 bg-slate-900 text-white rounded-[1.2rem] font-black text-[10px] uppercase tracking-[0.2em] shadow-lg">{submitting ? "..." : "Submit Category"}</button>
-                      {successMsg && <p className="text-[9px] font-black text-teal-600 uppercase text-center">{successMsg}</p>}
                    </form>
                 </motion.div>
              </motion.div>

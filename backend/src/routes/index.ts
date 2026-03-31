@@ -48,6 +48,9 @@ import customerSpinWheelRoutes from "./customerSpinWheelRoutes";
 import sellerSpinWheelRoutes from "./sellerSpinWheelRoutes";
 import deliverySpinWheelRoutes from "./deliverySpinWheelRoutes";
 import equipmentRoutes from "./equipmentRoutes";
+import sellerReviewRoutes from "./sellerReviewRoutes";
+import complaintRoutes from "./complaintRoutes";
+import sellerComplaintRoutes from "./sellerComplaintRoutes";
 
 import {
   createOrder,
@@ -139,6 +142,7 @@ router.use("/customer/quick-delivery", customerQuickDeliveryRoutes);
 router.use("/customer/cart", customerCartRoutes);
 router.use("/customer/wishlist", wishlistRoutes);
 router.use("/customer/reviews", productReviewRoutes);
+router.use("/customer/complaints", complaintRoutes);
 
 // General customer profile/location routes (catch-all for /customer)
 router.use("/customer", customerRoutes);
@@ -180,6 +184,7 @@ router.use("/seller/reports", reportRoutes);
 router.use("/seller/wallet", walletRoutes);
 
 // Seller Combo Offer routes
+router.use("/seller/complaints", sellerComplaintRoutes);
 router.use("/seller/combo-offers", sellerComboRoutes);
 
 // Tax routes (protected, seller/admin)
@@ -219,6 +224,9 @@ router.use("/delivery/wallet", authenticate, requireUserType("Delivery"), delive
 
 // Admin withdrawal management routes (protected, admin only)
 router.use("/admin/withdrawals", authenticate, requireUserType("Admin"), adminWithdrawalRoutes);
+
+// Seller Review Routes
+router.use("/seller/reviews", sellerReviewRoutes);
 
 // Admin commission management routes (protected, admin only)
 

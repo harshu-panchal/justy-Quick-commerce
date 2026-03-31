@@ -20,6 +20,7 @@ import { calculateProductPrice } from '../../utils/priceUtils';
 import { getCategoryType, getDeliveryInfo } from '../../config/pincodeService';
 import ComboOfferSection from './components/ComboOfferSection';
 import BuyTogetherSection from './components/BuyTogetherSection';
+import ProductReviews from './components/ProductReviews';
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
@@ -1016,6 +1017,16 @@ export default function ProductDetail() {
             />
           </div>
             )}
+
+            {/* Product Reviews */}
+            <div className="px-4 md:px-6 lg:px-8 mt-12 bg-white rounded-3xl p-8 shadow-sm border border-neutral-100">
+                <ProductReviews 
+                    productId={product.id || product._id} 
+                    productName={product.productName}
+                    productImage={product.mainImage}
+                />
+            </div>
+
           </div>
         </div>
 

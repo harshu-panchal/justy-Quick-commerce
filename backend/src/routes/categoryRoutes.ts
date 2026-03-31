@@ -6,7 +6,9 @@ import {
   getAllCategoriesWithSubcategories,
   getAllSubcategories,
   getSubSubCategories,
+  createCategory,
 } from "../modules/seller/controllers/categoryController";
+import { authenticate, requireUserType } from "../middleware/auth";
 
 const router = Router();
 
@@ -15,6 +17,14 @@ const router = Router();
 
 // Get all categories (parent categories only by default)
 router.get("/", getCategories);
+
+// Create a new category request (Seller/Admin)
+router.post(
+  "/", 
+  authenticate, 
+  requireUserType("Seller", "Admin"), 
+  createCategory
+);
 
 // Get all subcategories (across all categories)
 router.get("/subcategories", getAllSubcategories);

@@ -9,12 +9,28 @@ export interface Review {
     };
     rating: number;
     comment: string;
+    title?: string;
+    images?: string[];
     createdAt: string;
+    isVerifiedPurchase?: boolean;
+    sellerReply?: string;
+    sellerRepliedAt?: string;
 }
 
 export interface ReviewResponse {
     success: boolean;
-    data: Review[];
+    data: {
+        reviews: Review[];
+        stats: {
+            avgRating: number;
+            totalReviews: number;
+        };
+        pagination: {
+            total: number;
+            page: number;
+            pages: number;
+        };
+    };
     message?: string;
 }
 
@@ -29,7 +45,14 @@ export const getProductReviews = async (productId: string): Promise<ReviewRespon
 /**
  * Add a review for a product
  */
-export const addReview = async (productId: string, rating: number, comment: string): Promise<any> => {
-    const response = await api.post('/customer/reviews', { productId, rating, comment });
+export const addReview = async (data: {
+    productId: string;
+    orderId?: string;
+    rating: number;
+    comment: string;
+    title?: string;
+    images?: string[];
+}): Promise<any> => {
+    const response = await api.post('/customer/reviews', data);
     return response.data;
 };

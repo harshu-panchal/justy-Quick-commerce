@@ -9,6 +9,7 @@ import { useDeliveryTracking } from "../../hooks/useDeliveryTracking";
 import DeliveryPartnerCard from "../../components/DeliveryPartnerCard";
 import { useWarehouse } from "../../hooks/useWarehouse";
 import { cancelOrder, updateOrderNotes, getSellerLocationsForOrder, refreshDeliveryOtp, cancelOrderItem, requestReturn } from "../../services/api/customerOrderService";
+import RateProductModal from "./components/RateProductModal";
 
 // Icon Components
 const ArrowLeftIcon = ({ className }: { className?: string }) => (
@@ -485,6 +486,9 @@ export default function OrderDetail() {
     reason: "",
     description: "",
   });
+
+  const [showRateModal, setShowRateModal] = useState(false);
+  const [rateItem, setRateItem] = useState<any>(null);
 
   const returnReasons = [
     "Product is damaged/defective",
@@ -1248,6 +1252,18 @@ export default function OrderDetail() {
                               Return Item
                             </button>
                           )}
+                          {item.status === 'Delivered' && (
+                            <button
+                              className="text-[11px] text-teal-600 font-bold hover:underline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setRateItem(item);
+                                setShowRateModal(true);
+                              }}
+                            >
+                              Rate Product
+                            </button>
+                          )}
                         </div>
 
                         {/* Return Progress */}
@@ -1536,6 +1552,19 @@ export default function OrderDetail() {
                             Return Item
                           </Button>
                         )}
+                        {item.status === 'Delivered' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-xs text-teal-600 border-teal-200 hover:bg-teal-50 py-1 h-8"
+                            onClick={() => {
+                              setRateItem(item);
+                              setShowRateModal(true);
+                            }}
+                          >
+                            Rate Product
+                          </Button>
+                        )}
                       </div>
                     </div>
                   );
@@ -1713,6 +1742,25 @@ export default function OrderDetail() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Rate Product Modal */}
+      {rateItem && (
+        <RateProductModal
+            isOpen={showRateModal}
+            onClose={() => {
+                setShowRateModal(false);
+                setRateItem(null);
+            }}
+            productId={rateItem.product?._id || rateItem.product?.id || rateItem.productId}
+            productName={rateItem.product?.name || rateItem.productName || "Product"}
+            productImage={rateItem.product?.mainImage || rateItem.product?.imageUrl}
+            orderId={id || ""}
+            onSuccess={() => {
+                // Optionally refresh order data to reflect reviewed status if we track it
+                handleRefresh();
+            }}
+        />
+      )}
     </div>
   );
 }

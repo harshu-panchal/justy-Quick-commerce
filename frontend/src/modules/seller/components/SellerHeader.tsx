@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import jyastiLogo from '@assets/jyastiLogo.png';
 import { useAuth } from '../../../context/AuthContext';
+import { toggleShopStatus } from '../../../services/api/auth/sellerAuthService';
 
 interface SellerHeaderProps {
   onMenuClick: () => void;
@@ -13,7 +14,9 @@ export default function SellerHeader({ onMenuClick, isSidebarOpen }: SellerHeade
   const location = useLocation();
   const [showSettingsDropdown, setShowSettingsDropdown] = useState(false);
   const [showLocationDropdown, setShowLocationDropdown] = useState(false);
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
+  const [isShopOpen, setIsShopOpen] = useState(user?.isShopOpen ?? true);
+  const [isToggling, setIsToggling] = useState(false);
   const settingsRef = useRef<HTMLDivElement>(null);
   const locationRef = useRef<HTMLDivElement>(null);
 
@@ -49,6 +52,22 @@ export default function SellerHeader({ onMenuClick, isSidebarOpen }: SellerHeade
   const handleLocationClick = () => {
     setShowLocationDropdown(!showLocationDropdown);
     setShowSettingsDropdown(false);
+  };
+
+  const handleToggleShop = async () => {
+    if (isToggling) return;
+    setIsToggling(true);
+    try {
+      const res = await toggleShopStatus();
+      if (res.success) {
+        setIsShopOpen(res.data.isShopOpen);
+        updateUser({ ...user, isShopOpen: res.data.isShopOpen });
+      }
+    } catch (err) {
+      console.error("Toggle failed:", err);
+    } finally {
+      setIsToggling(false);
+    }
   };
 
   const handleLogoClick = () => {
@@ -144,6 +163,22 @@ export default function SellerHeader({ onMenuClick, isSidebarOpen }: SellerHeade
           >
             Wallet
           </button>
+        </div>
+
+        {/* Shop Status Toggle */}
+        <div className="flex items-center gap-3 bg-neutral-50 px-4 py-2 rounded-2xl border border-neutral-100">
+           <span className={`text-[10px] font-black uppercase tracking-widest ${isShopOpen ? 'text-emerald-600' : 'text-rose-500'}`}>
+              {isShopOpen ? 'Shop Open' : 'Shop Closed'}
+           </span>
+           <button 
+             onClick={handleToggleShop}
+             disabled={isToggling}
+             className={`relative w-12 h-6 rounded-full transition-colors duration-300 focus:outline-none ${isShopOpen ? 'bg-emerald-500' : 'bg-slate-300'}`}
+           >
+              <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow-sm transition-transform duration-300 flex items-center justify-center ${isShopOpen ? 'translate-x-6' : 'translate-x-0'}`}>
+                 {isToggling && <div className="w-2 h-2 border-2 border-neutral-200 border-t-neutral-800 rounded-full animate-spin" />}
+              </div>
+           </button>
         </div>
 
         {/* Action Icons */}

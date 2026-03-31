@@ -67,6 +67,7 @@ export interface Product {
   mainImageUrl?: string;
   mainImage?: string;
   galleryImageUrls: string[];
+  galleryImages?: string[];
   variations: ProductVariation[];
   variationType?: string;
   createdAt?: string;
@@ -189,7 +190,7 @@ export const generateProductDescriptionAI = async (data: {
   tags?: string[]; 
   existingDescription?: string; 
 }): Promise<ApiResponse<{ description: string }>> => {
-  const response = await api.post("/products/generate-description", data);
+  const response = await api.post("/ai/product-description", data);
   return response.data;
 };
 

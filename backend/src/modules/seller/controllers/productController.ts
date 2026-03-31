@@ -152,14 +152,14 @@ export const createProduct = asyncHandler(
       }
     }
 
-    // 6. Set product status - Products require admin approval
+    // 6. Set product status - Products MUST require admin approval
     newProductData.publish = false;
     newProductData.status = "Pending";
     newProductData.requiresApproval = true;
 
     // Set default values for other required fields if not provided
-    if (!newProductData.popular) newProductData.popular = false;
-    if (!newProductData.dealOfDay) newProductData.dealOfDay = false;
+    if (newProductData.popular === undefined) newProductData.popular = false;
+    if (newProductData.dealOfDay === undefined) newProductData.dealOfDay = false;
     if (!newProductData.isReturnable) newProductData.isReturnable = false;
     if (!newProductData.rating) newProductData.rating = 0;
     if (!newProductData.reviewsCount) newProductData.reviewsCount = 0;
@@ -334,8 +334,10 @@ export const updateProduct = asyncHandler(
     console.log("DEBUG updateProduct: sellerId from token:", sellerId);
     console.log("DEBUG updateProduct: productId:", id);
 
-    // Remove sellerId from update data if present (cannot change owner)
+    // Remove sellerId and status fields from update data (cannot change owner or status)
     delete updateData.sellerId;
+    delete updateData.publish; 
+    delete updateData.status;
 
     // Map frontend field names to model field names (same as createProduct)
     if (updateData.headerCategoryId !== undefined) {
@@ -509,7 +511,8 @@ export const deleteProduct = asyncHandler(
  */
 export const updateStock = asyncHandler(async (req: Request, res: Response) => {
   const sellerId = (req as any).user.userId;
-  const { id, variationId } = req.params;
+  const { id } = req.params;
+  const variationId = req.params.variationId || req.body.variationId;
   const { stock, status } = req.body;
 
   const product = await Product.findOne({ _id: id, seller: sellerId });
@@ -565,9 +568,18 @@ export const updateProductStatus = asyncHandler(
     const { publish, popular, dealOfDay } = req.body;
 
     const updateData: any = {};
-    if (publish !== undefined) updateData.publish = publish;
+    // Sellers CANNOT publish their own products; only admin can.
+    // However, they can toggle popular/dealOfDay if permitted, or we can restrict that too.
     if (popular !== undefined) updateData.popular = popular;
     if (dealOfDay !== undefined) updateData.dealOfDay = dealOfDay;
+    
+    // If they attempt to publish, return forbidden or just ignore it.
+    if (publish !== undefined) {
+      return res.status(403).json({
+        success: false,
+        message: "Only administrators can publish products. Your update will remain pending approval."
+      });
+    }
 
     const product = await Product.findOneAndUpdate(
       { _id: id, seller: sellerId },

@@ -81,7 +81,7 @@ router.post(
     const folder = (req.body.folder as string) || "public_uploads";
     
     // Safety check: Only allow specific folders for public uploads
-    const allowedFolders = ["sellers/fssai", "delivery/documents", "public_assets", "sellers/registration"];
+    const allowedFolders = ["sellers/fssai", "delivery/documents", "public_assets", "sellers/registration", "sellers/verification"];
     if (!allowedFolders.includes(folder)) {
       return res.status(403).json({
         success: false,

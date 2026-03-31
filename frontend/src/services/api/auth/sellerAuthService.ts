@@ -49,6 +49,8 @@ export interface RegisterData {
   fssaiLicNo?: string;
   storeDescription?: string;
   gstNumber?: string;
+  bankName?: string;
+  branch?: string;
   accountNumber?: string;
   ifsc?: string;
   upiId?: string;

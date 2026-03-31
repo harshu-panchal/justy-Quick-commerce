@@ -98,7 +98,7 @@ export default function SellerSignUp() {
   const [shopEstablishmentPreview, setShopEstablishmentPreview] = useState<string>('');
   const [drivingLicenseFile, setDrivingLicenseFile] = useState<File | null>(null);
   const [drivingLicensePreview, setDrivingLicensePreview] = useState<string>('');
-  const [businessLicenseType, setBusinessLicenseType] = useState<'Brand' | 'Distributor' | 'Dealer'>('Brand');
+  const [businessLicenseType, setBusinessLicenseType] = useState<string>('Manufacturer');
   const [businessLicenseFile, setBusinessLicenseFile] = useState<File | null>(null);
   const [businessLicensePreview, setBusinessLicensePreview] = useState<string>('');
   const [gstCertificateFile, setGstCertificateFile] = useState<File | null>(null);
@@ -116,7 +116,6 @@ export default function SellerSignUp() {
   const [categoriesLoading, setCategoriesLoading] = useState(true);
 
   useEffect(() => {
-    // Sync with Home Page categories (Header Categories) by fetching from API
     const syncCategories = async () => {
       setCategoriesLoading(true);
       try {
@@ -153,8 +152,10 @@ export default function SellerSignUp() {
 
   const showAdditionalDocs = formData.categories.length > 0;
 
+  const quickCategories = ['Food', 'bakery', 'Pharmacy', 'pharmacy', 'Vegetable & Fruits', 'Pan Corner', 'pan corner'];
+
   const showShopCertificate = formData.categories.some(cat => 
-    ['Food', 'food', 'bakery'].includes(cat)
+    ['Food', 'food', 'bakery'].includes(cat) || (cat && !quickCategories.includes(cat))
   );
 
   const showCheque = formData.categories.some(cat => 
@@ -169,7 +170,6 @@ export default function SellerSignUp() {
     ['Pharmacy', 'pharmacy'].includes(cat)
   );
 
-  const quickCategories = ['Food', 'bakery', 'Pharmacy', 'pharmacy', 'Vegetable & Fruits', 'Pan Corner', 'pan corner'];
   const showScheduledDocs = formData.categories.some(cat => 
     cat && !quickCategories.includes(cat)
   );
@@ -491,6 +491,8 @@ export default function SellerSignUp() {
         fssaiLicNo: fssaiImageUrl, // Store image URL in the license number field for now, or use fssaiImage if you updated the model
         storeDescription: formData.storeDescription,
         accountNumber: formData.accountNumber,
+        bankName: formData.bankName,
+        branch: formData.branch,
         ifsc: formData.ifsc,
         upiId: formData.upiId,
         gstNumber: formData.gstNumber,
@@ -1015,24 +1017,32 @@ export default function SellerSignUp() {
                       {showScheduledDocs && (
                         <div className="space-y-4 pt-2 border-t border-neutral-100">
                           <div>
-                            <label className="block text-sm font-bold text-teal-900 mb-2">Business License Type</label>
+                            <label className="block text-sm font-bold text-teal-900 mb-2">Brand listing</label>
                             <select
                               value={businessLicenseType}
-                              onChange={(e) => setBusinessLicenseType(e.target.value as any)}
-                              className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 bg-white shadow-sm"
+                              onChange={(e) => setBusinessLicenseType(e.target.value)}
+                              className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 bg-white shadow-sm font-medium"
                               disabled={loading}
                             >
-                              <option value="Brand">Brand License (Trademark)</option>
-                              <option value="Distributor">Distributor License</option>
-                              <option value="Dealer">Dealer License</option>
+                              <option value="Manufacturer">Manufacturer</option>
+                              <option value="Supplier">Supplier</option>
+                              <option value="Dealer">Dealer</option>
+                              <option value="Distributor">Distributor</option>
+                              <option value="Export/Import">Export/Import</option>
+                              <option value="Retailer">Retailer</option>
+                              <option value="Wholesaler">Wholesaler</option>
                             </select>
                           </div>
 
                           <div className="space-y-3">
                             <label className="block text-sm font-bold text-teal-900 text-center">
-                              {businessLicenseType === 'Brand' ? 'Trademark License' : 
-                               businessLicenseType === 'Distributor' ? 'Distributor License' : 
-                               'Dealer License'} *
+                              {businessLicenseType === 'Manufacturer' ? 'Trademark Registration Certificate' : 
+                               businessLicenseType === 'Supplier' ? 'Supplier Agreement or Brand Approval Letter' : 
+                               businessLicenseType === 'Dealer' ? 'Dealer Territory Letter or Approved Letter from the brand' :
+                               businessLicenseType === 'Distributor' ? 'Duplicate Confirmation Letter from the brand' :
+                               businessLicenseType === 'Export/Import' ? 'Import Export Licence' :
+                               businessLicenseType === 'Retailer' ? 'Retailer Corporation of a Letter' :
+                               businessLicenseType === 'Wholesaler' ? 'Trade Licence' : 'Business License'} *
                             </label>
                             <div className="relative h-32 border-2 border-dashed border-neutral-300 rounded-2xl flex flex-col items-center justify-center bg-neutral-50 hover:bg-neutral-100 transition-all overflow-hidden group">
                               <input
@@ -1068,10 +1078,14 @@ export default function SellerSignUp() {
                                 </div>
                               ) : (
                                 <div className="text-center">
-                                  <p className="text-xs font-bold text-teal-800">
-                                    Upload {businessLicenseType === 'Brand' ? 'Trademark' : 
-                                            businessLicenseType === 'Distributor' ? 'Distributor' : 
-                                            'Dealer'} License
+                                  <p className="text-xs font-bold text-teal-800 px-4 text-center">
+                                    Upload {businessLicenseType === 'Manufacturer' ? 'Trademark Registration' : 
+                                            businessLicenseType === 'Supplier' ? 'Supplier Agreement/Brand Approval' : 
+                                            businessLicenseType === 'Dealer' ? 'Dealer Territory/Approved Letter' :
+                                            businessLicenseType === 'Distributor' ? 'Confirmation Letter' :
+                                            businessLicenseType === 'Export/Import' ? 'Export Import License' :
+                                            businessLicenseType === 'Retailer' ? 'Retailer Corporation Letter' :
+                                            businessLicenseType === 'Wholesaler' ? 'Trade License' : 'License'}
                                   </p>
                                   <p className="text-[10px] text-neutral-500">JPG, PNG, PDF (Max 2MB)</p>
                                 </div>

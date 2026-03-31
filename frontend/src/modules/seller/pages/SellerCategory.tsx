@@ -1,183 +1,182 @@
-import { useState, useEffect } from 'react';
-import { getCategories, Category } from '../../../services/api/categoryService';
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { getCategories, Category } from "../../../services/api/categoryService";
+import { getHeaderCategoriesPublic, HeaderCategory } from "../../../services/api/headerCategoryService";
+import api from "../../../services/api/config";
+import { uploadImage } from "../../../services/api/uploadService";
+import { useAuth } from "../../../context/AuthContext";
 
 export default function SellerCategory() {
-    const [categories, setCategories] = useState<Category[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string>('');
-    const [searchTerm, setSearchTerm] = useState('');
-    const [rowsPerPage, setRowsPerPage] = useState(10);
+  const { user } = useAuth();
+  
+  const [headerCategories, setHeaderCategories] = useState<HeaderCategory[]>([]);
+  const [subCategories, setSubCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const rowsPerPage = 7;
 
-    // Fetch categories from API
-    useEffect(() => {
-        const fetchCategories = async () => {
-            setLoading(true);
-            setError('');
-            try {
-                const params: any = {};
-                if (searchTerm) {
-                    params.search = searchTerm;
-                }
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    name: "",
+    headerCategoryId: "",
+    image: null as File | null,
+    preview: ""
+  });
+  const [submitting, setSubmitting] = useState(false);
+  const [successMsg, setSuccessMsg] = useState("");
 
-                const response = await getCategories(params);
-                if (response.success && response.data) {
-                    setCategories(response.data);
-                } else {
-                    setError(response.message || 'Failed to fetch categories');
-                }
-            } catch (err: any) {
-                setError(err.response?.data?.message || err.message || 'Failed to fetch categories');
-            } finally {
-                setLoading(false);
-            }
-        };
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const [hRes, sRes] = await Promise.all([
+        getHeaderCategoriesPublic(true),
+        getCategories()
+      ]);
+      const quickH = hRes.filter(h => 
+        h.deliveryType === 'quick' && 
+        h.name.toLowerCase() !== 'grocery' && 
+        h.name.toLowerCase() !== '99 to199 offers'
+      );
+      setHeaderCategories(quickH);
+      if (sRes.success) setSubCategories(sRes.data);
+    } catch (err) {
+      setError("Sync failed.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        fetchCategories();
-    }, [searchTerm]);
+  useEffect(() => { fetchData(); }, []);
 
-    // Client-side filtering for display (API handles search, but we can filter further if needed)
-    const filteredCategories = categories.filter(cat =>
-        cat.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+  const filteredCategories = subCategories.filter(cat => 
+    cat.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (cat.headerCategoryId as any)?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-    return (
-        <div className="flex flex-col h-full">
-            {/* Page Header */}
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-semibold text-neutral-800">Category</h1>
-                <div className="text-sm text-blue-500">
-                    <span className="cursor-pointer hover:underline">Home</span> <span className="text-neutral-400">/</span> <span className="text-neutral-600">Dashboard</span>
-                </div>
-            </div>
+  const paginatedData = filteredCategories.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+  const totalPages = Math.ceil(filteredCategories.length / rowsPerPage);
 
-            {/* Content Card */}
-            <div className="bg-white rounded-lg shadow-sm border border-neutral-200 flex-1 flex flex-col">
-                <div className="p-4 border-b border-neutral-100 font-medium text-neutral-700">
-                    View Category
-                </div>
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) setFormData(prev => ({ ...prev, image: file, preview: URL.createObjectURL(file) }));
+  };
 
-                {/* Controls */}
-                <div className="p-4 flex justify-end items-center gap-2">
-                    <div className="flex items-center gap-2">
-                        <select
-                            value={rowsPerPage}
-                            onChange={(e) => setRowsPerPage(Number(e.target.value))}
-                            className="bg-neutral-100 border-none rounded py-1.5 px-3text-sm focus:ring-0 cursor-pointer"
-                        >
-                            <option value={10}>10</option>
-                            <option value={20}>20</option>
-                            <option value={50}>50</option>
-                        </select>
+  const handleAddSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.name.trim() || !formData.headerCategoryId) { setError("Fields required."); return; }
+    setSubmitting(true);
+    try {
+      let imageUrl = "";
+      if (formData.image) {
+          const uploadRes = await uploadImage(formData.image, "categories");
+          imageUrl = uploadRes.secureUrl;
+      }
+      await api.post("/categories", { name: formData.name, headerCategoryId: formData.headerCategoryId, image: imageUrl, status: "Unpublished" });
+      setSuccessMsg("Submitted! ✨");
+      setTimeout(() => { setIsModalOpen(false); setSuccessMsg(""); setFormData({ name: "", headerCategoryId: "", image: null, preview: "" }); fetchData(); }, 2000);
+    } catch (err: any) { setError(err.response?.data?.message || "Submit failed."); } finally { setSubmitting(false); }
+  };
 
-                        <button
-                            onClick={() => {
-                                const headers = ['ID', 'Category Name', 'Total Subcategory'];
-                                const csvContent = [
-                                    headers.join(','),
-                                    ...filteredCategories.map(cat => [
-                                        cat._id,
-                                        `"${cat.name}"`,
-                                        cat.totalSubcategory
-                                    ].join(','))
-                                ].join('\n');
-                                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                                const link = document.createElement('a');
-                                const url = URL.createObjectURL(blob);
-                                link.setAttribute('href', url);
-                                link.setAttribute('download', `categories_${new Date().toISOString().split('T')[0]}.csv`);
-                                link.style.visibility = 'hidden';
-                                document.body.appendChild(link);
-                                link.click();
-                                document.body.removeChild(link);
-                            }}
-                            className="bg-teal-700 hover:bg-teal-800 text-white px-3 py-1.5 rounded text-sm font-medium flex items-center gap-1 transition-colors"
-                        >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                            Export
-                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-1"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                        </button>
+  return (
+    <div className="font-sans antialiased text-slate-900 pb-10">
+      <div className="max-w-7xl mx-auto py-8 lg:py-10 px-4 sm:px-6">
+        
+        {/* Header - Zoomed Out */}
+        <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-8">
+          <div className="space-y-1">
+             <nav className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">
+                <span>Enterprise</span><span className="text-slate-200">/</span><span className="text-teal-600">Product Map</span>
+             </nav>
+             <h1 className="text-2xl font-black tracking-tight text-slate-900">Category Architecture</h1>
+          </div>
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="h-11 px-8 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-[0.1em] hover:bg-slate-800 transition-all flex items-center gap-3 shadow-lg"
+          >
+             <span className="bg-teal-500 text-white w-5 h-5 rounded-md flex items-center justify-center font-black">+</span>
+             New Category
+          </button>
+        </header>
 
-                        <div className="relative">
-                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-neutral-400 text-xs">Search:</span>
-                            <input
-                                type="text"
-                                className="pl-14 pr-3 py-1.5 bg-neutral-100 border-none rounded text-sm focus:ring-1 focus:ring-teal-500 w-48"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
-                        </div>
-                    </div>
-                </div>
-
-                {/* Loading and Error States */}
-                {loading && (
-                    <div className="flex items-center justify-center p-8">
-                        <div className="text-neutral-500">Loading categories...</div>
-                    </div>
-                )}
-                {error && !loading && (
-                    <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg m-4">
-                        {error}
-                    </div>
-                )}
-
-                {/* Table */}
-                {!loading && !error && (
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse border border-neutral-200">
-                            <thead>
-                                <tr className="bg-neutral-50 text-xs font-bold text-neutral-800">
-                                    <th className="p-4 w-16 border border-neutral-200">
-                                        <div className="flex items-center justify-between cursor-pointer">ID <span className="text-neutral-300 text-[10px]">⇅</span></div>
-                                    </th>
-                                    <th className="p-4 border border-neutral-200">
-                                        <div className="flex items-center justify-between cursor-pointer">Category Name <span className="text-neutral-300 text-[10px]">⇅</span></div>
-                                    </th>
-                                    <th className="p-4 border border-neutral-200">
-                                        <div className="flex items-center justify-between cursor-pointer">Category Image <span className="text-neutral-300 text-[10px]">⇅</span></div>
-                                    </th>
-                                    <th className="p-4 border border-neutral-200">
-                                        <div className="flex items-center justify-between cursor-pointer">Total Subcategory <span className="text-neutral-300 text-[10px]">⇅</span></div>
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filteredCategories.map((category) => (
-                                    <tr key={category._id} className="hover:bg-neutral-50 transition-colors text-sm text-neutral-700">
-                                        <td className="p-4 align-middle border border-neutral-200">{category._id}</td>
-                                        <td className="p-4 align-middle border border-neutral-200">{category.name}</td>
-                                        <td className="p-4 border border-neutral-200">
-                                            <div className="w-16 h-12 bg-white border border-neutral-200 rounded p-1 flex items-center justify-center mx-auto">
-                                                <img
-                                                    src={category.image || '/assets/category-placeholder.png'}
-                                                    alt={category.name}
-                                                    className="max-w-full max-h-full object-contain"
-                                                    onError={(e) => {
-                                                        (e.target as HTMLImageElement).src = 'https://placehold.co/60x40?text=Img';
-                                                    }}
-                                                />
-                                            </div>
-                                        </td>
-                                        <td className="p-4 align-middle border border-neutral-200">{category.totalSubcategory || 0}</td>
-                                    </tr>
-                                ))}
-                                {filteredCategories.length === 0 && (
-                                    <tr>
-                                        <td colSpan={4} className="p-8 text-center text-neutral-400 border border-neutral-200">
-                                            No categories found.
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
-
-                {/* Pagination (Visual only mostly for now as per image doesn't show bottom) */}
-                <div className="p-4 border-t border-neutral-100 mt-auto">
-                    {/* Placeholder for potential pagination info if needed, or left empty as strictly per image top part */}
-                </div>
-            </div>
+        {/* Search - Zoomed Out */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm mb-8">
+           <div className="relative w-full md:w-[320px]">
+              <input 
+                type="text" placeholder="Quick search..." value={searchTerm} onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                className="w-full h-10 bg-slate-50 border border-slate-100 rounded-xl pl-10 pr-4 text-[12px] font-bold focus:bg-white focus:border-teal-500 transition-all outline-none"
+              />
+              <svg className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+           </div>
+           <div className="hidden md:flex items-center gap-4">
+              <div className="flex items-center gap-2 font-black text-[8px] text-slate-400 uppercase tracking-widest"><div className="w-2 h-2 rounded-full bg-emerald-500 shadow-sm" />Active</div>
+              <div className="flex items-center gap-2 font-black text-[8px] text-slate-400 uppercase tracking-widest"><div className="w-2 h-2 rounded-full bg-rose-500 shadow-sm" />Pending</div>
+           </div>
         </div>
-    );
+
+        {/* Table - Zoomed Out */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+           <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+              <h2 className="text-lg font-black text-slate-800 tracking-tight">Active Hierarchy</h2>
+              <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest">{filteredCategories.length} Nodes</p>
+           </div>
+           <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                 <thead>
+                    <tr className="bg-slate-50/50 border-b border-slate-100">
+                       <th className="p-5 text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Image</th>
+                       <th className="p-5 text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Name</th>
+                       <th className="p-5 text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Parent Category</th>
+                       <th className="p-5 text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 text-right">Status</th>
+                    </tr>
+                 </thead>
+                 <tbody className="divide-y divide-slate-50">
+                    <AnimatePresence mode="popLayout">
+                       {paginatedData.map((cat) => (
+                          <motion.tr key={cat._id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="group hover:bg-slate-50/40 transition-all duration-300">
+                             <td className="p-5">
+                                <div className="w-16 h-10 bg-slate-100 rounded-lg overflow-hidden border border-slate-100 shadow-inner"><img src={cat.image || "https://placehold.co/80x50?text=Asset"} className="w-full h-full object-cover group-hover:scale-105 transition-transform" alt={cat.name} /></div>
+                             </td>
+                             <td className="p-5"><div className="space-y-0.5"><p className="text-[13px] font-black text-slate-800 group-hover:text-teal-600 transition-colors uppercase italic">{cat.name}</p><p className="text-[8px] text-slate-400 font-bold uppercase tracking-widest">ID {cat._id.slice(-6).toUpperCase()}</p></div></td>
+                             <td className="p-5"><span className="px-3 py-1 bg-slate-50 text-slate-600 rounded-lg text-[9px] font-black tracking-widest uppercase border border-slate-100">{(cat as any).headerCategoryId?.name || "Global Tier"}</span></td>
+                             <td className="p-5 text-right"><span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${cat.status === "Published" || cat.status === "Active" || cat.isActive ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-500"}`}><div className={`w-1.5 h-1.5 rounded-full ${cat.status === "Published" || cat.status === "Active" || cat.isActive ? 'bg-emerald-500' : 'bg-rose-500'}`} />{cat.status === "Published" || cat.status === "Active" || cat.isActive ? "Active" : "Pending"}</span></td>
+                          </motion.tr>
+                       ))}
+                    </AnimatePresence>
+                 </tbody>
+              </table>
+           </div>
+           <footer className="p-6 bg-slate-50/50 flex items-center justify-between border-t border-slate-100">
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Page {currentPage} of {totalPages || 1}</p>
+              <div className="flex items-center gap-2">
+                 <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="w-10 h-10 bg-white border border-slate-200 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-900 transition-all disabled:opacity-20 shadow-sm"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"/></svg></button>
+                 <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="w-10 h-10 bg-white border border-slate-200 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-900 transition-all disabled:opacity-20 shadow-sm"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"/></svg></button>
+              </div>
+           </footer>
+        </div>
+
+        {/* Modal - Zoomed Out */}
+        <AnimatePresence>
+           {isModalOpen && (
+             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[200] bg-slate-900/30 backdrop-blur-3xl flex items-center justify-center p-6">
+                <motion.div initial={{ scale: 0.98, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.98, opacity: 0 }} className="bg-white rounded-[2.5rem] p-10 max-w-md w-full shadow-2xl relative border border-slate-100">
+                   <button onClick={() => setIsModalOpen(false)} className="absolute top-8 right-8 text-slate-300">×</button>
+                   <form onSubmit={handleAddSubmit} className="space-y-6">
+                      <div className="space-y-1"><h3 className="text-xl font-black text-slate-900 tracking-tight">Create New Category</h3></div>
+                      <div className="space-y-4">
+                         <div className="space-y-2"><label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Parent Category</label><select value={formData.headerCategoryId} onChange={e => setFormData(p => ({ ...p, headerCategoryId: e.target.value }))} className="w-full h-12 px-5 bg-slate-50 border border-slate-100 rounded-2xl text-[12px] font-black outline-none"><option value="">Select Category</option>{headerCategories.map(h => <option key={h._id} value={h._id}>{h.name}</option>)}</select></div>
+                         <div className="space-y-2"><label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Category</label><input type="text" value={formData.name} onChange={e => setFormData(p => ({ ...p, name: e.target.value }))} placeholder="Category Name" className="w-full h-12 px-6 bg-slate-50 border border-slate-100 rounded-2xl text-[14px] font-black outline-none" /></div>
+                         <div className="space-y-2"><label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Category Image</label><div className="relative h-32 bg-slate-50 border-2 border-dashed border-slate-200 rounded-[1.5rem] overflow-hidden cursor-pointer" onClick={() => document.getElementById('cat-img-final')?.click()}>{formData.preview ? <img src={formData.preview} className="w-full h-full object-cover" /> : <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-slate-300"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span className="text-[8px] font-black uppercase">Upload</span></div>}<input id="cat-img-final" type="file" onChange={handleImageChange} className="hidden" /></div></div>
+                      </div>
+                      <button type="submit" disabled={submitting} className="w-full h-14 bg-slate-900 text-white rounded-[1.2rem] font-black text-[10px] uppercase tracking-[0.2em] shadow-lg">{submitting ? "..." : "Submit Category"}</button>
+                      {successMsg && <p className="text-[9px] font-black text-teal-600 uppercase text-center">{successMsg}</p>}
+                   </form>
+                </motion.div>
+             </motion.div>
+           )}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
 }

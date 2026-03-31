@@ -18,6 +18,8 @@ export interface Category {
   groupCategory?: string;
   totalSubcategory?: number;
   totalProduct?: number;
+  status?: string;
+  isActive?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }

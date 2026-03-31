@@ -114,6 +114,16 @@ const CustomerReferEarn = lazy(() => import("./modules/user/CustomerReferEarn"))
 const SellerLogin = lazy(() => import("./modules/seller/pages/SellerLogin"));
 const SellerSignUp = lazy(() => import("./modules/seller/pages/SellerSignUp"));
 
+// Lazy load new seller features
+const SellerGrowth = lazy(() => import("./modules/seller/pages/SellerGrowth"));
+const SellerComplaints = lazy(() => import("./modules/seller/pages/SellerComplaints"));
+const SellerRatings = lazy(() => import("./modules/seller/pages/SellerRatings"));
+const SellerFinance = lazy(() => import("./modules/seller/pages/SellerFinance"));
+const SellerHelp = lazy(() => import("./modules/seller/pages/SellerHelp"));
+const SellerOutlets = lazy(() => import("./modules/seller/pages/SellerOutlets"));
+const SellerGeneralReports = lazy(() => import("./modules/seller/pages/SellerGeneralReports"));
+const SellerProductDetail = lazy(() => import("./modules/seller/pages/SellerProductDetail"));
+
 // Lazy load admin routes
 const AdminLayout = lazy(() => import("./modules/admin/components/AdminLayout"));
 const AdminDashboard = lazy(() => import("./modules/admin/pages/AdminDashboard"));
@@ -355,6 +365,7 @@ function App() {
                                                   <Route path="product/edit/:id" element={<SellerAddProduct />} />
                                                   <Route path="product/taxes" element={<SellerTaxes />} />
                                                   <Route path="product/list" element={<SellerProductList />} />
+                                                   <Route path="product/detail/:id" element={<SellerProductDetail />} />
                                                   <Route path="product/stock" element={<SellerStockManagement />} />
                                                   <Route path="call" element={<SellerVideoCall />} />
                                                   <Route path="plans" element={<SellerPlans />} />
@@ -367,6 +378,13 @@ function App() {
                                                   <Route path="account-settings" element={<SellerAccountSettings />} />
                                                   <Route path="marketplace" element={<SellerEquipmentShop />} />
                                                   <Route path="marketplace/cart" element={<SellerEquipmentCart />} />
+                                                   <Route path="growth" element={<SellerGrowth />} />
+                                                   <Route path="complaints" element={<SellerComplaints />} />
+                                                   <Route path="ratings" element={<SellerRatings />} />
+                                                   <Route path="finance" element={<SellerFinance />} />
+                                                   <Route path="help" element={<SellerHelp />} />
+                                                   <Route path="outlets" element={<SellerOutlets />} />
+                                                   <Route path="reports" element={<SellerGeneralReports />} />
                                                 </Routes>
                                               </SellerLayout>
                                             }
@@ -377,6 +395,7 @@ function App() {
                                   </ProtectedRoute>
                                 }
                               />
+
 
                               {/* Admin App Routes */}
                               <Route

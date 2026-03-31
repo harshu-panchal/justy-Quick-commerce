@@ -24,69 +24,60 @@ interface SellerSidebarProps {
 }
 
 const menuItems: MenuItem[] = [
-  { label: "Dashboard", path: "/seller" },
-  { label: "Orders", path: "/seller/orders", requiresPayment: true },
-  { label: "Category", path: "/seller/category", requiresPayment: true },
-  { label: "SubCategory", path: "/seller/subcategory", requiresPayment: true },
-  {
-    label: "Video Call",
-    path: "/seller/call",
+  { 
+    label: "ORDERS", 
+    path: "/seller/orders", 
+    requiresPayment: true,
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M23 7l-7 5 7 5V7z"></path>
-        <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+        <path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
       </svg>
-    ),
+    )
   },
-  {
-    label: "Plans",
-    path: "/seller/plans",
+  { 
+    label: "GROWTH", 
+    path: "/seller/growth", 
+    requiresPayment: true,
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M4 19.5A2.5 2.5 0 0 0 6.5 22h11A2.5 2.5 0 0 0 20 19.5v-13A2.5 2.5 0 0 0 17.5 4h-11A2.5 2.5 0 0 0 4 6.5v13z"></path>
-        <path d="M8 7h8"></path>
-        <path d="M8 11h8"></path>
-        <path d="M8 15h5"></path>
+        <path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
       </svg>
-    ),
+    )
   },
   {
-    label: "Spin & Win",
-    path: "/seller/spin-wheel",
-    icon: (
-      <svg
-        width="18"
-        height="18"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round">
-        <circle cx="12" cy="12" r="9"></circle>
-        <path d="M12 3v3"></path>
-        <path d="M21 12h-3"></path>
-        <path d="M12 21v-3"></path>
-        <path d="M3 12h3"></path>
-        <path d="M7 7l2 2"></path>
-        <path d="M17 17l-2-2"></path>
-        <path d="M17 7l-2 2"></path>
-        <path d="M7 17l2-2"></path>
-      </svg>
-    ),
-  },
-  {
-    label: "Product",
-    path: "/seller/product",
+    label: "MENU",
+    path: "/seller/menu",
     hasSubmenu: true,
     requiresPayment: true,
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+    ),
     submenuItems: [
       {
-        label: "Add new Product",
-        path: "/seller/product/add",
+        label: "Category",
+        path: "/seller/category",
         requiresPayment: true,
         icon: (
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line><line x1="16" y1="12" x2="8" y2="12"></line><line x1="12" y1="16" x2="12" y2="8"></line></svg>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
+        ),
+      },
+      {
+        label: "Products",
+        path: "/seller/product/list",
+        requiresPayment: true,
+        icon: (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+        ),
+      },
+   
+      {
+        label: "Stock Manage",
+        path: "/seller/product/stock",
+        requiresPayment: true,
+        icon: (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
         ),
       },
       {
@@ -94,61 +85,124 @@ const menuItems: MenuItem[] = [
         path: "/seller/product/taxes",
         requiresPayment: true,
         icon: (
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="18" rx="4" ry="2"></ellipse><ellipse cx="12" cy="14" rx="3.5" ry="1.8"></ellipse><ellipse cx="12" cy="10" rx="3" ry="1.5"></ellipse><circle cx="9" cy="9" r="1" fill="currentColor"></circle><line x1="7" y1="7" x2="11" y2="11" strokeWidth="2"></line><circle cx="15" cy="11" r="1" fill="currentColor"></circle></svg>
-        ),
-      },
-      {
-        label: "Product List",
-        path: "/seller/product/list",
-        requiresPayment: true,
-        icon: (
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><polyline points="9 12 11 14 15 10"></polyline><polyline points="9 16 11 18 15 14"></polyline></svg>
-        ),
-      },
-      {
-        label: "Stock Management",
-        path: "/seller/product/stock",
-        requiresPayment: true,
-        icon: (
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="18" rx="4" ry="2"></ellipse><ellipse cx="12" cy="14" rx="3.5" ry="1.8"></ellipse><ellipse cx="12" cy="10" rx="3" ry="1.5"></ellipse><circle cx="9" cy="9" r="1" fill="currentColor"></circle></svg>
         ),
       },
     ],
   },
-  {
-    label: "Wallet",
-    path: "/seller/wallet",
-  },
-  {
-    label: "Reports",
-    path: "/seller/reports",
-    hasSubmenu: true,
+  { 
+    label: "COMPLAINTS", 
+    path: "/seller/complaints", 
     requiresPayment: true,
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+      </svg>
+    )
+  },
+  { 
+    label: "RATINGS", 
+    path: "/seller/ratings", 
+    requiresPayment: true,
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.382-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+      </svg>
+    )
+  },
+  { 
+    label: "REPORTS", 
+    path: "/seller/reports", 
+    requiresPayment: true,
+    hasSubmenu: true,
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 01-2 2h22a2 2 0 01-2-2v-6a2 2 0 00-2-2h-2a2 2 0 00-2 2v6" />
+      </svg>
+    ),
     submenuItems: [
       {
         label: "Sales Report",
         path: "/seller/reports/sales",
         requiresPayment: true,
         icon: (
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
         ),
       },
-    ],
+      {
+        label: "Analytics",
+        path: "/seller/reports",
+        requiresPayment: true,
+        icon: (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 01-2 2h22a2 2 0 01-2-2v-6a2 2 0 00-2-2h-2a2 2 0 00-2 2v6"></path></svg>
+        ),
+      }
+    ]
   },
-  { label: "Return", path: "/seller/return", requiresPayment: true },
-  { label: "Combo Offers", path: "/seller/combo-offers", requiresPayment: true },
-  {
-    label: "Marketplace",
-    path: "/seller/marketplace",
+  { 
+    label: "FINANCE", 
+    path: "/seller/finance", 
     requiresPayment: true,
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path>
-        <path d="M3 6h18"></path>
-        <path d="M16 10a4 4 0 0 1-8 0"></path>
+        <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+        <path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16" />
       </svg>
-    ),
+    )
   },
+  { 
+    label: "HELP", 
+    path: "/seller/help", 
+    requiresPayment: true,
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10" />
+        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+        <line x1="12" y1="17" x2="12.01" y2="17" />
+      </svg>
+    )
+  },
+  { 
+    label: "OUTLETS & STAFF", 
+    path: "/seller/outlets", 
+    requiresPayment: true,
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+      </svg>
+    )
+  },
+  // {
+  //   label: "Video Call",
+  //   path: "/seller/call",
+  //   icon: (
+  //     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  //       <path d="M23 7l-7 5 7 5V7z"></path>
+  //       <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+  //     </svg>
+  //   ),
+  // },
+  // {
+  //   label: "Spin & Win",
+  //   path: "/seller/spin-wheel",
+  //   icon: (
+  //     <svg
+  //       width="18"
+  //       height="18"
+  //       viewBox="0 0 24 24"
+  //       fill="none"
+  //       stroke="currentColor"
+  //       strokeWidth="2"
+  //       strokeLinecap="round"
+  //       strokeLinejoin="round">
+  //       <circle cx="12" cy="12" r="9"></circle>
+  //       <path d="M12 3v3"></path>
+  //       <path d="M21 12h-3"></path>
+  //       <path d="M12 21v-3"></path>
+  //       <path d="M3 12h3"></path>
+  //     </svg>
+  //   ),
+  // },
   {
     label: "Profile",
     path: "/seller/account-settings",

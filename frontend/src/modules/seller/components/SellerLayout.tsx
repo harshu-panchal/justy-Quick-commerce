@@ -53,14 +53,14 @@ export default function SellerLayout({ children }: SellerLayoutProps) {
 
       {/* Main Content */}
       <div
-        className={`flex-1 flex flex-col transition-all duration-300 w-full ${isSidebarOpen ? 'ml-64' : 'ml-0'
+        className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ${isSidebarOpen ? 'lg:pl-64' : 'pl-0'
           }`}
       >
         {/* Header */}
         <SellerHeader onMenuClick={toggleSidebar} isSidebarOpen={isSidebarOpen} />
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 bg-neutral-50">
+        <main className="flex-1 p-4 sm:p-6 md:p-8 bg-neutral-50 overflow-x-hidden">
           <EquipmentCartProvider>
             {children}
           </EquipmentCartProvider>

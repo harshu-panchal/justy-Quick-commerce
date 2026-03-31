@@ -12,6 +12,13 @@ export interface ApiResponse<T> {
   };
 }
 
+export interface ProductAddon {
+  _id?: string;
+  name: string;
+  price: number;
+  inStock?: boolean;
+}
+
 export interface ProductVariation {
   _id?: string;
   name?: string; // Mapped from title if needed, or direct
@@ -54,6 +61,7 @@ export interface Product {
   weight?: string;
   color?: string;
   size?: string;
+  sku?: string;
   mainImageUrl?: string;
   mainImage?: string; // Mapped directly from Product model
   galleryImageUrls: string[];
@@ -72,6 +80,12 @@ export interface Product {
   // Shop by Store fields
   isShopByStoreOnly?: boolean;
   shopId?: string | any;
+  foodType?: 'Veg' | 'Non-Veg' | 'Egg';
+  preparationTime?: number;
+  timing?: string[];
+  addons?: ProductAddon[];
+  availabilityStatus?: 'Available' | 'Sold out';
+  packagingPrice?: number;
 }
 
 export interface CreateProductData {
@@ -88,6 +102,7 @@ export interface CreateProductData {
   seoTitle?: string;
   seoKeywords?: string;
   seoImageAlt?: string;
+  seoImage?: string;
   seoDescription?: string;
   smallDescription?: string;
   tags?: string[];
@@ -102,12 +117,19 @@ export interface CreateProductData {
   weight?: string;
   color?: string;
   size?: string;
+  sku?: string;
   mainImageUrl?: string;
   galleryImageUrls?: string[];
   variations: ProductVariation[];
   variationType?: string;
   isShopByStoreOnly?: boolean;
   shopId?: string;
+  foodType?: 'Veg' | 'Non-Veg' | 'Egg';
+  preparationTime?: number;
+  timing?: string[];
+  addons?: ProductAddon[];
+  availabilityStatus?: 'Available' | 'Sold out';
+  packagingPrice?: number;
 }
 
 export interface Shop {
@@ -128,6 +150,7 @@ export interface GetProductsParams {
   limit?: number;
   sortBy?: string;
   sortOrder?: "asc" | "desc";
+  sellerId?: string;
 }
 
 export interface ProductsResponse {

@@ -97,6 +97,17 @@ export interface IProduct extends Document {
   isShopByStoreOnly?: boolean;
   shopId?: mongoose.Types.ObjectId;
 
+  foodType?: 'Veg' | 'Non-Veg' | 'Egg';
+  preparationTime?: number; // in minutes
+  timing?: string[]; // e.g., ["Breakfast", "Lunch"]
+  packagingPrice?: number;
+  addons?: Array<{
+    name: string;
+    price: number;
+    inStock?: boolean;
+  }>;
+  availabilityStatus?: 'Available' | 'Sold out';
+
   rejectionReason?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -372,6 +383,37 @@ const ProductSchema = new Schema<IProduct>(
     shopId: {
       type: Schema.Types.ObjectId,
       ref: "Shop",
+    },
+    foodType: {
+      type: String,
+      enum: ["Veg", "Non-Veg", "Egg"],
+    },
+    preparationTime: {
+      type: Number,
+      min: [1, "Preparation time must be at least 1 minute"],
+    },
+    timing: {
+      type: [String],
+      default: [],
+    },
+    addons: {
+      type: [
+        {
+          name: { type: String, trim: true },
+          price: { type: Number, default: 0 },
+          inStock: { type: Boolean, default: true },
+        },
+      ],
+      default: [],
+    },
+    availabilityStatus: {
+      type: String,
+      enum: ["Available", "Sold out"],
+      default: "Available",
+    },
+    packagingPrice: {
+      type: Number,
+      default: 0,
     },
   },
   {

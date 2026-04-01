@@ -296,7 +296,7 @@ export default function SellerAddProduct() {
                 unitType: product.grocery?.unitType || "Packet",
                 minOrderQuantity: product.grocery?.minOrderQuantity?.toString() || "1",
                 expiryDate: product.grocery?.expiryDate ? new Date(product.grocery.expiryDate).toISOString().split('T')[0] : "",
-                brandName: product.grocery?.brand || product.brandName || "",
+                brand: product.grocery?.brand || product.brandName || "",
                 description: product.smallDescription || "",
               }
             });

@@ -61,7 +61,9 @@ export default function SellerHeader({ onMenuClick, isSidebarOpen }: SellerHeade
       const res = await toggleShopStatus();
       if (res.success) {
         setIsShopOpen(res.data.isShopOpen);
-        updateUser({ ...user, isShopOpen: res.data.isShopOpen });
+        if (user) {
+          updateUser({ ...user, isShopOpen: res.data.isShopOpen });
+        }
       }
     } catch (err) {
       console.error("Toggle failed:", err);

@@ -38,6 +38,14 @@ interface Seller {
     profile?: string;
     idProof?: string;
     addressProof?: string;
+    cancelledCheque?: string;
+    shopEstablishment?: string;
+    drivingLicense?: string;
+    businessLicense?: string;
+    businessLicenseType?: string;
+    gstCertificate?: string;
+    fssaiLicNo?: string;
+    upiId?: string;
     requireProductApproval?: boolean;
     viewCustomerDetails?: boolean;
     securityDepositStatus?: 'Pending' | 'Paid' | 'Refunded';
@@ -81,6 +89,14 @@ const mapSellerToFrontend = (seller: SellerType): Seller => {
         profile: seller.profile,
         idProof: seller.idProof,
         addressProof: seller.addressProof,
+        cancelledCheque: seller.cancelledCheque,
+        shopEstablishment: seller.shopEstablishment,
+        drivingLicense: seller.drivingLicense,
+        businessLicense: seller.businessLicense,
+        businessLicenseType: seller.businessLicenseType,
+        gstCertificate: seller.gstCertificate,
+        fssaiLicNo: seller.fssaiLicNo,
+        upiId: seller.upiId,
         requireProductApproval: seller.requireProductApproval,
         viewCustomerDetails: seller.viewCustomerDetails,
         securityDepositStatus: seller.securityDepositStatus || 'Pending',
@@ -118,6 +134,8 @@ export default function AdminManageSellerList() {
     const [categoryCommissions, setCategoryCommissions] = useState<CategoryCommission[]>([]);
     const [isSavingCommissions, setIsSavingCommissions] = useState(false);
     const [isFetchingCommissions, setIsFetchingCommissions] = useState(false);
+    const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+
 
     // Fetch sellers from backend
     useEffect(() => {
@@ -1103,6 +1121,84 @@ export default function AdminManageSellerList() {
                                     </div>
                                 )}
 
+                                {/* Uploaded Documents */}
+                                <div className="bg-neutral-50 rounded-lg p-4">
+                                    <h4 className="text-sm font-semibold text-neutral-700 mb-3">Uploaded Documents</h4>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                                        {[
+                                            { label: 'FSSAI License', url: editingSeller.fssaiLicNo },
+                                            { label: 'GST Certificate', url: editingSeller.gstCertificate },
+                                            { label: 'Cancelled Cheque', url: editingSeller.cancelledCheque },
+                                            { label: 'Shop Establishment', url: editingSeller.shopEstablishment },
+                                            { label: 'Driving License', url: editingSeller.drivingLicense },
+                                            { label: 'Business License', url: editingSeller.businessLicense, type: editingSeller.businessLicenseType },
+                                        ].map((doc, idx) => (
+                                            <div key={idx} className="bg-white p-3 rounded-lg border border-neutral-200 flex flex-col h-full">
+                                                <div className="flex justify-between items-start mb-2">
+                                                    <label className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">{doc.label}</label>
+                                                    {doc.type && <span className="text-[10px] bg-teal-50 text-teal-700 px-1.5 py-0.5 rounded font-bold">{doc.type}</span>}
+                                                </div>
+                                                
+                                                {doc.url ? (
+                                                    <div className="flex-1 flex flex-col justify-between">
+                                                        <div className="relative group cursor-pointer aspect-[4/3] rounded overflow-hidden bg-neutral-100 mb-3"
+                                                             onClick={() => {
+                                                                 if (doc.url?.toLowerCase().endsWith('.pdf')) {
+                                                                     window.open(doc.url, '_blank');
+                                                                 } else {
+                                                                     setLightboxUrl(doc.url || null);
+                                                                 }
+                                                             }}>
+                                                            {doc.url.toLowerCase().endsWith('.pdf') ? (
+                                                                <div className="w-full h-full flex flex-col items-center justify-center text-red-500 gap-2">
+                                                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                                                        <line x1="9" y1="15" x2="12" y2="15"></line>
+                                                                        <line x1="9" y1="11" x2="15" y2="11"></line>
+                                                                        <line x1="9" y1="19" x2="15" y2="19"></line>
+                                                                    </svg>
+                                                                    <span className="text-[10px] font-bold">PDF DOCUMENT</span>
+                                                                </div>
+                                                            ) : (
+                                                                <>
+                                                                    <img src={doc.url} alt={doc.label} className="w-full h-full object-cover" />
+                                                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                                                                            <circle cx="11" cy="11" r="8"></circle>
+                                                                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                                                            <line x1="11" y1="8" x2="11" y2="14"></line>
+                                                                            <line x1="8" y1="11" x2="14" y2="11"></line>
+                                                                        </svg>
+                                                                    </div>
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                        <button 
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                window.open(doc.url, '_blank');
+                                                            }}
+                                                            className="text-[10px] font-bold text-teal-600 hover:text-teal-700 uppercase tracking-tighter flex items-center gap-1"
+                                                        >
+                                                            View Full Document
+                                                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                                                <polyline points="15 3 21 3 21 9"></polyline>
+                                                                <line x1="10" y1="14" x2="21" y2="3"></line>
+                                                            </svg>
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex-1 flex items-center justify-center bg-neutral-50 rounded border border-dashed border-neutral-200 py-6">
+                                                        <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Not Uploaded</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
                                 {/* Settings */}
                                 <div className="bg-neutral-50 rounded-lg p-4">
                                     <h4 className="text-sm font-semibold text-neutral-700 mb-3">Settings</h4>
@@ -1190,7 +1286,47 @@ export default function AdminManageSellerList() {
                     </div>
                 </div>
             )}
+
+            {/* Lightbox Overlay */}
+            {lightboxUrl && (
+                <div 
+                    className="fixed inset-0 z-[100] bg-black/90 flex flex-col items-center justify-center p-4 sm:p-8 animate-in fade-in duration-200"
+                    onClick={() => setLightboxUrl(null)}
+                >
+                    <button 
+                        className="absolute top-4 right-4 text-white hover:text-neutral-300 p-2 transition-colors"
+                        onClick={() => setLightboxUrl(null)}
+                    >
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                    
+                    <div className="relative max-w-5xl max-h-full flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+                        <img 
+                            src={lightboxUrl} 
+                            alt="Full document" 
+                            className="max-w-full max-h-[85vh] object-contain rounded shadow-2xl border border-white/10"
+                        />
+                        <div className="absolute -bottom-10 left-0 right-0 flex justify-center">
+                            <button 
+                                onClick={() => window.open(lightboxUrl, '_blank')}
+                                className="bg-white text-black px-4 py-1.5 rounded-full text-xs font-bold hover:bg-neutral-200 transition-colors flex items-center gap-2"
+                            >
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                    <polyline points="15 3 21 3 21 9"></polyline>
+                                    <line x1="10" y1="14" x2="21" y2="3"></line>
+                                </svg>
+                                Open Original
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
+
     );
 }
 

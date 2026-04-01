@@ -36,6 +36,15 @@ export interface Seller {
   profile?: string;
   idProof?: string;
   addressProof?: string;
+  cancelledCheque?: string;
+  shopEstablishment?: string;
+  drivingLicense?: string;
+  businessLicense?: string;
+  businessLicenseType?: string;
+  gstCertificate?: string;
+  gstCertificateUrl?: string;
+  fssaiLicNo?: string;
+  upiId?: string;
   requireProductApproval?: boolean;
   viewCustomerDetails?: boolean;
   securityDepositStatus?: "Pending" | "Paid" | "Refunded";

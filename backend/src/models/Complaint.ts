@@ -1,9 +1,10 @@
 import mongoose, { Document, Schema } from "mongoose";
 
 export interface IComplaint extends Document {
-  customer: mongoose.Types.ObjectId;
+  customer?: mongoose.Types.ObjectId;
   order?: mongoose.Types.ObjectId;
   seller?: mongoose.Types.ObjectId;
+  raisedByType: "Customer" | "Seller";
   
   category: "Delivery" | "Product" | "Payment" | "Refund" | "App/Technical" | "Other";
   subject: string;
@@ -26,7 +27,12 @@ const ComplaintSchema = new Schema<IComplaint>(
     customer: {
       type: Schema.Types.ObjectId,
       ref: "Customer",
-      required: [true, "Customer is required"],
+      required: false,
+    },
+    raisedByType: {
+      type: String,
+      enum: ["Customer", "Seller"],
+      default: "Customer",
     },
     order: {
       type: Schema.Types.ObjectId,

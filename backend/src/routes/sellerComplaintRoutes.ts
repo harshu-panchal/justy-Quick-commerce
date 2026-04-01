@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   getSellerComplaints,
   updateComplaintStatus,
+  raiseSupportTicket,
 } from "../modules/seller/controllers/complaintController";
 import { authenticate, requireUserType } from "../middleware/auth";
 
@@ -13,6 +14,9 @@ router.use(requireUserType("Seller"));
 
 // Get seller's complaints
 router.get("/", getSellerComplaints);
+
+// Raise a support ticket to admin
+router.post("/raise", raiseSupportTicket);
 
 // Update complaint status/response
 router.patch("/:id/status", updateComplaintStatus);

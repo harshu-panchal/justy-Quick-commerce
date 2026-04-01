@@ -108,6 +108,62 @@ export interface IProduct extends Document {
   }>;
   availabilityStatus?: 'Available' | 'Sold out';
 
+  pharmacy?: {
+    tablets?: string;
+    treatment?: string;
+    form?: string;
+    prescriptionRequired?: boolean;
+    packOf?: string;
+    dosage?: string;
+    therapeuticClassification?: string;
+    composition?: string;
+    containerType?: string;
+    salesPackage?: string;
+    manufacturingDate?: Date;
+    expiryDate?: Date;
+    sideEffects?: string;
+    manufacturerName?: string;
+    howItWorks?: string;
+    safetyAdvice?: string;
+    interactions?: string;
+    manufacturerLicenseNo?: string;
+    storage?: string;
+    contraindications?: string;
+    schedule?: string;
+    medicineType?: string;
+    underDPCO?: boolean;
+    manufacturingProcess?: string;
+    manufacturerAddress?: string;
+    usageDescription?: string;
+    variant?: string;
+    quantity?: string;
+  };
+
+  freshProduce?: {
+    packOf?: string;
+    brand?: string;
+    type?: string;
+    quantity?: string;
+    shelfLife?: string;
+    form?: string;
+    isOrganic?: boolean;
+    commonName?: string;
+    isWhole?: boolean;
+    origin?: string;
+    packagingType?: string;
+    netQuantity?: string;
+    addedPreservatives?: string;
+    secondaryQuantity?: string;
+    isImported?: boolean;
+  };
+
+  grocery?: {
+    unitType?: 'Kg' | 'Gram' | 'Litre' | 'Piece' | 'Packet';
+    minOrderQuantity?: number;
+    expiryDate?: Date;
+    brand?: string;
+  };
+
   rejectionReason?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -414,6 +470,59 @@ const ProductSchema = new Schema<IProduct>(
     packagingPrice: {
       type: Number,
       default: 0,
+    },
+    pharmacy: {
+      tablets: { type: String, trim: true },
+      treatment: { type: String, trim: true },
+      form: { type: String, trim: true },
+      prescriptionRequired: { type: Boolean, default: false },
+      packOf: { type: String, trim: true },
+      dosage: { type: String, trim: true },
+      therapeuticClassification: { type: String, trim: true },
+      composition: { type: String, trim: true },
+      containerType: { type: String, trim: true },
+      salesPackage: { type: String, trim: true },
+      manufacturingDate: { type: Date },
+      expiryDate: { type: Date },
+      sideEffects: { type: String, trim: true },
+      manufacturerName: { type: String, trim: true },
+      howItWorks: { type: String, trim: true },
+      safetyAdvice: { type: String, trim: true },
+      interactions: { type: String, trim: true },
+      manufacturerLicenseNo: { type: String, trim: true },
+      storage: { type: String, trim: true },
+      contraindications: { type: String, trim: true },
+      schedule: { type: String, trim: true },
+      medicineType: { type: String, trim: true },
+      underDPCO: { type: Boolean, default: false },
+      manufacturingProcess: { type: String, trim: true },
+      manufacturerAddress: { type: String, trim: true },
+      usageDescription: { type: String, trim: true },
+      variant: { type: String, trim: true },
+      quantity: { type: String, trim: true },
+    },
+    freshProduce: {
+      packOf: { type: String, trim: true },
+      brand: { type: String, trim: true },
+      type: { type: String, trim: true },
+      quantity: { type: String, trim: true },
+      shelfLife: { type: String, trim: true },
+      form: { type: String, trim: true },
+      isOrganic: { type: Boolean, default: false },
+      commonName: { type: String, trim: true },
+      isWhole: { type: Boolean, default: true },
+      origin: { type: String, trim: true },
+      packagingType: { type: String, trim: true },
+      netQuantity: { type: String, trim: true },
+      addedPreservatives: { type: String, trim: true },
+      secondaryQuantity: { type: String, trim: true },
+      isImported: { type: Boolean, default: false },
+    },
+    grocery: {
+      unitType: { type: String, enum: ['Kg', 'Gram', 'Litre', 'Piece', 'Packet'] },
+      minOrderQuantity: { type: Number, default: 1 },
+      expiryDate: { type: Date },
+      brand: { type: String, trim: true },
     },
   },
   {

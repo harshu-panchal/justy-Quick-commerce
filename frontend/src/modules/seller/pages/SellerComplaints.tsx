@@ -249,7 +249,9 @@ export default function SellerComplaints() {
                                     <div className="mb-5">
                                         <p className="text-[10px] font-black text-teal-600 uppercase tracking-widest mb-1">{ticket.category}</p>
                                         <h3 className="font-black text-neutral-900 text-sm uppercase tracking-tight leading-tight line-clamp-1">{ticket.subject}</h3>
-                                        <p className="text-[10px] font-bold text-neutral-400 mt-1 uppercase tracking-widest">By: {ticket.customer.name}</p>
+                                        <p className="text-[10px] font-bold text-neutral-400 mt-1 uppercase tracking-widest">
+                                            By: {ticket.raisedByType === 'Seller' ? 'STORE SUPPORT (YOU)' : (ticket.customer?.name || 'Anonymous Merchant')}
+                                        </p>
                                     </div>
 
                                     <div className="bg-neutral-50 p-4 rounded-2xl border border-neutral-100 mb-6">

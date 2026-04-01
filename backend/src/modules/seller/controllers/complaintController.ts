@@ -62,3 +62,34 @@ export const updateComplaintStatus = asyncHandler(
         });
     }
 );
+
+/**
+ * Raise a support ticket to Admin
+ */
+export const raiseSupportTicket = asyncHandler(
+    async (req: Request, res: Response) => {
+        const sellerId = (req as any).user.userId;
+        const { category = "Other", subject, message, images = [], priority = "Medium" } = req.body;
+
+        if (!subject || !message) {
+            return res.status(400).json({ success: false, message: "Subject and message are required" });
+        }
+
+        const complaint = await Complaint.create({
+            seller: sellerId,
+            raisedByType: "Seller",
+            category,
+            subject,
+            message,
+            images,
+            priority,
+            status: "Open"
+        });
+
+        return res.status(201).json({
+            success: true,
+            data: complaint,
+            message: "Support ticket raised successfully"
+        });
+    }
+);

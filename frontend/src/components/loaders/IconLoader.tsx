@@ -22,6 +22,8 @@ const IconLoader: React.FC<IconLoaderProps> = ({ forceShow = false }) => {
     }
   }, [show, animationData]);
 
+  return null;
+  /*
   return (
     <AnimatePresence>
       {show && (
@@ -49,6 +51,7 @@ const IconLoader: React.FC<IconLoaderProps> = ({ forceShow = false }) => {
       )}
     </AnimatePresence>
   );
+  */
 };
 
 export default IconLoader;

@@ -286,12 +286,13 @@ export const validateWithdrawal = async (
       };
     }
 
-    const ifsc = (user as any).ifsc || (user as any).ifscCode;
-    if (!user.accountNumber || !ifsc || !user.bankName) {
+    const ifscToUse = (user as any).ifsc || (user as any).ifscCode;
+    // Only Account Number and IFSC are required for Withdrawal as per Merchant Request
+    if (!user.accountNumber || !ifscToUse) {
       return {
         success: false,
         message:
-          "Please complete your bank account details before requesting withdrawal",
+          "Please ensure Account Number and IFSC are correctly filled in your Profile Settings.",
       };
     }
 
@@ -333,7 +334,8 @@ export const createWithdrawalRequest = async (
     }
 
     // Create account details string
-    const accountDetails = `${user.bankName} - ${user.accountNumber} (${user.ifscCode})`;
+    const ifscToUse = (user as any).ifsc || (user as any).ifscCode || 'N/A';
+    const accountDetails = `${user.bankName || 'Unknown Bank'} - ${user.accountNumber || 'N/A'} (${ifscToUse})`;
 
     // Create withdrawal request
     const withdrawRequest = new WithdrawRequest({

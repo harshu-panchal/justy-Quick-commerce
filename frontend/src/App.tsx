@@ -367,7 +367,7 @@ function App() {
                                                   <Route path="product/edit/:id" element={<SellerAddProduct />} />
                                                   <Route path="product/taxes" element={<SellerTaxes />} />
                                                   <Route path="product/list" element={<SellerProductList />} />
-                                                   <Route path="product/detail/:id" element={<SellerProductDetail />} />
+                                                  <Route path="product/detail/:id" element={<SellerProductDetail />} />
                                                   <Route path="product/stock" element={<SellerStockManagement />} />
                                                   <Route path="call" element={<SellerVideoCall />} />
                                                   <Route path="plans" element={<SellerPlans />} />
@@ -380,13 +380,13 @@ function App() {
                                                   <Route path="account-settings" element={<SellerAccountSettings />} />
                                                   <Route path="marketplace" element={<SellerEquipmentShop />} />
                                                   <Route path="marketplace/cart" element={<SellerEquipmentCart />} />
-                                                   <Route path="growth" element={<SellerGrowth />} />
-                                                   <Route path="complaints" element={<SellerComplaints />} />
-                                                   <Route path="ratings" element={<SellerRatings />} />
-                                                   <Route path="finance" element={<SellerFinance />} />
-                                                   <Route path="help" element={<SellerHelp />} />
-                                                   <Route path="outlets" element={<SellerOutlets />} />
-                                                   <Route path="reports" element={<SellerGeneralReports />} />
+                                                  <Route path="growth" element={<SellerGrowth />} />
+                                                  <Route path="complaints" element={<SellerComplaints />} />
+                                                  <Route path="ratings" element={<SellerRatings />} />
+                                                  <Route path="finance" element={<SellerFinance />} />
+                                                  <Route path="help" element={<SellerHelp />} />
+                                                  <Route path="outlets" element={<SellerOutlets />} />
+                                                  <Route path="reports" element={<SellerGeneralReports />} />
                                                 </Routes>
                                               </SellerLayout>
                                             }

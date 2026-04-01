@@ -31,10 +31,40 @@ export interface SalesReportResponse {
     };
 }
 
-/**
- * Get seller's sales report
- */
+export interface GeneralAnalyticsResponse {
+    success: boolean;
+    data: {
+        metrics: Array<{ label: string; value: string; desc: string; icon: string }>;
+        salesTrends: number[];
+        weekTotal: number;
+        peakHour: string;
+        growth: string;
+        topRevenueItem: string;
+    };
+}
+
+export interface GrowthInsightsResponse {
+    success: boolean;
+    data: {
+        promoRevenue: number;
+        promoOrders: number;
+        visibilityScore: string;
+        activeCampaigns: number;
+        recommendations: Array<{ title: string; impact: string; action: string }>;
+    };
+}
+
 export const getSalesReport = async (params: SalesReportParams): Promise<SalesReportResponse> => {
     const response = await api.get<SalesReportResponse>('/seller/reports/sales', { params });
+    return response.data;
+};
+
+export const getGeneralAnalytics = async (): Promise<GeneralAnalyticsResponse> => {
+    const response = await api.get<GeneralAnalyticsResponse>('/seller/reports/analytics');
+    return response.data;
+};
+
+export const getGrowthInsights = async (): Promise<GrowthInsightsResponse> => {
+    const response = await api.get<GrowthInsightsResponse>('/seller/reports/growth');
     return response.data;
 };

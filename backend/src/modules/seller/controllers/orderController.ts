@@ -246,7 +246,7 @@ export const updateOrderStatus = asyncHandler(
     const { status } = req.body;
 
     // Validate allowed status updates for seller
-    const allowedStatuses = ['Accepted', 'On the way', 'Delivered', 'Cancelled', 'Rejected'];
+    const allowedStatuses = ['Accepted', 'Ready', 'Picked Up', 'On the way', 'Delivered', 'Cancelled', 'Rejected'];
     if (!allowedStatuses.includes(status)) {
       return res.status(400).json({
         success: false,
@@ -335,11 +335,13 @@ export const updateOrderStatus = asyncHandler(
 
         // Log transaction
         await WalletTransaction.create({
-          sellerId,
+          userId: sellerId,
+          userType: 'SELLER',
           amount: netEarning,
           type: 'Credit',
           description: `Earnings from Order #${order.orderNumber}`,
           reference: `ORD-${order.orderNumber}-${Date.now()}`,
+          relatedOrder: order._id,
           status: 'Completed'
         });
       }

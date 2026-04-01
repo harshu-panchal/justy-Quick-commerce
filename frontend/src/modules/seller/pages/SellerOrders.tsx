@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { getOrders, Order, GetOrdersParams } from '../../../services/api/orderService';
+import { getOrders, Order, GetOrdersParams, updateOrderStatus, UpdateOrderStatusData } from '../../../services/api/orderService';
 
 
 type SortField = 'orderId' | 'deliveryDate' | 'orderDate' | 'status' | 'amount';
@@ -18,6 +18,28 @@ export default function SellerOrders() {
   const [currentPage, setCurrentPage] = useState(1);
   const [sortField, setSortField] = useState<SortField | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+
+  const handleStatusUpdate = async (e: React.MouseEvent, id: string, newStatus: UpdateOrderStatusData['status']) => {
+    e.stopPropagation();
+    if (updatingId) return;
+    
+    setUpdatingId(id);
+    try {
+      const response = await updateOrderStatus(id, { status: newStatus });
+      if (response.success) {
+        setOrders(prev => prev.map(order => 
+          order.id === id ? { ...order, status: newStatus } : order
+        ));
+      } else {
+        alert(response.message || 'Failed to update status');
+      }
+    } catch (err: any) {
+      alert(err.response?.data?.message || err.message || 'Failed to update status');
+    } finally {
+      setUpdatingId(null);
+    }
+  };
 
   // Fetch orders from API
   useEffect(() => {
@@ -307,16 +329,44 @@ export default function SellerOrders() {
                   <div className="flex gap-2">
                     {activeTab === 'New' ? (
                       <>
-                        <button className="flex-1 py-2.5 bg-teal-600 text-white text-xs font-bold rounded-xl hover:bg-teal-700 transition-colors shadow-[0_4px_12px_rgba(13,148,136,0.3)]">
-                          Accept Order
+                        <button 
+                          onClick={(e) => handleStatusUpdate(e, order.id, 'Accepted')}
+                          disabled={updatingId === order.id}
+                          className="flex-1 py-2.5 bg-teal-600 text-white text-xs font-bold rounded-xl hover:bg-teal-700 transition-colors shadow-[0_4px_12px_rgba(13,148,136,0.3)] disabled:opacity-50"
+                        >
+                          {updatingId === order.id ? 'Processing...' : 'Accept Order'}
                         </button>
-                        <button className="px-4 py-2.5 bg-red-50 text-red-600 text-xs font-bold rounded-xl hover:bg-red-100 transition-colors border border-red-100">
+                        <button 
+                          onClick={(e) => handleStatusUpdate(e, order.id, 'Rejected')}
+                          disabled={updatingId === order.id}
+                          className="px-4 py-2.5 bg-red-50 text-red-600 text-xs font-bold rounded-xl hover:bg-red-100 transition-colors border border-red-100 disabled:opacity-50"
+                        >
                           Reject
                         </button>
                       </>
                     ) : activeTab === 'Preparing' ? (
-                      <button className="flex-1 py-2.5 bg-teal-600 text-white text-xs font-bold rounded-xl hover:bg-teal-700 transition-colors shadow-[0_4px_12px_rgba(13,148,136,0.3)]">
-                        Mark as Ready
+                      <button 
+                        onClick={(e) => handleStatusUpdate(e, order.id, 'Ready')}
+                        disabled={updatingId === order.id}
+                        className="flex-1 py-2.5 bg-teal-600 text-white text-xs font-bold rounded-xl hover:bg-teal-700 transition-colors shadow-[0_4px_12px_rgba(13,148,136,0.3)] disabled:opacity-50"
+                      >
+                        {updatingId === order.id ? 'Processing...' : 'Mark as Ready'}
+                      </button>
+                    ) : activeTab === 'Ready' ? (
+                      <button 
+                        onClick={(e) => handleStatusUpdate(e, order.id, 'Picked Up')}
+                        disabled={updatingId === order.id}
+                        className="flex-1 py-2.5 bg-teal-600 text-white text-xs font-bold rounded-xl hover:bg-teal-700 transition-colors shadow-[0_4px_12px_rgba(13,148,136,0.3)] disabled:opacity-50"
+                      >
+                        {updatingId === order.id ? 'Processing...' : 'Mark as Picked Up'}
+                      </button>
+                    ) : activeTab === 'Picked Up' ? (
+                      <button 
+                        onClick={(e) => handleStatusUpdate(e, order.id, 'Delivered')}
+                        disabled={updatingId === order.id}
+                        className="flex-1 py-2.5 bg-teal-600 text-white text-xs font-bold rounded-xl hover:bg-teal-700 transition-colors shadow-[0_4px_12px_rgba(13,148,136,0.3)] disabled:opacity-50"
+                      >
+                        {updatingId === order.id ? 'Processing...' : 'Mark as Delivered'}
                       </button>
                     ) : (
                       <button className="flex-1 py-2.5 bg-white border border-neutral-200 text-neutral-700 text-xs font-bold rounded-xl hover:bg-neutral-50 transition-all flex items-center justify-center gap-2 shadow-sm">

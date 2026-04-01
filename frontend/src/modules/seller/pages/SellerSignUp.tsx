@@ -122,7 +122,7 @@ export default function SellerSignUp() {
         const headerCategories = await getHeaderCategoriesPublic(true);
         if (headerCategories && headerCategories.length > 0) {
           // Filter out categories that shouldn't be show for seller registration
-          const excludedCategories = ['Grocery', '99 to199 offers'];
+          const excludedCategories = ['99 to199 offers'];
           
           const mappedCategories = headerCategories
             .filter((cat: HeaderCategory) => !excludedCategories.includes(cat.name))
@@ -147,12 +147,12 @@ export default function SellerSignUp() {
   }, []);
 
   const showFSSAI = formData.categories.some(cat => 
-    ['Vegetable & Fruits', 'Food', 'bakery'].includes(cat)
+    ['Vegetable & Fruits', 'Food', 'bakery', 'Grocery', 'Tea Corner'].includes(cat)
   );
 
   const showAdditionalDocs = formData.categories.length > 0;
 
-  const quickCategories = ['Food', 'bakery', 'Pharmacy', 'pharmacy', 'Vegetable & Fruits', 'Pan Corner', 'pan corner'];
+  const quickCategories = ['Food', 'bakery', 'Pharmacy', 'pharmacy', 'Vegetable & Fruits', 'Pan Corner', 'pan corner', 'Grocery', 'grocery', 'Tea Corner', 'tea corner'];
 
   const showShopCertificate = formData.categories.some(cat => 
     ['Food', 'food', 'bakery'].includes(cat) || (cat && !quickCategories.includes(cat))

@@ -2,9 +2,14 @@ import api from '../config';
 
 export interface ComplaintEntry {
     _id: string;
-    customer: {
+    customer?: {
         name: string;
         email: string;
+        mobile: string;
+    };
+    seller?: {
+        sellerName: string;
+        storeName: string;
         mobile: string;
     };
     order?: {
@@ -12,6 +17,7 @@ export interface ComplaintEntry {
         status: string;
         totalPrice: number;
     };
+    raisedByType: 'Customer' | 'Seller';
     category: string;
     subject: string;
     message: string;

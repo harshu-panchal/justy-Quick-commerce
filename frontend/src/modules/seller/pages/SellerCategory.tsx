@@ -34,13 +34,15 @@ export default function SellerCategory() {
         getHeaderCategoriesPublic(true),
         getCategories()
       ]);
+      const sellerCategory = user?.category || (user?.categories && user.categories.length > 0 ? user.categories[0] : null);
+      
       const quickH = hRes.filter(h => 
         h.deliveryType === 'quick' && 
-        h.name === user?.category
+        h.name === sellerCategory
       );
       setHeaderCategories(quickH);
       
-      const matchingHeader = quickH.find(h => h.name === user?.category);
+      const matchingHeader = quickH.find(h => h.name === sellerCategory);
       if (matchingHeader) {
         setFormData(prev => ({ ...prev, headerCategoryId: matchingHeader._id }));
       }
@@ -48,7 +50,7 @@ export default function SellerCategory() {
       if (sRes.success) {
         // Filter subcategories by the seller's registered header category
         const filteredBySeller = sRes.data.filter((cat: any) => 
-          cat.headerCategoryId?.name === user?.category
+          cat.headerCategoryId?.name === sellerCategory
         );
         setSubCategories(filteredBySeller);
       }
@@ -190,7 +192,7 @@ export default function SellerCategory() {
                              className="w-full h-12 px-5 bg-slate-50 border border-slate-100 rounded-2xl text-[12px] font-black outline-none"
                            >
                              <option value="">Select Category</option>
-                             {headerCategories.filter(h => h.name === user?.category).map(h => (
+                             {headerCategories.map(h => (
                                <option key={h._id} value={h._id}>{h.name}</option>
                              ))}
                            </select>

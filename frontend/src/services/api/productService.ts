@@ -12,6 +12,55 @@ export interface ApiResponse<T> {
   };
 }
 
+export interface PharmacyData {
+  tablets?: string;
+  quantity?: string;
+  treatment?: string;
+  form?: string;
+  prescriptionRequired?: boolean;
+  packOf?: string;
+  variant?: string;
+  dosage?: string;
+  therapeuticClassification?: string;
+  composition?: string;
+  containerType?: string;
+  salesPackage?: string;
+  manufacturingDate?: string | Date;
+  expiryDate?: string | Date;
+  sideEffects?: string;
+  manufacturerName?: string;
+  howItWorks?: string;
+  safetyAdvice?: string;
+  interactions?: string;
+  manufacturerLicenseNo?: string;
+  storage?: string;
+  contraindications?: string;
+  schedule?: string;
+  medicineType?: string;
+  underDPCO?: boolean;
+  manufacturingProcess?: string;
+  manufacturerAddress?: string;
+  usageDescription?: string;
+}
+
+export interface FreshProduceData {
+  packOf?: string;
+  brand?: string;
+  type?: string;
+  quantity?: string;
+  shelfLife?: string;
+  form?: string;
+  isOrganic?: boolean;
+  commonName?: string;
+  isWhole?: boolean;
+  origin?: string;
+  packagingType?: string;
+  netQuantity?: string;
+  addedPreservatives?: string;
+  secondaryQuantity?: string;
+  isImported?: boolean;
+}
+
 export interface ProductAddon {
   _id?: string;
   name: string;
@@ -87,6 +136,15 @@ export interface Product {
   addons?: ProductAddon[];
   availabilityStatus?: 'Available' | 'Sold out';
   packagingPrice?: number;
+  barcode?: string;
+  pharmacy?: PharmacyData;
+  freshProduce?: FreshProduceData;
+  grocery?: {
+    unitType?: 'Kg' | 'Gram' | 'Litre' | 'Piece' | 'Packet';
+    minOrderQuantity?: number;
+    expiryDate?: Date | string;
+    brand?: string;
+  };
 }
 
 export interface CreateProductData {
@@ -133,6 +191,15 @@ export interface CreateProductData {
   addons?: ProductAddon[];
   availabilityStatus?: 'Available' | 'Sold out';
   packagingPrice?: number;
+  barcode?: string;
+  pharmacy?: PharmacyData;
+  freshProduce?: FreshProduceData;
+  grocery?: {
+    unitType?: 'Kg' | 'Gram' | 'Litre' | 'Piece' | 'Packet';
+    minOrderQuantity?: number;
+    expiryDate?: Date | string;
+    brand?: string;
+  };
 }
 
 export interface Shop {

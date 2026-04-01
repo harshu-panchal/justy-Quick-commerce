@@ -63,7 +63,10 @@ import {
   getPublicOrderDetails,
 } from "../modules/customer/controllers/customerOrderController";
 
+import faqRoutes from "./faqRoutes";
+
 const router = Router();
+router.use("/faqs", faqRoutes);
 
 // Public Order View (QR Scan)
 router.get("/public/orders/:id", getPublicOrderDetails);

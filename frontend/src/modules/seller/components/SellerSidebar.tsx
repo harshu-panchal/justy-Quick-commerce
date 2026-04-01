@@ -87,14 +87,6 @@ const menuItems: MenuItem[] = [
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
         ),
       },
-      {
-        label: "Taxes",
-        path: "/seller/product/taxes",
-        requiresPayment: true,
-        icon: (
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="18" rx="4" ry="2"></ellipse><ellipse cx="12" cy="14" rx="3.5" ry="1.8"></ellipse><ellipse cx="12" cy="10" rx="3" ry="1.5"></ellipse><circle cx="9" cy="9" r="1" fill="currentColor"></circle></svg>
-        ),
-      },
     ],
   },
   { 
@@ -169,16 +161,16 @@ const menuItems: MenuItem[] = [
       </svg>
     )
   },
-  { 
-    label: "OUTLETS & STAFF", 
-    path: "/seller/outlets", 
-    requiresPayment: true,
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-      </svg>
-    )
-  },
+  // { 
+  //   label: "OUTLETS & STAFF", 
+  //   path: "/seller/outlets", 
+  //   requiresPayment: true,
+  //   icon: (
+  //     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  //       <path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+  //     </svg>
+  //   )
+  // },
   // {
   //   label: "Video Call",
   //   path: "/seller/call",
@@ -189,27 +181,27 @@ const menuItems: MenuItem[] = [
   //     </svg>
   //   ),
   // },
-  // {
-  //   label: "Spin & Win",
-  //   path: "/seller/spin-wheel",
-  //   icon: (
-  //     <svg
-  //       width="18"
-  //       height="18"
-  //       viewBox="0 0 24 24"
-  //       fill="none"
-  //       stroke="currentColor"
-  //       strokeWidth="2"
-  //       strokeLinecap="round"
-  //       strokeLinejoin="round">
-  //       <circle cx="12" cy="12" r="9"></circle>
-  //       <path d="M12 3v3"></path>
-  //       <path d="M21 12h-3"></path>
-  //       <path d="M12 21v-3"></path>
-  //       <path d="M3 12h3"></path>
-  //     </svg>
-  //   ),
-  // },
+  {
+    label: "Spin & Win",
+    path: "/seller/spin-wheel",
+    icon: (
+      <svg
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round">
+        <circle cx="12" cy="12" r="9"></circle>
+        <path d="M12 3v3"></path>
+        <path d="M21 12h-3"></path>
+        <path d="M12 21v-3"></path>
+        <path d="M3 12h3"></path>
+      </svg>
+    ),
+  },
   {
     label: "Profile",
     path: "/seller/account-settings",

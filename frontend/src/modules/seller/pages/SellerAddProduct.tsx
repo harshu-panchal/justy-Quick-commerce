@@ -31,6 +31,12 @@ export default function SellerAddProduct() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const userCat = (user?.category || (user?.categories && user.categories[0]) || "").toLowerCase();
+  const isPharmacy = userCat.includes("pharmacy");
+  const isProduce = userCat.includes("vegetable") || userCat.includes("fruit");
+  const isGrocery = userCat.includes("grocery");
+  const isTeaCorner = userCat.includes("tea corner") || userCat.includes("pan corner");
+  const isFoodBakery = (userCat.includes("food") || userCat.includes("bakery")) && !isTeaCorner && !isGrocery && !isPharmacy && !isProduce;
   
   const [formData, setFormData] = useState({
     productName: "",
@@ -51,6 +57,7 @@ export default function SellerAddProduct() {
     preparationTime: "20",
     timing: [] as string[],
     sku: "",
+    barcode: "",
     availabilityStatus: "Available" as "Available" | "Sold out",
     packagingPrice: "0",
     isJain: "No",
@@ -58,6 +65,60 @@ export default function SellerAddProduct() {
     hsnCode: "",
     fssaiLicNo: "",
     weight: "",
+    pharmacy: {
+      tablets: "",
+      quantity: "",
+      treatment: "",
+      form: "",
+      prescriptionRequired: "No",
+      packOf: "",
+      variant: "",
+      dosage: "",
+      therapeuticClassification: "",
+      composition: "",
+      containerType: "",
+      salesPackage: "",
+      manufacturingDate: "",
+      expiryDate: "",
+      usageDescription: "",
+      sideEffects: "",
+      manufacturerName: "",
+      howItWorks: "",
+      safetyAdvice: "",
+      interactions: "",
+      manufacturerLicenseNo: "",
+      storage: "",
+      contraindications: "",
+      schedule: "",
+      medicineType: "Allopathic",
+      underDPCO: "No",
+      manufacturingProcess: "",
+      manufacturerAddress: "",
+    },
+    freshProduce: {
+      packOf: "",
+      brand: "",
+      type: "",
+      quantity: "",
+      shelfLife: "",
+      form: "",
+      isOrganic: "No",
+      commonName: "",
+      isWhole: "Yes",
+      origin: "",
+      packagingType: "",
+      netQuantity: "",
+      addedPreservatives: "No",
+      secondaryQuantity: "",
+      isImported: "No",
+    },
+    grocery: {
+      unitType: "Packet" as "Kg" | "Gram" | "Litre" | "Piece" | "Packet",
+      minOrderQuantity: "1",
+      expiryDate: "",
+      brand: "",
+      description: "",
+    },
   });
 
   const [showProposalField, setShowProposalField] = useState(false);
@@ -84,6 +145,7 @@ export default function SellerAddProduct() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiSuggestion, setAiSuggestion] = useState<string>("");
 
+  const [brands, setBrands] = useState<Brand[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [taxes, setTaxes] = useState<Tax[]>([]);
   const [headerCategories, setHeaderCategories] = useState<HeaderCategory[]>([]);
@@ -95,6 +157,7 @@ export default function SellerAddProduct() {
           getCategories(),
           getActiveTaxes(),
           getHeaderCategoriesPublic(),
+          getBrands(),
         ]);
         
         let fetchedCategories: Category[] = [];
@@ -104,36 +167,49 @@ export default function SellerAddProduct() {
         }
         
         if (results[1].status === "fulfilled" && results[1].value.success) setTaxes(results[1].value.data);
+
+        if (results[3].status === "fulfilled" && results[3].value.success) setBrands(results[3].value.data);
         
         if (results[2].status === "fulfilled") {
            const hRes = results[2].value;
-           // Filter by seller's category
-           const filtered = hRes.filter((hc: HeaderCategory) => 
-             hc.deliveryType === "quick" && 
-             hc.status === "Published" &&
-             hc.name === user?.category
-           );
-           setHeaderCategories(filtered);
-           
-           if (filtered.length > 0 && !id) {
-              const headId = filtered[0]._id;
-              setFormData(p => ({ ...p, headerCategory: headId }));
-              
-              // Also auto-select first subcategory if available
-              const subCats = fetchedCategories.filter(c => 
-                ((c as any).headerCategoryId?._id === headId || 
-                (c as any).headerCategoryId === headId) &&
-                c.status === "Active"
-              );
-              if (subCats.length > 0) {
-                setFormData(p => ({ ...p, headerCategory: headId, category: subCats[0]._id }));
-              }
-           }
+            const sellerCategory = (user?.category || (user?.categories && user.categories.length > 0 ? user.categories[0] : null) || "").toLowerCase();
+            
+            // Filter by seller's category
+            const filtered = hRes.filter((hc: HeaderCategory) => 
+              hc.deliveryType === "quick" && 
+              hc.status === "Published" &&
+              hc.name.toLowerCase() === sellerCategory
+            );
+            setHeaderCategories(filtered);
+            
+            if (filtered.length > 0 && !id) {
+               const headId = filtered[0]._id;
+               
+               // Find matching subcategories
+               const subCats = fetchedCategories.filter(c => 
+                 ((c as any).headerCategoryId?._id === headId || 
+                 (c as any).headerCategoryId === headId) &&
+                 c.status === "Active"
+               );
+               
+               if (subCats.length > 0) {
+                 setFormData(p => ({ 
+                   ...p, 
+                   headerCategory: headId, 
+                   category: subCats[0]._id 
+                 }));
+               } else {
+                 setFormData(p => ({ 
+                   ...p, 
+                   headerCategory: headId 
+                 }));
+               }
+            }
         }
       } catch (err) { console.error("Error fetching data:", err); }
     };
     fetchData();
-  }, [user?.category, id]);
+  }, [user, id]);
 
   useEffect(() => {
     if (id) {
@@ -161,13 +237,68 @@ export default function SellerAddProduct() {
               preparationTime: product.preparationTime?.toString() || "20",
               timing: product.timing || [],
               sku: product.sku || "",
+              barcode: product.barcode || "",
               availabilityStatus: product.availabilityStatus || "Available",
               packagingPrice: product.packagingPrice?.toString() || "0",
               isJain: product.isJain ? "Yes" : "No",
-              spicyLevel: product.spicyLevel || "None",
               hsnCode: product.hsnCode || "",
               fssaiLicNo: product.fssaiLicNo || "",
               weight: product.weight || "",
+              spicyLevel: product.spicyLevel || "None",
+              pharmacy: {
+                tablets: product.pharmacy?.tablets || "",
+                quantity: product.pharmacy?.quantity || "",
+                treatment: product.pharmacy?.treatment || "",
+                form: product.pharmacy?.form || "",
+                prescriptionRequired: product.pharmacy?.prescriptionRequired ? "Yes" : "No",
+                packOf: product.pharmacy?.packOf || "",
+                variant: product.pharmacy?.variant || "",
+                dosage: product.pharmacy?.dosage || "",
+                therapeuticClassification: product.pharmacy?.therapeuticClassification || "",
+                composition: product.pharmacy?.composition || "",
+                containerType: product.pharmacy?.containerType || "",
+                salesPackage: product.pharmacy?.salesPackage || "",
+                manufacturingDate: product.pharmacy?.manufacturingDate ? new Date(product.pharmacy.manufacturingDate).toISOString().split('T')[0] : "",
+                expiryDate: product.pharmacy?.expiryDate ? new Date(product.pharmacy.expiryDate).toISOString().split('T')[0] : "",
+                usageDescription: product.pharmacy?.usageDescription || "",
+                sideEffects: product.pharmacy?.sideEffects || "",
+                manufacturerName: product.pharmacy?.manufacturerName || "",
+                howItWorks: product.pharmacy?.howItWorks || "",
+                safetyAdvice: product.pharmacy?.safetyAdvice || "",
+                interactions: product.pharmacy?.interactions || "",
+                manufacturerLicenseNo: product.pharmacy?.manufacturerLicenseNo || "",
+                storage: product.pharmacy?.storage || "",
+                contraindications: product.pharmacy?.contraindications || "",
+                schedule: product.pharmacy?.schedule || "",
+                medicineType: product.pharmacy?.medicineType || "Allopathic",
+                underDPCO: product.pharmacy?.underDPCO ? "Yes" : "No",
+                manufacturingProcess: product.pharmacy?.manufacturingProcess || "",
+                manufacturerAddress: product.pharmacy?.manufacturerAddress || "",
+              },
+              freshProduce: {
+                packOf: product.freshProduce?.packOf || "",
+                brand: product.freshProduce?.brand || "",
+                type: product.freshProduce?.type || "",
+                quantity: product.freshProduce?.quantity || "",
+                shelfLife: product.freshProduce?.shelfLife || "",
+                form: product.freshProduce?.form || "",
+                isOrganic: product.freshProduce?.isOrganic ? "Yes" : "No",
+                commonName: product.freshProduce?.commonName || "",
+                isWhole: product.freshProduce?.isWhole !== false ? "Yes" : "No",
+                origin: product.freshProduce?.origin || "",
+                packagingType: product.freshProduce?.packagingType || "",
+                netQuantity: product.freshProduce?.netQuantity || "",
+                addedPreservatives: product.freshProduce?.addedPreservatives || "No",
+                secondaryQuantity: product.freshProduce?.secondaryQuantity || "",
+                isImported: product.freshProduce?.isImported ? "Yes" : "No",
+              },
+              grocery: {
+                unitType: product.grocery?.unitType || "Packet",
+                minOrderQuantity: product.grocery?.minOrderQuantity?.toString() || "1",
+                expiryDate: product.grocery?.expiryDate ? new Date(product.grocery.expiryDate).toISOString().split('T')[0] : "",
+                brandName: product.grocery?.brand || product.brandName || "",
+                description: product.smallDescription || "",
+              }
             });
             setVariations(product.variations || []);
             setAddons(product.addons || []);
@@ -192,7 +323,19 @@ export default function SellerAddProduct() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    if (name === "headerCategory" && value === "propose_new") setShowProposalField(true);
+    if (name.startsWith("pharmacy.")) {
+      const field = name.split(".")[1];
+      setFormData(prev => ({ ...prev, pharmacy: { ...prev.pharmacy, [field]: value } }));
+    }
+    else if (name.startsWith("freshProduce.")) {
+      const field = name.split(".")[1];
+      setFormData(prev => ({ ...prev, freshProduce: { ...prev.freshProduce, [field]: value } }));
+    }
+    else if (name.startsWith("grocery.")) {
+      const field = name.split(".")[1];
+      setFormData(prev => ({ ...prev, grocery: { ...prev.grocery, [field]: value } }));
+    }
+    else if (name === "headerCategory" && value === "propose_new") setShowProposalField(true);
     else setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -301,7 +444,7 @@ export default function SellerAddProduct() {
         spicyLevel: formData.spicyLevel,
         price: variations[0].price, 
         stock: variations[0].stock, 
-        preparationTime: parseInt(formData.preparationTime) || 20, 
+        preparationTime: (isPharmacy || isProduce) ? undefined : (parseInt(formData.preparationTime) || 20), 
         packagingPrice: parseFloat(formData.packagingPrice) || 0, 
         variations: variations.map(v => ({ ...v, name: v.title })), 
         addons: addons, 
@@ -312,7 +455,25 @@ export default function SellerAddProduct() {
         mainImageUrl: uploadedUrls[0], 
         galleryImageUrls: uploadedUrls.slice(1), 
         tags: formData.tags.split(",").map(t => t.trim()).filter(Boolean), 
-        taxId: formData.tax || undefined 
+        taxId: formData.tax || undefined,
+        pharmacy: isPharmacy ? {
+          ...formData.pharmacy,
+          prescriptionRequired: formData.pharmacy.prescriptionRequired === "Yes",
+          underDPCO: formData.pharmacy.underDPCO === "Yes",
+          manufacturingDate: formData.pharmacy.manufacturingDate || undefined,
+          expiryDate: formData.pharmacy.expiryDate || undefined,
+        } : undefined,
+        freshProduce: isProduce ? {
+          ...formData.freshProduce,
+          isOrganic: formData.freshProduce.isOrganic === "Yes",
+          isWhole: formData.freshProduce.isWhole === "Yes",
+          isImported: formData.freshProduce.isImported === "Yes",
+        } : undefined,
+        grocery: isGrocery ? {
+          ...formData.grocery,
+          minOrderQuantity: parseInt(formData.grocery.minOrderQuantity) || 1,
+          expiryDate: formData.grocery.expiryDate || undefined,
+        } : undefined
       };
 
       // 3. Submit to Backend
@@ -358,40 +519,50 @@ export default function SellerAddProduct() {
                    <p className="text-[8px] font-black text-neutral-400 uppercase tracking-[0.2em] ml-0.5">Availability</p>
                    <button type="button" onClick={() => setFormData(p => ({ ...p, availabilityStatus: p.availabilityStatus === "Available" ? "Sold out" : "Available" }))} className={`w-11 h-5.5 rounded-full transition-all flex items-center px-1 shadow-inner ${formData.availabilityStatus === "Available" ? "bg-emerald-500" : "bg-neutral-200"}`}><motion.div animate={{ x: formData.availabilityStatus === "Available" ? 22 : 0 }} className="w-3.5 h-3.5 bg-white rounded-full shadow-md" /></button>
                 </div>
-                <div className="flex flex-col gap-1.5 border-r border-neutral-100 pr-6">
-                   <p className="text-[8px] font-black text-neutral-400 uppercase tracking-[0.2em] ml-0.5">Recommended</p>
-                   <button type="button" onClick={() => setFormData(p => ({ ...p, popular: p.popular === "Yes" ? "No" : "Yes" }))} className={`w-11 h-5.5 rounded-full transition-all flex items-center px-1 shadow-inner ${formData.popular === "Yes" ? "bg-amber-500" : "bg-neutral-200"}`}><motion.div animate={{ x: formData.popular === "Yes" ? 22 : 0 }} className="w-3.5 h-3.5 bg-white rounded-full shadow-md" /></button>
-                </div>
-                <div className="flex flex-col gap-1.5 border-r border-neutral-100 pr-6">
-                   <p className="text-[8px] font-black text-neutral-400 uppercase tracking-[0.2em] ml-0.5">Best Seller</p>
-                   <button type="button" onClick={() => setFormData(p => ({ ...p, dealOfDay: p.dealOfDay === "Yes" ? "No" : "Yes" }))} className={`w-11 h-5.5 rounded-full transition-all flex items-center px-1 shadow-inner ${formData.dealOfDay === "Yes" ? "bg-orange-500" : "bg-neutral-200"}`}><motion.div animate={{ x: formData.dealOfDay === "Yes" ? 22 : 0 }} className="w-3.5 h-3.5 bg-white rounded-full shadow-md" /></button>
-                </div>
-                <div className="flex flex-col gap-1.5 border-r border-neutral-100 pr-6">
-                   <p className="text-[8px] font-black text-neutral-400 uppercase tracking-[0.2em] ml-0.5">Approval Status</p>
-                   <div className="px-3 py-1 bg-amber-50 text-amber-600 rounded-lg text-[9px] font-black uppercase tracking-widest border border-amber-100">Pending 🔍</div>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                   <p className="text-[8px] font-black text-neutral-400 uppercase tracking-[0.2em] ml-0.5">Jain Friendly</p>
-                   <button type="button" onClick={() => setFormData(p => ({ ...p, isJain: p.isJain === "Yes" ? "No" : "Yes" }))} className={`w-11 h-5.5 rounded-full transition-all flex items-center px-1 shadow-inner ${formData.isJain === "Yes" ? "bg-sky-500" : "bg-neutral-200"}`}><motion.div animate={{ x: formData.isJain === "Yes" ? 22 : 0 }} className="w-3.5 h-3.5 bg-white rounded-full shadow-md" /></button>
-                </div>
+                {!isTeaCorner && !isGrocery && (
+                  <>
+                    <div className="flex flex-col gap-1.5 border-r border-neutral-100 pr-6">
+                       <p className="text-[8px] font-black text-neutral-400 uppercase tracking-[0.2em] ml-0.5">Recommended</p>
+                       <button type="button" onClick={() => setFormData(p => ({ ...p, popular: p.popular === "Yes" ? "No" : "Yes" }))} className={`w-11 h-5.5 rounded-full transition-all flex items-center px-1 shadow-inner ${formData.popular === "Yes" ? "bg-amber-500" : "bg-neutral-200"}`}><motion.div animate={{ x: formData.popular === "Yes" ? 22 : 0 }} className="w-3.5 h-3.5 bg-white rounded-full shadow-md" /></button>
+                    </div>
+                    <div className="flex flex-col gap-1.5 border-r border-neutral-100 pr-6">
+                       <p className="text-[8px] font-black text-neutral-400 uppercase tracking-[0.2em] ml-0.5">Best Seller</p>
+                       <button type="button" onClick={() => setFormData(p => ({ ...p, dealOfDay: p.dealOfDay === "Yes" ? "No" : "Yes" }))} className={`w-11 h-5.5 rounded-full transition-all flex items-center px-1 shadow-inner ${formData.dealOfDay === "Yes" ? "bg-orange-500" : "bg-neutral-200"}`}><motion.div animate={{ x: formData.dealOfDay === "Yes" ? 22 : 0 }} className="w-3.5 h-3.5 bg-white rounded-full shadow-md" /></button>
+                    </div>
+                    <div className="flex flex-col gap-1.5 border-r border-neutral-100 pr-6">
+                       <p className="text-[8px] font-black text-neutral-400 uppercase tracking-[0.2em] ml-0.5">Approval Status</p>
+                       <div className="px-3 py-1 bg-amber-50 text-amber-600 rounded-lg text-[9px] font-black uppercase tracking-widest border border-amber-100">Pending 🔍</div>
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                       <p className="text-[8px] font-black text-neutral-400 uppercase tracking-[0.2em] ml-0.5">Jain Friendly</p>
+                       <button type="button" onClick={() => setFormData(p => ({ ...p, isJain: p.isJain === "Yes" ? "No" : "Yes" }))} className={`w-11 h-5.5 rounded-full transition-all flex items-center px-1 shadow-inner ${formData.isJain === "Yes" ? "bg-sky-500" : "bg-neutral-200"}`}><motion.div animate={{ x: formData.isJain === "Yes" ? 22 : 0 }} className="w-3.5 h-3.5 bg-white rounded-full shadow-md" /></button>
+                    </div>
+                  </>
+                )}
              </div>
-             <div className="bg-neutral-50 px-4 py-2 rounded-xl border border-neutral-100 flex items-center gap-4">
-                <select name="tax" value={formData.tax} onChange={handleChange} className="bg-white border border-neutral-200 rounded-lg py-1.5 px-3 text-[11px] font-black text-neutral-600 outline-none focus:border-teal-500 transition-all min-w-[90px]">{taxes.map(t => <option key={t._id} value={t._id}>{t.percentage}% GST</option>)}<option value="">No Tax</option></select>
-             </div>
+             {!isGrocery && (
+               <div className="bg-neutral-50 px-4 py-2 rounded-xl border border-neutral-100 flex items-center gap-4">
+                  <select name="tax" value={formData.tax} onChange={handleChange} className="bg-white border border-neutral-200 rounded-lg py-1.5 px-3 text-[11px] font-black text-neutral-600 outline-none focus:border-teal-500 transition-all min-w-[90px]">{taxes.map(t => <option key={t._id} value={t._id}>{t.percentage}% GST</option>)}<option value="">No Tax</option></select>
+               </div>
+             )}
           </div>
 
           {/* Section 1: Basic Information */}
           <section className="bg-white rounded-2xl border border-neutral-200 p-6 sm:p-8 shadow-sm space-y-6">
              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3"><div className="w-1.5 h-8 bg-teal-600 rounded-full"></div><h2 className="text-lg font-black text-neutral-800 tracking-tight">Product Identity</h2></div>
-                <div className="flex bg-neutral-100/50 p-1 rounded-xl border border-neutral-100 gap-1">{["Veg", "Non-Veg", "Egg"].map(type => (<button key={type} type="button" onClick={() => setFormData(p => ({ ...p, foodType: type as any }))} className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${formData.foodType === type ? "bg-white text-teal-600 shadow-sm" : "text-neutral-400"}`}>{type}</button>))}</div>
+                <div className="flex items-center gap-3"><div className="w-1.5 h-8 bg-emerald-600 rounded-full"></div><h2 className="text-lg font-black text-neutral-800 tracking-tight">Product Identity</h2></div>
+                {!isPharmacy && !isProduce && !isGrocery && !isTeaCorner && (
+                  <div className="flex bg-neutral-100/50 p-1 rounded-xl border border-neutral-100 gap-1">{["Veg", "Non-Veg", "Egg"].map(type => (<button key={type} type="button" onClick={() => setFormData(p => ({ ...p, foodType: type as any }))} className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${formData.foodType === type ? "bg-white text-emerald-600 shadow-sm" : "text-neutral-400"}`}>{type}</button>))}</div>
+                )}
              </div>
              <div className="space-y-4">
-                <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Full Product Name *</label><input type="text" name="productName" value={formData.productName} onChange={handleChange} placeholder="e.g. Artisanal Paneer Butter Masala" className="w-full h-12 px-5 bg-neutral-50 border border-neutral-100 rounded-xl text-[16px] font-bold focus:bg-white focus:border-teal-500 transition-all outline-none" /></div>
-                <div className="grid grid-cols-2 gap-6">
-                   <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Preparation Time (Mins)</label><input type="number" name="preparationTime" value={formData.preparationTime} onChange={handleChange} className="w-full h-11 px-5 bg-neutral-50 border border-neutral-100 rounded-xl text-[14px] font-black tabular-nums transition-all outline-none focus:border-teal-500" /></div>
-                   <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Spicy Level</label><select name="spicyLevel" value={formData.spicyLevel} onChange={handleChange} className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-[12px] font-black uppercase outline-none focus:border-teal-500"><option value="None">Not Spicy</option><option value="Mild">Mild 🔥</option><option value="Medium">Medium 🔥🔥</option><option value="Hot">Extra Hot 🔥🔥🔥</option></select></div>
-                </div>
+                <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Full Product Name *</label><input type="text" name="productName" value={formData.productName} onChange={handleChange} placeholder="e.g. Fresh Organic Tomatoes" className="w-full h-12 px-5 bg-neutral-50 border border-neutral-100 rounded-xl text-[16px] font-bold focus:bg-white focus:border-emerald-500 transition-all outline-none" /></div>
+                {!isPharmacy && !isProduce && !isGrocery && (
+                  <div className="grid grid-cols-2 gap-6">
+                     <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Preparation Time (Mins)</label><input type="number" name="preparationTime" value={formData.preparationTime} onChange={handleChange} className="w-full h-11 px-5 bg-neutral-50 border border-neutral-100 rounded-xl text-[14px] font-black tabular-nums transition-all outline-none focus:border-emerald-500" /></div>
+                     {!isTeaCorner && <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Spicy Level</label><select name="spicyLevel" value={formData.spicyLevel} onChange={handleChange} className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-[12px] font-black uppercase outline-none focus:border-teal-500"><option value="None">Not Spicy</option><option value="Mild">Mild 🔥</option><option value="Medium">Medium 🔥🔥</option><option value="Hot">Extra Hot 🔥🔥🔥</option></select></div>}
+                  </div>
+                )}
                 <div className="space-y-1.5">
                    <div className="flex justify-between items-center">
                       <label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">Description</label>
@@ -430,21 +601,164 @@ export default function SellerAddProduct() {
                    <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-[0.2em]">Sub Category</label><select name="category" value={formData.category} onChange={handleChange} className="w-full h-11 px-4 bg-neutral-50 rounded-xl text-[12px] font-bold border border-neutral-100 focus:bg-white focus:border-teal-500 transition-all outline-none cursor-pointer disabled:opacity-40">{categories.filter(c => ((c as any).headerCategoryId?._id === formData.headerCategory || (c as any).headerCategoryId === formData.headerCategory) && (c as any).status === "Active").map((cat: any) => <option key={cat._id} value={cat._id}>{cat.name}</option>)}</select></div>
                 </div>
              </section>
-             <section className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm space-y-4 flex flex-col justify-between">
-                <div className="flex items-center justify-between">
-                   <div className="flex items-center gap-3"><div className="w-1.5 h-6 bg-teal-600 rounded-full"></div><h2 className="text-md font-black text-neutral-800 tracking-tight">Packaging Fees</h2></div>
-                   <span className="w-8 h-8 bg-neutral-50 text-teal-600 rounded-lg flex items-center justify-center shadow-sm border border-neutral-100"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M21 8l-9-4-9 4v8l9 4 9-4V8z"/><path d="M12 12l9-4"/><path d="M12 12v8"/><path d="M12 12L3 8"/></svg></span>
-                </div>
-                <div className="bg-neutral-50/20 p-6 rounded-2xl border border-neutral-100 relative group">
-                   <p className="absolute top-3 left-0 right-0 text-center text-[7px] font-black text-neutral-400 uppercase tracking-[0.2em] opacity-40 group-hover:opacity-100 transition-opacity">Fixed per order</p>
-                   <div className="flex items-center justify-center gap-2">
-                      <span className="text-2xl font-black text-neutral-300">₹</span>
-                      <input type="number" name="packagingPrice" value={formData.packagingPrice} onChange={handleChange} className="bg-transparent border-none text-center text-4xl font-black text-teal-600 outline-none w-24 tabular-nums" />
+             {!isTeaCorner && !isGrocery && (
+               <section className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm space-y-4 flex flex-col justify-between">
+                  <div className="flex items-center justify-between">
+                     <div className="flex items-center gap-3"><div className="w-1.5 h-6 bg-teal-600 rounded-full"></div><h2 className="text-md font-black text-neutral-800 tracking-tight">Packaging Fees</h2></div>
+                     <span className="w-8 h-8 bg-neutral-50 text-teal-600 rounded-lg flex items-center justify-center shadow-sm border border-neutral-100"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M21 8l-9-4-9 4v8l9 4 9-4V8z"/><path d="M12 12l9-4"/><path d="M12 12v8"/><path d="M12 12L3 8"/></svg></span>
+                  </div>
+                  <div className="bg-neutral-50/20 p-6 rounded-2xl border border-neutral-100 relative group">
+                     <p className="absolute top-3 left-0 right-0 text-center text-[7px] font-black text-neutral-400 uppercase tracking-[0.2em] opacity-40 group-hover:opacity-100 transition-opacity">Fixed per order</p>
+                     <div className="flex items-center justify-center gap-2">
+                        <span className="text-2xl font-black text-neutral-300">₹</span>
+                        <input type="number" name="packagingPrice" value={formData.packagingPrice} onChange={handleChange} className="bg-transparent border-none text-center text-4xl font-black text-teal-600 outline-none w-24 tabular-nums" />
+                     </div>
+                  </div>
+                  <p className="text-[8px] font-bold text-neutral-400 text-center uppercase tracking-widest">Added to customer subtotal</p>
+               </section>
+             )}
+          </div>
+
+          {isPharmacy && (
+             <section className="bg-white rounded-2xl border border-neutral-200 p-6 sm:p-8 shadow-sm space-y-8">
+                <div className="flex items-center gap-3"><div className="w-1.5 h-8 bg-teal-600 rounded-full"></div><h2 className="text-lg font-black text-neutral-800 tracking-tight">Pharmacy Specifications</h2></div>
+                
+                {/* Visual Highlights */}
+                <div className="space-y-4">
+                   <h3 className="text-[10px] font-black text-neutral-400 uppercase tracking-widest ml-1 text-teal-600">★ High Priority Info</h3>
+                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Tablets Count</label><input type="text" name="pharmacy.tablets" value={formData.pharmacy.tablets} onChange={handleChange} placeholder="e.g. 10 Tabs" className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-bold" /></div>
+                      <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Quantity/Volume</label><input type="text" name="pharmacy.quantity" value={formData.pharmacy.quantity} onChange={handleChange} placeholder="e.g. 100ml" className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-bold" /></div>
+                      <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Primary Treatment</label><input type="text" name="pharmacy.treatment" value={formData.pharmacy.treatment} onChange={handleChange} placeholder="e.g. Fever" className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-bold" /></div>
+                      <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Medicine Form</label><input type="text" name="pharmacy.form" value={formData.pharmacy.form} onChange={handleChange} placeholder="e.g. Syrup" className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-bold" /></div>
+                   </div>
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Prescription Required?</label><select name="pharmacy.prescriptionRequired" value={formData.pharmacy.prescriptionRequired} onChange={handleChange} className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-bold focus:bg-white focus:border-blue-500 transition-all outline-none"><option value="No">No (OTC)</option><option value="Yes">Yes (Prescription)</option></select></div>
+                      <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Pack Of</label><input type="text" name="pharmacy.packOf" value={formData.pharmacy.packOf} onChange={handleChange} placeholder="e.g. Pack of 2" className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-bold focus:bg-white focus:border-blue-500 transition-all outline-none" /></div>
                    </div>
                 </div>
-                <p className="text-[8px] font-bold text-neutral-400 text-center uppercase tracking-widest">Added to customer subtotal</p>
+
+               {/* General Medicine Details */}
+               <div className="space-y-6 pt-4 border-t border-neutral-100">
+                  <h3 className="text-[10px] font-black text-neutral-400 uppercase tracking-widest ml-1">All Details in General</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                     <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">(1) Brand Name</label><input type="text" name="brandName" value={formData.brandName} onChange={handleChange} className="w-full h-10 px-4 bg-neutral-50 rounded-xl border-none text-sm font-bold" /></div>
+                     <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">(5) Variant</label><input type="text" name="pharmacy.variant" value={formData.pharmacy.variant} onChange={handleChange} className="w-full h-10 px-4 bg-neutral-50 rounded-xl border-none text-sm font-bold" /></div>
+                     <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">(8) Dosage</label><input type="text" name="pharmacy.dosage" value={formData.pharmacy.dosage} onChange={handleChange} placeholder="e.g. Twice daily" className="w-full h-10 px-4 bg-neutral-50 rounded-xl border-none text-sm font-bold" /></div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                     <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">(9) Therapeutic Classification</label><input type="text" name="pharmacy.therapeuticClassification" value={formData.pharmacy.therapeuticClassification} onChange={handleChange} className="w-full h-10 px-4 bg-neutral-50 rounded-xl border-none text-sm font-bold" /></div>
+                     <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">(10) Composition</label><input type="text" name="pharmacy.composition" value={formData.pharmacy.composition} onChange={handleChange} placeholder="e.g. Paracetamol 500mg" className="w-full h-10 px-4 bg-neutral-50 rounded-xl border-none text-sm font-bold" /></div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                     <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">(11) Container Type</label><input type="text" name="pharmacy.containerType" value={formData.pharmacy.containerType} onChange={handleChange} className="w-full h-10 px-4 bg-neutral-50 rounded-xl border-none text-sm font-bold" /></div>
+                     <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">(12) Sales Package</label><input type="text" name="pharmacy.salesPackage" value={formData.pharmacy.salesPackage} onChange={handleChange} className="w-full h-10 px-4 bg-neutral-50 rounded-xl border-none text-sm font-bold" /></div>
+                     <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">(25) Type</label><select name="pharmacy.medicineType" value={formData.pharmacy.medicineType} onChange={handleChange} className="w-full h-10 px-4 bg-neutral-50 rounded-xl border-none text-sm font-bold"><option value="Allopathic">Allopathic</option><option value="Ayurvedic">Ayurvedic</option><option value="Homeopathic">Homeopathic</option></select></div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                     <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">(13) Date of Manufacturing</label><input type="date" name="pharmacy.manufacturingDate" value={formData.pharmacy.manufacturingDate} onChange={handleChange} className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-bold" /></div>
+                     <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">(14) Date of Expiry</label><input type="date" name="pharmacy.expiryDate" value={formData.pharmacy.expiryDate} onChange={handleChange} className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-bold" /></div>
+                  </div>
+
+                  <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">(15) Usage Description In Short</label><textarea name="pharmacy.usageDescription" value={formData.pharmacy.usageDescription} onChange={handleChange} rows={2} className="w-full p-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-medium focus:bg-white outline-none resize-none"></textarea></div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                     <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">(16) Side Effects</label><input type="text" name="pharmacy.sideEffects" value={formData.pharmacy.sideEffects} onChange={handleChange} className="w-full h-10 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm" /></div>
+                     <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">(23) Contraindications</label><input type="text" name="pharmacy.contraindications" value={formData.pharmacy.contraindications} onChange={handleChange} className="w-full h-10 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm" /></div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                     <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">(18) How it Works</label><textarea name="pharmacy.howItWorks" value={formData.pharmacy.howItWorks} onChange={handleChange} rows={2} className="w-full p-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm"></textarea></div>
+                     <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">(19) Safety Advice</label><textarea name="pharmacy.safetyAdvice" value={formData.pharmacy.safetyAdvice} onChange={handleChange} rows={2} className="w-full p-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm"></textarea></div>
+                  </div>
+
+                  <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">(20) Interaction with Drugs and Food</label><textarea name="pharmacy.interactions" value={formData.pharmacy.interactions} onChange={handleChange} rows={2} className="w-full p-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm"></textarea></div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                     <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">(24) Schedule</label><select name="pharmacy.schedule" value={formData.pharmacy.schedule} onChange={handleChange} className="w-full h-10 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm"><option value="">None</option><option value="Schedule H">Schedule H</option><option value="Schedule H1">Schedule H1</option><option value="Schedule X">Schedule X</option><option value="Schedule G">Schedule G</option></select></div>
+                     <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">(26) Under DPCO?</label><select name="pharmacy.underDPCO" value={formData.pharmacy.underDPCO} onChange={handleChange} className="w-full h-10 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm"><option value="No">No</option><option value="Yes">Yes</option></select></div>
+                     <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">(22) Storage Explanation</label><input type="text" name="pharmacy.storage" value={formData.pharmacy.storage} onChange={handleChange} placeholder="e.g. Store in cool place" className="w-full h-10 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm" /></div>
+                  </div>
+
+                  <div className="space-y-6 pt-4 border-t border-dashed border-neutral-200">
+                     <h4 className="text-[9px] font-black text-neutral-400 uppercase tracking-[0.2em]">Supplier / Manufacturer Info</h4>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">(17) Manufacturer/Dealer Name</label><input type="text" name="pharmacy.manufacturerName" value={formData.pharmacy.manufacturerName} onChange={handleChange} className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-bold" /></div>
+                        <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">(21) Licence Number</label><input type="text" name="pharmacy.manufacturerLicenseNo" value={formData.pharmacy.manufacturerLicenseNo} onChange={handleChange} className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-bold" /></div>
+                     </div>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">(27) Manufacturing Process</label><input type="text" name="pharmacy.manufacturingProcess" value={formData.pharmacy.manufacturingProcess} onChange={handleChange} className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm" /></div>
+                        <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">(28) Manufacturer Address</label><textarea name="pharmacy.manufacturerAddress" value={formData.pharmacy.manufacturerAddress} onChange={handleChange} rows={2} className="w-full p-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm"></textarea></div>
+                     </div>
+                  </div>
+               </div>
              </section>
-          </div>
+          )}
+
+          {isProduce && (
+             <section className="bg-white rounded-2xl border border-neutral-200 p-6 sm:p-8 shadow-sm space-y-8">
+               <div className="flex items-center gap-3"><div className="w-1.5 h-8 bg-emerald-600 rounded-full"></div><h2 className="text-lg font-black text-neutral-800 tracking-tight">Produce Specifications</h2></div>
+               
+               {/* Product Highlights */}
+               <div className="space-y-4">
+                  <h3 className="text-[10px] font-black text-neutral-400 uppercase tracking-widest ml-1 text-emerald-600">★ Product Highlights</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                     <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Pack of</label><input type="text" name="freshProduce.packOf" value={formData.freshProduce.packOf} onChange={handleChange} placeholder="e.g. 1kg" className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-bold shadow-sm" /></div>
+                     <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Brand</label><input type="text" name="freshProduce.brand" value={formData.freshProduce.brand} onChange={handleChange} placeholder="e.g. Fresho" className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-bold shadow-sm" /></div>
+                     <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Type</label><input type="text" name="freshProduce.type" value={formData.freshProduce.type} onChange={handleChange} placeholder="e.g. Seasonal" className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-bold shadow-sm" /></div>
+                     <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Quantity</label><input type="text" name="freshProduce.quantity" value={formData.freshProduce.quantity} onChange={handleChange} placeholder="e.g. 5 units" className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-bold shadow-sm" /></div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                     <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Shelf Life</label><input type="text" name="freshProduce.shelfLife" value={formData.freshProduce.shelfLife} onChange={handleChange} placeholder="e.g. 3-4 days" className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-bold shadow-sm" /></div>
+                     <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Form</label><input type="text" name="freshProduce.form" value={formData.freshProduce.form} onChange={handleChange} placeholder="e.g. Whole/Cut" className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-bold shadow-sm" /></div>
+                     <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Organic?</label><select name="freshProduce.isOrganic" value={formData.freshProduce.isOrganic} onChange={handleChange} className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-bold shadow-sm"><option value="No">No</option><option value="Yes">Yes</option></select></div>
+                     <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Common Name</label><input type="text" name="freshProduce.commonName" value={formData.freshProduce.commonName} onChange={handleChange} placeholder="e.g. Onion" className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-bold shadow-sm" /></div>
+                  </div>
+               </div>
+
+               {/* All Details / General */}
+               <div className="space-y-6 pt-6 border-t border-neutral-100">
+                  <h3 className="text-[10px] font-black text-neutral-400 uppercase tracking-widest ml-1">General Details</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                     <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Origin / Country</label><input type="text" name="freshProduce.origin" value={formData.freshProduce.origin} onChange={handleChange} className="w-full h-10 px-4 bg-white rounded-xl border border-neutral-100 text-sm font-bold" /></div>
+                     <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Packaging Type</label><input type="text" name="freshProduce.packagingType" value={formData.freshProduce.packagingType} onChange={handleChange} className="w-full h-10 px-4 bg-white rounded-xl border border-neutral-100 text-sm font-bold" /></div>
+                     <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Net Quantity</label><input type="text" name="freshProduce.netQuantity" value={formData.freshProduce.netQuantity} onChange={handleChange} className="w-full h-10 px-4 bg-white rounded-xl border border-neutral-100 text-sm font-bold" /></div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                     <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Added Preservatives?</label><select name="freshProduce.addedPreservatives" value={formData.freshProduce.addedPreservatives} onChange={handleChange} className="w-full h-10 px-4 bg-white rounded-xl border border-neutral-100 text-sm font-bold"><option value="No">No</option><option value="Yes">Yes</option></select></div>
+                     <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Whole / Cut?</label><select name="freshProduce.isWhole" value={formData.freshProduce.isWhole} onChange={handleChange} className="w-full h-10 px-4 bg-white rounded-xl border border-neutral-100 text-sm font-bold"><option value="Yes">Whole</option><option value="No">Pre-Cut</option></select></div>
+                     <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Secondary Quantity</label><input type="text" name="freshProduce.secondaryQuantity" value={formData.freshProduce.secondaryQuantity} onChange={handleChange} className="w-full h-10 px-4 bg-white rounded-xl border border-neutral-100 text-sm font-bold" /></div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                     <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Food Type</label><select name="foodType" value={formData.foodType} onChange={handleChange} className="w-full h-10 px-4 bg-white rounded-xl border border-neutral-100 text-[10px] font-black uppercase"><option value="Veg">Veg</option><option value="Non-Veg">Non-Veg</option><option value="Egg">Egg</option></select></div>
+                     <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Imported?</label><select name="freshProduce.isImported" value={formData.freshProduce.isImported} onChange={handleChange} className="w-full h-10 px-4 bg-white border border-neutral-100 rounded-xl text-sm font-bold"><option value="No">Local / Domestic</option><option value="Yes">Imported</option></select></div>
+                  </div>
+                  <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Product Weight (Total)</label><input type="text" name="weight" value={formData.weight} onChange={handleChange} placeholder="e.g. 500g" className="w-full h-11 px-4 bg-white border border-neutral-100 rounded-xl text-sm font-bold" /></div>
+               </div>
+            </section>
+          )}
+
+          {isGrocery && (
+             <section className="bg-white rounded-2xl border border-neutral-200 p-6 sm:p-8 shadow-sm space-y-8">
+               <div className="flex items-center gap-3"><div className="w-1.5 h-8 bg-amber-600 rounded-full"></div><h2 className="text-lg font-black text-neutral-800 tracking-tight">Grocery Details</h2></div>
+               
+               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Unit Type</label><select name="grocery.unitType" value={formData.grocery.unitType} onChange={handleChange} className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-bold focus:bg-white focus:border-amber-500 transition-all outline-none"><option value="Kg">Kg</option><option value="Gram">Gram</option><option value="Litre">Litre</option><option value="Piece">Piece</option><option value="Packet">Packet</option></select></div>
+                  <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Minimum Order Qty</label><input type="number" name="grocery.minOrderQuantity" value={formData.grocery.minOrderQuantity} onChange={handleChange} placeholder="e.g. 1" className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-bold focus:bg-white focus:border-amber-500 transition-all outline-none" /></div>
+                  <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Expiry Date</label><input type="date" name="grocery.expiryDate" value={formData.grocery.expiryDate} onChange={handleChange} className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-bold focus:bg-white focus:border-amber-500 transition-all outline-none" /></div>
+               </div>
+
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-[0.2em]">Brand Name *</label><select name="grocery.brand" value={formData.grocery.brand} onChange={handleChange} className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-bold focus:bg-white focus:border-amber-500 transition-all outline-none"><option value="">Select Brand</option>{brands.map(b => <option key={b._id} value={b.name}>{b.name}</option>)}</select></div>
+                  <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Barcode / SKU</label><input type="text" name="barcode" value={formData.barcode} onChange={handleChange} placeholder="Optional Barcode" className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-bold focus:bg-white focus:border-amber-500 transition-all outline-none" /></div>
+               </div>
+             </section>
+          )}
 
           {/* Section 3: Pricing & Combinations */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -466,19 +780,21 @@ export default function SellerAddProduct() {
              </section>
 
              {/* Add-ons Management */}
-             <section className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm space-y-6">
-                <div className="flex items-center gap-3"><div className="w-1.5 h-8 bg-sky-500 rounded-full"></div><h2 className="text-lg font-black text-neutral-800 tracking-tight">Add-ons / Sides</h2></div>
-                <div className="space-y-4">
-                   <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">Modifier Name</label><input type="text" value={addonForm.name} onChange={e => setAddonForm(p => ({ ...p, name: e.target.value }))} className="w-full h-10 px-4 bg-neutral-50 rounded-lg text-xs font-bold border-none" placeholder="e.g. Extra Cheese" /></div>
-                      <div className="space-y-1"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">Fee (₹)</label><input type="number" value={addonForm.price} onChange={e => setAddonForm(p => ({ ...p, price: e.target.value }))} className="w-full h-10 px-4 bg-neutral-50 rounded-lg text-xs font-bold border-none" placeholder="0" /></div>
-                   </div>
-                   <button type="button" onClick={addAddon} className="w-full h-10 bg-slate-900/5 text-slate-900 border border-slate-200 rounded-lg text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all">Add Modifier</button>
-                   <div className="space-y-2 max-h-[140px] overflow-y-auto pr-2 custom-scrollbar">
-                      {addons.map((a, i) => (<div key={i} className="flex items-center justify-between p-3 bg-neutral-50 rounded-xl mb-2 group transition-all hover:bg-sky-50/50"><div className="flex items-center gap-3"><p className="text-[11px] font-black text-slate-800">{a.name}</p></div><div className="flex items-center gap-4"><p className="text-[10px] font-bold text-sky-600">₹{a.price}</p><button type="button" onClick={() => removeAddon(i)} className="text-rose-400 opacity-0 group-hover:opacity-100 transition-all">×</button></div></div>))}
-                   </div>
-                </div>
-             </section>
+             {!isGrocery && (
+               <section className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm space-y-6">
+                  <div className="flex items-center gap-3"><div className="w-1.5 h-8 bg-sky-500 rounded-full"></div><h2 className="text-lg font-black text-neutral-800 tracking-tight">Add-ons / Sides</h2></div>
+                  <div className="space-y-4">
+                     <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">Modifier Name</label><input type="text" value={addonForm.name} onChange={e => setAddonForm(p => ({ ...p, name: e.target.value }))} className="w-full h-10 px-4 bg-neutral-50 rounded-lg text-xs font-bold border-none" placeholder="e.g. Extra Cheese" /></div>
+                        <div className="space-y-1"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">Fee (₹)</label><input type="number" value={addonForm.price} onChange={e => setAddonForm(p => ({ ...p, price: e.target.value }))} className="w-full h-10 px-4 bg-neutral-50 rounded-lg text-xs font-bold border-none" placeholder="0" /></div>
+                     </div>
+                     <button type="button" onClick={addAddon} className="w-full h-10 bg-slate-900/5 text-slate-900 border border-slate-200 rounded-lg text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all">Add Modifier</button>
+                     <div className="space-y-2 max-h-[140px] overflow-y-auto pr-2 custom-scrollbar">
+                        {addons.map((a, i) => (<div key={i} className="flex items-center justify-between p-3 bg-neutral-50 rounded-xl mb-2 group transition-all hover:bg-sky-50/50"><div className="flex items-center gap-3"><p className="text-[11px] font-black text-slate-800">{a.name}</p></div><div className="flex items-center gap-4"><p className="text-[10px] font-bold text-sky-600">₹{a.price}</p><button type="button" onClick={() => removeAddon(i)} className="text-rose-400 opacity-0 group-hover:opacity-100 transition-all">×</button></div></div>))}
+                     </div>
+                  </div>
+               </section>
+             )}
           </div>
 
           {/* Section 4: Imagery & Logistics */}
@@ -508,18 +824,20 @@ export default function SellerAddProduct() {
                 </div>
              </section>
 
-             <section className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm space-y-6">
-                <div className="flex items-center gap-3"><div className="w-1.5 h-8 bg-neutral-800 rounded-full"></div><h2 className="text-lg font-black text-neutral-800 tracking-tight">Compliance & Limits</h2></div>
-                <div className="grid grid-cols-2 gap-6">
-                   <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">HSN Code</label><input type="text" name="hsnCode" value={formData.hsnCode} onChange={handleChange} placeholder="8 digits" className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-bold focus:bg-white transition-all outline-none" /></div>
-                   <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">FSSAI License No.</label><input type="text" name="fssaiLicNo" value={formData.fssaiLicNo} onChange={handleChange} placeholder="14 digits" className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-bold focus:bg-white transition-all outline-none" /></div>
-                </div>
-                <div className="grid grid-cols-2 gap-6">
-                   <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">Weight (e.g. 500g)</label><input type="text" name="weight" value={formData.weight} onChange={handleChange} placeholder="Size/Weight" className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-bold focus:bg-white transition-all outline-none" /></div>
-                   <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">Max Order limit</label><input type="number" name="totalAllowedQuantity" value={formData.totalAllowedQuantity} onChange={handleChange} className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-bold focus:bg-white transition-all outline-none" /></div>
-                </div>
-                <p className="text-[8px] font-medium text-neutral-400 uppercase tracking-widest mt-2 leading-relaxed opacity-60">Mandatory for GST compliance and shipping calculations.</p>
-             </section>
+             {!isTeaCorner && !isGrocery && (
+               <section className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm space-y-6">
+                  <div className="flex items-center gap-3"><div className="w-1.5 h-8 bg-neutral-800 rounded-full"></div><h2 className="text-lg font-black text-neutral-800 tracking-tight">Compliance & Limits</h2></div>
+                  <div className="grid grid-cols-2 gap-6">
+                     <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">HSN Code</label><input type="text" name="hsnCode" value={formData.hsnCode} onChange={handleChange} placeholder="8 digits" className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-bold focus:bg-white transition-all outline-none" /></div>
+                     <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">FSSAI License No.</label><input type="text" name="fssaiLicNo" value={formData.fssaiLicNo} onChange={handleChange} placeholder="14 digits" className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-bold focus:bg-white transition-all outline-none" /></div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-6">
+                     <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">Weight (e.g. 500g)</label><input type="text" name="weight" value={formData.weight} onChange={handleChange} placeholder="Size/Weight" className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-bold focus:bg-white transition-all outline-none" /></div>
+                     <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">Max Order limit</label><input type="number" name="totalAllowedQuantity" value={formData.totalAllowedQuantity} onChange={handleChange} className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-bold focus:bg-white transition-all outline-none" /></div>
+                  </div>
+                  <p className="text-[8px] font-medium text-neutral-400 uppercase tracking-widest mt-2 leading-relaxed opacity-60">Mandatory for GST compliance and shipping calculations.</p>
+               </section>
+             )}
           </div>
 
           {/* Action Center */}

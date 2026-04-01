@@ -53,6 +53,7 @@ export interface IOrder extends Document {
   | "Accepted"
   | "Pending"
   | "Processed"
+  | "Ready"
   | "Ready for pickup"
   | "Shipped"
   | "Picked Up"
@@ -303,6 +304,7 @@ const OrderSchema = new Schema<IOrder>(
         "Accepted",
         "Pending",
         "Processed",
+        "Ready",
         "Ready for pickup",
         "Shipped",
         "Picked Up",

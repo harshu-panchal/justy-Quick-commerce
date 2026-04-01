@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { getAllSubcategories, SubCategory } from '../../../services/api/categoryService';
+import { useAuth } from '../../../context/AuthContext';
 
 export default function SellerSubCategory() {
+    const { user } = useAuth();
     const [subcategories, setSubcategories] = useState<SubCategory[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string>('');
@@ -26,7 +28,13 @@ export default function SellerSubCategory() {
 
                 const response = await getAllSubcategories(params);
                 if (response.success && response.data) {
-                    setSubcategories(response.data);
+                    const sellerCategory = (user as any)?.category || ((user as any)?.categories && (user as any).categories.length > 0 ? (user as any).categories[0] : null);
+                    
+                    const filtered = response.data.filter((sub: any) => 
+                        sub.categoryName === sellerCategory
+                    );
+                    
+                    setSubcategories(filtered);
                     // Extract pagination info if available
                     if ((response as any).pagination) {
                         setTotalPages((response as any).pagination.pages);
@@ -42,7 +50,7 @@ export default function SellerSubCategory() {
         };
 
         fetchSubcategories();
-    }, [currentPage, rowsPerPage, sortColumn, sortDirection]);
+    }, [currentPage, rowsPerPage, sortColumn, sortDirection, user]);
 
     // Client-side sorting (if API doesn't handle it)
     let sortedSubcategories = [...subcategories];

@@ -133,6 +133,7 @@ export const createProduct = asyncHandler(
     }, null, 2));
     if (!newProductData.brand) delete newProductData.brand;
     if (!newProductData.brandName) delete newProductData.brandName;
+    if (newProductData.sku === "" || newProductData.sku === null) delete newProductData.sku;
 
     // Handle Tax: Frontend sends taxId, Model expects 'tax' (string) or something else?
     // Checking SellerAddProduct.tsx sending taxId -> formData.tax
@@ -373,6 +374,9 @@ export const updateProduct = asyncHandler(
     if (updateData.galleryImageUrls) {
       updateData.galleryImages = updateData.galleryImageUrls;
       delete updateData.galleryImageUrls;
+    }
+    if (updateData.sku === "" || updateData.sku === null) {
+      updateData.sku = undefined;
     }
 
     // Validate variations if provided

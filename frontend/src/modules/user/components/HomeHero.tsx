@@ -333,12 +333,6 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
               alt="JYASTI builds trust"
               className="h-20 md:h-12 w-auto object-contain relative z-10 px-2 filter drop-shadow-[0_4px_6px_rgba(0,0,0,0.12)]"
             />
-            <button 
-              onClick={() => navigate('/seller/signup')} 
-              className="flex items-center gap-1.5 bg-white/20 hover:bg-white/30 px-2.5 py-1.5 rounded-full transition-all border border-white/20 text-white shadow-lg active:scale-95"
-            >
-              <span className="text-[9px] font-black uppercase tracking-tight whitespace-nowrap">Become a Seller</span>
-            </button>
           </div>
 
           <div className="flex items-center gap-2 rounded-xl border border-white/20 bg-white/12 px-3 py-1.5 text-white shadow-[0_8px_20px_rgba(0,0,0,0.12)] backdrop-blur-sm">
@@ -442,7 +436,7 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
           </div>
 
           {/* Bottom Row: Delivery Mode Indicator/Badge */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-between mt-1 mb-1">
             <div className="flex items-center">
               {deliveryMode === 'quick' ? (
                 <>
@@ -464,6 +458,14 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
                 </>
               )}
             </div>
+            
+            {/* Become a Seller Button */}
+            <button 
+              onClick={() => navigate('/seller/signup')} 
+              className="flex items-center gap-1.5 bg-white/20 hover:bg-white/30 px-2.5 py-1.5 rounded-full transition-all border border-white/20 text-white shadow-lg active:scale-95"
+            >
+              <span className="text-[9px] font-black uppercase tracking-tight whitespace-nowrap">Become a Seller</span>
+            </button>
           </div>
         </div>
       </div>

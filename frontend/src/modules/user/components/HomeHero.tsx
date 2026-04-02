@@ -460,12 +460,12 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
             </div>
             
             {/* Become a Seller Button */}
-            <button 
-              onClick={() => navigate('/seller/signup')} 
+            <a 
+              href="/seller/signup" 
               className="flex items-center gap-1.5 bg-white/20 hover:bg-white/30 px-2.5 py-1.5 rounded-full transition-all border border-white/20 text-white shadow-lg active:scale-95"
             >
               <span className="text-[9px] font-black uppercase tracking-tight whitespace-nowrap">Become a Seller</span>
-            </button>
+            </a>
           </div>
         </div>
       </div>

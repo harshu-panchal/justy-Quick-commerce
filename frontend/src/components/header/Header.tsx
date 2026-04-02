@@ -178,13 +178,13 @@ export default function Header() {
 
         {/* Action Buttons */}
         <div className="flex items-center gap-1 lg:gap-3" style={{ color: textColor }}>
-          <button 
-            onClick={() => navigate('/seller/signup')} 
+          <a 
+            href="/seller/signup" 
             className="hidden lg:flex items-center gap-2 bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full transition-all border border-white/20 mr-2 group"
           >
             <SellerIcon />
             <span className="text-[11px] font-bold whitespace-nowrap">Become a Seller</span>
-          </button>
+          </a>
 
           <button onClick={() => navigate('/addresses')} className="flex flex-col items-center p-2 hover:bg-white/10 rounded-xl transition-colors min-w-[64px]">
             <LocationIcon />

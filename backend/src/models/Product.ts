@@ -100,7 +100,6 @@ export interface IProduct extends Document {
   foodType?: 'Veg' | 'Non-Veg' | 'Egg';
   preparationTime?: number; // in minutes
   timing?: string[]; // e.g., ["Breakfast", "Lunch"]
-  packagingPrice?: number;
   addons?: Array<{
     name: string;
     price: number;
@@ -466,10 +465,6 @@ const ProductSchema = new Schema<IProduct>(
       type: String,
       enum: ["Available", "Sold out"],
       default: "Available",
-    },
-    packagingPrice: {
-      type: Number,
-      default: 0,
     },
     pharmacy: {
       tablets: { type: String, trim: true },

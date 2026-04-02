@@ -136,7 +136,6 @@ export interface Product {
   timing?: string[];
   addons?: ProductAddon[];
   availabilityStatus?: 'Available' | 'Sold out';
-  packagingPrice?: number;
   barcode?: string;
   pharmacy?: PharmacyData;
   freshProduce?: FreshProduceData;
@@ -192,7 +191,6 @@ export interface CreateProductData {
   timing?: string[];
   addons?: ProductAddon[];
   availabilityStatus?: 'Available' | 'Sold out';
-  packagingPrice?: number;
   barcode?: string;
   pharmacy?: PharmacyData;
   freshProduce?: FreshProduceData;

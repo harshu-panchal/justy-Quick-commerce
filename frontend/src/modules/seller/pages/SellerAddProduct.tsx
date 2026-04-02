@@ -61,7 +61,6 @@ export default function SellerAddProduct() {
     sku: "",
     barcode: "",
     availabilityStatus: "Available" as "Available" | "Sold out",
-    packagingPrice: "0",
     isJain: "No",
     spicyLevel: "None" as "None" | "Mild" | "Medium" | "Hot",
     hsnCode: "",
@@ -244,7 +243,6 @@ export default function SellerAddProduct() {
               sku: product.sku || "",
               barcode: product.barcode || "",
               availabilityStatus: product.availabilityStatus || "Available",
-              packagingPrice: product.packagingPrice?.toString() || "0",
               isJain: product.isJain ? "Yes" : "No",
               hsnCode: product.hsnCode || "",
               fssaiLicNo: product.fssaiLicNo || "",
@@ -468,7 +466,6 @@ export default function SellerAddProduct() {
         price: variations[0].price, 
         stock: variations[0].stock, 
         preparationTime: (isPharmacy || isProduce) ? undefined : (parseInt(formData.preparationTime) || 20), 
-        packagingPrice: parseFloat(formData.packagingPrice) || 0, 
         variations: variations.map(v => ({ ...v, name: v.title })), 
         addons: addons, 
         fssaiLicNo: formData.fssaiLicNo,
@@ -645,41 +642,25 @@ export default function SellerAddProduct() {
              </div>
           </section>
 
-           {/* Section 2: Category & Packaging */}
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <section className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm space-y-4">
-                 <div className="flex items-center gap-3"><div className="w-1.5 h-6 bg-teal-600 rounded-full"></div><h2 className="text-md font-black text-neutral-800 tracking-tight">Categories</h2></div>
-                 <div className="space-y-4">
-                    <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-[0.2em]">Parent Category</label><select name="headerCategory" value={formData.headerCategory} onChange={handleChange} className="w-full h-11 px-4 bg-neutral-50 rounded-xl text-[12px] font-bold border border-neutral-100 focus:bg-white focus:border-teal-500 transition-all outline-none cursor-pointer"><option value="">Selection Required</option>{headerCategories.map(hc => <option key={hc._id} value={hc._id}>{hc.name}</option>)}</select></div>
-                    <div className="space-y-1.5">
-                       <label className="text-[9px] font-black text-neutral-400 uppercase tracking-[0.2em]">Sub Category</label>
-                       <select name="category" value={formData.category} onChange={handleChange} className="w-full h-11 px-4 bg-neutral-50 rounded-xl text-[12px] font-bold border border-neutral-100 focus:bg-white focus:border-teal-500 transition-all outline-none cursor-pointer disabled:opacity-40"><option value="">Selection Required</option>{categories.filter(c => ((c as any).headerCategoryId?._id === formData.headerCategory || (c as any).headerCategoryId === formData.headerCategory) && (c as any).status === "Active").map((cat: any) => <option key={cat._id} value={cat._id}>{cat.name}</option>)}</select>
-                    </div>
-                    {subcategories.length > 0 && (
-                      <div className="space-y-1.5">
-                        <label className="text-[9px] font-black text-neutral-400 uppercase tracking-[0.2em]">Deep Sub Category (Optional)</label>
-                        <select name="subcategory" value={formData.subcategory} onChange={handleChange} className="w-full h-11 px-4 bg-neutral-50 rounded-xl text-[12px] font-bold border border-neutral-100 focus:bg-white focus:border-teal-500 transition-all outline-none cursor-pointer"><option value="">Selection Optional</option>{subcategories.map(sc => <option key={sc._id} value={sc._id}>{sc.subcategoryName}</option>)}</select>
-                      </div>
-                    )}
-                 </div>
-              </section>
-             {!isTeaCorner && !isGrocery && (
-               <section className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm space-y-4 flex flex-col justify-between">
-                  <div className="flex items-center justify-between">
-                     <div className="flex items-center gap-3"><div className="w-1.5 h-6 bg-teal-600 rounded-full"></div><h2 className="text-md font-black text-neutral-800 tracking-tight">Packaging Fees</h2></div>
-                     <span className="w-8 h-8 bg-neutral-50 text-teal-600 rounded-lg flex items-center justify-center shadow-sm border border-neutral-100"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M21 8l-9-4-9 4v8l9 4 9-4V8z"/><path d="M12 12l9-4"/><path d="M12 12v8"/><path d="M12 12L3 8"/></svg></span>
-                  </div>
-                  <div className="bg-neutral-50/20 p-6 rounded-2xl border border-neutral-100 relative group">
-                     <p className="absolute top-3 left-0 right-0 text-center text-[7px] font-black text-neutral-400 uppercase tracking-[0.2em] opacity-40 group-hover:opacity-100 transition-opacity">Fixed per order</p>
-                     <div className="flex items-center justify-center gap-2">
-                        <span className="text-2xl font-black text-neutral-300">₹</span>
-                        <input type="number" name="packagingPrice" value={formData.packagingPrice} onChange={handleChange} className="bg-transparent border-none text-center text-4xl font-black text-teal-600 outline-none w-24 tabular-nums" />
+            {/* Section 2: Category */}
+            <div className="grid grid-cols-1 gap-8">
+               <section className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm space-y-4">
+                  <div className="flex items-center gap-3"><div className="w-1.5 h-6 bg-teal-600 rounded-full"></div><h2 className="text-md font-black text-neutral-800 tracking-tight">Categories</h2></div>
+                  <div className="space-y-4">
+                     <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-[0.2em]">Parent Category</label><select name="headerCategory" value={formData.headerCategory} onChange={handleChange} className="w-full h-11 px-4 bg-neutral-50 rounded-xl text-[12px] font-bold border border-neutral-100 focus:bg-white focus:border-teal-500 transition-all outline-none cursor-pointer"><option value="">Selection Required</option>{headerCategories.map(hc => <option key={hc._id} value={hc._id}>{hc.name}</option>)}</select></div>
+                     <div className="space-y-1.5">
+                        <label className="text-[9px] font-black text-neutral-400 uppercase tracking-[0.2em]">Sub Category</label>
+                        <select name="category" value={formData.category} onChange={handleChange} className="w-full h-11 px-4 bg-neutral-50 rounded-xl text-[12px] font-bold border border-neutral-100 focus:bg-white focus:border-teal-500 transition-all outline-none cursor-pointer disabled:opacity-40"><option value="">Selection Required</option>{categories.filter(c => ((c as any).headerCategoryId?._id === formData.headerCategory || (c as any).headerCategoryId === formData.headerCategory) && (c as any).status === "Active").map((cat: any) => <option key={cat._id} value={cat._id}>{cat.name}</option>)}</select>
                      </div>
+                     {subcategories.length > 0 && (
+                       <div className="space-y-1.5">
+                         <label className="text-[9px] font-black text-neutral-400 uppercase tracking-[0.2em]">Deep Sub Category (Optional)</label>
+                         <select name="subcategory" value={formData.subcategory} onChange={handleChange} className="w-full h-11 px-4 bg-neutral-50 rounded-xl text-[12px] font-bold border border-neutral-100 focus:bg-white focus:border-teal-500 transition-all outline-none cursor-pointer"><option value="">Selection Optional</option>{subcategories.map(sc => <option key={sc._id} value={sc._id}>{sc.subcategoryName}</option>)}</select>
+                       </div>
+                     )}
                   </div>
-                  <p className="text-[8px] font-bold text-neutral-400 text-center uppercase tracking-widest">Added to customer subtotal</p>
                </section>
-             )}
-          </div>
+            </div>
 
           {isPharmacy && (
              <section className="bg-white rounded-2xl border border-neutral-200 p-6 sm:p-8 shadow-sm space-y-8">

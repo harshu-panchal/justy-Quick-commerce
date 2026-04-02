@@ -201,13 +201,6 @@ export default function SellerProductDetail() {
                  </div>
               </div>
 
-              {/* Fiscal Stats */}
-              <div className="bg-neutral-50/50 border border-neutral-100 rounded-2xl p-6 flex items-center justify-between">
-                 <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-orange-500 font-black">₹</div>
-                    <div><p className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">Packaging & Service</p><p className="text-sm font-black text-neutral-800">₹{product.packagingPrice || 0}</p></div>
-                 </div>
-              </div>
            </div>
         </div>
       </div>

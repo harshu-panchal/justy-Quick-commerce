@@ -462,6 +462,8 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
             {/* Become a Seller Button */}
             <a 
               href="/seller/signup" 
+              target="_blank"
+              rel="noopener noreferrer"
               className="flex items-center gap-1.5 bg-white/20 hover:bg-white/30 px-2.5 py-1.5 rounded-full transition-all border border-white/20 text-white shadow-lg active:scale-95"
             >
               <span className="text-[9px] font-black uppercase tracking-tight whitespace-nowrap">Become a Seller</span>

@@ -180,6 +180,8 @@ export default function Header() {
         <div className="flex items-center gap-1 lg:gap-3" style={{ color: textColor }}>
           <a 
             href="/seller/signup" 
+            target="_blank"
+            rel="noopener noreferrer"
             className="hidden lg:flex items-center gap-2 bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full transition-all border border-white/20 mr-2 group"
           >
             <SellerIcon />

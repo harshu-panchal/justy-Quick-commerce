@@ -100,6 +100,7 @@ export interface Product {
   seoImageAlt?: string;
   seoDescription?: string;
   smallDescription?: string;
+  description?: string;
   tags: string[];
   manufacturer?: string;
   madeIn?: string;
@@ -166,6 +167,7 @@ export interface CreateProductData {
   seoImage?: string;
   seoDescription?: string;
   smallDescription?: string;
+  description?: string;
   tags?: string[];
   manufacturer?: string;
   madeIn?: string;

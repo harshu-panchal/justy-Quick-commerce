@@ -109,6 +109,13 @@ export default function Header() {
     </svg>
   );
 
+  const SellerIcon = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+      <polyline points="9 22 9 12 15 12 15 22" />
+    </svg>
+  );
+
   const CartIcon = () => (
     <div className="relative">
       <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -171,6 +178,14 @@ export default function Header() {
 
         {/* Action Buttons */}
         <div className="flex items-center gap-1 lg:gap-3" style={{ color: textColor }}>
+          <button 
+            onClick={() => navigate('/seller/signup')} 
+            className="hidden lg:flex items-center gap-2 bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full transition-all border border-white/20 mr-2 group"
+          >
+            <SellerIcon />
+            <span className="text-[11px] font-bold whitespace-nowrap">Become a Seller</span>
+          </button>
+
           <button onClick={() => navigate('/addresses')} className="flex flex-col items-center p-2 hover:bg-white/10 rounded-xl transition-colors min-w-[64px]">
             <LocationIcon />
             <span className="text-[10px] font-bold mt-0.5">Location</span>

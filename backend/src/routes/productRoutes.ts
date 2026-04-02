@@ -42,6 +42,7 @@ router.get("/:id", getProductById);
 
 // Update product
 router.put("/:id", updateProduct);
+router.patch("/:id", updateProduct);
 
 // Delete product
 router.delete("/:id", deleteProduct);

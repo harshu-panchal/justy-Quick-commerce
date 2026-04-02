@@ -254,12 +254,24 @@ export default function AdminProductEdit() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-neutral-700 mb-1 uppercase tracking-wider">Description</label>
+                  <label className="block text-xs font-semibold text-neutral-700 mb-1 uppercase tracking-wider">Short Description</label>
+                  <textarea 
+                    name="smallDescription"
+                    rows={2}
+                    value={managedProduct.smallDescription || ""}
+                    onChange={handleInputChange}
+                    placeholder="Brief product summary..."
+                    className="w-full px-3 py-2 border border-neutral-300 rounded focus:ring-1 focus:ring-teal-500 focus:outline-none"
+                  ></textarea>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-neutral-700 mb-1 uppercase tracking-wider">Detailed Description</label>
                   <textarea 
                     name="description"
-                    rows={6}
+                    rows={4}
                     value={managedProduct.description || ""}
                     onChange={handleInputChange}
+                    placeholder="Full product details, nutrition info, usage instructions..."
                     className="w-full px-3 py-2 border border-neutral-300 rounded focus:ring-1 focus:ring-teal-500 focus:outline-none"
                   ></textarea>
                 </div>
@@ -279,18 +291,17 @@ export default function AdminProductEdit() {
                       <option value="other">Other (Custom Brand)</option>
                     </select>
                   </div>
-                  {managedProduct.brand === "other" && (
-                    <div>
-                      <label className="block text-xs font-semibold text-neutral-700 mb-1 uppercase tracking-wider">Custom Brand Name</label>
-                      <input 
-                        type="text" 
-                        name="brandName"
-                        value={managedProduct.brandName || ""}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-neutral-300 rounded focus:ring-1 focus:ring-teal-500 focus:outline-none"
-                      />
-                    </div>
-                  )}
+                  <div>
+                    <label className="block text-xs font-semibold text-neutral-700 mb-1 uppercase tracking-wider">Custom Brand Name</label>
+                    <input 
+                      type="text" 
+                      name="brandName"
+                      value={managedProduct.brandName || (typeof managedProduct.brand === 'object' ? (managedProduct.brand as any)?.name : '') || ""}
+                      onChange={handleInputChange}
+                      placeholder="Brand name as displayed to customers"
+                      className="w-full px-3 py-2 border border-neutral-300 rounded focus:ring-1 focus:ring-teal-500 focus:outline-none"
+                    />
+                  </div>
                   <div>
                     <label className="block text-xs font-semibold text-neutral-700 mb-1 uppercase tracking-wider">SKU (External ID)</label>
                     <input 
@@ -328,21 +339,19 @@ export default function AdminProductEdit() {
                   <label className="block text-xs font-semibold text-neutral-700 mb-1 uppercase tracking-wider">Discount Price (₹)</label>
                   <input 
                     type="number" 
-                    name="compareAtPrice"
-                    value={managedProduct.compareAtPrice || 0}
+                    name="discPrice"
+                    value={managedProduct.discPrice ?? (managedProduct as any).variations?.[0]?.discPrice ?? 0}
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-neutral-300 rounded focus:ring-1 focus:ring-teal-500 focus:outline-none text-neutral-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-neutral-700 mb-1 uppercase tracking-wider">Tax (%)</label>
-                  <input 
-                    type="text" 
-                    name="tax"
-                    value={managedProduct.tax || ""}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-neutral-300 rounded focus:ring-1 focus:ring-teal-500 focus:outline-none"
-                  />
+                  <label className="block text-xs font-semibold text-neutral-700 mb-1 uppercase tracking-wider">Tax Rate</label>
+                  <p className="px-3 py-2 bg-neutral-50 border border-neutral-200 rounded text-sm font-medium text-neutral-700">
+                    {typeof managedProduct.tax === 'object' && managedProduct.tax 
+                      ? `${(managedProduct.tax as any)?.rate || (managedProduct.tax as any)?.percentage || 0}% GST` 
+                      : managedProduct.tax || 'No Tax'}
+                  </p>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-neutral-700 mb-1 uppercase tracking-wider">HSN Code</label>

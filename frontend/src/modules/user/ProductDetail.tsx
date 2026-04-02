@@ -890,13 +890,13 @@ export default function ProductDetail() {
               {isInfoExpanded && (
                 <div className="bg-white px-2 py-2">
                   <div className="space-y-1.5">
-                    {product.description && (
+                    {(product.description || product.smallDescription) && (
                       <div className="flex items-start">
                         <span className="text-xs font-semibold text-neutral-800 w-[180px] flex-shrink-0">
                           Description:
                         </span>
                         <span className="text-xs text-neutral-600 leading-relaxed flex-1">
-                          {product.description}
+                          {product.description || product.smallDescription}
                         </span>
                       </div>
                     )}

@@ -139,6 +139,7 @@ export default function SellerProductList() {
                                 )}
                              </div>
                              <h3 className="text-base font-black text-neutral-900 tracking-tight leading-tight group-hover:text-teal-600 transition-colors uppercase italic">{p.productName}</h3>
+                             {(p.brandName || (p as any).brand?.name) && <p className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest">Brand: {p.brandName || (p as any).brand?.name}</p>}
                           </div>
                           <div className="space-y-0.5">
                              <p className="text-xl font-black text-neutral-900 tracking-tighter tabular-nums">₹{p.variations?.[0]?.price || 0}</p>

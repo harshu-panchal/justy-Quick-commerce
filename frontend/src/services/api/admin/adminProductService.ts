@@ -142,6 +142,7 @@ export interface Product {
   weight?: string;
   color?: string;
   size?: string;
+  discPrice?: number;
   isReturnable: boolean;
   maxReturnDays?: number;
   seoTitle?: string;

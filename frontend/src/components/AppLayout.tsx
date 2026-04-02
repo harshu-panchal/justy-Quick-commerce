@@ -202,12 +202,20 @@ export default function AppLayout({ children }: AppLayoutProps) {
                         ? `${userLocation.city}, ${userLocation.state}`
                         : userLocation?.city || ''}
                   </span>
-                  <button
-                    onClick={() => setShowLocationChangeModal(true)}
-                    className="text-blue-600 font-medium hover:text-blue-700 transition-colors flex-shrink-0 ml-2"
-                  >
-                    Change
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <button 
+                      onClick={() => navigate('/seller/signup')} 
+                      className="text-emerald-700 font-bold bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg text-[9px] uppercase tracking-tighter shadow-sm active:scale-95"
+                    >
+                      <span className="whitespace-nowrap">Become a Seller</span>
+                    </button>
+                    <button
+                      onClick={() => setShowLocationChangeModal(true)}
+                      className="text-blue-600 font-bold hover:text-blue-700 transition-colors flex-shrink-0 ml-0.5 text-[11px]"
+                    >
+                      Change
+                    </button>
+                  </div>
                 </div>
               )}
 

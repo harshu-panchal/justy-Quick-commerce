@@ -327,12 +327,18 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
       >
         {/* Brand Row */}
         <div className="mb-0.5 max-w-2xl mx-auto flex items-center justify-between gap-3">
-          <div className="relative group p-0">
+          <div className="relative group p-0 flex items-center gap-3">
             <img
               src={jyastiLogo}
               alt="JYASTI builds trust"
               className="h-20 md:h-12 w-auto object-contain relative z-10 px-2 filter drop-shadow-[0_4px_6px_rgba(0,0,0,0.12)]"
             />
+            <button 
+              onClick={() => navigate('/seller/signup')} 
+              className="flex items-center gap-1.5 bg-white/20 hover:bg-white/30 px-2.5 py-1.5 rounded-full transition-all border border-white/20 text-white shadow-lg active:scale-95"
+            >
+              <span className="text-[9px] font-black uppercase tracking-tight whitespace-nowrap">Become a Seller</span>
+            </button>
           </div>
 
           <div className="flex items-center gap-2 rounded-xl border border-white/20 bg-white/12 px-3 py-1.5 text-white shadow-[0_8px_20px_rgba(0,0,0,0.12)] backdrop-blur-sm">

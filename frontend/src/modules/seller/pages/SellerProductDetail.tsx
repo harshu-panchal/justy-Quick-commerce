@@ -81,7 +81,7 @@ export default function SellerProductDetail() {
               <div className="bg-slate-900 rounded-3xl p-8 text-white flex justify-between items-center shadow-2xl relative overflow-hidden">
                  <div className="relative z-10">
                     <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 mb-2">Primary Valuation</p>
-                    <p className="text-5xl font-black tracking-tighter tabular-nums">₹{product.variations?.[0]?.price || 0}<span className="text-sm font-bold opacity-30 ml-2">Starting</span></p>
+                    <p className="text-5xl font-black tracking-tighter tabular-nums">₹{product.variations?.[0]?.discPrice || product.variations?.[0]?.price || 0}<span className="text-sm font-bold opacity-30 ml-2">Starting</span></p>
                  </div>
                  <div className="text-right flex flex-col gap-4 relative z-10">
                     <div className="bg-white/10 px-4 py-2 rounded-xl border border-white/10">
@@ -98,12 +98,14 @@ export default function SellerProductDetail() {
               </div>
 
               {/* Identity Details */}
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                  <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm">
                     <p className="text-[9px] font-black text-neutral-400 uppercase tracking-widest mb-4">Architecture</p>
                     <div className="space-y-4">
                        <div><p className="text-[9px] font-black text-teal-600 uppercase">Domain</p><p className="text-sm font-black text-neutral-800 uppercase italic">{(product.headerCategoryId as any)?.name || "N/A"}</p></div>
                        <div><p className="text-[9px] font-black text-teal-600 uppercase">Category</p><p className="text-sm font-black text-neutral-800 uppercase italic">{(product.categoryId as any)?.name || (product as any).category?.name || "N/A"}</p></div>
+                       {((product as any).subcategory?.name || (product as any).subcategory?.subcategoryName) && <div><p className="text-[9px] font-black text-teal-600 uppercase">Subcategory</p><p className="text-sm font-black text-neutral-800 uppercase italic">{(product as any).subcategory?.name || (product as any).subcategory?.subcategoryName}</p></div>}
+                       <div><p className="text-[9px] font-black text-teal-600 uppercase">Brand</p><p className="text-sm font-black text-neutral-800 uppercase italic">{product.brandName || (product as any).brand?.name || "N/A"}</p></div>
                     </div>
                  </div>
                  <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm">
@@ -111,6 +113,14 @@ export default function SellerProductDetail() {
                     <div className="space-y-4">
                        <div><p className="text-[9px] font-black text-orange-600 uppercase">Food Type</p><p className="text-sm font-black text-neutral-800">{product.foodType}</p></div>
                        <div><p className="text-[9px] font-black text-orange-600 uppercase">Prep Time</p><p className="text-sm font-black text-neutral-800">{product.preparationTime} Minutes</p></div>
+                       <div><p className="text-[9px] font-black text-orange-600 uppercase">External SKU</p><p className="text-sm font-black text-neutral-800 uppercase tabular-nums">{product.sku || "N/A"}</p></div>
+                    </div>
+                 </div>
+                 <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm">
+                    <p className="text-[9px] font-black text-neutral-400 uppercase tracking-widest mb-4">Compliance</p>
+                    <div className="space-y-4">
+                       <div><p className="text-[9px] font-black text-blue-600 uppercase">Tax Rate</p><p className="text-sm font-black text-neutral-800">{(product.tax as any)?.percentage || product.tax || 0}% GST Applied</p></div>
+                       <div><p className="text-[9px] font-black text-blue-600 uppercase">HSN Code</p><p className="text-sm font-black text-neutral-800 uppercase tabular-nums">{product.hsnCode || "N/A"}</p></div>
                     </div>
                  </div>
               </div>
@@ -118,8 +128,50 @@ export default function SellerProductDetail() {
               {/* Description */}
               <div className="bg-white border border-neutral-200 rounded-2xl p-8 shadow-sm">
                  <p className="text-[9px] font-black text-neutral-400 uppercase tracking-widest mb-4">Product Narrative</p>
-                 <p className="text-neutral-600 leading-relaxed font-medium">{product.smallDescription || "No detailed description provided for this node."}</p>
+                 <p className="text-neutral-600 leading-relaxed font-medium mb-4">{product.smallDescription || "No detailed description provided."}</p>
+                 {product.description && (
+                   <div className="pt-4 border-t border-neutral-100">
+                      <p className="text-[9px] font-black text-teal-600 uppercase tracking-widest mb-2">Detailed Context</p>
+                      <p className="text-neutral-500 text-sm leading-relaxed">{product.description}</p>
+                   </div>
+                 )}
               </div>
+
+              {/* Category Specific Details */}
+              {(product.pharmacy || product.freshProduce || product.grocery) && (
+                <div className="bg-white border border-neutral-200 rounded-2xl p-8 shadow-sm mb-8">
+                   <p className="text-[9px] font-black text-neutral-400 uppercase tracking-widest mb-6">Categorical Information</p>
+                   
+                   {product.pharmacy && (
+                     <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                        {product.pharmacy.tablets && <div><p className="text-[8px] font-black text-teal-600 uppercase">Tablets</p><p className="text-sm font-bold text-neutral-800">{product.pharmacy.tablets}</p></div>}
+                        {product.pharmacy.quantity && <div><p className="text-[8px] font-black text-teal-600 uppercase">Quantity</p><p className="text-sm font-bold text-neutral-800">{product.pharmacy.quantity}</p></div>}
+                        {product.pharmacy.form && <div><p className="text-[8px] font-black text-teal-600 uppercase">Form</p><p className="text-sm font-bold text-neutral-800">{product.pharmacy.form}</p></div>}
+                        {product.pharmacy.packOf && <div><p className="text-[8px] font-black text-teal-600 uppercase">Pack Of</p><p className="text-sm font-bold text-neutral-800">{product.pharmacy.packOf}</p></div>}
+                        {product.pharmacy.dosage && <div><p className="text-[8px] font-black text-teal-600 uppercase">Dosage</p><p className="text-sm font-bold text-neutral-800">{product.pharmacy.dosage}</p></div>}
+                        {product.pharmacy.medicineType && <div><p className="text-[8px] font-black text-teal-600 uppercase">Med. Type</p><p className="text-sm font-bold text-neutral-800">{product.pharmacy.medicineType}</p></div>}
+                        {product.pharmacy.manufacturerName && <div className="col-span-full"><p className="text-[8px] font-black text-teal-600 uppercase">Manufacturer</p><p className="text-sm font-bold text-neutral-800">{product.pharmacy.manufacturerName}</p></div>}
+                     </div>
+                   )}
+
+                   {product.freshProduce && (
+                     <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                        {product.freshProduce.origin && <div><p className="text-[8px] font-black text-emerald-600 uppercase">Origin</p><p className="text-sm font-bold text-neutral-800 uppercase italic">{product.freshProduce.origin}</p></div>}
+                        {product.freshProduce.shelfLife && <div><p className="text-[8px] font-black text-emerald-600 uppercase">Shelf Life</p><p className="text-sm font-bold text-neutral-800">{product.freshProduce.shelfLife}</p></div>}
+                        {product.freshProduce.isOrganic && <div><p className="text-[8px] font-black text-emerald-600 uppercase">Type</p><p className="text-sm font-bold text-emerald-500 uppercase italic">Organic</p></div>}
+                        {product.freshProduce.netQuantity && <div><p className="text-[8px] font-black text-emerald-600 uppercase">Net Qty</p><p className="text-sm font-bold text-neutral-800 uppercase tabular-nums">{product.freshProduce.netQuantity}</p></div>}
+                     </div>
+                   )}
+
+                   {product.grocery && (
+                     <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                        {product.grocery.unitType && <div><p className="text-[8px] font-black text-blue-600 uppercase">Unit Type</p><p className="text-sm font-bold text-neutral-800 uppercase italic">{product.grocery.unitType}</p></div>}
+                        {product.grocery.brand && <div><p className="text-[8px] font-black text-blue-600 uppercase">Brand</p><p className="text-sm font-bold text-neutral-800 uppercase italic">{product.grocery.brand}</p></div>}
+                        {product.grocery.expiryDate && <div><p className="text-[8px] font-black text-blue-600 uppercase">Expiry (Approx)</p><p className="text-sm font-bold text-neutral-800 tabular-nums">{new Date(product.grocery.expiryDate).toLocaleDateString()}</p></div>}
+                     </div>
+                   )}
+                </div>
+              )}
 
               {/* Variation Matrix */}
               <div className="bg-white border border-neutral-200 rounded-2xl overflow-hidden shadow-sm">
@@ -136,7 +188,13 @@ export default function SellerProductDetail() {
                           </div>
                           <div className="flex items-center gap-8">
                              <div className="text-right"><p className="text-[8px] font-black text-neutral-400 uppercase">Stock</p><p className="text-[12px] font-black text-neutral-800 tabular-nums">{v.stock}</p></div>
-                             <div className="text-right"><p className="text-[8px] font-black text-neutral-400 uppercase">Price</p><p className="text-lg font-black text-teal-600 tabular-nums">₹{v.price}</p></div>
+                             <div className="text-right">
+                                <p className="text-[8px] font-black text-neutral-400 uppercase">Valuation</p>
+                                <div className="flex flex-col items-end">
+                                   <p className="text-lg font-black text-teal-600 tabular-nums leading-none">₹{v.discPrice || v.price}</p>
+                                   {v.discPrice && v.discPrice < v.price && <p className="text-[10px] font-bold text-neutral-400 line-through tabular-nums leading-none mt-1">₹{v.price}</p>}
+                                </div>
+                             </div>
                           </div>
                        </div>
                     ))}
@@ -148,9 +206,6 @@ export default function SellerProductDetail() {
                  <div className="flex items-center gap-4">
                     <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-orange-500 font-black">₹</div>
                     <div><p className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">Packaging & Service</p><p className="text-sm font-black text-neutral-800">₹{product.packagingPrice || 0}</p></div>
-                 </div>
-                 <div className="flex items-center gap-4 text-right">
-                    <div><p className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">HSN / TAX</p><p className="text-sm font-black text-neutral-800">18% GST (Default)</p></div>
                  </div>
               </div>
            </div>

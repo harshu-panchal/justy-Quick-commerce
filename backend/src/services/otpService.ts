@@ -82,8 +82,8 @@ function buildOtpMessage(otp: string): string {
  * Send SMS via SMS India HUB API
  */
 async function sendSmsViaApi(mobile: string, message: string): Promise<void> {
-  if (!SMS_INDIA_HUB_API_KEY || !SMS_INDIA_HUB_SENDER_ID) {
-    console.warn('SMS India HUB credentials are missing. Skipping real SMS send.');
+  if (!SMS_INDIA_HUB_API_KEY || !SMS_INDIA_HUB_SENDER_ID || process.env.USE_MOCK_OTP === 'true') {
+    console.log(`[TEST-MODE] SMS to ${mobile} skipped. Content: ${message}`);
     return;
   }
 

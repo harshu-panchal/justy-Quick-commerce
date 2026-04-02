@@ -11,7 +11,7 @@ import {
   ProductAddon,
   generateProductDescriptionAI
 } from "../../../services/api/productService";
-import { getCategories, Category } from "../../../services/api/categoryService";
+import { getCategories, getSubcategories, Category, SubCategory } from "../../../services/api/categoryService";
 import { getActiveTaxes, Tax } from "../../../services/api/taxService";
 import { getBrands, Brand } from "../../../services/api/brandService";
 import { getHeaderCategoriesPublic, HeaderCategory } from "../../../services/api/headerCategoryService";
@@ -42,6 +42,7 @@ export default function SellerAddProduct() {
     productName: "",
     headerCategory: "",
     category: "",
+    subcategory: "",
     foodType: "Veg" as "Veg" | "Non-Veg" | "Egg",
     publish: "Yes",
     popular: "No",
@@ -50,6 +51,7 @@ export default function SellerAddProduct() {
     brandName: "",
     tags: "",
     smallDescription: "",
+    description: "",
     tax: "",
     totalAllowedQuantity: "10",
     mainImageUrl: "",
@@ -147,6 +149,7 @@ export default function SellerAddProduct() {
 
   const [brands, setBrands] = useState<Brand[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [subcategories, setSubcategories] = useState<SubCategory[]>([]);
   const [taxes, setTaxes] = useState<Tax[]>([]);
   const [headerCategories, setHeaderCategories] = useState<HeaderCategory[]>([]);
 
@@ -220,17 +223,19 @@ export default function SellerAddProduct() {
             const product = response.data;
             setFormData({
               productName: product.productName,
-              headerCategory: (product.headerCategoryId as any)?._id || (product as any).headerCategoryId || "",
-              category: (product.category as any)?._id || product.categoryId || "",
+              headerCategory: String((product.headerCategoryId as any)?._id || (product as any).headerCategoryId || ""),
+              category: String((product.category as any)?._id || product.categoryId || ""),
+              subcategory: String((product.subcategory as any)?._id || product.subcategoryId || (product as any).subcategory || ""),
               foodType: product.foodType || "Veg",
               publish: product.publish ? "Yes" : "No",
               popular: product.popular ? "Yes" : "No",
               dealOfDay: product.dealOfDay ? "Yes" : "No",
-              brand: "",
+              brand: String((product as any).brand?._id || (product as any).brand || ""),
               brandName: product.brandName || "",
               tags: product.tags?.join(", ") || "",
               smallDescription: product.smallDescription || "",
-              tax: (product.tax as any)?._id || (product as any).taxId || "",
+              description: product.description || "",
+              tax: String((product.tax as any)?._id || (product as any).taxId || ""),
               totalAllowedQuantity: product.totalAllowedQuantity?.toString() || "10",
               mainImageUrl: product.mainImageUrl || product.mainImage || "",
               galleryImageUrls: product.galleryImageUrls || [],
@@ -297,7 +302,7 @@ export default function SellerAddProduct() {
                 minOrderQuantity: product.grocery?.minOrderQuantity?.toString() || "1",
                 expiryDate: product.grocery?.expiryDate ? new Date(product.grocery.expiryDate).toISOString().split('T')[0] : "",
                 brand: product.grocery?.brand || product.brandName || "",
-                description: product.smallDescription || "",
+                description: product.description || "",
               }
             });
             setVariations(product.variations || []);
@@ -320,6 +325,24 @@ export default function SellerAddProduct() {
       fetchProduct();
     }
   }, [id]);
+
+  useEffect(() => {
+    const fetchSubcategories = async () => {
+      if (!formData.category) {
+        setSubcategories([]);
+        return;
+      }
+      try {
+        const res = await getSubcategories(formData.category);
+        if (res.success) {
+          setSubcategories(res.data);
+        }
+      } catch (err) {
+        console.error("Error fetching subcategories:", err);
+      }
+    };
+    fetchSubcategories();
+  }, [formData.category]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -456,6 +479,9 @@ export default function SellerAddProduct() {
         galleryImageUrls: uploadedUrls.slice(1), 
         tags: formData.tags.split(",").map(t => t.trim()).filter(Boolean), 
         taxId: formData.tax || undefined,
+        brandId: (formData.brand && formData.brand !== "other") ? formData.brand : undefined,
+        brandName: (formData.brand === "other" || !formData.brand) ? formData.brandName : brands.find(b => b._id === formData.brand)?.name,
+        subcategoryId: formData.subcategory || undefined,
         pharmacy: isPharmacy ? {
           ...formData.pharmacy,
           prescriptionRequired: formData.pharmacy.prescriptionRequired === "Yes",
@@ -557,6 +583,29 @@ export default function SellerAddProduct() {
              </div>
              <div className="space-y-4">
                 <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Full Product Name *</label><input type="text" name="productName" value={formData.productName} onChange={handleChange} placeholder="e.g. Fresh Organic Tomatoes" className="w-full h-12 px-5 bg-neutral-50 border border-neutral-100 rounded-xl text-[16px] font-bold focus:bg-white focus:border-emerald-500 transition-all outline-none" /></div>
+
+                <div className="grid grid-cols-2 gap-6">
+                   <div className="space-y-1.5">
+                      <label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Brand</label>
+                      <select name="brand" value={formData.brand} onChange={handleChange} className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-[12px] font-bold outline-none focus:border-teal-500">
+                         <option value="">Select Brand</option>
+                         {brands.map(b => (
+                            <option key={b._id} value={b._id}>{b.name}</option>
+                         ))}
+                         <option value="other">Other / Custom</option>
+                      </select>
+                   </div>
+                   <div className="space-y-1.5">
+                      <label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">External SKU (ID)</label>
+                      <input type="text" name="sku" value={formData.sku} onChange={handleChange} placeholder="e.g. SKU-123" className="w-full h-11 px-5 bg-neutral-50 border border-neutral-100 rounded-xl text-[14px] font-bold focus:bg-white focus:border-emerald-500 transition-all outline-none" />
+                   </div>
+                </div>
+                {formData.brand === "other" && (
+                   <div className="space-y-1.5">
+                      <label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Custom Brand Name</label>
+                      <input type="text" name="brandName" value={formData.brandName} onChange={handleChange} placeholder="Enter brand name" className="w-full h-11 px-5 bg-neutral-50 border border-neutral-100 rounded-xl text-[14px] font-bold focus:bg-white focus:border-emerald-500 transition-all outline-none" />
+                   </div>
+                )}
                 {!isPharmacy && !isProduce && !isGrocery && (
                   <div className="grid grid-cols-2 gap-6">
                      <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Preparation Time (Mins)</label><input type="number" name="preparationTime" value={formData.preparationTime} onChange={handleChange} className="w-full h-11 px-5 bg-neutral-50 border border-neutral-100 rounded-xl text-[14px] font-black tabular-nums transition-all outline-none focus:border-emerald-500" /></div>
@@ -565,7 +614,7 @@ export default function SellerAddProduct() {
                 )}
                 <div className="space-y-1.5">
                    <div className="flex justify-between items-center">
-                      <label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">Description</label>
+                      <label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">Short Description</label>
                       <button 
                         type="button" 
                         onClick={handleGenerateAI} 
@@ -575,10 +624,14 @@ export default function SellerAddProduct() {
                         {aiLoading ? "Thinking..." : "✨ Magic AI"}
                       </button>
                    </div>
-                   <textarea name="smallDescription" value={formData.smallDescription} onChange={handleChange} rows={3} placeholder="Tell your customers about the taste, texture, and secret ingredients..." className="w-full p-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-medium focus:bg-white transition-all outline-none resize-none"></textarea>
+                   <textarea name="smallDescription" value={formData.smallDescription} onChange={handleChange} rows={2} placeholder="Brief summary (e.g. A delicious blend of spices...)" className="w-full p-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-medium focus:bg-white transition-all outline-none resize-none mb-3"></textarea>
+                   
+                   <label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest block mb-1.5 ml-1">Detailed Description (Required for details page)</label>
+                   <textarea name="description" value={formData.description} onChange={handleChange} rows={4} placeholder="Full product details, nutrition info, usage instructions, etc..." className="w-full p-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-medium focus:bg-white transition-all outline-none resize-none"></textarea>
+
                    <AnimatePresence>
                       {aiSuggestion && (
-                         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="p-4 bg-teal-50 border border-teal-100 rounded-xl space-y-3">
+                         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="p-4 bg-teal-50 border border-teal-100 rounded-xl space-y-3 mt-4">
                             <div className="flex items-center justify-between">
                                <p className="text-[10px] font-black text-teal-700 uppercase tracking-widest">AI Suggestion</p>
                                <button type="button" onClick={() => setAiSuggestion("")} className="text-teal-400 text-xs font-black">×</button>
@@ -592,15 +645,24 @@ export default function SellerAddProduct() {
              </div>
           </section>
 
-          {/* Section 2: Category & Packaging */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-             <section className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm space-y-4">
-                <div className="flex items-center gap-3"><div className="w-1.5 h-6 bg-teal-600 rounded-full"></div><h2 className="text-md font-black text-neutral-800 tracking-tight">Categories</h2></div>
-                <div className="space-y-4">
-                   <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-[0.2em]">Parent Category</label><select name="headerCategory" value={formData.headerCategory} onChange={handleChange} className="w-full h-11 px-4 bg-neutral-50 rounded-xl text-[12px] font-bold border border-neutral-100 focus:bg-white focus:border-teal-500 transition-all outline-none cursor-pointer"><option value="">Selection Required</option>{headerCategories.map(hc => <option key={hc._id} value={hc._id}>{hc.name}</option>)}</select></div>
-                   <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-[0.2em]">Sub Category</label><select name="category" value={formData.category} onChange={handleChange} className="w-full h-11 px-4 bg-neutral-50 rounded-xl text-[12px] font-bold border border-neutral-100 focus:bg-white focus:border-teal-500 transition-all outline-none cursor-pointer disabled:opacity-40">{categories.filter(c => ((c as any).headerCategoryId?._id === formData.headerCategory || (c as any).headerCategoryId === formData.headerCategory) && (c as any).status === "Active").map((cat: any) => <option key={cat._id} value={cat._id}>{cat.name}</option>)}</select></div>
-                </div>
-             </section>
+           {/* Section 2: Category & Packaging */}
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <section className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm space-y-4">
+                 <div className="flex items-center gap-3"><div className="w-1.5 h-6 bg-teal-600 rounded-full"></div><h2 className="text-md font-black text-neutral-800 tracking-tight">Categories</h2></div>
+                 <div className="space-y-4">
+                    <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-[0.2em]">Parent Category</label><select name="headerCategory" value={formData.headerCategory} onChange={handleChange} className="w-full h-11 px-4 bg-neutral-50 rounded-xl text-[12px] font-bold border border-neutral-100 focus:bg-white focus:border-teal-500 transition-all outline-none cursor-pointer"><option value="">Selection Required</option>{headerCategories.map(hc => <option key={hc._id} value={hc._id}>{hc.name}</option>)}</select></div>
+                    <div className="space-y-1.5">
+                       <label className="text-[9px] font-black text-neutral-400 uppercase tracking-[0.2em]">Sub Category</label>
+                       <select name="category" value={formData.category} onChange={handleChange} className="w-full h-11 px-4 bg-neutral-50 rounded-xl text-[12px] font-bold border border-neutral-100 focus:bg-white focus:border-teal-500 transition-all outline-none cursor-pointer disabled:opacity-40"><option value="">Selection Required</option>{categories.filter(c => ((c as any).headerCategoryId?._id === formData.headerCategory || (c as any).headerCategoryId === formData.headerCategory) && (c as any).status === "Active").map((cat: any) => <option key={cat._id} value={cat._id}>{cat.name}</option>)}</select>
+                    </div>
+                    {subcategories.length > 0 && (
+                      <div className="space-y-1.5">
+                        <label className="text-[9px] font-black text-neutral-400 uppercase tracking-[0.2em]">Deep Sub Category (Optional)</label>
+                        <select name="subcategory" value={formData.subcategory} onChange={handleChange} className="w-full h-11 px-4 bg-neutral-50 rounded-xl text-[12px] font-bold border border-neutral-100 focus:bg-white focus:border-teal-500 transition-all outline-none cursor-pointer"><option value="">Selection Optional</option>{subcategories.map(sc => <option key={sc._id} value={sc._id}>{sc.subcategoryName}</option>)}</select>
+                      </div>
+                    )}
+                 </div>
+              </section>
              {!isTeaCorner && !isGrocery && (
                <section className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm space-y-4 flex flex-col justify-between">
                   <div className="flex items-center justify-between">

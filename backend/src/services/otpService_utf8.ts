@@ -105,8 +105,9 @@ function handleSmsResponse(responseData: SmsIndiaHubResponse): void {
  * Send SMS via SMS India HUB API
  */
 async function sendSmsViaApi(mobile: string, message: string): Promise<void> {
-  if (!SMS_INDIA_HUB_API_KEY || !SMS_INDIA_HUB_SENDER_ID) {
-    throw new Error('SMS India HUB credentials are missing. Please check environment variables.');
+  if (!SMS_INDIA_HUB_API_KEY || !SMS_INDIA_HUB_SENDER_ID || process.env.USE_MOCK_OTP === 'true') {
+    console.log(`[TEST-MODE] SMS to ${mobile} skipped. Content: ${message}`);
+    return;
   }
 
   const cleanMobile = normalizeMobileNumber(mobile);

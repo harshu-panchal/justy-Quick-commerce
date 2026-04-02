@@ -133,7 +133,13 @@ export const createProduct = asyncHandler(
     }, null, 2));
     if (!newProductData.brand) delete newProductData.brand;
     if (!newProductData.brandName) delete newProductData.brandName;
-    if (newProductData.sku === "" || newProductData.sku === null) delete newProductData.sku;
+    if (newProductData.sku === "" || newProductData.sku === null) {
+      delete newProductData.sku;
+    } else if (newProductData.sku) {
+      // Ensure SKU is truly unique by trimming and converting to uppercase if desired,
+      // but at least trimming is already done by schema.
+      newProductData.sku = newProductData.sku.toString().trim();
+    }
 
     // Handle Tax: Frontend sends taxId, Model expects 'tax' (string) or something else?
     // Checking SellerAddProduct.tsx sending taxId -> formData.tax
@@ -377,6 +383,8 @@ export const updateProduct = asyncHandler(
     }
     if (updateData.sku === "" || updateData.sku === null) {
       updateData.sku = undefined;
+    } else if (updateData.sku) {
+      updateData.sku = updateData.sku.toString().trim();
     }
 
     // Validate variations if provided
@@ -444,6 +452,14 @@ export const updateProduct = asyncHandler(
         success: false,
         message: "Product not found",
       });
+    }
+
+    // Clean up empty strings for ObjectId ref fields to prevent BSONError
+    const objectIdFields = ["subcategory", "brand", "category", "headerCategoryId", "tax", "shopId"];
+    for (const field of objectIdFields) {
+      if (updateData[field] === "" || updateData[field] === null) {
+        delete updateData[field];
+      }
     }
 
     // Apply updates

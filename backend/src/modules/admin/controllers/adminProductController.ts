@@ -1030,6 +1030,8 @@ export const getProducts = asyncHandler(async (req: Request, res: Response) => {
       .populate("category", "name")
       .populate("subcategory", "name")
       .populate("brand", "name")
+      .populate("headerCategoryId", "name slug")
+      .populate("tax", "name rate percentage")
       .populate("seller", "sellerName storeName")
       .sort({ createdAt: -1 })
       .skip(skip)
@@ -1061,6 +1063,8 @@ export const getProductById = asyncHandler(
       .populate("category", "name")
       .populate("subcategory", "name")
       .populate("brand", "name")
+      .populate("headerCategoryId", "name slug")
+      .populate("tax", "name rate percentage")
       .populate("seller", "sellerName storeName")
       .populate("approvedBy", "firstName lastName");
 
@@ -1090,6 +1094,8 @@ export const getProductById = asyncHandler(
         .populate("category", "name")
         .populate("subcategory", "name")
         .populate("brand", "name")
+        .populate("headerCategoryId", "name slug")
+        .populate("tax", "name rate percentage")
         .populate("seller", "sellerName storeName")
         .populate("approvedBy", "firstName lastName");
 

@@ -180,6 +180,7 @@ const AdminProfile = lazy(() => import("./modules/admin/pages/AdminProfile"));
 const AdminProductEdit = lazy(() => import("./modules/admin/pages/AdminProductEdit"));
 const SpinnerManagement = lazy(() => import("./modules/admin/pages/SpinnerManagement"));
 const SellerEquipmentCart = lazy(() => import("./modules/seller/pages/SellerEquipmentCart"));
+const AdminGrowth = lazy(() => import("./modules/admin/pages/AdminGrowth"));
 
 // Warehouse routes
 const WarehouseLayout = lazy(() => import("./modules/warehouse/components/WarehouseLayout"));
@@ -408,6 +409,7 @@ function App() {
                                       <AdminLayout>
                                         <Routes>
                                           <Route path="" element={<AdminDashboard />} />
+                                          <Route path="growth" element={<AdminGrowth />} />
                                           <Route path="profile" element={<AdminProfile />} />
                                           <Route path="category" element={<AdminCategory />} />
                                           <Route path="category/header" element={<AdminHeaderCategory />} />

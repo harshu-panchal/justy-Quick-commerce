@@ -358,6 +358,12 @@ export default function AdminDashboard() {
   const orderDataDec2025 = orderAnalyticsDaily?.thisPeriod || [];
   const orderData2025 = orderAnalytics?.thisPeriod || [];
 
+  const currentMonthYear = new Date().toLocaleString("default", { month: "short", year: "numeric" });
+  const currentYear = new Date().getFullYear().toString();
+  
+  const maxDailyOrders = Math.max(...orderDataDec2025.map((d: any) => d.value ?? 0), 3);
+  const maxMonthlyOrders = Math.max(...orderData2025.map((d: any) => d.value ?? 0), 80);
+
   const totalPagesNewOrders = Math.ceil(newOrders.length / entriesPerPage);
   const startIndexNewOrders = (currentPage - 1) * entriesPerPage;
   const endIndexNewOrders = startIndexNewOrders + entriesPerPage;
@@ -583,17 +589,17 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         <ErrorBoundary fallback={<div className="text-sm text-red-600 p-4">Chart failed to load</div>}>
           <OrderChart
-            title="Order - Dec 2025"
+            title={`Order - ${currentMonthYear}`}
             data={orderDataDec2025}
-            maxValue={3}
+            maxValue={Math.ceil(maxDailyOrders * 1.2)}
             height={400}
           />
         </ErrorBoundary>
         <ErrorBoundary fallback={<div className="text-sm text-red-600 p-4">Chart failed to load</div>}>
           <OrderChart
-            title="Order - 2025"
+            title={`Order - ${currentYear}`}
             data={orderData2025}
-            maxValue={80}
+            maxValue={Math.ceil(maxMonthlyOrders * 1.2)}
             height={400}
           />
         </ErrorBoundary>

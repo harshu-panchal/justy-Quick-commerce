@@ -53,6 +53,7 @@ export interface IProduct extends Document {
   madeIn?: string;
   tax?: string;
   fssaiLicNo?: string;
+  gstNumber?: string;
   totalAllowedQuantity?: number;
   hsnCode?: string;
   weight?: string;
@@ -161,6 +162,267 @@ export interface IProduct extends Document {
     minOrderQuantity?: number;
     expiryDate?: Date;
     brand?: string;
+  };
+
+  electronics?: {
+    modelNumber?: string;
+    productCondition?: 'New' | 'Refurbished' | 'Used';
+    warranty?: boolean;
+    warrantyPeriod?: string;
+    countryOfOrigin?: string;
+    processorType?: string;
+    ram?: string;
+    storageCapacity?: string;
+    displaySize?: string;
+    batteryCapacity?: string;
+    operatingSystem?: string;
+    connectivity?: string[]; // e.g. ["WiFi", "Bluetooth", "5G"]
+    powerConsumption?: string;
+    colorOptions?: string[];
+    minStockAlert?: number;
+    bulkPrice?: number;
+    videoUrl?: string;
+    threeSixtyViewUrl?: string;
+    datasheetUrl?: string;
+    packageWeight?: string;
+    packageLength?: string;
+    packageWidth?: string;
+    packageHeight?: string;
+    shippingClass?: string;
+    deliveryTime?: string;
+    bisCertification?: string;
+    serialNumber?: string;
+    safetyInstructions?: string;
+    importerDetails?: string;
+    installationRequired?: boolean;
+    installationCharges?: number;
+    supportContact?: string;
+    manufacturerDetails?: string;
+    replacementPolicy?: string;
+    promotionalBanner?: string;
+  };
+
+  fashionApparel?: {
+    gender?: 'Men' | 'Women' | 'Unisex' | 'Kids';
+    ageGroup?: 'Adult' | 'Teen' | 'Kids' | 'Baby';
+    apparelType?: string; // T-Shirts, Shirts, Kurta, etc.
+    availableSizes?: string[]; // XS, S, M, L, XL, XXL
+    sizeChartUrl?: string; // URL to size chart image
+    fitType?: 'Slim Fit' | 'Regular Fit' | 'Loose Fit' | 'Oversized';
+    primaryColor?: string;
+    secondaryColor?: string;
+    pattern?: 'Solid' | 'Printed' | 'Striped' | 'Checked' | 'Embroidered';
+    sleeveType?: 'Full Sleeve' | 'Half Sleeve' | 'Sleeveless';
+    neckType?: 'Round Neck' | 'V-Neck' | 'Collar';
+    fabricType?: 'Cotton' | 'Polyester' | 'Denim' | 'Silk' | 'Wool' | 'Linen';
+    fabricBlend?: string; // e.g. "90% Cotton, 10% Lycra"
+    isStretchable?: boolean;
+    careInstructions?: string;
+    countryOfOrigin?: string;
+    occasion?: 'Casual' | 'Formal' | 'Party Wear' | 'Sports' | 'Ethnic';
+    minOrderQuantity?: number;
+    modelImage?: string;
+    videoUrl?: string;
+    packageWeight?: string;
+    packageLength?: string;
+    packageWidth?: string;
+    packageHeight?: string;
+    shippingClass?: string;
+  };
+  beautyPersonalCare?: {
+    keyBenefits?: string;
+    ingredients?: string;
+    barcode?: string;
+    sizeVolume?: string;
+    shadeColor?: string;
+    fragranceVariant?: string;
+    packSize?: string;
+    skinType?: string;
+    hairType?: string;
+    concern?: string;
+    ingredientType?: string;
+    gender?: 'Men' | 'Women' | 'Unisex';
+    spf?: string;
+    formulation?: string;
+    beforeAfterImages?: string[];
+    isDermatologicallyTested?: boolean;
+    isCrueltyFree?: boolean;
+    isVegan?: boolean;
+    isOrganic?: boolean;
+    isParabenFree?: boolean;
+    isSulphateFree?: boolean;
+    packageWeight?: string;
+    packageLength?: string;
+    packageWidth?: string;
+    packageHeight?: string;
+    shippingClass?: string;
+    deliveryTime?: string;
+    expiryDate?: Date;
+    manufacturingDate?: Date;
+    faqs?: { question: string; answer: string }[];
+  };
+  homeKitchen?: {
+    material?: 'Steel' | 'Plastic' | 'Glass' | 'Wood' | 'Silicone' | 'Other';
+    color?: string;
+    capacitySize?: string;
+    usageType?: string; // Kitchen, Cleaning, Laundry, Bathroom
+    powerType?: 'Electric' | 'Manual' | 'Battery' | 'None';
+    warranty?: string;
+    powerConsumption?: string;
+    voltage?: string;
+    applianceType?: string;
+    energyRating?: string;
+    cleaningType?: string;
+    fragrance?: string;
+    isChemical?: boolean;
+    isHerbal?: boolean;
+    packSize?: string;
+    packageWeight?: string;
+    packageLength?: string;
+    packageWidth?: string;
+    packageHeight?: string;
+    shippingCharges?: number;
+  };
+  babyKids?: {
+    ageGroup?: string;
+    gender?: 'Boys' | 'Girls' | 'Unisex';
+    size?: string;
+    color?: string;
+    materialFabric?: string;
+    pattern?: string;
+    occasion?: string;
+    safetyCertification?: string;
+    isBpaFree?: boolean;
+    isNonToxic?: boolean;
+    countryOfOrigin?: string;
+    packageWeight?: string;
+    packageLength?: string;
+    packageWidth?: string;
+    packageHeight?: string;
+    deliveryTime?: string;
+  };
+  sportsFitness?: {
+    keyFeatures?: string;
+    material?: string;
+    weight?: string;
+    dimensions?: string;
+    color?: string;
+    size?: string;
+    sportType?: string; // Cricket, Football, Gym, Yoga, etc.
+    skillLevel?: 'Beginner' | 'Intermediate' | 'Professional';
+    usage?: 'Indoor' | 'Outdoor' | 'Both';
+    packageWeight?: string;
+    packageLength?: string;
+    packageWidth?: string;
+    packageHeight?: string;
+    shippingClass?: 'Standard' | 'Heavy Item';
+    deliveryCharges?: number;
+    warranty?: string;
+    returnPolicy?: string;
+    certification?: string;
+    countryOfOrigin?: string;
+  };
+  automotive?: {
+    vehicleType?: 'Car' | 'Bike' | 'Truck' | 'EV' | 'Other';
+    compatibleBrand?: string;
+    compatibleModel?: string;
+    modelYear?: string;
+    engineType?: 'Petrol' | 'Diesel' | 'Electric' | 'Hybrid' | 'Any';
+    partNumber?: string;
+    material?: string;
+    color?: string;
+    weight?: string;
+    dimensions?: string;
+    warrantyPeriod?: string;
+    installationGuideUrl?: string;
+    installationType?: 'DIY' | 'Professional Required';
+    isOem?: boolean;
+    returnEligibility?: boolean;
+    shippingWeight?: string;
+    countryOfOrigin?: string;
+  };
+  booksStationery?: {
+    isbn?: string;
+    author?: string;
+    publisher?: string;
+    language?: string;
+    edition?: string;
+    pages?: number;
+    condition?: 'New' | 'Used';
+    weight?: string;
+    dimensions?: string;
+    shippingWeight?: string;
+    deliveryTime?: string;
+    returnPolicy?: string;
+    bindingType?: 'Paperback' | 'Hardcover';
+    paperQuality?: string;
+    stationeryMaterial?: 'Plastic' | 'Metal' | 'Paper' | 'Other';
+    penType?: 'Ball' | 'Gel' | 'Fountain' | 'Other';
+    notebookSize?: 'A4' | 'A5' | 'B5' | 'Other';
+  };
+  healthWellness?: {
+    ingredients?: string;
+    form?: 'Tablet' | 'Capsule' | 'Powder' | 'Liquid' | 'Gummies' | 'Other';
+    flavor?: string;
+    quantityWeight?: string;
+    servingSize?: string;
+    servingsPerPack?: number;
+    suitableFor?: 'Men' | 'Women' | 'Kids' | 'All';
+    healthBenefit?: string;
+    dietaryPreference?: 'Vegetarian' | 'Non-Vegetarian' | 'Vegan';
+    isSugarFree?: boolean;
+    isGlutenFree?: boolean;
+    isOrganic?: boolean;
+    expiryDate?: string;
+    manufacturingDate?: string;
+    licenseNumber?: string;
+    usageInstructions?: string;
+    isDoctorRecommended?: boolean;
+    packageWeight?: string;
+    packageDimensions?: string;
+    shippingClass?: 'Standard' | 'Fragile' | 'Cold Storage';
+  };
+  petSupplies?: {
+    petType?: 'Dog' | 'Cat' | 'Bird' | 'Fish' | 'Small Animals' | 'Reptiles' | 'Other';
+    breedSize?: 'Small' | 'Medium' | 'Large' | 'All Sizes';
+    lifeStage?: 'Puppy' | 'Kitten' | 'Adult' | 'Senior' | 'All Ages';
+    material?: string;
+    flavor?: string;
+    weightSize?: string;
+    color?: string;
+    packSize?: string;
+    shelfLife?: string;
+    expiryDate?: Date;
+    ingredients?: string;
+    safetyInstructions?: string;
+    countryOfOrigin?: string;
+    packageWeight?: string;
+    packageDimensions?: string;
+    shippingClass?: string;
+  };
+  industrialBusiness?: {
+    modelNumber?: string;
+    material?: string;
+    powerSource?: 'Electric' | 'Battery' | 'Manual' | 'Hydraulic' | 'Other';
+    voltage?: string;
+    wattage?: string;
+    capacity?: string;
+    loadLimit?: string;
+    finishType?: string;
+    usageType?: 'Industrial' | 'Commercial' | 'Workshop' | 'General';
+    isGstApplicable?: boolean;
+    isInvoiceAvailable?: boolean;
+    dispatchTime?: string;
+    shippingMethod?: 'Courier' | 'Freight' | 'Pickup';
+    isInstallationAvailable?: boolean;
+    isIsoCertified?: boolean;
+    isBisCertified?: boolean;
+    isCeCertified?: boolean;
+    warrantyPeriod?: string;
+    safetyCompliance?: string;
+    sparePartsAvailability?: boolean;
+    maintenanceSupport?: boolean;
+    datasheetUrl?: string;
   };
 
   rejectionReason?: string;
@@ -333,6 +595,10 @@ const ProductSchema = new Schema<IProduct>(
       trim: true,
     },
     fssaiLicNo: {
+      type: String,
+      trim: true,
+    },
+    gstNumber: {
       type: String,
       trim: true,
     },
@@ -514,10 +780,227 @@ const ProductSchema = new Schema<IProduct>(
       isImported: { type: Boolean, default: false },
     },
     grocery: {
-      unitType: { type: String, enum: ['Kg', 'Gram', 'Litre', 'Piece', 'Packet'] },
+      unitType: { type: String, enum: ['Kg', 'Gram', 'Litre', 'Piece', 'Packet'], default: 'Packet' },
       minOrderQuantity: { type: Number, default: 1 },
       expiryDate: { type: Date },
       brand: { type: String, trim: true },
+    },
+    electronics: {
+      modelNumber: { type: String, trim: true },
+      productCondition: { type: String, enum: ['New', 'Refurbished', 'Used'], default: 'New' },
+      warranty: { type: Boolean, default: false },
+      warrantyPeriod: { type: String, trim: true },
+      countryOfOrigin: { type: String, trim: true },
+      processorType: { type: String, trim: true },
+      ram: { type: String, trim: true },
+      storageCapacity: { type: String, trim: true },
+      displaySize: { type: String, trim: true },
+      batteryCapacity: { type: String, trim: true },
+      operatingSystem: { type: String, trim: true },
+      connectivity: { type: [String], default: [] },
+      powerConsumption: { type: String, trim: true },
+      colorOptions: { type: [String], default: [] },
+      minStockAlert: { type: Number },
+      bulkPrice: { type: Number },
+      videoUrl: { type: String, trim: true },
+      threeSixtyViewUrl: { type: String, trim: true },
+      datasheetUrl: { type: String, trim: true },
+      packageWeight: { type: String, trim: true },
+      packageLength: { type: String, trim: true },
+      packageWidth: { type: String, trim: true },
+      packageHeight: { type: String, trim: true },
+      shippingClass: { type: String, trim: true },
+      deliveryTime: { type: String, trim: true },
+      bisCertification: { type: String, trim: true },
+      serialNumber: { type: String, trim: true },
+      safetyInstructions: { type: String, trim: true },
+      importerDetails: { type: String, trim: true },
+      installationRequired: { type: Boolean, default: false },
+      installationCharges: { type: Number },
+      supportContact: { type: String, trim: true },
+      manufacturerDetails: { type: String, trim: true },
+      replacementPolicy: { type: String, trim: true },
+      promotionalBanner: { type: String, trim: true },
+    },
+    fashionApparel: {
+      gender: { type: String, enum: ['Men', 'Women', 'Unisex', 'Kids'] },
+      ageGroup: { type: String, enum: ['Adult', 'Teen', 'Kids', 'Baby'] },
+      apparelType: { type: String, trim: true },
+      availableSizes: { type: [String], default: [] },
+      sizeChartUrl: { type: String, trim: true },
+      fitType: { type: String, enum: ['Slim Fit', 'Regular Fit', 'Loose Fit', 'Oversized'] },
+      primaryColor: { type: String, trim: true },
+      secondaryColor: { type: String, trim: true },
+      pattern: { type: String, enum: ['Solid', 'Printed', 'Striped', 'Checked', 'Embroidered'] },
+      sleeveType: { type: String, enum: ['Full Sleeve', 'Half Sleeve', 'Sleeveless'] },
+      neckType: { type: String, enum: ['Round Neck', 'V-Neck', 'Collar'] },
+      fabricType: { type: String, enum: ['Cotton', 'Polyester', 'Denim', 'Silk', 'Wool', 'Linen'] },
+      fabricBlend: { type: String, trim: true },
+      isStretchable: { type: Boolean, default: false },
+      careInstructions: { type: String, trim: true },
+      countryOfOrigin: { type: String, trim: true },
+      occasion: { type: String, enum: ['Casual', 'Formal', 'Party Wear', 'Sports', 'Ethnic'] },
+      minOrderQuantity: { type: Number, default: 1 },
+      modelImage: { type: String, trim: true },
+      videoUrl: { type: String, trim: true },
+      packageWeight: { type: String, trim: true },
+      packageLength: { type: String, trim: true },
+      packageWidth: { type: String, trim: true },
+      packageHeight: { type: String, trim: true },
+      shippingClass: { type: String, trim: true },
+    },
+    beautyPersonalCare: {
+      keyBenefits: { type: String, trim: true },
+      ingredients: { type: String, trim: true },
+      barcode: { type: String, trim: true },
+      sizeVolume: { type: String, trim: true },
+      shadeColor: { type: String, trim: true },
+      fragranceVariant: { type: String, trim: true },
+      packSize: { type: String, trim: true },
+      skinType: { type: String, trim: true },
+      hairType: { type: String, trim: true },
+      concern: { type: String, trim: true },
+      ingredientType: { type: String, trim: true },
+      gender: { type: String, enum: ['Men', 'Women', 'Unisex'] },
+      spf: { type: String, trim: true },
+      formulation: { type: String, trim: true },
+      beforeAfterImages: [{ type: String }],
+      isDermatologicallyTested: { type: Boolean, default: false },
+      isCrueltyFree: { type: Boolean, default: false },
+      isVegan: { type: Boolean, default: false },
+      isOrganic: { type: Boolean, default: false },
+      isParabenFree: { type: Boolean, default: false },
+      isSulphateFree: { type: Boolean, default: false },
+      packageWeight: { type: String, trim: true },
+      packageLength: { type: String, trim: true },
+      packageWidth: { type: String, trim: true },
+      packageHeight: { type: String, trim: true },
+      shippingClass: { type: String, trim: true },
+      deliveryTime: { type: String, trim: true },
+      expiryDate: { type: Date },
+      manufacturingDate: { type: Date },
+      faqs: [{ question: { type: String }, answer: { type: String } }],
+    },
+    homeKitchen: {
+      material: { type: String, enum: ['Steel', 'Plastic', 'Glass', 'Wood', 'Silicone', 'Other'] },
+      color: { type: String, trim: true },
+      capacitySize: { type: String, trim: true },
+      usageType: { type: String, trim: true },
+      powerType: { type: String, enum: ['Electric', 'Manual', 'Battery', 'None'] },
+      warranty: { type: String, trim: true },
+      powerConsumption: { type: String, trim: true },
+      voltage: { type: String, trim: true },
+      applianceType: { type: String, trim: true },
+      energyRating: { type: String, trim: true },
+      cleaningType: { type: String, trim: true },
+      fragrance: { type: String, trim: true },
+      isChemical: { type: Boolean, default: false },
+      isHerbal: { type: Boolean, default: false },
+      packSize: { type: String, trim: true },
+      packageWeight: { type: String, trim: true },
+      packageLength: { type: String, trim: true },
+      packageWidth: { type: String, trim: true },
+      packageHeight: { type: String, trim: true },
+      shippingCharges: { type: Number },
+    },
+    babyKids: {
+      ageGroup: { type: String, trim: true },
+      gender: { type: String, enum: ['Boys', 'Girls', 'Unisex'] },
+      size: { type: String, trim: true },
+      color: { type: String, trim: true },
+      materialFabric: { type: String, trim: true },
+      pattern: { type: String, trim: true },
+      occasion: { type: String, trim: true },
+      safetyCertification: { type: String, trim: true },
+      isBpaFree: { type: Boolean, default: false },
+      isNonToxic: { type: Boolean, default: false },
+      countryOfOrigin: { type: String, trim: true },
+      packageWeight: { type: String, trim: true },
+      packageLength: { type: String, trim: true },
+      packageWidth: { type: String, trim: true },
+      packageHeight: { type: String, trim: true },
+      deliveryTime: { type: String, trim: true },
+    },
+    sportsFitness: {
+      keyFeatures: { type: String, trim: true },
+      material: { type: String, trim: true },
+      weight: { type: String, trim: true },
+      dimensions: { type: String, trim: true },
+      color: { type: String, trim: true },
+      size: { type: String, trim: true },
+      sportType: { type: String, trim: true },
+      skillLevel: { type: String, enum: ['Beginner', 'Intermediate', 'Professional'] },
+      usage: { type: String, enum: ['Indoor', 'Outdoor', 'Both'] },
+      packageWeight: { type: String, trim: true },
+      packageLength: { type: String, trim: true },
+      packageWidth: { type: String, trim: true },
+      packageHeight: { type: String, trim: true },
+      shippingClass: { type: String, enum: ['Standard', 'Heavy Item'] },
+      deliveryCharges: { type: Number },
+      warranty: { type: String, trim: true },
+      returnPolicy: { type: String, trim: true },
+      certification: { type: String, trim: true },
+      countryOfOrigin: { type: String, trim: true },
+    },
+    automotive: {
+      vehicleType: { type: String, enum: ['Car', 'Bike', 'Truck', 'EV', 'Other'] },
+      compatibleBrand: { type: String, trim: true },
+      compatibleModel: { type: String, trim: true },
+      modelYear: { type: String, trim: true },
+      engineType: { type: String, enum: ['Petrol', 'Diesel', 'Electric', 'Hybrid', 'Any'] },
+      partNumber: { type: String, trim: true },
+      material: { type: String, trim: true },
+      color: { type: String, trim: true },
+      weight: { type: String, trim: true },
+      dimensions: { type: String, trim: true },
+      warrantyPeriod: { type: String, trim: true },
+      installationGuideUrl: { type: String, trim: true },
+      installationType: { type: String, enum: ['DIY', 'Professional Required'] },
+      isOem: { type: Boolean, default: false },
+      returnEligibility: { type: Boolean, default: true },
+      shippingWeight: { type: String, trim: true },
+      countryOfOrigin: { type: String, trim: true },
+    },
+    booksStationery: {
+      isbn: { type: String, trim: true },
+      author: { type: String, trim: true },
+      publisher: { type: String, trim: true },
+      language: { type: String, trim: true },
+      edition: { type: String, trim: true },
+      pages: { type: Number },
+      condition: { type: String, enum: ['New', 'Used'] },
+      weight: { type: String, trim: true },
+      dimensions: { type: String, trim: true },
+      shippingWeight: { type: String, trim: true },
+      deliveryTime: { type: String, trim: true },
+      returnPolicy: { type: String, trim: true },
+      bindingType: { type: String, enum: ['Paperback', 'Hardcover'] },
+      paperQuality: { type: String, trim: true },
+      stationeryMaterial: { type: String, enum: ['Plastic', 'Metal', 'Paper', 'Other'] },
+      penType: { type: String, enum: ['Ball', 'Gel', 'Fountain', 'Other'] },
+      notebookSize: { type: String, enum: ['A4', 'A5', 'B5', 'Other'] },
+    },
+    healthWellness: {
+      ingredients: { type: String, trim: true },
+      form: { type: String, enum: ['Tablet', 'Capsule', 'Powder', 'Liquid', 'Gummies', 'Other'] },
+      flavor: { type: String, trim: true },
+      quantityWeight: { type: String, trim: true },
+      servingSize: { type: String, trim: true },
+      servingsPerPack: { type: Number },
+      suitableFor: { type: String, enum: ['Men', 'Women', 'Kids', 'All'] },
+      healthBenefit: { type: String, trim: true },
+      dietaryPreference: { type: String, enum: ['Vegetarian', 'Non-Vegetarian', 'Vegan'] },
+      isSugarFree: { type: Boolean, default: false },
+      isGlutenFree: { type: Boolean, default: false },
+      isOrganic: { type: Boolean, default: false },
+      expiryDate: { type: String, trim: true },
+      manufacturingDate: { type: String, trim: true },
+      licenseNumber: { type: String, trim: true },
+      usageInstructions: { type: String, trim: true },
+      isDoctorRecommended: { type: Boolean, default: false },
+      packageWeight: { type: String, trim: true },
+      packageDimensions: { type: String, trim: true },
+      shippingClass: { type: String, enum: ['Standard', 'Fragile', 'Cold Storage'] },
     },
   },
   {

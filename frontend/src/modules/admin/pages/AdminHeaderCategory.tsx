@@ -37,6 +37,7 @@ export default function AdminHeaderCategory() {
   const [currentPage, setCurrentPage] = useState(1);
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [deliveryFilter, setDeliveryFilter] = useState<'all' | 'quick' | 'scheduled'>('all');
 
   const themeOptions = Object.keys(themes);
 
@@ -107,11 +108,22 @@ export default function AdminHeaderCategory() {
     }
   };
 
-  const filteredCategories = headerCategories.filter(category =>
-    category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (category.relatedCategory || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (category.slug || '').toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [deliveryFilter, searchTerm, entriesPerPage]);
+
+  const filteredCategories = headerCategories.filter(category => {
+    const matchesSearch = 
+      category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (category.relatedCategory || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (category.slug || '').toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesDelivery = 
+      deliveryFilter === 'all' || 
+      (category.deliveryType || 'quick') === deliveryFilter;
+
+    return matchesSearch && matchesDelivery;
+  });
 
   const totalPages = Math.ceil(filteredCategories.length / entriesPerPage);
   const startIndex = (currentPage - 1) * entriesPerPage;
@@ -372,45 +384,7 @@ export default function AdminHeaderCategory() {
               </select>
             </div>
 
-            {/* Scheduled Fields Condition => Time and Delivery Boy Selection */}
-            {selectedDeliveryType === 'scheduled' && (
-              <div className="grid grid-cols-1 gap-4 p-4 border rounded bg-orange-50/50">
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Delivery Date & Time (Expected):
-                  </label>
-                  <input
-                    type="datetime-local"
-                    value={scheduledTime}
-                    onChange={(e) => setScheduledTime(e.target.value)}
-                    className="w-full px-3 py-2 border border-neutral-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-teal-500"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Assign Delivery Partner (Optional):
-                  </label>
-                  <select
-                    value={assignedDeliveryBoy}
-                    onChange={(e) => setAssignedDeliveryBoy(e.target.value)}
-                    className="w-full px-3 py-2 border border-neutral-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-teal-500"
-                  >
-                    <option value="">-- No Specific Delivery Boy --</option>
-                    {deliveryBoys.map((boy) => (
-                      <option key={boy._id} value={boy._id}>
-                        {boy.name} ({boy.mobile})
-                      </option>
-                    ))}
-                  </select>
-                  <p className="mt-1 text-xs text-neutral-500">
-                    If assigned, this specific partner will manage deliveries for this scheduled category.
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Status */}
+       
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-2">
                 Status:
@@ -447,25 +421,56 @@ export default function AdminHeaderCategory() {
 
         {/* Right Panel - List & Search */}
         <div className="bg-white rounded-lg shadow-sm border border-neutral-200 flex flex-col h-full">
-          <div className="p-4 border-b border-neutral-200 flex justify-between items-center bg-neutral-50">
-            <h3 className="font-semibold text-neutral-700">Category List</h3>
+          <div className="p-4 border-b border-neutral-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-neutral-50/50">
+            <div className="flex bg-neutral-100 p-1 rounded-lg border border-neutral-200">
+              {(['all', 'quick', 'scheduled'] as const).map((type) => (
+                <button
+                  key={type}
+                  onClick={() => setDeliveryFilter(type)}
+                  className={`
+                    px-4 py-1.5 text-xs font-semibold rounded-md transition-all capitalize
+                    ${deliveryFilter === type 
+                      ? 'bg-white text-teal-600 shadow-sm' 
+                      : 'text-neutral-500 hover:text-neutral-700'}
+                  `}
+                >
+                  {type}
+                </button>
+              ))}
+            </div>
 
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Search category..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-8 pr-3 py-1.5 text-sm border border-neutral-300 rounded-full w-48 focus:outline-none focus:ring-1 focus:ring-teal-500"
-              />
-              <svg
-                className="w-4 h-4 text-neutral-400 absolute left-2.5 top-2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <div className="flex items-center gap-2 text-xs text-neutral-500 whitespace-nowrap">
+                <span>View</span>
+                <select
+                  value={entriesPerPage}
+                  onChange={(e) => setEntriesPerPage(Number(e.target.value))}
+                  className="px-2 py-1 border border-neutral-300 rounded focus:outline-none focus:ring-1 focus:ring-teal-500 bg-white cursor-pointer"
+                >
+                  <option value={10}>10</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </select>
+              </div>
+
+              <div className="relative flex-1 sm:w-48">
+                <input
+                  type="text"
+                  placeholder="Search category..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-8 pr-3 py-1.5 text-sm border border-neutral-300 rounded-full w-full focus:outline-none focus:ring-1 focus:ring-teal-500 bg-white"
+                />
+                <svg
+                  className="w-4 h-4 text-neutral-400 absolute left-2.5 top-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
             </div>
           </div>
 

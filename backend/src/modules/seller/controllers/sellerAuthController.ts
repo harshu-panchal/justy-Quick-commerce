@@ -160,6 +160,8 @@ export const verifyOTP = asyncHandler(async (req: Request, res: Response) => {
         depositAmount: seller.depositAmount,
         depositPaidAt: seller.depositPaidAt,
         securityDepositPaidAt: seller.securityDepositPaidAt,
+        fssaiLicNo: seller.fssaiLicNo,
+        gstNumber: seller.gstNumber,
       },
     },
   });
@@ -337,6 +339,8 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
         depositAmount: seller.depositAmount,
         depositPaidAt: seller.depositPaidAt,
         securityDepositPaidAt: seller.securityDepositPaidAt,
+        fssaiLicNo: seller.fssaiLicNo,
+        gstNumber: seller.gstNumber,
       },
     },
   });

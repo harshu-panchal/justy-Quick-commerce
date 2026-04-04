@@ -492,6 +492,8 @@ export interface CreateProductData {
   automotive?: AutomotiveData;
   booksStationery?: BooksStationeryData;
   healthWellness?: HealthWellnessData;
+  petSupplies?: PetSuppliesData;
+  industrialBusiness?: IndustrialBusinessData;
 }
 
 export interface Shop {

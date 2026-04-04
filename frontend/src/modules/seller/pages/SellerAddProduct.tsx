@@ -32,23 +32,14 @@ export default function SellerAddProduct() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const userCat = (user?.category || (user?.categories && user.categories[0]) || "").toLowerCase();
-  const isPharmacy = userCat.includes("pharmacy");
-  const isProduce = userCat.includes("vegetable") || userCat.includes("fruit");
-  const isGrocery = userCat.includes("grocery");
-  const isTeaCorner = userCat.includes("tea corner") || userCat.includes("pan corner");
-  const isFoodBakery = (userCat.includes("food") || userCat.includes("bakery")) && !isTeaCorner && !isGrocery && !isPharmacy && !isProduce;
-  const isElectronics = userCat.includes("electronics");
-  const isFashion = userCat.includes("fashion") || userCat.includes("apparel");
-  const isBeauty = userCat.includes("beauty") || userCat.includes("care") || userCat.includes("makeup");
-  const isHomeKitchen = userCat.includes("home") || userCat.includes("kitchen");
-  const isBabyKids = userCat.includes("baby") || userCat.includes("kids");
-  const isSportsFitness = userCat.includes("sports") || userCat.includes("fitness");
-  const isAutomotive = userCat.includes("automotive");
-  const isBooksStationery = userCat.includes("book") || userCat.includes("stationery");
 
+  const [brands, setBrands] = useState<Brand[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [subcategories, setSubcategories] = useState<SubCategory[]>([]);
+  const [taxes, setTaxes] = useState<Tax[]>([]);
+  const [headerCategories, setHeaderCategories] = useState<HeaderCategory[]>([]);
 
   const [formData, setFormData] = useState({
-    
     productName: "",
     headerCategory: "",
     category: "",
@@ -397,6 +388,30 @@ export default function SellerAddProduct() {
     },
   });
 
+  // Derived state for category-specific UI rendering
+  const selectedHeaderCatName = headerCategories.find(hc => hc._id === formData.headerCategory)?.name.toLowerCase() || "";
+  
+  // Use user profile as fallback only if no category is selected yet (Adding new)
+  const effectiveCatName = selectedHeaderCatName || userCat;
+
+  const isPharmacy = effectiveCatName.includes("pharmacy");
+  const isProduce = effectiveCatName.includes("vegetable") || effectiveCatName.includes("fruit") || effectiveCatName.includes("produce");
+  const isGrocery = effectiveCatName.includes("grocery");
+  const isTeaCorner = effectiveCatName.includes("tea corner") || effectiveCatName.includes("pan corner");
+  const isFoodBakery = (effectiveCatName.includes("food") || effectiveCatName.includes("bakery")) && !isTeaCorner && !isGrocery && !isPharmacy && !isProduce;
+  const isElectronics = effectiveCatName.includes("electronics");
+  const isFashion = effectiveCatName.includes("fashion") || effectiveCatName.includes("apparel");
+  const isBeauty = effectiveCatName.includes("beauty") || effectiveCatName.includes("care") || effectiveCatName.includes("makeup");
+  const isHomeKitchen = effectiveCatName.includes("home") || effectiveCatName.includes("kitchen");
+  const isBabyKids = effectiveCatName.includes("baby") || effectiveCatName.includes("kids");
+  const isSportsFitness = effectiveCatName.includes("sports") || effectiveCatName.includes("fitness");
+  const isAutomotive = effectiveCatName.includes("automotive");
+  const isBooksStationery = effectiveCatName.includes("book") || effectiveCatName.includes("stationery");
+  const isHealthWellness = effectiveCatName.includes("health") || effectiveCatName.includes("wellness");
+  const isPetSupplies = effectiveCatName.includes("pet supplies");
+  const isIndustrial = effectiveCatName.includes("industrial");
+  const isScheduled = headerCategories.find(h => h._id === formData.headerCategory)?.deliveryType === "scheduled";
+
   const [showProposalField, setShowProposalField] = useState(false);
   const [proposalName, setProposalName] = useState("");
   const [proposalLoading, setProposalLoading] = useState(false);
@@ -420,13 +435,6 @@ export default function SellerAddProduct() {
   const [uploading, setUploading] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiSuggestion, setAiSuggestion] = useState<string>("");
-
-  const [brands, setBrands] = useState<Brand[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [subcategories, setSubcategories] = useState<SubCategory[]>([]);
-  const [taxes, setTaxes] = useState<Tax[]>([]);
-  const [headerCategories, setHeaderCategories] = useState<HeaderCategory[]>([]);
-  const isScheduled = headerCategories.find(h => h._id === formData.headerCategory)?.deliveryType === "scheduled";
 
   useEffect(() => {
     const fetchData = async () => {
@@ -549,6 +557,12 @@ export default function SellerAddProduct() {
               gstNumber: product.gstNumber || "",
               weight: product.weight || "",
               spicyLevel: product.spicyLevel || "None",
+              seoTitle: product.seoTitle || "",
+              seoKeywords: product.seoKeywords || "",
+              seoDescription: product.seoDescription || "",
+              isReturnable: product.isReturnable !== false ? "Yes" : "No",
+              maxReturnDays: product.maxReturnDays?.toString() || "7",
+              returnPolicyText: product.returnPolicyText || "",
               pharmacy: {
                 tablets: product.pharmacy?.tablets || "",
                 quantity: product.pharmacy?.quantity || "",
@@ -900,9 +914,7 @@ export default function SellerAddProduct() {
     };
     fetchSubcategories();
   }, [formData.category]);
-  const isHealthWellness = headerCategories.find(h => h._id === formData.headerCategory)?.name.toLowerCase().includes("health & wellness");
-  const isPetSupplies = headerCategories.find(h => h._id === formData.headerCategory)?.name.toLowerCase().includes("pet supplies");
-  const isIndustrial = headerCategories.find(h => h._id === formData.headerCategory)?.name.toLowerCase().includes("industrial");
+  // Already defined at top
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -1123,7 +1135,7 @@ export default function SellerAddProduct() {
           minOrderQuantity: parseInt(formData.grocery.minOrderQuantity) || 1,
           expiryDate: formData.grocery.expiryDate || undefined,
         } : undefined,
-        electronics: (isElectronics && isScheduled) ? {
+        electronics: isElectronics ? {
           ...formData.electronics,
           warranty: formData.electronics.warranty === "Yes",
           connectivity: formData.electronics.connectivity.split(",").map(i => i.trim()).filter(Boolean),

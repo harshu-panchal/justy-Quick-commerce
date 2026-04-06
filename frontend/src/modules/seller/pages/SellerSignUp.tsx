@@ -89,6 +89,10 @@ export default function SellerSignUp() {
     gstCertificateUrl: '',
     isDeliveryByPlatform: true,
     fssaiImage: '',
+    deliveryTime: {
+      regional: '',
+      local: '',
+    },
   });
   const [fssaiImageFile, setFssaiImageFile] = useState<File | null>(null);
   const [fssaiImagePreview, setFssaiImagePreview] = useState<string>('');
@@ -114,6 +118,7 @@ export default function SellerSignUp() {
   const [emailSending, setEmailSending] = useState(false);
   const [emailVerifying, setEmailVerifying] = useState(false);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [fullHeaderCategories, setFullHeaderCategories] = useState<HeaderCategory[]>([]);
 
   useEffect(() => {
     const syncCategories = async () => {
@@ -133,12 +138,15 @@ export default function SellerSignUp() {
               hasWarning: false
             })) as Category[];
           setCategories(mappedCategories);
+          setFullHeaderCategories(headerCategories);
         } else {
           setCategories([]);
+          setFullHeaderCategories([]);
         }
       } catch (err) {
         console.error('Failed to sync header categories:', err);
         setCategories([]);
+        setFullHeaderCategories([]);
       } finally {
         setCategoriesLoading(false);
       }
@@ -173,6 +181,9 @@ export default function SellerSignUp() {
   const showScheduledDocs = formData.categories.some(cat => 
     cat && !quickCategories.includes(cat)
   );
+
+  const selectedHeaderCategory = fullHeaderCategories.find(c => c.name === formData.categories[0]);
+  const isScheduledCategory = selectedHeaderCategory?.deliveryType === 'scheduled';
 
   const toggleCategory = (name: string) => {
     setFormData(prev => ({
@@ -292,6 +303,17 @@ export default function SellerSignUp() {
         [name]: value,
       }));
     }
+  };
+
+  const handleDeliveryTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      deliveryTime: {
+        ...prev.deliveryTime,
+        [name]: value
+      }
+    }));
   };
 
 
@@ -506,6 +528,10 @@ export default function SellerSignUp() {
         drivingLicenseUrl,
         businessLicenseUrl,
         businessLicenseType,
+        deliveryTime: isScheduledCategory ? {
+          regional: formData.deliveryTime.regional,
+          local: formData.deliveryTime.local,
+        } : undefined,
       });
 
       if (response.success) {
@@ -789,6 +815,44 @@ export default function SellerSignUp() {
                       </select>
                     )}
                   </div>
+
+                  {isScheduledCategory && (
+                    <div className="space-y-4 p-4 bg-amber-50/50 border border-amber-100 rounded-xl animate-fadeIn">
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="w-5 h-5 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center text-[10px] font-bold">!</div>
+                        <h4 className="text-xs font-bold text-amber-800 uppercase tracking-wider">Delivery Time (Scheduled)</h4>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-[10px] font-bold text-amber-700 uppercase mb-1 ml-1">Regional Delivery Time *</label>
+                          <input
+                            type="text"
+                            name="regional"
+                            value={formData.deliveryTime.regional}
+                            onChange={handleDeliveryTimeChange}
+                            placeholder="e.g. 3-5 Days"
+                            required={isScheduledCategory}
+                            className="w-full px-4 py-3 text-sm border border-amber-200 rounded-xl focus:outline-none focus:border-amber-500 bg-white"
+                            disabled={loading}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-amber-700 uppercase mb-1 ml-1">Local Delivery Time *</label>
+                          <input
+                            type="text"
+                            name="local"
+                            value={formData.deliveryTime.local}
+                            onChange={handleDeliveryTimeChange}
+                            placeholder="e.g. 1-2 Days"
+                            required={isScheduledCategory}
+                            className="w-full px-4 py-3 text-sm border border-amber-200 rounded-xl focus:outline-none focus:border-amber-500 bg-white"
+                            disabled={loading}
+                          />
+                        </div>
+                      </div>
+                      <p className="text-[10px] text-amber-600 italic px-1">Specify estimated delivery times for regional and local shipping.</p>
+                    </div>
+                  )}
 
                   <div className="space-y-4">
                     <label className="block text-sm font-medium text-neutral-700 mb-1">

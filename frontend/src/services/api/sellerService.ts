@@ -50,6 +50,10 @@ export interface Seller {
   securityDepositStatus?: "Pending" | "Paid" | "Refunded";
   isPincodeActive?: boolean;
   pincode?: string;
+  deliveryTime?: {
+    regional?: string;
+    local?: string;
+  };
   createdAt?: string;
   updatedAt?: string;
 }

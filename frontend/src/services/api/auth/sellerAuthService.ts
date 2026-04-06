@@ -62,6 +62,10 @@ export interface RegisterData {
   businessLicenseUrl?: string;
   businessLicenseType?: string;
   gstCertificateUrl?: string;
+  deliveryTime?: {
+    regional?: string;
+    local?: string;
+  };
 }
 
 export interface RegisterResponse {

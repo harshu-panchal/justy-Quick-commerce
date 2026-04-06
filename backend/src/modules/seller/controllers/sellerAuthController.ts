@@ -310,6 +310,10 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
     businessLicense: req.body.businessLicenseUrl,
     businessLicenseType: req.body.businessLicenseType,
     gstCertificate: req.body.gstCertificateUrl,
+    deliveryTime: req.body.deliveryTime ? {
+      regional: req.body.deliveryTime.regional || '',
+      local: req.body.deliveryTime.local || '',
+    } : undefined,
   });
 
   await seller.save();

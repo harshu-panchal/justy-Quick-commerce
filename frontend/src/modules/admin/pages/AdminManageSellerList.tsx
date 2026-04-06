@@ -51,6 +51,10 @@ interface Seller {
     securityDepositStatus?: 'Pending' | 'Paid' | 'Refunded';
     isPincodeActive: boolean;
     pincode?: string;
+    deliveryTime?: {
+        regional?: string;
+        local?: string;
+    };
 }
 
 // Helper function to convert backend seller to frontend format
@@ -102,6 +106,7 @@ const mapSellerToFrontend = (seller: SellerType): Seller => {
         securityDepositStatus: seller.securityDepositStatus || 'Pending',
         isPincodeActive: seller.isPincodeActive ?? true,
         pincode: seller.pincode,
+        deliveryTime: seller.deliveryTime,
     };
 };
 
@@ -969,6 +974,25 @@ export default function AdminManageSellerList() {
                                         </div>
                                     </div>
                                 </div>
+
+                                {(editingSeller.deliveryTime?.regional || editingSeller.deliveryTime?.local) && (
+                                    <div className="bg-amber-50 rounded-lg p-4 border border-amber-100">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <div className="w-5 h-5 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center text-[10px] font-bold">!</div>
+                                            <h4 className="text-sm font-semibold text-amber-900">Delivery Time (Scheduled)</h4>
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="text-xs text-amber-700 font-medium">Regional Delivery Time</label>
+                                                <p className="text-sm font-bold text-amber-900">{editingSeller.deliveryTime.regional || 'N/A'}</p>
+                                            </div>
+                                            <div>
+                                                <label className="text-xs text-amber-700 font-medium">Local Delivery Time</label>
+                                                <p className="text-sm font-bold text-amber-900">{editingSeller.deliveryTime.local || 'N/A'}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
 
                                 {/* Address Information */}
                                 <div className="bg-neutral-50 rounded-lg p-4">

@@ -233,7 +233,7 @@ export const getProducts = async (req: Request, res: Response) => {
     const products = await Product.find(query)
       .populate({
         path: "category",
-        select: "name icon image headerCategoryId",
+        select: "name icon image headerCategoryId disclaimer",
         populate: {
           path: "headerCategoryId",
           select: "deliveryType"
@@ -241,7 +241,7 @@ export const getProducts = async (req: Request, res: Response) => {
       })
       .populate({
         path: "subcategory",
-        select: "name headerCategoryId",
+        select: "name headerCategoryId disclaimer",
         populate: {
           path: "headerCategoryId",
           select: "deliveryType"
@@ -383,7 +383,7 @@ export const getProductsBySubcategory = async (req: Request, res: Response) => {
     const products = await Product.find(productQuery)
       .populate({
         path: "category",
-        select: "name slug headerCategoryId",
+        select: "name slug headerCategoryId disclaimer",
         populate: {
           path: "headerCategoryId",
           select: "deliveryType"
@@ -391,7 +391,7 @@ export const getProductsBySubcategory = async (req: Request, res: Response) => {
       })
       .populate({
         path: "subcategory",
-        select: "name slug headerCategoryId",
+        select: "name slug headerCategoryId disclaimer",
         populate: {
           path: "headerCategoryId",
           select: "deliveryType"
@@ -455,7 +455,7 @@ export const getProductById = async (req: Request, res: Response) => {
     })
       .populate({
         path: "category",
-        select: "name headerCategoryId",
+        select: "name headerCategoryId disclaimer",
         populate: {
           path: "headerCategoryId",
           select: "deliveryType"
@@ -463,7 +463,7 @@ export const getProductById = async (req: Request, res: Response) => {
       })
       .populate({
         path: "subcategory",
-        select: "name headerCategoryId",
+        select: "name headerCategoryId disclaimer",
         populate: {
           path: "headerCategoryId",
           select: "deliveryType"

@@ -26,6 +26,7 @@ export interface Category {
   createdAt?: string;
   updatedAt?: string;
   commissionRate?: number;
+  disclaimer?: string;
 }
 
 export interface CreateCategoryData {
@@ -39,6 +40,7 @@ export interface CreateCategoryData {
   headerCategoryId?: string | null;
   status?: "Active" | "Inactive";
   commissionRate?: number;
+  disclaimer?: string;
 }
 
 export interface UpdateCategoryData extends Partial<CreateCategoryData> { }

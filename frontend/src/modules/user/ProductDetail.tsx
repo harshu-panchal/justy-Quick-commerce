@@ -21,6 +21,7 @@ import { getCategoryType, getDeliveryInfo } from '../../config/pincodeService';
 import ComboOfferSection from './components/ComboOfferSection';
 import BuyTogetherSection from './components/BuyTogetherSection';
 import ProductReviews from './components/ProductReviews';
+import CategoryDisclaimer from './components/CategoryDisclaimer';
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
@@ -680,6 +681,7 @@ export default function ProductDetail() {
               />
             </svg>
           </button>
+          
         </div>
 
         {/* Expanded Product Details Section */}
@@ -996,6 +998,14 @@ export default function ProductDetail() {
                 </div>
               )}
             </div>
+            {/* Category Disclaimer - Moved here for better UX */}
+            {(() => {
+              const disclaimer = 
+                product.subSubCategory?.disclaimer || 
+                product.subcategory?.disclaimer || 
+                product.category?.disclaimer;
+              return <CategoryDisclaimer disclaimer={disclaimer} className="mt-4 mb-2 mx-1" label="Before You Buy" />;
+            })()}
           </div>
         )}
 
@@ -1019,7 +1029,7 @@ export default function ProductDetail() {
             )}
 
             {/* Product Reviews */}
-            <div className="px-4 md:px-6 lg:px-8 mt-12 bg-white rounded-3xl p-8 shadow-sm border border-neutral-100">
+            <div className="px-4 md:px-6 lg:px-8 mt-10 bg-white rounded-2xl p-5 md:p-6 border border-neutral-100">
                 <ProductReviews 
                     productId={product.id || product._id} 
                     productName={product.productName}

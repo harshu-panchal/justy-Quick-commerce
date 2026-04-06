@@ -25,6 +25,7 @@ export const createCategory = asyncHandler(
       groupCategory,
       parentId,
       headerCategoryId,
+      disclaimer,
       status = "Active",
     } = req.body;
 
@@ -126,6 +127,7 @@ export const createCategory = asyncHandler(
       parentId: parentId || null,
       headerCategoryId: finalHeaderCategoryId || null,
       commissionRate: req.body.commissionRate || 0,
+      disclaimer,
       status,
     });
 

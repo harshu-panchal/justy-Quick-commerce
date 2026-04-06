@@ -10,6 +10,7 @@ import { useAuth } from "../../context/AuthContext";
 // import { products } from '../../data/products'; // Removed
 import { OrderAddress, Order } from "../../types/order";
 import PartyPopper from "./components/PartyPopper";
+import CategoryDisclaimer from "./components/CategoryDisclaimer";
 import {
   Sheet,
   SheetContent,
@@ -98,6 +99,25 @@ export default function Checkout() {
   });
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
+
+  // Extract unique category disclaimers from cart items
+  const categoryDisclaimers = useMemo(() => {
+    const disclaimers = new Set<string>();
+    cart.items.forEach((item: any) => {
+      const product = item.product;
+      if (!product) return;
+
+      const disclaimer =
+        product.subSubCategory?.disclaimer ||
+        product.subcategory?.disclaimer ||
+        product.category?.disclaimer;
+
+      if (disclaimer) {
+        disclaimers.add(disclaimer);
+      }
+    });
+    return Array.from(disclaimers);
+  }, [cart.items]);
 
   // Map Picker State
   const [showMapPicker, setShowMapPicker] = useState(false);
@@ -1821,7 +1841,20 @@ export default function Checkout() {
           </div>
         )}
 
-        {/* Bill details */}
+            {/* Category Disclaimers */}
+            {categoryDisclaimers.length > 0 && (
+              <div className="px-4 md:px-6 lg:px-8 py-2 space-y-2">
+                {categoryDisclaimers.map((disclaimer, index) => (
+                  <CategoryDisclaimer
+                    key={index}
+                    disclaimer={disclaimer}
+                    label={categoryDisclaimers.length > 1 ? `Disclaimer ${index + 1}` : "Before You Buy"}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Bill Details */}
         <div className="px-4 md:px-6 lg:px-8 py-2.5 md:py-3 border-b border-neutral-200">
           <h2 className="text-base font-bold text-neutral-900 mb-2.5">
             Bill details

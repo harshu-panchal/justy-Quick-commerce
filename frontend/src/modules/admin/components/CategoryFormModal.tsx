@@ -49,6 +49,7 @@ export default function CategoryFormModal({
     hasWarning: false,
     groupCategory: "",
     commissionRate: 0,
+    disclaimer: "",
   });
 
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -114,6 +115,7 @@ export default function CategoryFormModal({
           hasWarning: category.hasWarning || false,
           groupCategory: category.groupCategory || "",
           commissionRate: category.commissionRate || 0,
+          disclaimer: category.disclaimer || "",
         });
         if (category.image) {
           setImagePreview(category.image);
@@ -156,6 +158,7 @@ export default function CategoryFormModal({
           hasWarning: false,
           groupCategory: "",
           commissionRate: 0,
+          disclaimer: "",
         });
       } else {
         // Reset form for new category
@@ -170,6 +173,7 @@ export default function CategoryFormModal({
           hasWarning: false,
           groupCategory: "",
           commissionRate: 0,
+          disclaimer: "",
         });
       }
       setImageFile(null);
@@ -360,6 +364,7 @@ export default function CategoryFormModal({
         hasWarning: formData.hasWarning,
         groupCategory: formData.groupCategory || undefined,
         commissionRate: formData.commissionRate,
+        disclaimer: formData.disclaimer.trim() || undefined,
       };
 
       await onSubmit(submitData);
@@ -871,6 +876,24 @@ export default function CategoryFormModal({
                 </div>
               </div>
             )}
+
+            <div className="space-y-4 pt-4 border-t border-neutral-100">
+              <h4 className="text-sm font-semibold text-neutral-800">Additional Information</h4>
+              <div>
+                <label className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200 uppercase tracking-wider mb-1.5">
+                  Category Disclaimer
+                </label>
+                <textarea
+                  className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-green-500 min-h-[100px]"
+                  placeholder="Enter disclaimer to be shown on all products of this category"
+                  value={formData.disclaimer}
+                  onChange={(e) => setFormData({ ...formData, disclaimer: e.target.value })}
+                />
+                <p className="mt-1 text-[10px] text-neutral-500">
+                  This disclaimer will be shown on the product detail page and during checkout for all products in this category.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 

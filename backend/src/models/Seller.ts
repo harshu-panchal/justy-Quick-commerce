@@ -100,6 +100,10 @@ export interface ISeller extends Document {
   averageRating: number;
   totalOrders: number;
   isDeliveryByPlatform: boolean;
+  deliveryTime?: {
+    regional?: string;
+    local?: string;
+  };
 
   // Product Limits Tracking
   freeProductsAdded: number;
@@ -458,6 +462,10 @@ const SellerSchema = new Schema<ISeller>(
     isDeliveryByPlatform: {
       type: Boolean,
       default: true,
+    },
+    deliveryTime: {
+      regional: { type: String, trim: true },
+      local: { type: String, trim: true },
     },
 
     // Product Limits Tracking

@@ -1272,19 +1272,6 @@ export default function SellerAddProduct() {
                 </>
               )}
             </div>
-            {!isGrocery && (
-              <div className="bg-neutral-50 px-4 py-2 rounded-xl border border-neutral-100 flex items-center gap-3">
-                <label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest whitespace-nowrap">Tax / GST (%)</label>
-                <input
-                  type="number"
-                  name="tax"
-                  value={formData.tax}
-                  onChange={handleChange}
-                  placeholder="0"
-                  className="bg-white border border-neutral-200 rounded-lg py-1.5 px-3 text-[11px] font-black text-neutral-600 outline-none focus:border-teal-500 transition-all w-20"
-                />
-              </div>
-            )}
           </div>
 
           {/* Section 1: Basic Information */}
@@ -1988,10 +1975,42 @@ export default function SellerAddProduct() {
             {!isTeaCorner && !isGrocery && (
               <section className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm space-y-6">
                 <div className="flex items-center gap-3"><div className="w-1.5 h-8 bg-neutral-800 rounded-full"></div><h2 className="text-lg font-black text-neutral-800 tracking-tight">Compliance & Limits</h2></div>
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">Tax / GST (%)</label>
+                    <input
+                      type="number"
+                      name="tax"
+                      value={formData.tax}
+                      onChange={handleChange}
+                      placeholder="e.g. 18"
+                      className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-bold focus:bg-white transition-all outline-none"
+                    />
+                  </div>
                   <div className="space-y-1.5">
                     <label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">HSN Code</label>
                     <input type="text" name="hsnCode" value={formData.hsnCode} onChange={handleChange} placeholder="8 digits" className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-bold focus:bg-white transition-all outline-none" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">Weight / Size</label>
+                    <input type="text" name="weight" value={formData.weight} onChange={handleChange} placeholder="e.g. 500g" className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-bold focus:bg-white transition-all outline-none" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">GST Number</label>
+                    {(user?.gstNumber || user?.taxNumber)?.startsWith('http') ? (
+                      <div className="relative group h-11 bg-neutral-50 border border-neutral-100 rounded-xl overflow-hidden flex items-center justify-between px-3">
+                        <span className="text-[10px] font-bold text-teal-600">Verified Image</span>
+                        <div className="h-8 w-12 rounded border border-neutral-200 overflow-hidden bg-white relative">
+                          <img src={user.gstNumber || user.taxNumber} className="w-full h-full object-cover" alt="GST" />
+                          <a href={user.gstNumber || user.taxNumber} target="_blank" rel="noreferrer" className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center text-[7px] text-white font-black">VIEW</a>
+                        </div>
+                      </div>
+                    ) : (
+                      <input type="text" name="gstNumber" value={formData.gstNumber} onChange={handleChange} disabled={!!(user?.gstNumber || user?.taxNumber)} placeholder="15 digits" className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-bold focus:bg-white transition-all outline-none disabled:opacity-60" />
+                    )}
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">FSSAI License No.</label>
@@ -2008,28 +2027,12 @@ export default function SellerAddProduct() {
                     )}
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-6">
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="space-y-1.5">
-                    <label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">GST Number</label>
-                    {(user?.gstNumber || user?.taxNumber)?.startsWith('http') ? (
-                      <div className="relative group h-11 bg-neutral-50 border border-neutral-100 rounded-xl overflow-hidden flex items-center justify-between px-3">
-                        <span className="text-[10px] font-bold text-teal-600">Verified Image</span>
-                        <div className="h-8 w-12 rounded border border-neutral-200 overflow-hidden bg-white relative">
-                          <img src={user.gstNumber || user.taxNumber} className="w-full h-full object-cover" alt="GST" />
-                          <a href={user.gstNumber || user.taxNumber} target="_blank" rel="noreferrer" className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center text-[7px] text-white font-black">VIEW</a>
-                        </div>
-                      </div>
-                    ) : (
-                      <input type="text" name="gstNumber" value={formData.gstNumber} onChange={handleChange} disabled={!!(user?.gstNumber || user?.taxNumber)} placeholder="15 digits" className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-bold focus:bg-white transition-all outline-none disabled:opacity-60" />
-                    )}
+                    <label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">Max Order limit</label>
+                    <input type="number" name="totalAllowedQuantity" value={formData.totalAllowedQuantity} onChange={handleChange} className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-bold focus:bg-white transition-all outline-none" />
                   </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">Weight (e.g. 500g)</label>
-                    <input type="text" name="weight" value={formData.weight} onChange={handleChange} placeholder="Size/Weight" className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-bold focus:bg-white transition-all outline-none" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">Max Order limit</label><input type="number" name="totalAllowedQuantity" value={formData.totalAllowedQuantity} onChange={handleChange} className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-bold focus:bg-white transition-all outline-none" /></div>
                 </div>
                 <p className="text-[8px] font-medium text-neutral-400 uppercase tracking-widest mt-2 leading-relaxed opacity-60">Mandatory for GST compliance and shipping calculations.</p>
               </section>

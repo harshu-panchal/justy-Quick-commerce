@@ -252,7 +252,7 @@ export const getProducts = async (req: Request, res: Response) => {
         select: "deliveryType"
       })
       .populate("brand", "name")
-      .populate("seller", "storeName")
+      .populate("seller", "storeName city deliveryTime location serviceRadiusKm")
       .sort(sortOptions)
       .skip(skip)
       .limit(Number(limit));
@@ -397,7 +397,7 @@ export const getProductsBySubcategory = async (req: Request, res: Response) => {
           select: "deliveryType"
         }
       })
-      .populate("seller", "storeName pincode logo deliveryTimeMin deliveryTimeMax")
+      .populate("seller", "storeName pincode logo deliveryTimeMin deliveryTimeMax city deliveryTime location serviceRadiusKm")
       .populate("headerCategoryId", "deliveryType")
       .sort({ createdAt: -1 })
       .lean();
@@ -472,7 +472,7 @@ export const getProductById = async (req: Request, res: Response) => {
       .populate("brand", "name")
       .populate(
         "seller",
-        "storeName city fssaiLicNo address location serviceRadiusKm"
+        "storeName city fssaiLicNo address location serviceRadiusKm deliveryTime"
       )
       .populate("headerCategoryId", "deliveryType");
 

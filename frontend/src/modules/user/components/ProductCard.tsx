@@ -12,7 +12,7 @@ import Badge from '../../../components/ui/badge';
 import StarRating from '../../../components/ui/StarRating';
 import { calculateProductPrice } from '../../../utils/priceUtils';
 import ProductTypeBadge from '../../../components/ProductTypeBadge';
-import { getCategoryType, getDeliveryInfo } from '../../../config/pincodeService';
+import { getCategoryType, getDeliveryInfo, getScheduledDeliveryText } from '../../../config/pincodeService';
 
 interface ProductCardProps {
   product: Product;
@@ -240,6 +240,23 @@ export default function ProductCard({
     }
   };
 
+  // Determine if this is a scheduled product
+  const isScheduleProduct = (product as any).headerCategoryId?.deliveryType === 'scheduled' ||
+    (product.category as any)?.headerCategoryId?.deliveryType === 'scheduled';
+
+  // Get dynamic delivery text for scheduled products
+  const scheduledDeliveryText = isScheduleProduct
+    ? getScheduledDeliveryText(
+        product.seller?.deliveryTime,
+        product.seller?.city,
+        location?.city,
+        location?.latitude,
+        location?.longitude,
+        product.seller?.location,
+        product.seller?.serviceRadiusKm
+      )
+    : null;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -437,7 +454,12 @@ export default function ProductCard({
                   <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
                   <path d="M12 6v6l4 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                 </svg>
-                <span>{getDeliveryInfo(getCategoryType(product.category?.name)).badge.toUpperCase()}</span>
+                <span>
+                  {scheduledDeliveryText
+                    ? scheduledDeliveryText.toUpperCase()
+                    : getDeliveryInfo(getCategoryType(product.category?.name)).badge.toUpperCase()
+                  }
+                </span>
               </p>
 
               {/* 4. % OFF */}
@@ -511,7 +533,17 @@ export default function ProductCard({
                     </span>
                   )}
                 </div>
-                <ProductTypeBadge type={getCategoryType(product.category?.name)} showDeliveryText={true} />
+                {scheduledDeliveryText ? (
+                  <p className="text-[10px] md:text-xs text-neutral-500 mt-1 flex items-center gap-1 font-medium">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-neutral-400">
+                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
+                      <path d="M12 6v6l4 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                    {scheduledDeliveryText}
+                  </p>
+                ) : (
+                  <ProductTypeBadge type={getCategoryType(product.category?.name)} showDeliveryText={true} />
+                )}
               </div>
             </>
           )}

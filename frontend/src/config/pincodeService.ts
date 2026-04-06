@@ -79,3 +79,86 @@ export function getDeliveryInfo(type: "organic" | "inorganic") {
         detailText: "Standard Delivery • 1-2 days",
     };
 }
+
+/**
+ * Calculate Haversine distance between two GPS coordinates (in kilometers).
+ */
+function haversineDistanceKm(
+    lat1: number, lng1: number,
+    lat2: number, lng2: number
+): number {
+    const R = 6371; // Earth radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+/**
+ * Get dynamic delivery time for scheduled category products.
+ *
+ * PRIMARY LOGIC: Uses GPS coordinates + seller's serviceRadiusKm.
+ *   - distance <= serviceRadius → "local" delivery time
+ *   - distance >  serviceRadius → "regional" delivery time
+ *
+ * FALLBACK: If any coordinates are missing, uses city-segment matching.
+ *
+ * Returns the exact text the seller entered at registration — never hardcoded.
+ *
+ * @param sellerDeliveryTime - { regional?: string, local?: string } from seller record
+ * @param sellerCity         - seller's city string (used in fallback)
+ * @param userCity           - user's city string (used in fallback)
+ * @param userLat            - user's GPS latitude
+ * @param userLng            - user's GPS longitude
+ * @param sellerLocation     - seller's GeoJSON location { type: 'Point', coordinates: [lng, lat] }
+ * @param sellerServiceRadius - seller's service radius in km (default 20 km)
+ */
+export function getScheduledDeliveryText(
+    sellerDeliveryTime: { regional?: string; local?: string } | undefined,
+    sellerCity: string | undefined,
+    userCity: string | undefined,
+    userLat?: number | null,
+    userLng?: number | null,
+    sellerLocation?: { type: string; coordinates: [number, number] } | null,
+    sellerServiceRadius?: number | null
+): string {
+    if (!sellerDeliveryTime || (!sellerDeliveryTime.regional && !sellerDeliveryTime.local)) {
+        return "Delivery time will be updated";
+    }
+
+    const DEFAULT_RADIUS_KM = 20;
+    let isLocal = false;
+
+    // ── PRIMARY: GPS distance check ──────────────────────────────────────────
+    if (
+        userLat != null && userLng != null &&
+        !isNaN(userLat) && !isNaN(userLng) &&
+        sellerLocation?.coordinates?.length === 2
+    ) {
+        const [sellerLng, sellerLat] = sellerLocation.coordinates; // GeoJSON: [lng, lat]
+        const radius = (sellerServiceRadius != null && sellerServiceRadius > 0)
+            ? sellerServiceRadius
+            : DEFAULT_RADIUS_KM;
+        const distance = haversineDistanceKm(userLat, userLng, sellerLat, sellerLng);
+        isLocal = distance <= radius;
+    }
+    // ── FALLBACK: city-segment comparison ───────────────────────────────────
+    else if (sellerCity && userCity) {
+        const sellerSegments = sellerCity.toLowerCase().split(',').map(s => s.trim()).filter(Boolean);
+        const userSegments = userCity.toLowerCase().split(',').map(s => s.trim()).filter(Boolean);
+        isLocal = userSegments.some(u => sellerSegments.includes(u)) ||
+                  sellerSegments.some(s => userSegments.includes(s));
+    }
+
+    // ── Return the seller's own delivery time strings (never hardcoded) ─────
+    if (isLocal && sellerDeliveryTime.local) {
+        return `Delivery in ${sellerDeliveryTime.local}`;
+    }
+    if (sellerDeliveryTime.regional) {
+        return `Delivery in ${sellerDeliveryTime.regional}`;
+    }
+    return "Delivery time will be updated";
+}

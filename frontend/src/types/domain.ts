@@ -45,6 +45,20 @@ export interface Product {
   isReturnable?: boolean;
   maxReturnDays?: number;
   sellerId?: string;
+  seller?: {
+    _id?: string;
+    storeName?: string;
+    city?: string;
+    deliveryTime?: {
+      regional?: string;
+      local?: string;
+    };
+    location?: {
+      type: 'Point';
+      coordinates: [number, number]; // [longitude, latitude] — GeoJSON order
+    };
+    serviceRadiusKm?: number;
+  };
   isAvailable?: boolean;
   type?: "organic" | "inorganic";
   approvalStatus?: "pending" | "approved" | "rejected";

@@ -17,7 +17,7 @@ import { getProductById, getProducts } from '../../services/api/customerProductS
 import WishlistButton from '../../components/WishlistButton';
 import StarRating from "../../components/ui/StarRating";
 import { calculateProductPrice } from '../../utils/priceUtils';
-import { getCategoryType, getDeliveryInfo } from '../../config/pincodeService';
+import { getCategoryType, getDeliveryInfo, getScheduledDeliveryText } from '../../config/pincodeService';
 import ComboOfferSection from './components/ComboOfferSection';
 import BuyTogetherSection from './components/BuyTogetherSection';
 import ProductReviews from './components/ProductReviews';
@@ -224,6 +224,24 @@ export default function ProductDetail() {
     )
     : null;
   const inCartQty = cartItem?.quantity || 0;
+
+  // Determine if this is a scheduled product
+  const isScheduleProduct = product?.headerCategoryId?.deliveryType === 'scheduled' ||
+    product?.category?.headerCategoryId?.deliveryType === 'scheduled' ||
+    product?.subcategory?.headerCategoryId?.deliveryType === 'scheduled';
+
+  // Get dynamic delivery text for scheduled products
+  const scheduledDeliveryText = isScheduleProduct
+    ? getScheduledDeliveryText(
+        product?.seller?.deliveryTime,
+        product?.seller?.city,
+        location?.city,
+        location?.latitude,
+        location?.longitude,
+        product?.seller?.location,
+        product?.seller?.serviceRadiusKm
+      )
+    : null;
 
   if (loading && !product) {
     return null; // Let the global IconLoader handle this
@@ -580,7 +598,7 @@ export default function ProductDetail() {
               />
             </svg>
             <span className="text-sm text-neutral-700 font-medium">
-              {getDeliveryInfo(getCategoryType(product.category?.name)).detailText}
+              {scheduledDeliveryText || getDeliveryInfo(getCategoryType(product.category?.name)).detailText}
             </span>
           </div>
 

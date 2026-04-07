@@ -157,6 +157,9 @@ export interface IAppSettings extends Document {
     kmRate?: number;
   };
 
+  // Seller Security Deposit
+  sellerSecurityDeposit: number;
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -484,6 +487,12 @@ const AppSettingsSchema = new Schema<IAppSettings>(
       salaryDays: { type: Number, default: 30 },
       kmRate: { type: Number, default: 0 }
     },
+    // Seller Security Deposit
+    sellerSecurityDeposit: {
+      type: Number,
+      default: 1000,
+      min: [0, "Security deposit cannot be negative"],
+    },
   },
   {
     timestamps: true,
@@ -498,6 +507,7 @@ AppSettingsSchema.statics.getSettings = async function () {
       appName: "Dhakad Snazzy",
       contactEmail: "contact@dhakadsnazzy.com",
       contactPhone: "1234567890",
+      sellerSecurityDeposit: 1000,
       spinnerSettings: {
         enabled: true,
         trigger: 'onLogin',

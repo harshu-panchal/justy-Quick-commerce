@@ -63,6 +63,8 @@ export default function SellerAddProduct() {
     isReturnable: "Yes",
     maxReturnDays: "7",
     returnPolicyText: "",
+    regionalTime: "",
+    localTime: "",
     preparationTime: "20",
     timing: [] as string[],
     sku: "",
@@ -547,6 +549,8 @@ export default function SellerAddProduct() {
               mainImageUrl: product.mainImageUrl || product.mainImage || "",
               galleryImageUrls: product.galleryImageUrls || [],
               preparationTime: product.preparationTime?.toString() || "20",
+              regionalTime: product.regionalTime || "",
+              localTime: product.localTime || "",
               timing: product.timing || [],
               sku: product.sku || "",
               barcode: product.barcode || "",
@@ -1097,6 +1101,8 @@ export default function SellerAddProduct() {
         price: variations[0].price,
         stock: variations[0].stock,
         preparationTime: (isPharmacy || isProduce) ? undefined : (parseInt(formData.preparationTime) || 20),
+        regionalTime: formData.regionalTime,
+        localTime: formData.localTime,
         variations: variations.map(v => ({ ...v, name: v.title })),
         addons: addons,
         fssaiLicNo: formData.fssaiLicNo,
@@ -1258,16 +1264,12 @@ export default function SellerAddProduct() {
                     <button type="button" onClick={() => setFormData(p => ({ ...p, popular: p.popular === "Yes" ? "No" : "Yes" }))} className={`w-11 h-5.5 rounded-full transition-all flex items-center px-1 shadow-inner ${formData.popular === "Yes" ? "bg-amber-500" : "bg-neutral-200"}`}><motion.div animate={{ x: formData.popular === "Yes" ? 22 : 0 }} className="w-3.5 h-3.5 bg-white rounded-full shadow-md" /></button>
                   </div>
                   <div className="flex flex-col gap-1.5 border-r border-neutral-100 pr-6">
-                    <p className="text-[8px] font-black text-neutral-400 uppercase tracking-[0.2em] ml-0.5">Best Seller</p>
-                    <button type="button" onClick={() => setFormData(p => ({ ...p, dealOfDay: p.dealOfDay === "Yes" ? "No" : "Yes" }))} className={`w-11 h-5.5 rounded-full transition-all flex items-center px-1 shadow-inner ${formData.dealOfDay === "Yes" ? "bg-orange-500" : "bg-neutral-200"}`}><motion.div animate={{ x: formData.dealOfDay === "Yes" ? 22 : 0 }} className="w-3.5 h-3.5 bg-white rounded-full shadow-md" /></button>
-                  </div>
-                  <div className="flex flex-col gap-1.5 border-r border-neutral-100 pr-6">
                     <p className="text-[8px] font-black text-neutral-400 uppercase tracking-[0.2em] ml-0.5">Approval Status</p>
                     <div className="px-3 py-1 bg-amber-50 text-amber-600 rounded-lg text-[9px] font-black uppercase tracking-widest border border-amber-100">Pending 🔍</div>
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <p className="text-[8px] font-black text-neutral-400 uppercase tracking-[0.2em] ml-0.5">Jain Friendly</p>
-                    <button type="button" onClick={() => setFormData(p => ({ ...p, isJain: p.isJain === "Yes" ? "No" : "Yes" }))} className={`w-11 h-5.5 rounded-full transition-all flex items-center px-1 shadow-inner ${formData.isJain === "Yes" ? "bg-sky-500" : "bg-neutral-200"}`}><motion.div animate={{ x: formData.isJain === "Yes" ? 22 : 0 }} className="w-3.5 h-3.5 bg-white rounded-full shadow-md" /></button>
+                    <p className="text-[8px] font-black text-neutral-400 uppercase tracking-[0.2em] ml-0.5">Deal of the Day</p>
+                    <button type="button" onClick={() => setFormData(p => ({ ...p, dealOfDay: p.dealOfDay === "Yes" ? "No" : "Yes" }))} className={`w-11 h-5.5 rounded-full transition-all flex items-center px-1 shadow-inner ${formData.dealOfDay === "Yes" ? "bg-orange-600" : "bg-neutral-200"}`}><motion.div animate={{ x: formData.dealOfDay === "Yes" ? 22 : 0 }} className="w-3.5 h-3.5 bg-white rounded-full shadow-md" /></button>
                   </div>
                 </>
               )}
@@ -1297,7 +1299,7 @@ export default function SellerAddProduct() {
                   </select>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">External SKU (ID)</label>
+                  <label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">External SKU (Product ID)</label>
                   <input type="text" name="sku" value={formData.sku} onChange={handleChange} placeholder="e.g. SKU-123" className="w-full h-11 px-5 bg-neutral-50 border border-neutral-100 rounded-xl text-[14px] font-bold focus:bg-white focus:border-emerald-500 transition-all outline-none" />
                 </div>
               </div>
@@ -1309,8 +1311,13 @@ export default function SellerAddProduct() {
               )}
               {!isPharmacy && !isProduce && !isGrocery && (
                 <div className="grid grid-cols-2 gap-6">
-                  <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Preparation Time (Mins)</label><input type="number" name="preparationTime" value={formData.preparationTime} onChange={handleChange} className="w-full h-11 px-5 bg-neutral-50 border border-neutral-100 rounded-xl text-[14px] font-black tabular-nums transition-all outline-none focus:border-emerald-500" /></div>
-                  {!isTeaCorner && <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Spicy Level</label><select name="spicyLevel" value={formData.spicyLevel} onChange={handleChange} className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-[12px] font-black uppercase outline-none focus:border-teal-500"><option value="None">Not Spicy</option><option value="Mild">Mild 🔥</option><option value="Medium">Medium 🔥🔥</option><option value="Hot">Extra Hot 🔥🔥🔥</option></select></div>}
+                  <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Regional Time</label><input type="text" name="regionalTime" value={formData.regionalTime} onChange={handleChange} placeholder="e.g. 10:00 AM - 08:00 PM" className="w-full h-11 px-5 bg-neutral-50 border border-neutral-100 rounded-xl text-[14px] font-black tabular-nums transition-all outline-none focus:border-emerald-500" /></div>
+                  <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Local Time</label><input type="text" name="localTime" value={formData.localTime} onChange={handleChange} placeholder="e.g. 09:00 AM - 10:00 PM" className="w-full h-11 px-5 bg-neutral-50 border border-neutral-100 rounded-xl text-[14px] font-black tabular-nums transition-all outline-none focus:border-emerald-500" /></div>
+                </div>
+              )}
+              {!isPharmacy && !isProduce && !isGrocery && !isTeaCorner && (
+                <div className="grid grid-cols-1 gap-6 pt-2">
+                  <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Spicy Level</label><select name="spicyLevel" value={formData.spicyLevel} onChange={handleChange} className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-[12px] font-black uppercase outline-none focus:border-teal-500"><option value="None">Not Spicy</option><option value="Mild">Mild 🔥</option><option value="Medium">Medium 🔥🔥</option><option value="Hot">Extra Hot 🔥🔥🔥</option></select></div>
                 </div>
               )}
               <div className="space-y-1.5">

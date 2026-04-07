@@ -13,6 +13,7 @@ export default function AdminBillingSettings() {
     const [platformFee, setPlatformFee] = useState<number>(0);
     const [freeDeliveryThreshold, setFreeDeliveryThreshold] = useState<number>(0);
     const [deliveryCharges, setDeliveryCharges] = useState<number>(0);
+    const [sellerSecurityDeposit, setSellerSecurityDeposit] = useState<number>(1000);
 
     // Distance Based Config
     const [isDistanceBased, setIsDistanceBased] = useState(false);
@@ -45,6 +46,7 @@ export default function AdminBillingSettings() {
                 setPlatformFee(data.platformFee || 0);
                 setFreeDeliveryThreshold(data.freeDeliveryThreshold || 0);
                 setDeliveryCharges(data.deliveryCharges || 0);
+                setSellerSecurityDeposit(data.sellerSecurityDeposit || 1000);
 
                 if (data.deliveryConfig) {
                     setIsDistanceBased(data.deliveryConfig.isDistanceBased || false);
@@ -81,6 +83,7 @@ export default function AdminBillingSettings() {
                 platformFee,
                 freeDeliveryThreshold,
                 deliveryCharges,
+                sellerSecurityDeposit,
                 deliveryConfig: {
                     isDistanceBased,
                     baseCharge,
@@ -108,6 +111,7 @@ export default function AdminBillingSettings() {
                 setPlatformFee(data.platformFee || 0);
                 setFreeDeliveryThreshold(data.freeDeliveryThreshold || 0);
                 setDeliveryCharges(data.deliveryCharges || 0);
+                setSellerSecurityDeposit(data.sellerSecurityDeposit || 1000);
 
                 if (data.deliveryConfig) {
                     setIsDistanceBased(data.deliveryConfig.isDistanceBased || false);
@@ -489,6 +493,28 @@ export default function AdminBillingSettings() {
                                 Rewards are only given after <strong>successful delivery</strong> of the first order.
                             </p>
                         </div>
+                    </div>
+                </div>
+
+                {/* Seller Onboarding Settings */}
+                <div className="bg-white rounded-xl shadow-sm border border-neutral-200 p-6">
+                    <h2 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b">Seller Onboarding</h2>
+                    <div className="max-w-md">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Seller Security Deposit (₹)
+                        </label>
+                        <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">₹</span>
+                            <input
+                                type="number"
+                                min="0"
+                                value={sellerSecurityDeposit}
+                                onChange={(e) => setSellerSecurityDeposit(Number(e.target.value))}
+                                className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500"
+                                placeholder="e.g. 1000"
+                            />
+                        </div>
+                        <p className="mt-1 text-xs text-gray-500">The amount sellers must pay after approval to start selling.</p>
                     </div>
                 </div>
             </div>

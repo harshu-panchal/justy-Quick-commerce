@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import { useToast } from '../../../context/ToastContext';
 import { createSellerDepositOrder, verifySellerDepositPayment } from '../../../services/api/paymentService';
+import api from '../../../services/api/config';
 
 declare global {
     interface Window {
@@ -15,11 +16,26 @@ const SellerDepositPayment = () => {
     const { user, logout, updateUser } = useAuth();
     const { showToast } = useToast();
     const [loading, setLoading] = useState(false);
+    const [depositAmount, setDepositAmount] = useState<number>(1000);
+
+    useEffect(() => {
+        const fetchSettings = async () => {
+            try {
+                const response = await api.get('/public/settings');
+                if (response.data.success) {
+                    setDepositAmount(response.data.data.sellerSecurityDeposit || 1000);
+                }
+            } catch (err) {
+                console.error('Failed to fetch public settings:', err);
+            }
+        };
+        fetchSettings();
+    }, []);
 
     const steps = [
         { id: 1, label: 'Store Registration', status: 'completed' },
         { id: 2, label: 'Admin Verification', status: 'completed' },
-        { id: 3, label: 'Pay Security Deposit ₹1000', status: 'in-progress' },
+        { id: 3, label: `Pay Security Deposit ₹${depositAmount}`, status: 'in-progress' },
         { id: 4, label: 'Start Selling', status: 'pending' },
     ];
 
@@ -131,7 +147,7 @@ const SellerDepositPayment = () => {
 
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">Security Deposit Required</h2>
                 <p className="text-gray-600 mb-8 leading-relaxed">
-                    Great news! Your store has been approved. To start selling on JYASTI builds trust, you need to pay a one-time refundable security deposit of ₹1000.
+                    Great news! Your store has been approved. To start selling on JYASTI builds trust, you need to pay a one-time refundable security deposit of ₹{depositAmount}.
                 </p>
 
                 {/* Progress steps */}
@@ -172,7 +188,7 @@ const SellerDepositPayment = () => {
                         : 'bg-neutral-300 text-neutral-500 cursor-not-allowed'
                         }`}
                 >
-                    {loading ? 'Processing...' : 'Pay Deposit ₹1000'}
+                    {loading ? 'Processing...' : `Pay Deposit ₹${depositAmount}`}
                 </button>
 
                 <button

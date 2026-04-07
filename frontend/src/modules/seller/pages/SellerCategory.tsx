@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { getCategories, Category } from "../../../services/api/categoryService";
 import { getHeaderCategoriesPublic, HeaderCategory } from "../../../services/api/headerCategoryService";
 import api from "../../../services/api/config";
-import { uploadImage } from "../../../services/api/uploadService";
 import { useAuth } from "../../../context/AuthContext";
 import toast from 'react-hot-toast';
 
@@ -19,11 +18,10 @@ export default function SellerCategory() {
   const rowsPerPage = 7;
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     headerCategoryId: "",
-    image: null as File | null,
-    preview: ""
   });
   const [submitting, setSubmitting] = useState(false);
 
@@ -34,17 +32,19 @@ export default function SellerCategory() {
         getHeaderCategoriesPublic(true),
         getCategories()
       ]);
-      const sellerCategory = user?.category || (user?.categories && user.categories.length > 0 ? user.categories[0] : null);
+      const rawCategory = (user?.category || (user?.categories && (user.categories as string[]).length > 0 ? (user.categories as string[])[0] : null));
+      const sellerCategory = rawCategory?.trim().toLowerCase();
       
-      const quickH = hRes.filter(h => 
-        h.deliveryType === 'quick' && 
-        h.name === sellerCategory
-      );
-      setHeaderCategories(quickH);
+      // Filter to show ONLY the seller's assigned category
+      const filteredH = hRes.filter((h: any) => {
+        const hName = h.name?.trim().toLowerCase();
+        return hName === sellerCategory || hName?.includes(sellerCategory || "") || sellerCategory?.includes(hName || "");
+      });
+
+      setHeaderCategories(filteredH);
       
-      const matchingHeader = quickH.find(h => h.name === sellerCategory);
-      if (matchingHeader) {
-        setFormData(prev => ({ ...prev, headerCategoryId: matchingHeader._id }));
+      if (filteredH.length > 0) {
+        setFormData(prev => ({ ...prev, headerCategoryId: filteredH[0]._id }));
       }
       
       if (sRes.success) {
@@ -71,25 +71,42 @@ export default function SellerCategory() {
   const paginatedData = filteredCategories.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
   const totalPages = Math.ceil(filteredCategories.length / rowsPerPage);
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) setFormData(prev => ({ ...prev, image: file, preview: URL.createObjectURL(file) }));
+  const handleEdit = (cat: Category) => {
+    setSelectedCategoryId(cat._id);
+    setFormData({
+      name: cat.name,
+      headerCategoryId: typeof cat.headerCategoryId === 'string' ? cat.headerCategoryId : (cat.headerCategoryId as any)?._id || "",
+    });
+    setIsModalOpen(true);
   };
 
   const handleAddSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name.trim() || !formData.headerCategoryId) { setError("Fields required."); return; }
+    if (!formData.name.trim() || !formData.headerCategoryId) { 
+      toast.error("Fields required."); 
+      return; 
+    }
     setSubmitting(true);
     try {
-      let imageUrl = "";
-      if (formData.image) {
-          const uploadRes = await uploadImage(formData.image, "categories");
-          imageUrl = uploadRes.secureUrl;
+      if (selectedCategoryId) {
+        // Update existing category
+        await api.put(`/categories/${selectedCategoryId}`, { 
+          name: formData.name, 
+          headerCategoryId: formData.headerCategoryId 
+        });
+        toast.success("Category updated successfully! ✨");
+      } else {
+        // Create new category
+        await api.post("/categories", { 
+          name: formData.name, 
+          headerCategoryId: formData.headerCategoryId, 
+          status: "Unpublished" 
+        });
+        toast.success("Category added successfully! ✨");
       }
-      await api.post("/categories", { name: formData.name, headerCategoryId: formData.headerCategoryId, image: imageUrl, status: "Unpublished" });
-      toast.success("Category added successfully! ✨");
       setIsModalOpen(false);
-      setFormData({ name: "", headerCategoryId: "", image: null, preview: "" });
+      setSelectedCategoryId(null);
+      setFormData({ name: "", headerCategoryId: "" });
       fetchData();
     } catch (err: any) { 
       toast.error(err.response?.data?.message || "Sync failed."); 
@@ -111,7 +128,11 @@ export default function SellerCategory() {
              <h1 className="text-2xl font-black tracking-tight text-slate-900">Category Architecture</h1>
           </div>
           <button 
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => {
+              setSelectedCategoryId(null);
+              setFormData({ name: "", headerCategoryId: headerCategories[0]?._id || "" });
+              setIsModalOpen(true);
+            }}
             className="h-11 px-8 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-[0.1em] hover:bg-slate-800 transition-all flex items-center gap-3 shadow-lg"
           >
              <span className="bg-teal-500 text-white w-5 h-5 rounded-md flex items-center justify-center font-black">+</span>
@@ -159,7 +180,18 @@ export default function SellerCategory() {
                              </td>
                              <td className="p-5"><div className="space-y-0.5"><p className="text-[13px] font-black text-slate-800 group-hover:text-teal-600 transition-colors uppercase italic">{cat.name}</p><p className="text-[8px] text-slate-400 font-bold uppercase tracking-widest">ID {cat._id.slice(-6).toUpperCase()}</p></div></td>
                              <td className="p-5"><span className="px-3 py-1 bg-slate-50 text-slate-600 rounded-lg text-[9px] font-black tracking-widest uppercase border border-slate-100">{(cat as any).headerCategoryId?.name || "Global Tier"}</span></td>
-                             <td className="p-5 text-right"><span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${cat.status === "Published" || cat.status === "Active" || cat.isActive ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-500"}`}><div className={`w-1.5 h-1.5 rounded-full ${cat.status === "Published" || cat.status === "Active" || cat.isActive ? 'bg-emerald-500' : 'bg-rose-500'}`} />{cat.status === "Published" || cat.status === "Active" || cat.isActive ? "Active" : "Pending"}</span></td>
+                             <td className="p-5 text-right">
+                                <div className="flex items-center justify-end gap-3">
+                                  <button 
+                                    onClick={() => handleEdit(cat)}
+                                    className="p-2 text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
+                                    title="Edit Category"
+                                  >
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                  </button>
+                                  <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${cat.status === "Published" || cat.status === "Active" || cat.isActive ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-500"}`}><div className={`w-1.5 h-1.5 rounded-full ${cat.status === "Published" || cat.status === "Active" || cat.isActive ? 'bg-emerald-500' : 'bg-rose-500'}`} />{cat.status === "Published" || cat.status === "Active" || cat.isActive ? "Active" : "Pending"}</span>
+                                </div>
+                             </td>
                           </motion.tr>
                        ))}
                     </AnimatePresence>
@@ -182,7 +214,7 @@ export default function SellerCategory() {
                 <motion.div initial={{ scale: 0.98, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.98, opacity: 0 }} className="bg-white rounded-[2.5rem] p-10 max-w-md w-full shadow-2xl relative border border-slate-100">
                    <button onClick={() => setIsModalOpen(false)} className="absolute top-8 right-8 text-slate-300">×</button>
                    <form onSubmit={handleAddSubmit} className="space-y-6">
-                      <div className="space-y-1"><h3 className="text-xl font-black text-slate-900 tracking-tight">Create New Category</h3></div>
+                      <div className="space-y-1"><h3 className="text-xl font-black text-slate-900 tracking-tight">{selectedCategoryId ? 'Update Category' : 'Create New Category'}</h3></div>
                       <div className="space-y-4">
                          <div className="space-y-2">
                            <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Parent Category</label>
@@ -198,9 +230,8 @@ export default function SellerCategory() {
                            </select>
                          </div>
                          <div className="space-y-2"><label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Category</label><input type="text" value={formData.name} onChange={e => setFormData(p => ({ ...p, name: e.target.value }))} placeholder="Category Name" className="w-full h-12 px-6 bg-slate-50 border border-slate-100 rounded-2xl text-[14px] font-black outline-none" /></div>
-                         <div className="space-y-2"><label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Category Image</label><div className="relative h-32 bg-slate-50 border-2 border-dashed border-slate-200 rounded-[1.5rem] overflow-hidden cursor-pointer" onClick={() => document.getElementById('cat-img-final')?.click()}>{formData.preview ? <img src={formData.preview} className="w-full h-full object-cover" /> : <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-slate-300"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span className="text-[8px] font-black uppercase">Upload</span></div>}<input id="cat-img-final" type="file" onChange={handleImageChange} className="hidden" /></div></div>
                       </div>
-                      <button type="submit" disabled={submitting} className="w-full h-14 bg-slate-900 text-white rounded-[1.2rem] font-black text-[10px] uppercase tracking-[0.2em] shadow-lg">{submitting ? "..." : "Submit Category"}</button>
+                      <button type="submit" disabled={submitting} className="w-full h-14 bg-slate-900 text-white rounded-[1.2rem] font-black text-[10px] uppercase tracking-[0.2em] shadow-lg">{submitting ? "..." : (selectedCategoryId ? "Update Category" : "Submit Category")}</button>
                    </form>
                 </motion.div>
              </motion.div>

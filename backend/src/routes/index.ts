@@ -111,6 +111,10 @@ router.use("/auth/seller", sellerAuthRoutes);
 router.use("/auth/customer", customerAuthRoutes);
 router.use("/auth/delivery", deliveryAuthRoutes);
 
+// Public settings route
+import { getPublicSettings } from "../controllers/settingsController";
+router.get("/public/settings", getPublicSettings);
+
 // FCM Token routes (protected - requires authentication)
 router.use("/fcm-tokens", authenticate, fcmTokenRoutes);
 

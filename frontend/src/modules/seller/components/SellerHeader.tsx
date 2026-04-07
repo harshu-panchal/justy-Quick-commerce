@@ -112,7 +112,7 @@ export default function SellerHeader({ onMenuClick, isSidebarOpen }: SellerHeade
           {/* JYASTI builds trust Logo */}
           <button
             onClick={handleLogoClick}
-            className="hover:opacity-80 transition-opacity"
+            className="hover:opacity-80 transition-opacity flex-shrink-0"
           >
             <img
               src={jyastiLogo}
@@ -121,6 +121,28 @@ export default function SellerHeader({ onMenuClick, isSidebarOpen }: SellerHeade
               style={{ maxWidth: '250px' }}
             />
           </button>
+
+          {/* Store Name and Category - Added this section */}
+          <div className="hidden lg:flex flex-col border-l border-neutral-200 pl-4 py-1">
+            <h1 className="text-lg font-bold text-neutral-800 leading-tight truncate max-w-[200px]">
+              {user?.storeName || 'My Store'}
+            </h1>
+            <div className="flex items-center gap-2">
+              <span className="px-2 py-0.5 bg-neutral-100 text-[10px] font-bold text-neutral-500 rounded-md uppercase tracking-wider">
+                {user?.category || 'General'}
+              </span>
+            </div>
+          </div>
+
+          {/* Mobile Store info - only on sm screens */}
+          <div className="flex flex-col lg:hidden ml-2 min-w-0">
+             <h1 className="text-sm font-bold text-neutral-800 truncate leading-none">
+              {user?.storeName || 'My Store'}
+            </h1>
+             <span className="text-[9px] font-medium text-neutral-500 uppercase tracking-tighter">
+                {user?.category || 'General'}
+              </span>
+          </div>
 
           {/* Mobile Logout Button - Only visible on mobile */}
           <div className="ml-auto sm:hidden">

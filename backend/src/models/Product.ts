@@ -99,6 +99,8 @@ export interface IProduct extends Document {
   shopId?: mongoose.Types.ObjectId;
 
   foodType?: 'Veg' | 'Non-Veg' | 'Egg';
+  regionalTime?: string;
+  localTime?: string;
   preparationTime?: number; // in minutes
   timing?: string[]; // e.g., ["Breakfast", "Lunch"]
   addons?: Array<{
@@ -708,6 +710,14 @@ const ProductSchema = new Schema<IProduct>(
     foodType: {
       type: String,
       enum: ["Veg", "Non-Veg", "Egg"],
+    },
+    regionalTime: {
+      type: String,
+      trim: true,
+    },
+    localTime: {
+      type: String,
+      trim: true,
     },
     preparationTime: {
       type: Number,

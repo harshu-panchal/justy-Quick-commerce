@@ -132,6 +132,7 @@ export interface AppSettings {
   maintenanceMessage?: string;
   spinnerSettings?: SpinnerSettings;
   updatedBy?: string;
+  sellerSecurityDeposit?: number;
   createdAt?: string;
   updatedAt?: string;
 }

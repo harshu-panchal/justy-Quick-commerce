@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import Payment from '../models/Payment';
 import Order from '../models/Order';
 import mongoose from 'mongoose';
+import AppSettings from '../models/AppSettings';
 
 // Initialize Razorpay instance
 const getRazorpayInstance = () => {
@@ -311,13 +312,15 @@ export const handleWebhook = async (
  */
 export const createSellerDepositOrder = async (
     sellerId: string,
-    amount: number = 1000 // Fixed deposit amount
+    amount?: number
 ) => {
     try {
+        const settings = await AppSettings.getSettings();
+        const depositAmount = amount || settings.sellerSecurityDeposit || 1000;
         const razorpay = getRazorpayInstance();
 
         const options = {
-            amount: Math.round(amount * 100), // Amount in paise
+            amount: Math.round(depositAmount * 100), // Amount in paise
             currency: 'INR',
             receipt: `sdep_${sellerId.slice(-10)}_${Date.now()}`,
             notes: {
@@ -404,7 +407,7 @@ export const captureSellerDepositPayment = async (
             razorpayOrderId,
             razorpayPaymentId,
             razorpaySignature,
-            amount: 1000,
+            amount: seller.depositAmount || 1000, // Will be updated correctly in $set below
             currency: 'INR',
             status: 'Completed',
             paidAt: new Date(),
@@ -416,6 +419,10 @@ export const captureSellerDepositPayment = async (
 
         await payment.save({ session });
 
+        // Fetch current deposit amount from settings
+        const settings = await AppSettings.getSettings();
+        const depositAmount = settings.sellerSecurityDeposit || 1000;
+
         // 4. Update seller fields using direct collection update to bypass all Mongoose and indexing overhead
         // This ensures that existing invalid GeoJSON data doesn't block the crucial payment update
         const updateResult = await mongoose.connection.db!.collection('sellers').updateOne(
@@ -425,7 +432,7 @@ export const captureSellerDepositPayment = async (
                     securityDepositStatus: 'Paid',
                     securityDepositPaidAt: new Date(),
                     depositPaid: true,
-                    depositAmount: 1000,
+                    depositAmount: depositAmount,
                     depositPaidAt: new Date(),
                     status: 'Approved'
                 },
@@ -468,13 +475,16 @@ const handlePaymentCaptured = async (payload: any) => {
         const notes = payload.notes || {};
 
         if (notes.paymentType === 'SecurityDeposit' && notes.sellerId) {
+            const settings = await AppSettings.getSettings();
+            const depositAmount = settings.sellerSecurityDeposit || 1000;
+
             // Handle seller deposit via webhook
             const Seller = mongoose.models.Seller;
             await Seller.findByIdAndUpdate(notes.sellerId, {
                 securityDepositStatus: 'Paid',
                 securityDepositPaidAt: new Date(),
                 depositPaid: true,
-                depositAmount: 1000,
+                depositAmount: depositAmount,
                 depositPaidAt: new Date(),
                 status: 'Approved'
             });
@@ -489,7 +499,7 @@ const handlePaymentCaptured = async (payload: any) => {
                     paymentGateway: 'Razorpay',
                     razorpayOrderId,
                     razorpayPaymentId,
-                    amount: 1000,
+                    amount: payload.amount / 100, // Use the actual amount from Razorpay payload
                     currency: 'INR',
                     status: 'Completed',
                     paidAt: new Date(),

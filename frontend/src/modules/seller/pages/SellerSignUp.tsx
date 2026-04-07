@@ -375,6 +375,36 @@ export default function SellerSignUp() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleSkipTest = () => {
+    if (formStep === 1) {
+      setFormData(prev => ({
+        ...prev,
+        sellerName: prev.sellerName || 'Test Seller',
+        email: prev.email || `test${Math.floor(Math.random() * 10000)}@example.com`,
+        storeName: prev.storeName || 'Test Store',
+      }));
+      setIsEmailVerified(true);
+      setFormStep(2);
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        mobile: prev.mobile || '9876543210',
+        upiId: prev.upiId || 'test@okaxis',
+        categories: prev.categories.length > 0 ? prev.categories : ['Grocery'],
+        category: prev.category || 'Grocery',
+        latitude: prev.latitude || '28.6139',
+        longitude: prev.longitude || '77.2090',
+        city: prev.city || 'Test City',
+        state: prev.state || 'Test State',
+        pincode: prev.pincode || '123456',
+        nearestLandmark: prev.nearestLandmark || 'Test Landmark',
+        address: prev.address || 'Test Address'
+      }));
+      // Scroll to bottom so user can see Create button
+      setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }), 100);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -592,6 +622,21 @@ export default function SellerSignUp() {
         {/* Form Body */}
         <div className="p-6">
           <StepIndicator currentStep={isSuccess ? 3 : formStep} />
+
+          {!isSuccess && (
+            <div className="flex justify-end mb-4">
+              <button
+                type="button"
+                onClick={handleSkipTest}
+                className="text-[10px] font-bold text-orange-600 hover:text-orange-700 bg-orange-50 px-3 py-1.5 rounded-full border border-orange-200 transition-all active:scale-95 flex items-center gap-1.5"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                  <path d="M13 17l5-5-5-5M6 17l5-5-5-5" />
+                </svg>
+                SKIP FOR TEST
+              </button>
+            </div>
+          )}
 
           {isSuccess ? (
             <div className="py-12 text-center animate-fadeIn">

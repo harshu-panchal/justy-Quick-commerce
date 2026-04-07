@@ -1,0 +1,41 @@
+[
+  {
+    "_id": {
+      "$oid": "69b54e599f6672f947cd3483"
+    },
+    "name": "pharmacy",
+    "iconLibrary": "Custom",
+    "iconName": "medicine",
+    "slug": "gold",
+    "deliveryType": "quick",
+    "order": 0,
+    "status": "Published",
+    "createdAt": {
+      "$date": "2026-03-14T12:02:33.830Z"
+    },
+    "updatedAt": {
+      "$date": "2026-03-14T12:02:33.830Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "69cfa5ad430e6abca107f7f3"
+    },
+    "name": "Health & Wellness",
+    "iconLibrary": "Custom",
+    "iconName": "fitness",
+    "slug": "salmon",
+    "deliveryType": "scheduled",
+    "scheduledTime": "",
+    "order": 0,
+    "status": "Published",
+    "createdAt": {
+      "$date": "2026-04-03T11:34:05.564Z"
+    },
+    "updatedAt": {
+      "$date": "2026-04-03T11:34:05.564Z"
+    },
+    "__v": 0
+  }
+]

@@ -240,11 +240,12 @@ export default function ProductCard({
     }
   };
 
-  // Determine if this is a scheduled product
+// Determine if this is a scheduled product or has specific delivery times
   const isScheduleProduct = (product as any).headerCategoryId?.deliveryType === 'scheduled' ||
-    (product.category as any)?.headerCategoryId?.deliveryType === 'scheduled';
+    (product.category as any)?.headerCategoryId?.deliveryType === 'scheduled' ||
+    !!(product as any).regionalTime || !!(product as any).localTime;
 
-  // Get dynamic delivery text for scheduled products
+  // Get dynamic delivery text for scheduled products or those with specific times
   const scheduledDeliveryText = isScheduleProduct
     ? getScheduledDeliveryText(
         product.seller?.deliveryTime,
@@ -253,7 +254,8 @@ export default function ProductCard({
         location?.latitude,
         location?.longitude,
         product.seller?.location,
-        product.seller?.serviceRadiusKm
+        product.seller?.serviceRadiusKm,
+        { regionalTime: (product as any).regionalTime, localTime: (product as any).localTime }
       )
     : null;
 

@@ -263,15 +263,15 @@ export const getProducts = async (req: Request, res: Response) => {
     const nearbySellerIds = (req as any).nearbySellerIds || [];
     const formattedProducts = products.map((p: any) => {
       const sellerId = p.seller?._id || p.seller;
-      const isProdScheduled = 
+      const isProdScheduled =
         p.headerCategoryId?.deliveryType === 'scheduled' ||
         (p.category as any)?.headerCategoryId?.deliveryType === 'scheduled' ||
         (p.subcategory as any)?.headerCategoryId?.deliveryType === 'scheduled';
-      
+
       const isAvailable = isProdScheduled || (nearbySellerIds.length > 0 && sellerId
         ? nearbySellerIds.some((id: any) => id.toString() === sellerId.toString())
         : false);
-        
+
       return {
         ...p.toObject(),
         id: p._id.toString(),
@@ -352,7 +352,7 @@ export const getProductsBySubcategory = async (req: Request, res: Response) => {
     // 3. Seller Filtering (always allow approved sellers for global visibility, but track local ones)
     const allApprovedSellers = await Seller.find({ status: "Approved" }).select("_id pincode").lean();
     const allApprovedSellerIds = allApprovedSellers.map(s => s._id);
-    
+
     // Use all approved sellers for the query to ensure products are visible globally
     const eligibleSellerIds = allApprovedSellerIds;
 
@@ -507,7 +507,7 @@ export const getProductById = async (req: Request, res: Response) => {
     }
 
     // Check location availability if coordinates are provided
-    const isScheduled = 
+    const isScheduled =
       (product.headerCategoryId as any)?.deliveryType === "scheduled" ||
       (product.category as any)?.headerCategoryId?.deliveryType === "scheduled" ||
       (product.subcategory as any)?.headerCategoryId?.deliveryType === "scheduled";

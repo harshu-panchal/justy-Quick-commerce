@@ -62,6 +62,8 @@ export default function AdminAddProduct() {
     weight: "",
     color: "",
     size: "",
+    regionalTime: "",
+    localTime: "",
     mainImageUrl: "",
     galleryImageUrls: [] as string[],
   });
@@ -337,6 +339,8 @@ export default function AdminAddProduct() {
         mainImage: mainImageUrl || undefined,
         galleryImages: galleryImageUrls,
         variations: mappedVariations,
+        regionalTime: formData.regionalTime || undefined,
+        localTime: formData.localTime || undefined,
       };
 
       const response = await createProduct(productData);
@@ -354,6 +358,8 @@ export default function AdminAddProduct() {
             weight: "",
             color: "",
             size: "",
+            regionalTime: "",
+            localTime: "",
             mainImageUrl: "", galleryImageUrls: [],
           });
           setVariations([]);
@@ -789,6 +795,18 @@ export default function AdminAddProduct() {
                   <label className="block text-sm font-medium text-neutral-700 mb-2">Size</label>
                   <input type="text" name="size" value={formData.size} onChange={handleChange}
                     placeholder="Enter Size (if applicable)"
+                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">Regional Time</label>
+                  <input type="text" name="regionalTime" value={formData.regionalTime} onChange={handleChange}
+                    placeholder="e.g. 2 Days"
+                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">Local Time</label>
+                  <input type="text" name="localTime" value={formData.localTime} onChange={handleChange}
+                    placeholder="e.g. 12 Hours"
                     className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500" />
                 </div>
               </div>

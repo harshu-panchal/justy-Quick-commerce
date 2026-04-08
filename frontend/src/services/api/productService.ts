@@ -404,6 +404,8 @@ export interface Product {
   shopId?: string | any;
   foodType?: 'Veg' | 'Non-Veg' | 'Egg';
   preparationTime?: number;
+  regionalTime?: string;
+  localTime?: string;
   timing?: string[];
   addons?: ProductAddon[];
   availabilityStatus?: 'Available' | 'Sold out';
@@ -471,6 +473,8 @@ export interface CreateProductData {
   shopId?: string;
   foodType?: 'Veg' | 'Non-Veg' | 'Egg';
   preparationTime?: number;
+  regionalTime?: string;
+  localTime?: string;
   timing?: string[];
   addons?: ProductAddon[];
   availabilityStatus?: 'Available' | 'Sold out';

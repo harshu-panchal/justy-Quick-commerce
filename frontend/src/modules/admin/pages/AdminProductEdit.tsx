@@ -583,6 +583,35 @@ export default function AdminProductEdit() {
                       </div>
                     </>
                   )}
+
+                  {/* Delivery Times */}
+                  {!isPharmacy && !isProduce && !isGrocery && (
+                    <>
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest ml-1">Regional Time</label>
+                        <input 
+                          type="text" 
+                          name="regionalTime" 
+                          value={managedProduct.regionalTime || ""} 
+                          onChange={handleInputChange} 
+                          placeholder="e.g. 2 Days" 
+                          className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-bold" 
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest ml-1">Local Time</label>
+                        <input 
+                          type="text" 
+                          name="localTime" 
+                          value={managedProduct.localTime || ""} 
+                          onChange={handleInputChange} 
+                          placeholder="e.g. 12 Hours" 
+                          className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-bold" 
+                        />
+                      </div>
+                    </>
+                  )}
+
                   {isPharmacy && managedProduct.pharmacy && (
                     <>
                        <div className="space-y-1.5"><label className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Medicine Type</label><input type="text" name="pharmacy.medicineType" value={managedProduct.pharmacy.medicineType || ""} onChange={handleInputChange} className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-sm font-bold" /></div>

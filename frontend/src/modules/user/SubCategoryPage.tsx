@@ -84,8 +84,8 @@ export default function SubCategoryPage() {
                                 )}
                                 {deliveryMode && (
                                     <span className={`text-[10px] md:text-xs font-bold uppercase tracking-widest px-2 py-0.5 rounded ${deliveryMode === "Quick"
-                                            ? "bg-amber-50 text-amber-600"
-                                            : "bg-blue-50 text-blue-600"
+                                        ? "bg-amber-50 text-amber-600"
+                                        : "bg-blue-50 text-blue-600"
                                         }`}>
                                         {deliveryMode === "Quick" ? "⚡ Quick" : "📅 Scheduled"}
                                     </span>

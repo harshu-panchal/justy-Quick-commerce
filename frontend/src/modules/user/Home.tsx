@@ -49,7 +49,7 @@ export default function Home() {
           navigate("/spin-wheel");
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, [isAuthenticated, navigate, user?.userType]);
 
   const [loading, setLoading] = useState(true);
@@ -98,14 +98,14 @@ export default function Home() {
         );
         if (response.success && response.data) {
           setHomeData(response.data);
-          
+
           let allProducts: any[] = [];
-          
+
           // Add bestsellers
           if (response.data.bestsellers) {
             allProducts = [...response.data.bestsellers];
           }
-          
+
           // If in a specific category tab, also aggregate products from all dynamic sections
           if (slug && response.data.homeSections) {
             response.data.homeSections.forEach((section: any) => {
@@ -119,7 +119,7 @@ export default function Home() {
               }
             });
           }
-          
+
           setProducts(allProducts);
         } else {
           setError("Failed to load content. Please try again.");
@@ -256,7 +256,7 @@ export default function Home() {
   const selectedPincode = getStoredPincode();
   // We no longer hide entire categories based on pincode, 
   // because we want global visibility for all categories.
-  const isCategoryUnavailable = false; 
+  const isCategoryUnavailable = false;
 
   return (
     <div className="bg-white min-h-screen pb-20 md:pb-0" ref={contentRef}>
@@ -384,9 +384,9 @@ export default function Home() {
           )}
         </div>
       )}
-      <LuckySpin 
-        isOpen={showLuckySpin} 
-        onClose={() => setShowLuckySpin(false)} 
+      <LuckySpin
+        isOpen={showLuckySpin}
+        onClose={() => setShowLuckySpin(false)}
         autoOpened={true}
         config={spinnerConfig}
       />

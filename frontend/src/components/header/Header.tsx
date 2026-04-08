@@ -144,9 +144,9 @@ export default function Header() {
       {/* Top Row: Logo, Toggle, Search, Icons */}
       <div className="max-w-[1440px] mx-auto px-6 lg:px-10 py-3 flex items-center gap-8">
         {/* Logo */}
-        <Link 
-          to="/" 
-          onClick={() => setActiveCategory('all')} 
+        <Link
+          to="/"
+          onClick={() => setActiveCategory('all')}
           className="flex-shrink-0 relative group transition-all duration-300"
         >
           <img
@@ -178,8 +178,8 @@ export default function Header() {
 
         {/* Action Buttons */}
         <div className="flex items-center gap-1 lg:gap-3" style={{ color: textColor }}>
-          <a 
-            href="/seller/signup" 
+          <a
+            href="/seller/signup"
             target="_blank"
             rel="noopener noreferrer"
             className="hidden lg:flex items-center gap-2 bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full transition-all border border-white/20 mr-2 group"

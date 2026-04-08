@@ -225,12 +225,13 @@ export default function ProductDetail() {
     : null;
   const inCartQty = cartItem?.quantity || 0;
 
-  // Determine if this is a scheduled product
+  // Determine if this is a scheduled product or has specific delivery times
   const isScheduleProduct = product?.headerCategoryId?.deliveryType === 'scheduled' ||
     product?.category?.headerCategoryId?.deliveryType === 'scheduled' ||
-    product?.subcategory?.headerCategoryId?.deliveryType === 'scheduled';
+    product?.subcategory?.headerCategoryId?.deliveryType === 'scheduled' ||
+    !!product?.regionalTime || !!product?.localTime;
 
-  // Get dynamic delivery text for scheduled products
+  // Get dynamic delivery text for scheduled products or those with specific times
   const scheduledDeliveryText = isScheduleProduct
     ? getScheduledDeliveryText(
         product?.seller?.deliveryTime,
@@ -239,7 +240,8 @@ export default function ProductDetail() {
         location?.latitude,
         location?.longitude,
         product?.seller?.location,
-        product?.seller?.serviceRadiusKm
+        product?.seller?.serviceRadiusKm,
+        { regionalTime: product?.regionalTime, localTime: product?.localTime }
       )
     : null;
 
@@ -598,7 +600,14 @@ export default function ProductDetail() {
               />
             </svg>
             <span className="text-sm text-neutral-700 font-medium">
-              {scheduledDeliveryText || getDeliveryInfo(getCategoryType(product.category?.name)).detailText}
+              {product.regionalTime || product.localTime ? (
+                <div className="flex flex-col gap-0.5">
+                  {product.localTime && <div>Local Delivery: {product.localTime}</div>}
+                  {product.regionalTime && <div>Regional Delivery: {product.regionalTime}</div>}
+                </div>
+              ) : (
+                scheduledDeliveryText || getDeliveryInfo(getCategoryType(product.category?.name)).detailText
+              )}
             </span>
           </div>
 

@@ -111,9 +111,11 @@ export default function SellerProductDetail() {
                  <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm">
                     <p className="text-[9px] font-black text-neutral-400 uppercase tracking-widest mb-4">Specifications</p>
                     <div className="space-y-4">
-                       <div><p className="text-[9px] font-black text-orange-600 uppercase">Food Type</p><p className="text-sm font-black text-neutral-800">{product.foodType}</p></div>
-                       <div><p className="text-[9px] font-black text-orange-600 uppercase">Prep Time</p><p className="text-sm font-black text-neutral-800">{product.preparationTime} Minutes</p></div>
-                       <div><p className="text-[9px] font-black text-orange-600 uppercase">External SKU</p><p className="text-sm font-black text-neutral-800 uppercase tabular-nums">{product.sku || "N/A"}</p></div>
+                      <div><p className="text-[9px] font-black text-orange-600 uppercase">Food Type</p><p className="text-sm font-black text-neutral-800">{product.foodType}</p></div>
+                      <div><p className="text-[9px] font-black text-orange-600 uppercase">Prep Time</p><p className="text-sm font-black text-neutral-800">{product.preparationTime} Minutes</p></div>
+                      {product.regionalTime && <div><p className="text-[9px] font-black text-orange-600 uppercase">Regional Time</p><p className="text-sm font-black text-neutral-800">{product.regionalTime}</p></div>}
+                      {product.localTime && <div><p className="text-[9px] font-black text-orange-600 uppercase">Local Time</p><p className="text-sm font-black text-neutral-800">{product.localTime}</p></div>}
+                      <div><p className="text-[9px] font-black text-orange-600 uppercase">External SKU</p><p className="text-sm font-black text-neutral-800 uppercase tabular-nums">{product.sku || "N/A"}</p></div>
                     </div>
                  </div>
                  <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm">

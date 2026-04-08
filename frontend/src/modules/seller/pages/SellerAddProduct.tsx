@@ -412,7 +412,6 @@ export default function SellerAddProduct() {
   const isHealthWellness = effectiveCatName.includes("health") || effectiveCatName.includes("wellness");
   const isPetSupplies = effectiveCatName.includes("pet supplies");
   const isIndustrial = effectiveCatName.includes("industrial");
-  const isScheduled = headerCategories.find(h => h._id === formData.headerCategory)?.deliveryType === "scheduled";
 
   const [showProposalField, setShowProposalField] = useState(false);
   const [proposalName, setProposalName] = useState("");
@@ -1280,9 +1279,7 @@ export default function SellerAddProduct() {
           <section className="bg-white rounded-2xl border border-neutral-200 p-6 sm:p-8 shadow-sm space-y-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3"><div className="w-1.5 h-8 bg-emerald-600 rounded-full"></div><h2 className="text-lg font-black text-neutral-800 tracking-tight">Product Identity</h2></div>
-              {!isPharmacy && !isProduce && !isGrocery && !isTeaCorner && (
-                <div className="flex bg-neutral-100/50 p-1 rounded-xl border border-neutral-100 gap-1">{["Veg", "Non-Veg", "Egg"].map(type => (<button key={type} type="button" onClick={() => setFormData(p => ({ ...p, foodType: type as any }))} className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${formData.foodType === type ? "bg-white text-emerald-600 shadow-sm" : "text-neutral-400"}`}>{type}</button>))}</div>
-              )}
+
             </div>
             <div className="space-y-4">
               <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Full Product Name *</label><input type="text" name="productName" value={formData.productName} onChange={handleChange} placeholder="e.g. Fresh Organic Tomatoes" className="w-full h-12 px-5 bg-neutral-50 border border-neutral-100 rounded-xl text-[16px] font-bold focus:bg-white focus:border-emerald-500 transition-all outline-none" /></div>
@@ -1311,15 +1308,34 @@ export default function SellerAddProduct() {
               )}
               {!isPharmacy && !isProduce && !isGrocery && (
                 <div className="grid grid-cols-2 gap-6">
-                  <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Regional Time</label><input type="text" name="regionalTime" value={formData.regionalTime} onChange={handleChange} placeholder="e.g. 10:00 AM - 08:00 PM" className="w-full h-11 px-5 bg-neutral-50 border border-neutral-100 rounded-xl text-[14px] font-black tabular-nums transition-all outline-none focus:border-emerald-500" /></div>
-                  <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Local Time</label><input type="text" name="localTime" value={formData.localTime} onChange={handleChange} placeholder="e.g. 09:00 AM - 10:00 PM" className="w-full h-11 px-5 bg-neutral-50 border border-neutral-100 rounded-xl text-[14px] font-black tabular-nums transition-all outline-none focus:border-emerald-500" /></div>
+                  {/* Regional Time */}
+                  <div className="space-y-1.5 ">
+                    <label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Regional Time</label>
+                    <input
+                      type="text"
+                      name="regionalTime"
+                      value={formData.regionalTime}
+                      onChange={handleChange}
+                      placeholder="e.g. 2 Days or 48 Hours"
+                      className="w-full h-11 px-5 bg-neutral-50 border border-neutral-100 rounded-xl text-[14px] font-black tabular-nums transition-all outline-none focus:border-emerald-500"
+                    />
+                  </div>
+
+                  {/* Local Time */}
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Local Time</label>
+                    <input
+                      type="text"
+                      name="localTime"
+                      value={formData.localTime}
+                      onChange={handleChange}
+                      placeholder="e.g. 1 Day or 12 Hours"
+                      className="w-full h-11 px-5 bg-neutral-50 border border-neutral-100 rounded-xl text-[14px] font-black tabular-nums transition-all outline-none focus:border-emerald-500"
+                    />
+                  </div>
                 </div>
               )}
-              {!isPharmacy && !isProduce && !isGrocery && !isTeaCorner && (
-                <div className="grid grid-cols-1 gap-6 pt-2">
-                  <div className="space-y-1.5"><label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Spicy Level</label><select name="spicyLevel" value={formData.spicyLevel} onChange={handleChange} className="w-full h-11 px-4 bg-neutral-50 border border-neutral-100 rounded-xl text-[12px] font-black uppercase outline-none focus:border-teal-500"><option value="None">Not Spicy</option><option value="Mild">Mild 🔥</option><option value="Medium">Medium 🔥🔥</option><option value="Hot">Extra Hot 🔥🔥🔥</option></select></div>
-                </div>
-              )}
+           
               <div className="space-y-1.5">
                 <div className="flex justify-between items-center">
                   <label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">Short Description</label>
@@ -1513,7 +1529,7 @@ export default function SellerAddProduct() {
             </section>
           )}
 
-          {isElectronics && isScheduled && (
+          {isElectronics && (
             <section className="bg-white rounded-2xl border border-neutral-200 p-6 sm:p-8 shadow-sm space-y-8">
               <div className="flex items-center gap-3"><div className="w-1.5 h-8 bg-blue-600 rounded-full"></div><h2 className="text-lg font-black text-neutral-800 tracking-tight">Electronics & Gadgets Specifications</h2></div>
 

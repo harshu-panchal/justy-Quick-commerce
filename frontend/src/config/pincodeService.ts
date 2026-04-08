@@ -115,6 +115,7 @@ function haversineDistanceKm(
  * @param userLng            - user's GPS longitude
  * @param sellerLocation     - seller's GeoJSON location { type: 'Point', coordinates: [lng, lat] }
  * @param sellerServiceRadius - seller's service radius in km (default 20 km)
+ * @param productDeliveryTime - optional product-specific delivery times
  */
 export function getScheduledDeliveryText(
     sellerDeliveryTime: { regional?: string; local?: string } | undefined,
@@ -123,9 +124,13 @@ export function getScheduledDeliveryText(
     userLat?: number | null,
     userLng?: number | null,
     sellerLocation?: { type: string; coordinates: [number, number] } | null,
-    sellerServiceRadius?: number | null
+    sellerServiceRadius?: number | null,
+    productDeliveryTime?: { regionalTime?: string; localTime?: string } | null
 ): string {
-    if (!sellerDeliveryTime || (!sellerDeliveryTime.regional && !sellerDeliveryTime.local)) {
+    const effectiveRegional = productDeliveryTime?.regionalTime || sellerDeliveryTime?.regional;
+    const effectiveLocal = productDeliveryTime?.localTime || sellerDeliveryTime?.local;
+
+    if (!effectiveRegional && !effectiveLocal) {
         return "Delivery time will be updated";
     }
 
@@ -153,12 +158,12 @@ export function getScheduledDeliveryText(
                   sellerSegments.some(s => userSegments.includes(s));
     }
 
-    // ── Return the seller's own delivery time strings (never hardcoded) ─────
-    if (isLocal && sellerDeliveryTime.local) {
-        return `Delivery in ${sellerDeliveryTime.local}`;
+    // ── Return the seller's or product's own delivery time strings (never hardcoded) ─────
+    if (isLocal && effectiveLocal) {
+        return `Delivery in ${effectiveLocal}`;
     }
-    if (sellerDeliveryTime.regional) {
-        return `Delivery in ${sellerDeliveryTime.regional}`;
+    if (effectiveRegional) {
+        return `Delivery in ${effectiveRegional}`;
     }
     return "Delivery time will be updated";
 }

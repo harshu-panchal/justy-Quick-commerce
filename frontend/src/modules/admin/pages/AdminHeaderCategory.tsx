@@ -37,7 +37,7 @@ export default function AdminHeaderCategory() {
   const [currentPage, setCurrentPage] = useState(1);
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
-  const [deliveryFilter, setDeliveryFilter] = useState<'all' | 'quick' | 'scheduled'>('all');
+  const [deliveryFilter, setDeliveryFilter] = useState<'all' | 'quick'>('all');
 
   const themeOptions = Object.keys(themes);
 
@@ -113,13 +113,13 @@ export default function AdminHeaderCategory() {
   }, [deliveryFilter, searchTerm, entriesPerPage]);
 
   const filteredCategories = headerCategories.filter(category => {
-    const matchesSearch = 
+    const matchesSearch =
       category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (category.relatedCategory || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (category.slug || '').toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesDelivery = 
-      deliveryFilter === 'all' || 
+
+    const matchesDelivery =
+      deliveryFilter === 'all' ||
       (category.deliveryType || 'quick') === deliveryFilter;
 
     return matchesSearch && matchesDelivery;
@@ -380,11 +380,10 @@ export default function AdminHeaderCategory() {
                 className="w-full px-3 py-2 border border-neutral-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-teal-500"
               >
                 <option value="quick">Quick</option>
-                <option value="scheduled">Scheduled</option>
               </select>
             </div>
 
-       
+
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-2">
                 Status:
@@ -423,14 +422,14 @@ export default function AdminHeaderCategory() {
         <div className="bg-white rounded-lg shadow-sm border border-neutral-200 flex flex-col h-full">
           <div className="p-4 border-b border-neutral-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-neutral-50/50">
             <div className="flex bg-neutral-100 p-1 rounded-lg border border-neutral-200">
-              {(['all', 'quick', 'scheduled'] as const).map((type) => (
+              {(['all', 'quick'] as const).map((type) => (
                 <button
                   key={type}
                   onClick={() => setDeliveryFilter(type)}
                   className={`
                     px-4 py-1.5 text-xs font-semibold rounded-md transition-all capitalize
-                    ${deliveryFilter === type 
-                      ? 'bg-white text-teal-600 shadow-sm' 
+                    ${deliveryFilter === type
+                      ? 'bg-white text-teal-600 shadow-sm'
                       : 'text-neutral-500 hover:text-neutral-700'}
                   `}
                 >
@@ -520,8 +519,8 @@ export default function AdminHeaderCategory() {
                         {category.deliveryType === 'scheduled' && category.scheduledTime && (
                           <span className="text-xs text-orange-600 block mt-1">
                             {new Date(category.scheduledTime).toLocaleString('en-US', {
-                                month: 'short', day: 'numeric',
-                                hour: 'numeric', minute: '2-digit'
+                              month: 'short', day: 'numeric',
+                              hour: 'numeric', minute: '2-digit'
                             })}
                           </span>
                         )}

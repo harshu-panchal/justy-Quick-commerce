@@ -26,7 +26,7 @@ export const getHeaderCategories = async (req: Request, res: Response) => {
   try {
     const { all } = req.query;
     const filter = all === "true" ? {} : { status: "Published" };
-    
+
     const categories = await HeaderCategory.find(filter).sort({
       order: 1,
       createdAt: -1,
@@ -122,7 +122,7 @@ export const updateHeaderCategory = async (req: Request, res: Response) => {
       category.slug = slug || category.slug;
       category.relatedCategory = relatedCategory; // Allow clearing it (undefined or null or empty string)
       if (deliveryType) category.deliveryType = deliveryType;
-      
+
       if (deliveryType === 'scheduled') {
         category.scheduledTime = scheduledTime || undefined;
         category.assignedDeliveryBoy = assignedDeliveryBoy || undefined;

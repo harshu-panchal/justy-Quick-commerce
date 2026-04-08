@@ -501,6 +501,8 @@ export interface Product {
   timing?: string[];
   isJain?: boolean;
   spicyLevel?: 'None' | 'Mild' | 'Medium' | 'Hot';
+  regionalTime?: string;
+  localTime?: string;
   addons?: ProductAddon[];
   pharmacy?: PharmacyData;
   freshProduce?: FreshProduceData;
@@ -570,6 +572,8 @@ export interface CreateProductData {
   timing?: string[];
   isJain?: boolean;
   spicyLevel?: 'None' | 'Mild' | 'Medium' | 'Hot';
+  regionalTime?: string;
+  localTime?: string;
   addons?: ProductAddon[];
   pharmacy?: PharmacyData;
   freshProduce?: FreshProduceData;

@@ -27,7 +27,7 @@ const fix = async () => {
         if (!dynamicFields) continue;
         
         let updated = false;
-        const fieldEntries = Array.from(dynamicFields.entries());
+        const fieldEntries = Array.from((dynamicFields as any).entries()) as [string, any][];
         for (const [fieldId, value] of fieldEntries) {
             const fieldDef = await ProductField.findById(fieldId);
             if (fieldDef) {

@@ -30,7 +30,7 @@ export default function SellerCategory() {
     try {
       const [hRes, sRes] = await Promise.all([
         getHeaderCategoriesPublic(true),
-        getCategories()
+        getCategories({ includeUnpublished: true })
       ]);
       const rawCategory = (user?.category || (user?.categories && (user.categories as string[]).length > 0 ? (user.categories as string[])[0] : null));
       const sellerCategory = rawCategory?.trim().toLowerCase();

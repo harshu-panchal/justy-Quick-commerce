@@ -25,6 +25,11 @@ export const getCategories = asyncHandler(
       query.name = { $regex: search, $options: "i" };
     }
 
+    // Filter by Active status for public/seller listing unless requested otherwise
+    if (req.query.includeUnpublished !== "true") {
+      query.status = "Active";
+    }
+
     const categories = await Category.find(query)
       .populate("headerCategoryId", "name slug")
       .sort({ name: 1 });
@@ -162,6 +167,9 @@ export const getSubcategories = asyncHandler(
 
     // 2. Get subcategories from old SubCategory model (for backward compatibility)
     const oldSubcategoryQuery: any = { category: parentCategoryId };
+    if (req.query.includeUnpublished !== "true") {
+      oldSubcategoryQuery.status = "Active";
+    }
     if (searchQuery) {
       oldSubcategoryQuery.name = searchQuery;
     }
@@ -268,7 +276,7 @@ export const getSubcategories = asyncHandler(
  * Get all categories with their subcategories nested
  */
 export const getAllCategoriesWithSubcategories = asyncHandler(
-  async (_req: Request, res: Response) => {
+  async (req: Request, res: Response) => {
     // Get all parent categories
     const parentCategories = await Category.find({ parentId: null }).sort({
       name: 1,
@@ -277,9 +285,12 @@ export const getAllCategoriesWithSubcategories = asyncHandler(
     // Get all subcategories grouped by parent
     const categoriesWithSubcategories = await Promise.all(
       parentCategories.map(async (category) => {
-        const subcategories = await SubCategory.find({
-          category: category._id,
-        }).sort({ name: 1 });
+        const subQuery: any = { category: category._id };
+        if (req.query.includeUnpublished !== "true") {
+          subQuery.status = "Active";
+        }
+        
+        const subcategories = await SubCategory.find(subQuery).sort({ name: 1 });
 
         // Get product counts
         const subcategoriesWithCounts = await Promise.all(
@@ -331,6 +342,9 @@ export const getAllSubcategories = asyncHandler(
     } = req.query;
 
     const query: any = {};
+    if (req.query.includeUnpublished !== "true") {
+      query.status = "Active";
+    }
 
     // Search filter
     if (search) {

@@ -24,6 +24,7 @@ export default function SellerSubCategory() {
                     limit: rowsPerPage,
                     sortBy: sortColumn || 'subcategoryName',
                     sortOrder: sortDirection,
+                    includeUnpublished: true,
                 };
 
                 const response = await getAllSubcategories(params);

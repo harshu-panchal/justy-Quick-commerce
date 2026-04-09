@@ -37,6 +37,7 @@ export default function AdminSubCategory() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [status, setStatus] = useState<"Active" | "Inactive" | "Unpublished">("Active");
 
   // Fetch categories and subcategories on component mount
   useEffect(() => {
@@ -152,10 +153,11 @@ export default function AdminSubCategory() {
         imageUrl = imageResult.secureUrl;
       }
 
-      const subCategoryData = {
+      const subCategoryData: any = {
         name: subcategoryName.trim(),
         category: selectedCategory,
         image: imageUrl,
+        status: status,
       };
 
       if (editingId) {
@@ -183,6 +185,7 @@ export default function AdminSubCategory() {
       setSubcategoryImageFile(null);
       setSubcategoryImagePreview("");
       setSubcategoryImageUrl("");
+      setStatus("Active");
     } catch (error) {
       if (error && typeof error === "object" && "response" in error) {
         const axiosError = error as {
@@ -211,6 +214,7 @@ export default function AdminSubCategory() {
       setSelectedCategory(categoryId);
       setSubcategoryName(subCategory.name);
       setSubcategoryImageUrl(subCategory.image || "");
+      setStatus(subCategory.status || "Active");
     }
   };
 
@@ -305,6 +309,22 @@ export default function AdminSubCategory() {
               />
             </div>
 
+            {/* Status Selection */}
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-2">
+                Status:
+              </label>
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value as any)}
+                className="w-full px-3 py-2 border border-neutral-300 rounded text-sm bg-white focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500"
+                disabled={uploading}>
+                <option value="Active">Active (Approved)</option>
+                <option value="Inactive">Inactive</option>
+                <option value="Unpublished">Unpublished (Pending)</option>
+              </select>
+            </div>
+
             {/* Commission Rate - Input Removed as only SubSubCategory allows this now */}
             {/* SubCategory Image */}
             <div>
@@ -384,6 +404,7 @@ export default function AdminSubCategory() {
                   setSubcategoryImageFile(null);
                   setSubcategoryImagePreview("");
                   setSubcategoryImageUrl("");
+                  setStatus("Active");
                 }}
                 className="w-full py-2.5 rounded text-sm font-medium bg-neutral-200 hover:bg-neutral-300 text-neutral-700 transition-colors mt-2">
                 Cancel Edit
@@ -562,6 +583,9 @@ export default function AdminSubCategory() {
                     </div>
                   </th>
                   <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider">
                     Action
                   </th>
                 </tr>
@@ -570,7 +594,7 @@ export default function AdminSubCategory() {
                 {loading ? (
                   <tr>
                     <td
-                      colSpan={6}
+                      colSpan={7}
                       className="px-4 sm:px-6 py-8 text-center text-sm text-neutral-500">
                       Loading subcategories...
                     </td>
@@ -578,7 +602,7 @@ export default function AdminSubCategory() {
                 ) : error ? (
                   <tr>
                     <td
-                      colSpan={6}
+                      colSpan={7}
                       className="px-4 sm:px-6 py-8 text-center text-sm text-red-600">
                       {error}
                     </td>
@@ -586,7 +610,7 @@ export default function AdminSubCategory() {
                 ) : displayedSubCategories.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={6}
+                      colSpan={7}
                       className="px-4 sm:px-6 py-8 text-center text-sm text-neutral-500">
                       No subcategories found
                     </td>
@@ -630,6 +654,15 @@ export default function AdminSubCategory() {
                         </td>
                         <td className="px-4 sm:px-6 py-3 text-sm text-neutral-900">
                           {subCategory.totalProduct ?? 0}
+                        </td>
+                        <td className="px-4 sm:px-6 py-3">
+                            <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${
+                                subCategory.status === 'Active' ? 'bg-green-100 text-green-700' :
+                                subCategory.status === 'Inactive' ? 'bg-red-100 text-red-700' :
+                                'bg-amber-100 text-amber-700'
+                            }`}>
+                                {subCategory.status || 'Active'}
+                            </span>
                         </td>
                         <td className="px-4 sm:px-6 py-3">
                           <div className="flex items-center gap-2">

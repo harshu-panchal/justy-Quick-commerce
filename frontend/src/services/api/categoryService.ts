@@ -50,6 +50,7 @@ export interface CategoryWithSubcategories extends Category {
 export interface GetCategoriesParams {
   includeSubcategories?: boolean;
   search?: string;
+  includeUnpublished?: boolean;
 }
 
 export interface GetSubcategoriesParams {
@@ -58,6 +59,7 @@ export interface GetSubcategoriesParams {
   limit?: number;
   sortBy?: string;
   sortOrder?: "asc" | "desc";
+  includeUnpublished?: boolean;
 }
 
 export interface PaginatedResponse<T> {

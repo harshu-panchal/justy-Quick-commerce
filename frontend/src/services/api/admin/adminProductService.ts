@@ -72,6 +72,7 @@ export interface SubCategory {
   createdAt?: string;
   updatedAt?: string;
   commissionRate?: number;
+  status: "Active" | "Inactive" | "Unpublished";
 }
 
 export interface CreateSubCategoryData {
@@ -80,6 +81,7 @@ export interface CreateSubCategoryData {
   image?: string;
   order?: number;
   commissionRate?: number;
+  status?: "Active" | "Inactive" | "Unpublished";
 }
 
 // ==================== Seller Interfaces ====================

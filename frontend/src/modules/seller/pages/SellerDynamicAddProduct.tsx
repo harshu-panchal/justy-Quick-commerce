@@ -380,33 +380,45 @@ export default function SellerDynamicAddProduct() {
                                     )}
 
                                     {field.type === "multi-input" && (
-                                        <div className="space-y-2">
-                                            <input 
-                                                type="text" 
-                                                placeholder={field.placeholder || "Press Enter or comma to add"}
-                                                onKeyDown={(e) => {
-                                                    if (e.key === "Enter" || e.key === ",") {
-                                                        e.preventDefault();
-                                                        const val = (e.target as HTMLInputElement).value.trim();
-                                                        if (val) {
-                                                            const current = dynamicData[field._id] || [];
-                                                            if (!current.includes(val)) {
-                                                                handleDynamicChange(field._id, [...current, val]);
-                                                            }
-                                                            (e.target as HTMLInputElement).value = "";
-                                                        }
-                                                    }
+                                        <div className="space-y-3">
+                                            {(dynamicData[field._id] || [""]).map((val: string, idx: number) => (
+                                                <div key={idx} className="flex gap-2 animate-in fade-in slide-in-from-left-2 duration-200">
+                                                    <input 
+                                                        type="text" 
+                                                        placeholder={field.placeholder || `Enter ${field.label} ${idx + 1}`}
+                                                        value={val}
+                                                        onChange={(e) => {
+                                                            const current = [...(dynamicData[field._id] || [""])];
+                                                            current[idx] = e.target.value;
+                                                            handleDynamicChange(field._id, current);
+                                                        }}
+                                                        className="flex-1 h-11 px-4 bg-neutral-50 rounded-xl border border-neutral-100 focus:bg-white focus:border-indigo-500 outline-none transition-all font-bold"
+                                                    />
+                                                    {(dynamicData[field._id] || [""]).length > 1 && (
+                                                        <button 
+                                                            type="button" 
+                                                            onClick={() => {
+                                                                const current = (dynamicData[field._id] || [""]).filter((_: any, i: number) => i !== idx);
+                                                                handleDynamicChange(field._id, current);
+                                                            }}
+                                                            className="w-11 h-11 bg-rose-50 text-rose-500 rounded-xl flex items-center justify-center hover:bg-rose-100 transition-colors"
+                                                        >
+                                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            ))}
+                                            <button 
+                                                type="button"
+                                                onClick={() => {
+                                                    const current = dynamicData[field._id] || [""];
+                                                    handleDynamicChange(field._id, [...current, ""]);
                                                 }}
-                                                className="w-full h-11 px-4 bg-neutral-50 rounded-xl border border-neutral-100 focus:bg-white focus:border-indigo-500 outline-none transition-all font-bold placeholder:text-neutral-300"
-                                            />
-                                            <div className="flex flex-wrap gap-2">
-                                                {(dynamicData[field._id] || []).map((tag: string, idx: number) => (
-                                                    <span key={idx} className="flex items-center gap-1 bg-indigo-50 text-indigo-700 px-2 py-1 rounded-lg text-xs font-bold border border-indigo-100">
-                                                        {tag}
-                                                        <button type="button" onClick={() => handleDynamicChange(field._id, dynamicData[field._id].filter((_: any, i: number) => i !== idx))}>×</button>
-                                                    </span>
-                                                ))}
-                                            </div>
+                                                className="flex items-center gap-2 text-indigo-600 font-bold text-xs bg-indigo-50 px-4 py-2 rounded-xl border border-indigo-100 hover:bg-indigo-100 transition-all active:scale-95"
+                                            >
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+                                                Add More {field.label}
+                                            </button>
                                         </div>
                                     )}
                                 </div>

@@ -78,7 +78,7 @@ export default function SellerProductList() {
              <h1 className="text-2xl font-black tracking-tight text-neutral-900">Product List</h1>
           </div>
           <button 
-            onClick={() => navigate("/seller/product/add")}
+            onClick={() => navigate("/seller/product/create")}
             className="h-11 px-8 bg-neutral-900 text-white rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg active:scale-95 transition-all flex items-center justify-center gap-3 group border border-neutral-800"
           >
              <span>Add Product</span>

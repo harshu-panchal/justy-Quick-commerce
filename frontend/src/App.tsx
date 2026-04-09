@@ -97,7 +97,6 @@ const SellerOrders = lazy(() => import("./modules/seller/pages/SellerOrders"));
 const SellerOrderDetail = lazy(() => import("./modules/seller/pages/SellerOrderDetail"));
 const SellerCategory = lazy(() => import("./modules/seller/pages/SellerCategory"));
 const SellerSubCategory = lazy(() => import("./modules/seller/pages/SellerSubCategory"));
-const SellerAddProduct = lazy(() => import("./modules/seller/pages/SellerAddProduct"));
 const SellerTaxes = lazy(() => import("./modules/seller/pages/SellerTaxes"));
 const SellerProductList = lazy(() => import("./modules/seller/pages/SellerProductList"));
 const SellerStockManagement = lazy(() => import("./modules/seller/pages/SellerStockManagement"));
@@ -124,6 +123,7 @@ const SellerHelp = lazy(() => import("./modules/seller/pages/SellerHelp"));
 const SellerOutlets = lazy(() => import("./modules/seller/pages/SellerOutlets"));
 const SellerGeneralReports = lazy(() => import("./modules/seller/pages/SellerGeneralReports"));
 const SellerProductDetail = lazy(() => import("./modules/seller/pages/SellerProductDetail"));
+const SellerDynamicAddProduct = lazy(() => import("./modules/seller/pages/SellerDynamicAddProduct"));
 
 // Lazy load admin routes
 const AdminLayout = lazy(() => import("./modules/admin/components/AdminLayout"));
@@ -178,6 +178,7 @@ const AdminOrderDetail = lazy(() => import("./modules/admin/pages/AdminOrderDeta
 const AdminManageCustomer = lazy(() => import("./modules/admin/pages/AdminManageCustomer"));
 const AdminProfile = lazy(() => import("./modules/admin/pages/AdminProfile"));
 const AdminProductEdit = lazy(() => import("./modules/admin/pages/AdminProductEdit"));
+const AdminProductForm = lazy(() => import("./modules/admin/pages/AdminProductForm"));
 const SpinnerManagement = lazy(() => import("./modules/admin/pages/SpinnerManagement"));
 const SellerEquipmentCart = lazy(() => import("./modules/seller/pages/SellerEquipmentCart"));
 const AdminGrowth = lazy(() => import("./modules/admin/pages/AdminGrowth"));
@@ -364,8 +365,8 @@ function App() {
                                                   <Route path="orders/:id" element={<SellerOrderDetail />} />
                                                   <Route path="category" element={<SellerCategory />} />
                                                   <Route path="subcategory" element={<SellerSubCategory />} />
-                                                  <Route path="product/add" element={<SellerAddProduct />} />
-                                                  <Route path="product/edit/:id" element={<SellerAddProduct />} />
+                                                  <Route path="product/create" element={<SellerDynamicAddProduct />} />
+                                                  <Route path="product/edit/:id" element={<SellerDynamicAddProduct />} />
                                                   <Route path="product/taxes" element={<SellerTaxes />} />
                                                   <Route path="product/list" element={<SellerProductList />} />
                                                   <Route path="product/detail/:id" element={<SellerProductDetail />} />
@@ -418,6 +419,7 @@ function App() {
                                           <Route path="brand" element={<AdminBrand />} />
                                           <Route path="product/taxes" element={<AdminTaxes />} />
                                           <Route path="product/list" element={<AdminStockManagement />} />
+                                          <Route path="product/productform" element={<AdminProductForm />} />
                                           <Route path="product/add" element={<AdminAddProduct />} />
                                           <Route path="product/edit/:id" element={<AdminProductEdit />} />
                                           <Route path="manage-seller/list" element={<AdminManageSellerList />} />

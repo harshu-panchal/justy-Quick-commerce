@@ -429,6 +429,7 @@ export interface Product {
   healthWellness?: HealthWellnessData;
   petSupplies?: PetSuppliesData;
   industrialBusiness?: IndustrialBusinessData;
+  dynamicFields?: Record<string, any>;
 }
 
 export interface CreateProductData {
@@ -498,6 +499,7 @@ export interface CreateProductData {
   healthWellness?: HealthWellnessData;
   petSupplies?: PetSuppliesData;
   industrialBusiness?: IndustrialBusinessData;
+  dynamicFields?: Record<string, any>;
 }
 
 export interface Shop {
@@ -561,5 +563,10 @@ export const generateProductDescriptionAI = async (data: {
 
 export const getShops = async (): Promise<ApiResponse<Shop[]>> => {
   const response = await api.get("/shops");
+  return response.data;
+};
+
+export const getProductFields = async (): Promise<ApiResponse<any[]>> => {
+  const response = await api.get("/products/product-fields");
   return response.data;
 };

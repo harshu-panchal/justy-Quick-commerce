@@ -12,6 +12,7 @@ import {
 } from "../modules/seller/controllers/productController";
 import * as productSlotController from "../modules/seller/controllers/sellerProductSlotController";
 import { getBrands } from "../modules/admin/controllers/adminProductController";
+import * as productFieldController from "../modules/admin/controllers/adminProductFieldController";
 import { authenticate, requireUserType } from "../middleware/auth";
 
 const router = Router();
@@ -25,6 +26,9 @@ router.get("/brands", getBrands);
 
 // Get all active shops - sellers need this for shop-by-store-only products
 router.get("/shops", getShops);
+
+// Get product fields for dynamic attributes
+router.get("/product-fields", productFieldController.getProductFields);
 
 // Product Slot & Limit routes
 router.get("/slot-status", productSlotController.getMyProductStatus);

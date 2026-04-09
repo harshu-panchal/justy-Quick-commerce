@@ -59,17 +59,19 @@ export const createProduct = asyncHandler(
     }
 
     // 2. Map fields to match Product model
+    // Support both old static form (sends headerCategoryId/categoryId/brandId)
+    // and new dynamic form (sends headerCategory/category/brand directly)
     const newProductData: any = {
       ...productData,
-      seller: sellerId, // Map sellerId to seller
-      headerCategoryId: productData.headerCategoryId, // Map headerCategoryId
-      category: productData.categoryId, // Map categoryId to category
-      subcategory: productData.subcategoryId,
+      seller: sellerId,
+      headerCategoryId: productData.headerCategoryId || productData.headerCategory,
+      category: productData.categoryId || productData.category,
+      subcategory: productData.subcategoryId || productData.subcategory,
       subcategoryModel: "SubCategory", // Default
-      brand: productData.brandId,
+      brand: productData.brandId || productData.brand || undefined,
       brandName: productData.brandName,
-      mainImage: productData.mainImageUrl, // Map mainImageUrl to mainImage
-      galleryImages: productData.galleryImageUrls,
+      mainImage: productData.mainImageUrl || productData.mainImage,
+      galleryImages: productData.galleryImageUrls || productData.galleryImages || [],
     };
 
     // Map variations: Ensure 'title' from frontend is mapped to 'value' (or name) expected by Schema
@@ -83,33 +85,53 @@ export const createProduct = asyncHandler(
       }));
     }
 
-    // 3. Set Price and Stock from Variations
-    // The Product model requires a top-level price and stock
+    // 3. Set Price and Stock from Variations (only if variations exist)
     if (newProductData.variations && newProductData.variations.length > 0) {
       // Use the price of the first variation as the base price
       newProductData.price = newProductData.variations[0].price;
       newProductData.discPrice = newProductData.variations[0].discPrice || 0;
 
       // Calculate total stock (sum of all variations)
-      // Note: If any variation has stock 0 (unlimited), how should we handle top level?
-      // For now, let's sum them up. If purely unlimited, logic might differ.
       newProductData.stock = newProductData.variations.reduce(
         (acc: number, curr: any) => acc + (parseInt(curr.stock) || 0),
         0
       );
     }
 
-    // 4. Validate Price (Model requirement)
-    if (newProductData.price === undefined || newProductData.price === null) {
-      return res.status(400).json({
-        success: false,
-        message: "Product price is required (add at least one variation)",
-      });
+    // 3.5 Map Dynamic Fields back to Core Static Fields
+    if (newProductData.dynamicFields && newProductData.headerCategoryId) {
+      const ProductField = (await import("../../../models/ProductField")).default;
+      const fields = await ProductField.find({ headerCategory: newProductData.headerCategoryId });
+      
+      for (const [fieldId, value] of Object.entries(newProductData.dynamicFields)) {
+        const fieldDef = fields.find(f => f._id.toString() === fieldId);
+        if (fieldDef) {
+          const label = fieldDef.label.toLowerCase();
+          if (label.includes('product name') && !newProductData.productName) newProductData.productName = value;
+          if (label === 'price' && (!newProductData.price || newProductData.price === 0)) newProductData.price = Number(value);
+          if (label === 'stock' && (!newProductData.stock || newProductData.stock === 0)) newProductData.stock = Number(value);
+          if (label.includes('description') && !newProductData.description) newProductData.description = value;
+          if (label.includes('main image') && !newProductData.mainImage) newProductData.mainImage = value;
+          if ((label.includes('compare at price') || label === 'mrp') && !newProductData.compareAtPrice) newProductData.compareAtPrice = Number(value);
+        }
+      }
     }
 
-    // 5. Clean up undefined fields
+    // 4. Ensure price and stock have valid defaults for dynamic forms
+    if (newProductData.price === undefined || newProductData.price === null || newProductData.price === "") {
+      newProductData.price = 0;
+    }
+    newProductData.price = Number(newProductData.price);
+    if (newProductData.stock === undefined || newProductData.stock === null || newProductData.stock === "") {
+      newProductData.stock = 0;
+    }
+    newProductData.stock = Number(newProductData.stock);
+
+    // 5. Clean up undefined/empty fields
     if (!newProductData.headerCategoryId)
       delete newProductData.headerCategoryId;
+    if (!newProductData.category)
+      delete newProductData.category;
     if (!newProductData.subcategory) {
       delete newProductData.subcategory;
       delete newProductData.subcategoryModel;
@@ -149,13 +171,15 @@ export const createProduct = asyncHandler(
       newProductData.tax = productData.taxId;
     }
 
-    // Validate variation prices
-    for (const variation of productData.variations) {
-      if (Number(variation.discPrice) > Number(variation.price)) {
-        return res.status(400).json({
-          success: false,
-          message: `Discounted price (${variation.discPrice}) cannot be greater than price (${variation.price}) for variation ${variation.title}`,
-        });
+    // Validate variation prices (only if variations exist)
+    if (productData.variations && Array.isArray(productData.variations)) {
+      for (const variation of productData.variations) {
+        if (Number(variation.discPrice) > Number(variation.price)) {
+          return res.status(400).json({
+            success: false,
+            message: `Discounted price (${variation.discPrice}) cannot be greater than price (${variation.price}) for variation ${variation.title}`,
+          });
+        }
       }
     }
 
@@ -270,7 +294,7 @@ export const getProducts = asyncHandler(async (req: Request, res: Response) => {
     .populate("category", "name")
     .populate("subcategory", "name")
     .populate("brand", "name")
-    .populate("tax", "name rate")
+
     .sort(sort)
     .skip(skip)
     .limit(limitNum);
@@ -312,7 +336,7 @@ export const getProductById = asyncHandler(
       .populate("subcategory", "name")
       .populate("headerCategoryId", "name slug")
       .populate("brand", "name")
-      .populate("tax", "name rate");
+  ;
 
     if (!product) {
       return res.status(404).json({
@@ -337,6 +361,26 @@ export const updateProduct = asyncHandler(
     const sellerId = (req as any).user.userId;
     const { id } = req.params;
     const updateData = req.body;
+
+    // Map Dynamic Fields back to Core Static Fields if applicable
+    if (updateData.dynamicFields && (updateData.headerCategoryId || updateData.headerCategory)) {
+      const hcId = updateData.headerCategoryId || updateData.headerCategory;
+      const ProductField = (await import("../../../models/ProductField")).default;
+      const fields = await ProductField.find({ headerCategory: hcId });
+
+      for (const [fieldId, value] of Object.entries(updateData.dynamicFields)) {
+        const fieldDef = fields.find(f => f._id.toString() === fieldId);
+        if (fieldDef) {
+          const label = fieldDef.label.toLowerCase();
+          if (label.includes('product name')) updateData.productName = value;
+          if (label === 'price') updateData.price = Number(value);
+          if (label === 'stock') updateData.stock = Number(value);
+          if (label.includes('description')) updateData.description = value;
+          if (label.includes('main image')) updateData.mainImage = value;
+          if (label.includes('compare at price') || label === 'mrp') updateData.compareAtPrice = Number(value);
+        }
+      }
+    }
 
     console.log("DEBUG updateProduct: sellerId from token:", sellerId);
     console.log("DEBUG updateProduct: productId:", id);
@@ -481,7 +525,7 @@ export const updateProduct = asyncHandler(
       .populate("subcategory", "name")
       .populate("headerCategoryId", "name slug")
       .populate("brand", "name")
-      .populate("tax", "name rate");
+  ;
 
     console.log("DEBUG updateProduct: product updated successfully");
 

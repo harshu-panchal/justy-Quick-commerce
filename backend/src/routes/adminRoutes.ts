@@ -97,12 +97,19 @@ import * as subscriptionPlanController from "../modules/admin/controllers/adminS
 import * as adminEquipmentController from "../modules/admin/controllers/adminEquipmentController";
 import * as adminRefundController from "../modules/admin/controllers/adminRefundController";
 import * as qrController from "../modules/delivery/controllers/qrController";
+import * as productFieldController from "../modules/admin/controllers/adminProductFieldController";
 
 const router = Router();
 
 // All routes require admin authentication
 router.use(authenticate);
 router.use(requireUserType("Admin"));
+
+// ==================== Product Field Routes ====================
+router.get("/product-fields", productFieldController.getProductFields);
+router.post("/product-fields", productFieldController.createProductField);
+router.put("/product-fields/:id", productFieldController.updateProductField);
+router.delete("/product-fields/:id", productFieldController.deleteProductField);
 
 // ==================== Profile Routes ====================
 router.get("/profile", profileController.getProfile);

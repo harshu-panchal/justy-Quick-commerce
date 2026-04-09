@@ -245,6 +245,3 @@ app.get("/api/v1/health/razorpay-subscription-cron", (_req: Request, res: Respon
     lastError: lastRazorpaySubCronError,
   });
 });
-
-
-// Trigger nodemon restart

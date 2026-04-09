@@ -111,7 +111,10 @@ export const createProduct = asyncHandler(
           if (label === 'price' && (!newProductData.price || newProductData.price === 0)) newProductData.price = Number(value);
           if (label === 'stock' && (!newProductData.stock || newProductData.stock === 0)) newProductData.stock = Number(value);
           if (label.includes('description') && !newProductData.description) newProductData.description = value;
-          if (label.includes('main image') && !newProductData.mainImage) newProductData.mainImage = value;
+          if ((label.includes('main image') || label.includes('product image') || label === 'image') && !newProductData.mainImage) {
+            newProductData.mainImage = Array.isArray(value) ? value[0] : value;
+            if (Array.isArray(value)) newProductData.galleryImages = value;
+          }
           if ((label.includes('compare at price') || label === 'mrp') && !newProductData.compareAtPrice) newProductData.compareAtPrice = Number(value);
         }
       }
@@ -376,7 +379,10 @@ export const updateProduct = asyncHandler(
           if (label === 'price') updateData.price = Number(value);
           if (label === 'stock') updateData.stock = Number(value);
           if (label.includes('description')) updateData.description = value;
-          if (label.includes('main image')) updateData.mainImage = value;
+          if (label.includes('main image') || label.includes('product image') || label === 'image') {
+            updateData.mainImage = Array.isArray(value) ? value[0] : value;
+            if (Array.isArray(value)) updateData.galleryImages = value;
+          }
           if (label.includes('compare at price') || label === 'mrp') updateData.compareAtPrice = Number(value);
         }
       }

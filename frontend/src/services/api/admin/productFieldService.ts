@@ -5,7 +5,7 @@ export interface ProductField {
     _id: string;
     headerCategory: string | { _id: string; name: string };
     label: string;
-    type: 'text' | 'number' | 'select' | 'date' | 'time' | 'checkbox' | 'multi-input' | 'file';
+    type: 'text' | 'number' | 'select' | 'date' | 'time' | 'checkbox' | 'multi-input' | 'file' | 'toggle';
     options?: string[];
     section?: string;
     placeholder?: string;

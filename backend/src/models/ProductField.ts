@@ -3,7 +3,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 export interface IProductField extends Document {
     headerCategory: mongoose.Types.ObjectId;
     label: string;
-    type: 'text' | 'number' | 'select' | 'date' | 'time' | 'checkbox';
+    type: 'text' | 'number' | 'select' | 'date' | 'time' | 'checkbox' | 'toggle';
     options?: string[];
     section?: string;
     placeholder?: string;
@@ -26,7 +26,7 @@ const ProductFieldSchema: Schema = new Schema(
         },
         type: { 
             type: String, 
-            enum: ['text', 'number', 'select', 'date', 'time', 'checkbox', 'multi-input', 'file'], 
+            enum: ['text', 'number', 'select', 'date', 'time', 'checkbox', 'multi-input', 'file', 'toggle'], 
             default: 'text' 
         },
         options: {
@@ -35,8 +35,7 @@ const ProductFieldSchema: Schema = new Schema(
         },
         section: {
             type: String,
-            trim: true,
-            default: 'General Information'
+            trim: true
         },
         placeholder: {
             type: String,

@@ -1,0 +1,11 @@
+69d76353eb22d69c47527584: Cuisine Type
+69d76353eb22d69c47527586: Spicy Level (1-5)
+69d76353eb22d69c47527588: Preparation Time
+69d76353eb22d69c4752758a: Best Served
+69d76353eb22d69c4752758c: Is Vegetarian?
+69d76353eb22d69c4752758e: Allergen Information
+69d76353eb22d69c47527590: Estimated Calories
+69d76353eb22d69c47527592: Chef Special Recommendation
+69d76353eb22d69c47527594: Best Before (Date)
+69d76353eb22d69c47527596: Ingredients Summary
+69d77693490ba48f98177072: Product Image

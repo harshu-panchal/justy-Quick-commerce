@@ -91,7 +91,7 @@ export default function SellerDynamicAddProduct() {
   });
 
   const groupedFields = currentHCFields.reduce((acc, f) => {
-    const section = f.section || "General Information";
+    const section = f.section;
     if (!acc[section]) acc[section] = [];
     acc[section].push(f);
     return acc;
@@ -304,6 +304,19 @@ export default function SellerDynamicAddProduct() {
                                             <label htmlFor={field._id} className="text-sm font-bold text-neutral-600 cursor-pointer">
                                                 {field.placeholder || `Enable ${field.label}`}
                                             </label>
+                                        </div>
+                                    )}
+
+                                    {field.type === "toggle" && (
+                                        <div className="flex items-center justify-between h-11 px-4 bg-neutral-50 rounded-xl border border-neutral-100">
+                                            <span className="text-[10px] font-black text-neutral-400 uppercase">Status: {dynamicData[field._id] ? 'ON' : 'OFF'}</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleDynamicChange(field._id, !dynamicData[field._id])}
+                                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all focus:outline-none ${dynamicData[field._id] ? 'bg-indigo-600' : 'bg-neutral-300'}`}
+                                            >
+                                                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${dynamicData[field._id] ? 'translate-x-6' : 'translate-x-1'}`} />
+                                            </button>
                                         </div>
                                     )}
 

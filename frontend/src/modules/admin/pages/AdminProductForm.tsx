@@ -31,6 +31,8 @@ export default function AdminProductForm() {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const rowsPerPage = 10;
 
   useEffect(() => {
     fetchHeaderCategories();
@@ -75,6 +77,7 @@ export default function AdminProductForm() {
   const handleAddOrUpdate = async () => {
     if (!selectedHeaderCategory) return alert('Please select a header category');
     if (!fieldLabel.trim()) return alert('Please enter field label');
+    if (!sectionTitle.trim()) return alert('Please enter a section title');
     if (inputType === 'select' && options.filter(o => o.trim()).length === 0) {
         return alert('Please add at least one option for the dropdown');
     }
@@ -82,7 +85,7 @@ export default function AdminProductForm() {
     try {
       const payload: CreateProductFieldData = {
         headerCategory: selectedHeaderCategory,
-        section: sectionTitle || 'General Information',
+        section: sectionTitle,
         label: fieldLabel,
         placeholder: placeholder,
         type: inputType,
@@ -139,14 +142,18 @@ export default function AdminProductForm() {
     }
   };
 
-  const groupedFields = fields.reduce((acc, field) => {
+  const filteredFields = fields.filter(field => {
     const labelMatch = field.label.toLowerCase().includes(searchTerm.toLowerCase());
     const hId = typeof field.headerCategory === 'string' ? field.headerCategory : field.headerCategory?._id;
     const categoryMatch = !categoryFilter || hId === categoryFilter;
+    return labelMatch && categoryMatch;
+  });
 
-    if (!labelMatch || !categoryMatch) return acc;
+  const totalPages = Math.ceil(filteredFields.length / rowsPerPage);
+  const paginatedFields = filteredFields.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
 
-    const section = field.section || 'General Information';
+  const groupedFields = paginatedFields.reduce((acc, field) => {
+    const section = field.section || 'Uncategorized';
     if (!acc[section]) acc[section] = [];
     acc[section].push(field);
     return acc;
@@ -184,7 +191,7 @@ export default function AdminProductForm() {
                     type="text"
                     placeholder="Search field names..."
                     value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                     className="w-full pl-12 pr-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 outline-none transition-all shadow-inner"
                     />
                     <svg className="absolute left-4 top-3 w-5 h-5 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -196,7 +203,7 @@ export default function AdminProductForm() {
                     <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest whitespace-nowrap">Filter by category:</label>
                     <select
                         value={categoryFilter}
-                        onChange={(e) => setCategoryFilter(e.target.value)}
+                        onChange={(e) => { setCategoryFilter(e.target.value); setCurrentPage(1); }}
                         className="w-full md:w-64 px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm font-bold focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 outline-none transition-all appearance-none cursor-pointer"
                     >
                         <option value="">All Categories</option>
@@ -303,6 +310,48 @@ export default function AdminProductForm() {
                     </tbody>
                 </table>
             </div>
+
+            {/* Pagination Implementation */}
+            {totalPages > 1 && (
+                <div className="p-6 bg-white border-t border-neutral-100 flex items-center justify-between">
+                    <div className="text-[10px] font-black text-neutral-400 uppercase tracking-widest">
+                        Page {currentPage} of {totalPages} ({filteredFields.length} Total Fields)
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <button 
+                            disabled={currentPage === 1}
+                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                            className="w-10 h-10 border border-neutral-200 rounded-xl flex items-center justify-center text-neutral-400 hover:text-neutral-900 disabled:opacity-20 transition-all hover:bg-neutral-50"
+                        >
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5"><polyline points="15 18 9 12 15 6"/></svg>
+                        </button>
+                        
+                        <div className="flex gap-1.5">
+                            {Array.from({ length: totalPages }).map((_, i) => (
+                                <button 
+                                    key={i} 
+                                    onClick={() => setCurrentPage(i + 1)}
+                                    className={`w-10 h-10 rounded-xl text-[10px] font-black transition-all ${
+                                        currentPage === i + 1 
+                                        ? "bg-neutral-900 text-white shadow-xl" 
+                                        : "text-neutral-400 hover:bg-neutral-50"
+                                    }`}
+                                >
+                                    {i + 1}
+                                </button>
+                            ))}
+                        </div>
+
+                        <button 
+                            disabled={currentPage === totalPages}
+                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                            className="w-10 h-10 border border-neutral-200 rounded-xl flex items-center justify-center text-neutral-400 hover:text-neutral-900 disabled:opacity-20 transition-all hover:bg-neutral-50"
+                        >
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5"><polyline points="9 18 15 12 9 6"/></svg>
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
 
         {/* Modal for Add/Edit */}
@@ -395,6 +444,7 @@ export default function AdminProductForm() {
                                  <option value="date">Input Date</option>
                                  <option value="time">Input Time</option>
                                  <option value="checkbox">Input Checkbox</option>
+                                 <option value="toggle">Input Toggle / Switch</option>
                              </select>
                         </div>
 

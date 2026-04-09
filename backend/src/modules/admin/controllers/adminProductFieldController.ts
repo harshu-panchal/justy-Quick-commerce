@@ -18,8 +18,16 @@ export const getProductFields = async (req: Request, res: Response) => {
  */
 export const createProductField = async (req: Request, res: Response) => {
     try {
-        const { headerCategory, label, type, status, options } = req.body;
-        const newField = new ProductField({ headerCategory, label, type, status, options });
+        const { headerCategory, label, type, status, options, section, placeholder } = req.body;
+        const newField = new ProductField({ 
+            headerCategory, 
+            label, 
+            type, 
+            status, 
+            options, 
+            section, 
+            placeholder 
+        });
         await newField.save();
         return res.status(201).json({ success: true, data: newField });
     } catch (error: any) {

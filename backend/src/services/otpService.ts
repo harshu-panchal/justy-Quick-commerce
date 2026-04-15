@@ -201,13 +201,27 @@ export async function sendOTP(
   _isLogin: boolean = true
 ): Promise<OtpResponse> {
   try {
-    const otp = generateOTP(4);
+    let otp: string;
+    
+    // For Admin, use static OTP 1234
+    if (userType === 'Admin') {
+      otp = '1234';
+    } else {
+      otp = generateOTP(4);
+    }
 
     await saveOtpToDb({ mobile }, otp, userType);
-    const message = buildOtpMessage(otp);
-    await sendSmsViaApi(mobile, message);
 
-    return { success: true, message: 'OTP sent successfully' };
+    // Only send SMS for non-Admin users or if it's dynamic
+    if (userType !== 'Admin') {
+      const message = buildOtpMessage(otp);
+      await sendSmsViaApi(mobile, message);
+    }
+
+    return { 
+      success: true, 
+      message: userType === 'Admin' ? 'Admin verification code set' : 'OTP sent successfully' 
+    };
   } catch (error: any) {
     console.error('SMS OTP Error:', error);
     // Return success for testing

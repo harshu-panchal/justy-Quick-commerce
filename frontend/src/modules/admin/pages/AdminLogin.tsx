@@ -154,10 +154,10 @@ export default function AdminLogin() {
             <div className="space-y-4">
               <div className="text-center">
                 <p className="text-sm text-neutral-600 mb-2">
-                  Enter the 4-digit OTP sent to
+                  Enter the admin verification code
                 </p>
-                <p className="text-sm font-semibold text-neutral-800">
-                  +91 {mobileNumber}
+                <p className="text-xs text-neutral-400 mt-1">
+                  (Internal Access Only)
                 </p>
               </div>
 

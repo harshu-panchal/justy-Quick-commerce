@@ -625,7 +625,7 @@ export default function SellerSignUp() {
         <div className="p-6">
           <StepIndicator currentStep={isSuccess ? 3 : formStep} />
 
-          {!isSuccess && (
+          {/* {!isSuccess && (
             <div className="flex justify-end mb-4">
               <button
                 type="button"
@@ -638,7 +638,7 @@ export default function SellerSignUp() {
                 SKIP FOR TEST
               </button>
             </div>
-          )}
+          )} */}
 
           {isSuccess ? (
             <div className="py-12 text-center animate-fadeIn">

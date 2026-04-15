@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../../context/AuthContext";
 import {
   getHeaderCategoriesPublic,
@@ -227,206 +227,210 @@ export default function SellerDynamicAddProduct() {
                         animate={{ opacity: 1, y: 0 }}
                         className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm space-y-6"
                     >
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {currentHCFields.map(field => {
-                                // Check for conditional visibility
-                                if (field.dependsOn?.fieldId) {
-                                  const parentValue = dynamicData[field.dependsOn.fieldId];
-                                  if (parentValue !== field.dependsOn.value) return null;
-                                }
+                        <div className="space-y-10">
+                            {Object.entries(groupedFields).map(([section, fields]) => {
+                                // Filter visible fields in this section
+                                const isFieldVisible = (f: ProductField): boolean => {
+                                    if (!f.dependsOn?.fieldId) return true;
+                                    const parentField = currentHCFields.find(p => p._id === f.dependsOn?.fieldId);
+                                    if (!parentField) return true;
+                                    if (!isFieldVisible(parentField)) return false;
+                                    const parentValue = dynamicData[f.dependsOn.fieldId];
+                                    return parentValue === f.dependsOn.value;
+                                };
+
+                                const visibleSectionFields = fields.filter(isFieldVisible);
+                                if (visibleSectionFields.length === 0) return null;
 
                                 return (
-                                <div key={field._id} className="space-y-2">
-                                    <label className="text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">
-                                        {field.label} {field.required && <span className="text-rose-500">*</span>}
-                                    </label>
-                                    
-                                    {field.type === "text" && (
-                                        <input 
-                                            type="text" 
-                                            placeholder={field.placeholder}
-                                            required={field.required}
-                                            value={dynamicData[field._id] || ""}
-                                            onChange={(e) => handleDynamicChange(field._id, e.target.value)}
-                                            className="w-full h-11 px-4 bg-neutral-50 rounded-xl border border-neutral-100 focus:bg-white focus:border-indigo-500 outline-none transition-all font-bold"
-                                        />
-                                    )}
-
-                                    {field.type === "number" && (
-                                        <input 
-                                            type="number" 
-                                            required={field.required}
-                                            placeholder={field.placeholder}
-                                            value={dynamicData[field._id] || ""}
-                                            onChange={(e) => handleDynamicChange(field._id, e.target.value)}
-                                            className="w-full h-11 px-4 bg-neutral-50 rounded-xl border border-neutral-100 focus:bg-white focus:border-indigo-500 outline-none transition-all font-bold"
-                                        />
-                                    )}
-
-                                    {field.type === "select" && (
-                                        <select 
-                                            required={field.required}
-                                            value={dynamicData[field._id] || ""}
-                                            onChange={(e) => handleDynamicChange(field._id, e.target.value)}
-                                            className="w-full h-11 px-4 bg-neutral-50 rounded-xl border border-neutral-100 focus:bg-white focus:border-indigo-500 outline-none transition-all cursor-pointer font-bold appearance-none"
-                                        >
-                                            <option value="">{field.placeholder || "Select Option"}</option>
-                                            {field.options?.map(opt => (
-                                                <option key={opt} value={opt}>{opt}</option>
-                                            ))}
-                                        </select>
-                                    )}
-
-                                    {field.type === "date" && (
-                                        <input 
-                                            type="date" 
-                                            required={field.required}
-                                            value={dynamicData[field._id] || ""}
-                                            onChange={(e) => handleDynamicChange(field._id, e.target.value)}
-                                            className="w-full h-11 px-4 bg-neutral-50 rounded-xl border border-neutral-100 focus:bg-white focus:border-indigo-500 outline-none transition-all font-bold"
-                                        />
-                                    )}
-
-                                    {field.type === "time" && (
-                                        <input 
-                                            type="time" 
-                                            required={field.required}
-                                            value={dynamicData[field._id] || ""}
-                                            onChange={(e) => handleDynamicChange(field._id, e.target.value)}
-                                            className="w-full h-11 px-4 bg-neutral-50 rounded-xl border border-neutral-100 focus:bg-white focus:border-indigo-500 outline-none transition-all font-bold"
-                                        />
-                                    )}
-
-                                    {field.type === "checkbox" && (
-                                        <div className="flex items-center gap-3 h-11">
-                                            <input 
-                                                type="checkbox" 
-                                                id={field._id}
-                                                checked={!!dynamicData[field._id]}
-                                                onChange={(e) => handleDynamicChange(field._id, e.target.checked)}
-                                                className="w-5 h-5 rounded border-neutral-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-                                            />
-                                            <label htmlFor={field._id} className="text-sm font-bold text-neutral-600 cursor-pointer">
-                                                {field.placeholder || `Enable ${field.label}`}
-                                            </label>
+                                    <div key={section} className="space-y-6">
+                                        <div className="flex items-center gap-4">
+                                            <h3 className="text-xs font-black text-indigo-600 uppercase tracking-widest whitespace-nowrap">
+                                                {section || "General Information"}
+                                            </h3>
+                                            <div className="h-px w-full bg-indigo-50"></div>
                                         </div>
-                                    )}
+                                        
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <AnimatePresence mode="popLayout">
+                                                {visibleSectionFields.map(field => (
+                                                    <motion.div 
+                                                        key={field._id} 
+                                                        layout
+                                                        initial={{ opacity: 0, y: 10 }}
+                                                        animate={{ opacity: 1, y: 0 }}
+                                                        exit={{ opacity: 0, scale: 0.95 }}
+                                                        className="space-y-2"
+                                                    >
+                                                        <label className="text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">
+                                                            {field.label} {field.required && <span className="text-rose-500">*</span>}
+                                                        </label>
+                                                        
+                                                        {field.type === "text" && (
+                                                            <input 
+                                                                type="text" 
+                                                                placeholder={field.placeholder}
+                                                                required={field.required}
+                                                                value={dynamicData[field._id] || ""}
+                                                                onChange={(e) => handleDynamicChange(field._id, e.target.value)}
+                                                                className="w-full h-11 px-4 bg-neutral-50 rounded-xl border border-neutral-100 focus:bg-white focus:border-indigo-500 outline-none transition-all font-bold"
+                                                            />
+                                                        )}
 
-                                    {field.type === "toggle" && (
-                                        <div className="flex items-center justify-between h-11 px-4 bg-neutral-50 rounded-xl border border-neutral-100">
-                                            <span className="text-[10px] font-black text-neutral-400 uppercase">Status: {dynamicData[field._id] ? 'ON' : 'OFF'}</span>
-                                            <button
-                                                type="button"
-                                                onClick={() => handleDynamicChange(field._id, !dynamicData[field._id])}
-                                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all focus:outline-none ${dynamicData[field._id] ? 'bg-indigo-600' : 'bg-neutral-300'}`}
-                                            >
-                                                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${dynamicData[field._id] ? 'translate-x-6' : 'translate-x-1'}`} />
-                                            </button>
-                                        </div>
-                                    )}
+                                                        {field.type === "number" && (
+                                                            <input 
+                                                                type="number" 
+                                                                required={field.required}
+                                                                placeholder={field.placeholder}
+                                                                value={dynamicData[field._id] || ""}
+                                                                onChange={(e) => handleDynamicChange(field._id, e.target.value)}
+                                                                className="w-full h-11 px-4 bg-neutral-50 rounded-xl border border-neutral-100 focus:bg-white focus:border-indigo-500 outline-none transition-all font-bold"
+                                                            />
+                                                        )}
 
-                                    {field.type === "file" && (
-                                        <div className="space-y-4">
-                                            <div className="relative group">
-                                                <input 
-                                                    type="file" 
-                                                    multiple
-                                                    accept="image/*"
-                                                    onChange={async (e) => {
-                                                        const files = Array.from(e.target.files || []);
-                                                        if (files.length > 0) {
-                                                            const loadToast = toast.loading(`Uploading ${files.length} images...`);
-                                                            try {
-                                                                // Use our backend upload service which is already configured
-                                                                const uploadResults = await uploadImages(files, "products/dynamic");
-                                                                const urls = uploadResults.map(r => r.secureUrl);
-                                                                
-                                                                const current = Array.isArray(dynamicData[field._id]) ? dynamicData[field._id] : (dynamicData[field._id] ? [dynamicData[field._id]] : []);
-                                                                handleDynamicChange(field._id, [...current, ...urls]);
-                                                                toast.success("Images uploaded successfully!");
-                                                            } catch (err) {
-                                                                toast.error("Upload failed. Using backup method...");
-                                                                console.error(err);
-                                                            } finally {
-                                                                toast.dismiss(loadToast);
-                                                                e.target.value = ""; // Clear input
-                                                            }
-                                                        }
-                                                    }}
-                                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
-                                                />
-                                                <div className="w-full h-11 px-4 bg-neutral-50 rounded-xl flex items-center justify-between border border-neutral-100 group-hover:border-indigo-500 transition-all font-bold text-xs truncate">
-                                                    <span className="text-neutral-500 truncate">{Array.isArray(dynamicData[field._id]) && dynamicData[field._id].length > 0 ? `${dynamicData[field._id].length} Files Attached` : (field.placeholder || `Upload ${field.label}`)}</span>
-                                                    <svg className="w-4 h-4 text-neutral-400 group-hover:text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-8l-4-4m0 0L8 8m4-4v12" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                                                </div>
-                                            </div>
-
-                                            {/* Preview Grid */}
-                                            {Array.isArray(dynamicData[field._id]) && dynamicData[field._id].length > 0 && (
-                                                <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 mt-2">
-                                                    {dynamicData[field._id].map((url: string, idx: number) => (
-                                                        <div key={idx} className="relative aspect-square group">
-                                                            <img src={url} alt={`Preview ${idx}`} className="w-full h-full object-cover rounded-lg border border-neutral-100 shadow-sm" />
-                                                            <button 
-                                                                type="button"
-                                                                onClick={() => {
-                                                                    const updated = dynamicData[field._id].filter((_: any, i: number) => i !== idx);
-                                                                    handleDynamicChange(field._id, updated);
-                                                                }}
-                                                                className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 text-white rounded-full flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                                                        {field.type === "select" && (
+                                                            <select 
+                                                                required={field.required}
+                                                                value={dynamicData[field._id] || ""}
+                                                                onChange={(e) => handleDynamicChange(field._id, e.target.value)}
+                                                                className="w-full h-11 px-4 bg-neutral-50 rounded-xl border border-neutral-100 focus:bg-white focus:border-indigo-500 outline-none transition-all cursor-pointer font-bold appearance-none"
                                                             >
-                                                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" /></svg>
-                                                            </button>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
+                                                                <option value="">{field.placeholder || "Select Option"}</option>
+                                                                {field.options?.map(opt => (
+                                                                    <option key={opt} value={opt}>{opt}</option>
+                                                                ))}
+                                                            </select>
+                                                        )}
 
-                                    {field.type === "multi-input" && (
-                                        <div className="space-y-3">
-                                            {(dynamicData[field._id] || [""]).map((val: string, idx: number) => (
-                                                <div key={idx} className="flex gap-2 animate-in fade-in slide-in-from-left-2 duration-200">
-                                                    <input 
-                                                        type="text" 
-                                                        placeholder={field.placeholder || `Enter ${field.label} ${idx + 1}`}
-                                                        value={val}
-                                                        onChange={(e) => {
-                                                            const current = [...(dynamicData[field._id] || [""])];
-                                                            current[idx] = e.target.value;
-                                                            handleDynamicChange(field._id, current);
-                                                        }}
-                                                        className="flex-1 h-11 px-4 bg-neutral-50 rounded-xl border border-neutral-100 focus:bg-white focus:border-indigo-500 outline-none transition-all font-bold"
-                                                    />
-                                                    {(dynamicData[field._id] || [""]).length > 1 && (
-                                                        <button 
-                                                            type="button" 
-                                                            onClick={() => {
-                                                                const current = (dynamicData[field._id] || [""]).filter((_: any, i: number) => i !== idx);
-                                                                handleDynamicChange(field._id, current);
-                                                            }}
-                                                            className="w-11 h-11 bg-rose-50 text-rose-500 rounded-xl flex items-center justify-center hover:bg-rose-100 transition-colors"
-                                                        >
-                                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            ))}
-                                            <button 
-                                                type="button"
-                                                onClick={() => {
-                                                    const current = dynamicData[field._id] || [""];
-                                                    handleDynamicChange(field._id, [...current, ""]);
-                                                }}
-                                                className="flex items-center gap-2 text-indigo-600 font-bold text-xs bg-indigo-50 px-4 py-2 rounded-xl border border-indigo-100 hover:bg-indigo-100 transition-all active:scale-95"
-                                            >
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
-                                                Add More {field.label}
-                                            </button>
+                                                        {field.type === "date" && (
+                                                            <input 
+                                                                type="date" 
+                                                                required={field.required}
+                                                                value={dynamicData[field._id] || ""}
+                                                                onChange={(e) => handleDynamicChange(field._id, e.target.value)}
+                                                                className="w-full h-11 px-4 bg-neutral-50 rounded-xl border border-neutral-100 focus:bg-white focus:border-indigo-500 outline-none transition-all font-bold"
+                                                            />
+                                                        )}
+
+                                                        {field.type === "time" && (
+                                                            <input 
+                                                                type="time" 
+                                                                required={field.required}
+                                                                value={dynamicData[field._id] || ""}
+                                                                onChange={(e) => handleDynamicChange(field._id, e.target.value)}
+                                                                className="w-full h-11 px-4 bg-neutral-50 rounded-xl border border-neutral-100 focus:bg-white focus:border-indigo-500 outline-none transition-all font-bold"
+                                                            />
+                                                        )}
+
+                                                        {field.type === "checkbox" && (
+                                                            <div className="flex items-center gap-3 h-11">
+                                                                <input 
+                                                                    type="checkbox" 
+                                                                    id={field._id}
+                                                                    checked={!!dynamicData[field._id]}
+                                                                    onChange={(e) => handleDynamicChange(field._id, e.target.checked)}
+                                                                    className="w-5 h-5 rounded border-neutral-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                                                                />
+                                                                <label htmlFor={field._id} className="text-sm font-bold text-neutral-600 cursor-pointer">
+                                                                    {field.placeholder || `Enable ${field.label}`}
+                                                                </label>
+                                                            </div>
+                                                        )}
+
+                                                        {field.type === "toggle" && (
+                                                            <div className="flex items-center justify-between h-11 px-4 bg-neutral-50 rounded-xl border border-neutral-100">
+                                                                <span className="text-[10px] font-black text-neutral-400 uppercase">Status: {dynamicData[field._id] ? 'ON' : 'OFF'}</span>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => handleDynamicChange(field._id, !dynamicData[field._id])}
+                                                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all focus:outline-none ${dynamicData[field._id] ? 'bg-indigo-600' : 'bg-neutral-300'}`}
+                                                                >
+                                                                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${dynamicData[field._id] ? 'translate-x-6' : 'translate-x-1'}`} />
+                                                                </button>
+                                                            </div>
+                                                        )}
+
+                                                        {field.type === "file" && (
+                                                            <div className="space-y-4">
+                                                                <div className="relative group">
+                                                                    <input 
+                                                                        type="file" 
+                                                                        multiple
+                                                                        accept="image/*"
+                                                                        onChange={async (e) => {
+                                                                            const files = Array.from(e.target.files || []);
+                                                                            if (files.length > 0) {
+                                                                                const loadToast = toast.loading(`Uploading ${files.length} images...`);
+                                                                                try {
+                                                                                    const uploadResults = await uploadImages(files, "products/dynamic");
+                                                                                    const urls = uploadResults.map(r => r.secureUrl);
+                                                                                    const current = Array.isArray(dynamicData[field._id]) ? dynamicData[field._id] : (dynamicData[field._id] ? [dynamicData[field._id]] : []);
+                                                                                    handleDynamicChange(field._id, [...current, ...urls]);
+                                                                                    toast.success("Images uploaded successfully!");
+                                                                                } catch (err) {
+                                                                                    toast.error("Upload failed.");
+                                                                                } finally {
+                                                                                    toast.dismiss(loadToast);
+                                                                                    e.target.value = "";
+                                                                                }
+                                                                            }
+                                                                        }}
+                                                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
+                                                                    />
+                                                                    <div className="w-full h-11 px-4 bg-neutral-50 rounded-xl flex items-center justify-between border border-neutral-100 group-hover:border-indigo-500 transition-all font-bold text-xs truncate">
+                                                                        <span className="text-neutral-500 truncate">{Array.isArray(dynamicData[field._id]) && dynamicData[field._id].length > 0 ? `${dynamicData[field._id].length} Files Attached` : (field.placeholder || `Upload ${field.label}`)}</span>
+                                                                        <svg className="w-4 h-4 text-neutral-400 group-hover:text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-8l-4-4m0 0L8 8m4-4v12" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                                                                    </div>
+                                                                </div>
+                                                                {Array.isArray(dynamicData[field._id]) && dynamicData[field._id].length > 0 && (
+                                                                    <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 mt-2">
+                                                                        {dynamicData[field._id].map((url: string, idx: number) => (
+                                                                            <div key={idx} className="relative aspect-square group">
+                                                                                <img src={url} alt="Preview" className="w-full h-full object-cover rounded-lg border border-neutral-100 shadow-sm" />
+                                                                                <button type="button" onClick={() => {
+                                                                                    const updated = dynamicData[field._id].filter((_: any, i: number) => i !== idx);
+                                                                                    handleDynamicChange(field._id, updated);
+                                                                                }} className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 text-white rounded-full flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6" /></svg>
+                                                                                </button>
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        )}
+
+                                                        {field.type === "multi-input" && (
+                                                            <div className="space-y-3">
+                                                                {(dynamicData[field._id] || [""]).map((val: string, idx: number) => (
+                                                                    <div key={idx} className="flex gap-2">
+                                                                        <input 
+                                                                            type="text" 
+                                                                            placeholder={field.placeholder || `Enter ${field.label}`}
+                                                                            value={val}
+                                                                            onChange={(e) => {
+                                                                                const current = [...(dynamicData[field._id] || [""])];
+                                                                                current[idx] = e.target.value;
+                                                                                handleDynamicChange(field._id, current);
+                                                                            }}
+                                                                            className="flex-1 h-11 px-4 bg-neutral-50 rounded-xl border border-neutral-100 focus:bg-white focus:border-indigo-500 outline-none transition-all font-bold"
+                                                                        />
+                                                                        {(dynamicData[field._id] || [""]).length > 1 && (
+                                                                            <button type="button" onClick={() => {
+                                                                                const current = (dynamicData[field._id] || [""]).filter((_: any, i: number) => i !== idx);
+                                                                                handleDynamicChange(field._id, current);
+                                                                            }} className="w-11 h-11 bg-rose-50 text-rose-500 rounded-xl flex items-center justify-center hover:bg-rose-100"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6" /></svg></button>
+                                                                        )}
+                                                                    </div>
+                                                                ))}
+                                                                <button type="button" onClick={() => handleDynamicChange(field._id, [...(dynamicData[field._id] || [""]), ""])} className="text-indigo-600 font-bold text-xs bg-indigo-50 px-4 py-2 rounded-xl border border-indigo-100 hover:bg-indigo-100">Add More</button>
+                                                            </div>
+                                                        )}
+                                                    </motion.div>
+                                                ))}
+                                            </AnimatePresence>
                                         </div>
-                                    )}
-                                </div>
+                                    </div>
                                 );
                             })}
                         </div>

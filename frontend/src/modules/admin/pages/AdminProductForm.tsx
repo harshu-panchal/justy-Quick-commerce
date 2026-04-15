@@ -29,6 +29,9 @@ export default function AdminProductForm() {
   const [dependsOnFieldId, setDependsOnFieldId] = useState<string | null>(null);
   const [dependsOnValue, setDependsOnValue] = useState('');
   const [bulkFields, setBulkFields] = useState<string[]>([]);
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [fieldSearch, setFieldSearch] = useState('');
+  const [tempOptionLinks, setTempOptionLinks] = useState<Record<string, string[]>>({});
 
   // Table states
   const [searchTerm, setSearchTerm] = useState('');
@@ -76,6 +79,7 @@ export default function AdminProductForm() {
     setEditingId(null);
     setDependsOnFieldId(null);
     setDependsOnValue('');
+    setTempOptionLinks({});
     setIsModalOpen(false);
   };
 
@@ -99,16 +103,27 @@ export default function AdminProductForm() {
         dependsOn: dependsOnFieldId ? { fieldId: dependsOnFieldId, value: dependsOnValue } : undefined
       };
 
-      if (editingId) {
-        await updateProductField(editingId, payload);
-        alert('Field updated successfully!');
-      } else {
-        await createProductField(payload);
-        alert('Field added successfully!');
+      const res = editingId ? await updateProductField(editingId, payload) : await createProductField(payload);
+      
+      if (res.success) {
+        const fieldId = editingId || res.data._id;
+        
+        // Handle pending option links (especially important for new fields)
+        if (!editingId && Object.keys(tempOptionLinks).length > 0) {
+            await Promise.all(
+                Object.entries(tempOptionLinks).flatMap(([opt, childIds]) => 
+                    childIds.map(childId => updateProductField(childId, {
+                        dependsOn: { fieldId, value: opt }
+                    }))
+                )
+            );
+        }
+        
+        alert(editingId ? 'Field updated successfully!' : 'Field added successfully!');
+        fetchFields();
+        resetForm();
+        setTempOptionLinks({});
       }
-
-      fetchFields();
-      resetForm();
     } catch (error: any) {
       console.error(error);
       alert(error.response?.data?.message || 'Operation failed');
@@ -517,32 +532,145 @@ export default function AdminProductForm() {
                                             </div>
                                             
                                             {/* Multi-Select for dependent fields */}
-                                            {editingId && opt.trim() && (
-                                                <div className="bg-teal-50/50 p-2 rounded-lg space-y-2">
-                                                    <label className="text-[8px] font-black text-teal-600 uppercase tracking-widest block ml-1">Trigger Fields for "{opt}":</label>
-                                                    <div className="flex flex-wrap gap-1.5">
-                                                        {fields
-                                                            .filter(f => f._id !== editingId && (typeof f.headerCategory === 'string' ? f.headerCategory : (f.headerCategory as any)?._id) === selectedHeaderCategory)
-                                                            .map(f => {
-                                                                const isLinked = f.dependsOn?.fieldId === editingId && f.dependsOn?.value === opt;
+                                            {opt.trim() && (
+                                                <div className="bg-white p-3 rounded-xl border border-teal-100 space-y-2 shadow-sm relative">
+                                                    <div className="flex items-center justify-between">
+                                                        <label className="text-[9px] font-black text-teal-600 uppercase tracking-widest flex items-center gap-1.5">
+                                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                                                            Visible Fields for "{opt}":
+                                                        </label>
+                                                        {editingId && (
+                                                            <span className="text-[8px] bg-teal-600 text-white px-1.5 py-0.5 rounded flex items-center gap-1 font-bold">
+                                                                {fields.filter(f => f.dependsOn?.fieldId === editingId && f.dependsOn?.value === opt).length} Linked
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    
+                                                    <div className="relative">
+                                                        <div 
+                                                            onClick={() => {
+                                                                setOpenDropdown(openDropdown === `${idx}` ? null : `${idx}`);
+                                                                setFieldSearch('');
+                                                            }}
+                                                            className="w-full flex items-center justify-between px-3 py-2.5 bg-neutral-50 border border-teal-200 rounded-xl text-[10px] font-black cursor-pointer transition-all hover:bg-white hover:border-teal-500 hover:shadow-md group"
+                                                        >
+                                                            <div className="flex items-center gap-2">
+                                                                <div className="w-5 h-5 bg-teal-100 text-teal-600 rounded-md flex items-center justify-center font-black">
+                                                                    {editingId 
+                                                                        ? fields.filter(f => f.dependsOn?.fieldId === editingId && f.dependsOn?.value === opt).length
+                                                                        : (tempOptionLinks[opt] || []).length
+                                                                    }
+                                                                </div>
+                                                                <span className="text-neutral-600 group-hover:text-teal-700 uppercase tracking-tight">Set Visibility for "{opt}"</span>
+                                                            </div>
+                                                            <svg className={`w-4 h-4 text-teal-400 transition-transform duration-300 ${openDropdown === `${idx}` ? "rotate-180 text-teal-600" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                                                        </div>
+
+                                                        {openDropdown === `${idx}` && (
+                                                            <>
+                                                                <div className="fixed inset-0 z-[100]" onClick={() => setOpenDropdown(null)}></div>
+                                                                <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-teal-200 rounded-2xl shadow-2xl z-[101] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 border-t-4 border-t-teal-500">
+                                                                    {/* Search Header */}
+                                                                    <div className="p-3 bg-neutral-50 border-b border-neutral-100">
+                                                                        <div className="relative">
+                                                                            <input 
+                                                                                type="text"
+                                                                                placeholder="Search available fields..."
+                                                                                value={fieldSearch}
+                                                                                onChange={(e) => setFieldSearch(e.target.value)}
+                                                                                onClick={(e) => e.stopPropagation()}
+                                                                                className="w-full pl-8 pr-3 py-1.5 bg-white border border-neutral-200 rounded-lg text-[10px] font-bold focus:border-teal-500 outline-none transition-all"
+                                                                            />
+                                                                            <svg className="absolute left-2.5 top-2 w-3.5 h-3.5 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <div className="max-h-60 overflow-y-auto p-1 custom-scrollbar">
+                                                                        {fields
+                                                                            .filter(f => 
+                                                                                f._id !== editingId && 
+                                                                                (typeof f.headerCategory === 'string' ? f.headerCategory : (f.headerCategory as any)?._id) === selectedHeaderCategory &&
+                                                                                f.label.toLowerCase().includes(fieldSearch.toLowerCase())
+                                                                            )
+                                                                            .map(f => {
+                                                                                const isLinked = editingId 
+                                                                                    ? (f.dependsOn?.fieldId === editingId && f.dependsOn?.value === opt)
+                                                                                    : (tempOptionLinks[opt] || []).includes(f._id);
+                                                                                
+                                                                                const handleToggle = () => {
+                                                                                    if (editingId) {
+                                                                                        handleChildDependencyUpdate(f._id, isLinked ? null : opt);
+                                                                                    } else {
+                                                                                        setTempOptionLinks(prev => {
+                                                                                            const current = prev[opt] || [];
+                                                                                            const updated = isLinked ? current.filter(id => id !== f._id) : [...current, f._id];
+                                                                                            return { ...prev, [opt]: updated };
+                                                                                        });
+                                                                                    }
+                                                                                };
+
+                                                                                return (
+                                                                                    <label 
+                                                                                        key={f._id} 
+                                                                                        className={`flex items-center gap-3 p-2.5 rounded-xl cursor-pointer transition-all ${isLinked ? "bg-teal-50 shadow-inner" : "hover:bg-neutral-50"}`}
+                                                                                        onClick={(e) => e.stopPropagation()}
+                                                                                    >
+                                                                                        <div className="relative flex items-center">
+                                                                                            <input 
+                                                                                                type="checkbox"
+                                                                                                checked={isLinked}
+                                                                                                onChange={handleToggle}
+                                                                                                className="w-4 h-4 rounded-md text-teal-600 border-neutral-300 focus:ring-teal-500 cursor-pointer"
+                                                                                            />
+                                                                                        </div>
+                                                                                        <div className="flex flex-col">
+                                                                                            <span className={`text-[10px] font-black uppercase tracking-tight ${isLinked ? "text-teal-700 font-black" : "text-neutral-600"}`}>
+                                                                                                {f.label}
+                                                                                            </span>
+                                                                                            <div className="flex items-center gap-2">
+                                                                                                <span className="text-[8px] text-neutral-400 font-bold uppercase tracking-widest">{f.type}</span>
+                                                                                                <span className="text-[8px] text-neutral-300 font-black">•</span>
+                                                                                                <span className="text-[8px] text-neutral-400 font-bold">{f.section || 'General'}</span>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    </label>
+                                                                                );
+                                                                            })
+                                                                        }
+                                                                    </div>
+                                                                </div>
+                                                            </>
+                                                        )}
+                                                    </div>
+
+                                                    <div className="flex flex-wrap gap-1.5 mt-2">
+                                                        {editingId ? (
+                                                            fields
+                                                                .filter(f => f.dependsOn?.fieldId === editingId && f.dependsOn?.value === opt)
+                                                                .map(f => (
+                                                                    <div key={f._id} className="bg-white border border-teal-200 text-teal-700 text-[9px] font-black px-2.5 py-1.5 rounded-xl flex items-center gap-2 shadow-sm uppercase tracking-tight">
+                                                                        {f.label}
+                                                                        <button type="button" onClick={() => handleChildDependencyUpdate(f._id, null)} className="ml-1 text-teal-300 hover:text-rose-500">
+                                                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                                                                        </button>
+                                                                    </div>
+                                                                ))
+                                                        ) : (
+                                                            (tempOptionLinks[opt] || []).map(fieldId => {
+                                                                const f = fields.find(f => f._id === fieldId);
                                                                 return (
-                                                                    <button
-                                                                        key={f._id}
-                                                                        type="button"
-                                                                        onClick={() => handleChildDependencyUpdate(f._id, isLinked ? null : opt)}
-                                                                        className={`text-[9px] font-bold px-2 py-1 rounded-full border transition-all ${
-                                                                            isLinked 
-                                                                            ? "bg-teal-600 text-white border-teal-600 shadow-sm" 
-                                                                            : "bg-white text-teal-400 border-teal-100 hover:border-teal-300"
-                                                                        }`}
-                                                                    >
-                                                                        {isLinked && "✓ "}{f.label}
-                                                                    </button>
+                                                                    <div key={fieldId} className="bg-white border border-teal-200 text-teal-700 text-[9px] font-black px-2.5 py-1.5 rounded-xl flex items-center gap-2 shadow-sm uppercase tracking-tight">
+                                                                        {f?.label}
+                                                                        <button 
+                                                                            type="button" 
+                                                                            onClick={() => setTempOptionLinks(prev => ({ ...prev, [opt]: prev[opt].filter(id => id !== fieldId) }))} 
+                                                                            className="ml-1 text-teal-300 hover:text-rose-500"
+                                                                        >
+                                                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                                                                        </button>
+                                                                    </div>
                                                                 );
                                                             })
-                                                        }
-                                                        {fields.filter(f => f._id !== editingId && (typeof f.headerCategory === 'string' ? f.headerCategory : (f.headerCategory as any)?._id) === selectedHeaderCategory).length === 0 && (
-                                                            <span className="text-[8px] text-teal-300 uppercase italic font-bold">No fields available to link</span>
                                                         )}
                                                     </div>
                                                 </div>
@@ -636,81 +764,6 @@ export default function AdminProductForm() {
                             </div>
                         )}
 
-                        {/* Conditional Visibility Section */}
-                        <div className="p-4 bg-amber-50 border border-amber-100 rounded-2xl space-y-3">
-                            <div className="flex items-center gap-2">
-                                <svg className="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
-                                <label className="text-[10px] font-black text-amber-600 uppercase tracking-widest">Conditional Visibility (Optional)</label>
-                            </div>
-                            
-                            <div className="grid grid-cols-2 gap-3">
-                                <div className="space-y-1">
-                                    <label className="text-[9px] font-bold text-amber-700 uppercase ml-1">Parent Dropdown</label>
-                                    <select
-                                        value={dependsOnFieldId || ''}
-                                        onChange={(e) => {
-                                            const val = e.target.value;
-                                            setDependsOnFieldId(val || null);
-                                            setDependsOnValue('');
-                                        }}
-                                        className="w-full px-3 py-2 bg-white border border-amber-200 rounded-lg text-xs font-bold outline-none focus:border-amber-500"
-                                    >
-                                        {selectedHeaderCategory ? (
-                                            <>
-                                                <option value="">None (Always Show)</option>
-                                                {fields
-                                                    .filter(f => 
-                                                        f._id !== editingId && 
-                                                        f.status === 'Active' &&
-                                                        (typeof f.headerCategory === 'string' ? f.headerCategory : (f.headerCategory as any)?._id) === selectedHeaderCategory
-                                                    )
-                                                    .map(f => (
-                                                        <option key={f._id} value={f._id}>{f.label} ({f.type})</option>
-                                                    ))
-                                                }
-                                            </>
-                                        ) : (
-                                            <option disabled>Select Category First</option>
-                                        )}
-                                    </select>
-                                </div>
-                                
-                                <div className="space-y-1">
-                                    <label className="text-[9px] font-bold text-amber-700 uppercase ml-1">Show If Value Is</label>
-                                    {dependsOnFieldId && ['text', 'number', 'date', 'time'].includes(fields.find(f => f._id === dependsOnFieldId)?.type || '') ? (
-                                        <input
-                                            type="text"
-                                            value={dependsOnValue}
-                                            onChange={(e) => setDependsOnValue(e.target.value)}
-                                            placeholder="Enter value..."
-                                            className="w-full px-3 py-2 bg-white border border-amber-200 rounded-lg text-xs font-bold outline-none focus:border-amber-500"
-                                        />
-                                    ) : (
-                                        <select
-                                            value={dependsOnValue}
-                                            onChange={(e) => setDependsOnValue(e.target.value)}
-                                            disabled={!dependsOnFieldId}
-                                            className="w-full px-3 py-2 bg-white border border-amber-200 rounded-lg text-xs font-bold outline-none focus:border-amber-500 disabled:bg-amber-100/50 disabled:cursor-not-allowed"
-                                        >
-                                            <option value="">Select Value</option>
-                                            {dependsOnFieldId && fields.find(f => f._id === dependsOnFieldId)?.type === 'select' ? (
-                                                fields.find(f => f._id === dependsOnFieldId)?.options?.map(opt => (
-                                                    <option key={opt} value={opt}>{opt}</option>
-                                                ))
-                                            ) : dependsOnFieldId && ['checkbox', 'toggle'].includes(fields.find(f => f._id === dependsOnFieldId)?.type || '') ? (
-                                                <>
-                                                    <option value="true">True (Checked)</option>
-                                                    <option value="false">False (Unchecked)</option>
-                                                </>
-                                            ) : null}
-                                        </select>
-                                    )}
-                                </div>
-                            </div>
-                            <p className="text-[9px] text-amber-500 font-medium italic underline underline-offset-2">
-                                * This field will only appear when the selected value matches in the parent field.
-                            </p>
-                        </div>
 
                         <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-2xl border border-neutral-100">
                              <div>

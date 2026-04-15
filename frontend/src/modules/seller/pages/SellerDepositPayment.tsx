@@ -51,7 +51,7 @@ const SellerDepositPayment = () => {
     const steps = [
         { id: 1, label: 'Store Registration', status: 'completed' },
         { id: 2, label: 'Admin Verification', status: 'completed' },
-        { id: 3, label: `Pay Security Deposit ₹${depositAmount}`, status: 'in-progress' },
+        { id: 3, label: `Pay For Subscription ₹${depositAmount}`, status: 'in-progress' },
         { id: 4, label: 'Start Selling', status: 'pending' },
     ];
 
@@ -161,9 +161,9 @@ const SellerDepositPayment = () => {
                     </svg>
                 </div>
 
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">Security Deposit Required</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Subscription Payment</h2>
                 <p className="text-gray-600 mb-8 leading-relaxed">
-                    Great news! Your store has been approved. To start selling on JYASTI builds trust, you need to pay a one-time refundable security deposit of ₹{depositAmount}.
+                    Great news! Your store has been approved. To start selling on JYASTI builds trust, you need to pay a one-time subscription fee of ₹{depositAmount}.
                 </p>
 
                 {/* Progress steps */}
@@ -204,7 +204,7 @@ const SellerDepositPayment = () => {
                         : 'bg-neutral-300 text-neutral-500 cursor-not-allowed'
                         }`}
                 >
-                    {loading ? 'Processing...' : `Pay Deposit ₹${depositAmount}`}
+                    {loading ? 'Processing...' : `Pay For Subscription ₹${depositAmount}`}
                 </button>
 
                 <button

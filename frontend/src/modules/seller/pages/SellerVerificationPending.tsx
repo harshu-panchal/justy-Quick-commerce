@@ -52,7 +52,7 @@ const SellerVerificationPending = () => {
     const steps = [
         { id: 1, label: 'Store Registration', status: 'completed' },
         { id: 2, label: 'Admin Verification', status: 'in-progress' },
-        { id: 3, label: 'Pay Security Deposit ₹1000', status: 'pending' },
+        { id: 3, label: 'Pay For Subscription ₹1000', status: 'pending' },
         { id: 4, label: 'Start Selling', status: 'pending' },
     ];
 

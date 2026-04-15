@@ -3,7 +3,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 export interface IProductField extends Document {
     headerCategory: mongoose.Types.ObjectId;
     label: string;
-    type: 'text' | 'number' | 'select' | 'date' | 'time' | 'checkbox' | 'toggle';
+    type: 'text' | 'number' | 'select' | 'date' | 'time' | 'checkbox' | 'multi-input' | 'file' | 'toggle';
     options?: string[];
     section?: string;
     placeholder?: string;

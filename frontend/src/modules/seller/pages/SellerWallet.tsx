@@ -120,7 +120,7 @@ export default function SellerWallet() {
         animate={{ opacity: 1, y: 0 }}
         className="m-4 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl p-6 text-white shadow-lg"
       >
-        <p className="text-sm opacity-90 mb-1">Security Deposit Wallet Balance</p>
+        <p className="text-sm opacity-90 mb-1">Subscription Wallet Balance</p>
         <h1 className="text-4xl font-bold mb-4">₹{balance.toFixed(2)}</h1>
         <button
           onClick={() => setShowWithdrawModal(true)}

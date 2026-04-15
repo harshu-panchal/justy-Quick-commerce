@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "../../../context/AuthContext";
 
 interface SubMenuItem {
   label: string;
@@ -7,6 +8,7 @@ interface SubMenuItem {
   icon: JSX.Element;
   badge?: string;
   badgeColor?: string;
+  permission?: string;
 }
 
 interface MenuItem {
@@ -16,6 +18,7 @@ interface MenuItem {
   submenuItems?: SubMenuItem[];
   icon?: JSX.Element;
   badge?: string;
+  permission?: string;
 }
 
 interface MenuSection {
@@ -34,6 +37,7 @@ const menuSections: MenuSection[] = [
       {
         label: "Growth",
         path: "/admin/growth",
+        permission: "reports_view",
         icon: (
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
@@ -50,6 +54,7 @@ const menuSections: MenuSection[] = [
         label: "Category",
         path: "/admin/category",
         hasSubmenu: true,
+        permission: "products_view",
         submenuItems: [
           {
             label: "Category",
@@ -124,6 +129,7 @@ const menuSections: MenuSection[] = [
       {
         label: "Brand",
         path: "/admin/brand",
+        permission: "products_view",
         icon: (
           <svg
             width="18"
@@ -142,6 +148,7 @@ const menuSections: MenuSection[] = [
         label: "Product",
         path: "/admin/product",
         hasSubmenu: true,
+        permission: "products_view",
         icon: (
           <svg
             width="18"
@@ -225,6 +232,7 @@ const menuSections: MenuSection[] = [
         label: "Manage Seller",
         path: "/admin/manage-seller",
         hasSubmenu: true,
+        permission: "users_view",
         icon: (
           <svg
             width="18"
@@ -315,6 +323,7 @@ const menuSections: MenuSection[] = [
       {
         label: "Inventory",
         path: "/admin/equipment/items",
+        permission: "products_view",
         icon: (
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
@@ -326,6 +335,7 @@ const menuSections: MenuSection[] = [
       {
         label: "Marketplace Orders",
         path: "/admin/equipment/orders",
+        permission: "orders_view",
         icon: (
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path>
@@ -343,6 +353,7 @@ const menuSections: MenuSection[] = [
         label: "Manage Location",
         path: "/admin/manage-location",
         hasSubmenu: true,
+        permission: "settings_view",
         icon: (
           <svg
             width="18"
@@ -383,6 +394,7 @@ const menuSections: MenuSection[] = [
       {
         label: "Coupon",
         path: "/admin/coupon",
+        permission: "content_manage",
         icon: (
           <svg
             width="18"
@@ -403,6 +415,7 @@ const menuSections: MenuSection[] = [
         label: "Delivery Boy",
         path: "/admin/delivery-boy",
         hasSubmenu: true,
+        permission: "delivery_view",
         icon: (
           <svg
             width="18"
@@ -518,6 +531,7 @@ const menuSections: MenuSection[] = [
       {
         label: "Manage Customer",
         path: "/admin/customers",
+        permission: "users_view",
         icon: (
           <svg
             width="18"
@@ -538,6 +552,7 @@ const menuSections: MenuSection[] = [
       {
         label: "Users",
         path: "/admin/users",
+        permission: "users_view",
         icon: (
           <svg
             width="18"
@@ -558,6 +573,7 @@ const menuSections: MenuSection[] = [
       {
         label: "Notification",
         path: "/admin/notification",
+        permission: "notification_view",
         icon: (
           <svg
             width="18"
@@ -579,6 +595,7 @@ const menuSections: MenuSection[] = [
       {
         label: "FAQ",
         path: "/admin/faq",
+        permission: "faq_manage",
         icon: (
           <svg
             width="18"
@@ -611,6 +628,7 @@ const menuSections: MenuSection[] = [
         label: "Order List",
         path: "/admin/orders",
         hasSubmenu: true,
+        permission: "orders_view",
         icon: (
           <svg
             width="18"
@@ -809,6 +827,7 @@ const menuSections: MenuSection[] = [
       {
         label: "Wallet & Earnings",
         path: "/admin/wallet",
+        permission: "wallet_view",
         icon: (
           <svg
             width="18"
@@ -833,6 +852,7 @@ const menuSections: MenuSection[] = [
       {
         label: "Home Section",
         path: "/admin/home-section",
+        permission: "content_manage",
         icon: (
           <svg
             width="18"
@@ -991,6 +1011,7 @@ const menuSections: MenuSection[] = [
       {
         label: "Subscriptions",
         path: "/admin/subscriptions",
+        permission: "settings_view",
         icon: (
           <svg
             width="18"
@@ -1032,6 +1053,7 @@ const menuSections: MenuSection[] = [
       {
         label: "Billing & Charges",
         path: "/admin/billing-settings",
+        permission: "settings_view",
         icon: (
           <svg
             width="18"
@@ -1076,6 +1098,7 @@ const menuSections: MenuSection[] = [
       {
         label: "Spin Wheel",
         path: "/admin/spin-wheel",
+        permission: "content_manage",
         icon: (
           <svg
             width="18"
@@ -1101,6 +1124,7 @@ const menuSections: MenuSection[] = [
       {
         label: "Refer & Earn",
         path: "/admin/refer-earn",
+        permission: "settings_view",
         icon: (
           <svg
             width="18"
@@ -1126,6 +1150,7 @@ const menuSections: MenuSection[] = [
       {
         label: "SMS Gateway",
         path: "/admin/sms-gateway",
+        permission: "settings_view",
         icon: (
           <svg
             width="18"
@@ -1144,6 +1169,7 @@ const menuSections: MenuSection[] = [
       {
         label: "System User",
         path: "/admin/system-user",
+        permission: "users_manage",
         icon: (
           <svg
             width="18"
@@ -1162,8 +1188,29 @@ const menuSections: MenuSection[] = [
         ),
       },
       {
+        label: "Role Management",
+        path: "/admin/roles",
+        permission: "roles_view",
+        icon: (
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            <circle cx="12" cy="11" r="3"></circle>
+            <path d="M7 18.5c0-2 2-3.5 5-3.5s5 1.5 5 3.5"></path>
+          </svg>
+        ),
+      },
+      {
         label: "Customer App Policy",
         path: "/admin/customer-app-policy",
+        permission: "settings_view",
         icon: (
           <svg
             width="18"
@@ -1183,6 +1230,7 @@ const menuSections: MenuSection[] = [
       {
         label: "Delivery App Policy",
         path: "/admin/delivery-app-policy",
+        permission: "settings_view",
         icon: (
           <svg
             width="18"
@@ -1206,6 +1254,7 @@ const menuSections: MenuSection[] = [
 export default function AdminSidebar({ onClose }: AdminSidebarProps) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
   const [expandedMenus, setExpandedMenus] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -1254,13 +1303,58 @@ export default function AdminSidebar({ onClose }: AdminSidebarProps) {
     );
   };
 
-  // Filter menu items based on search query
+  // Filter menu items based on search query and permissions
   const filteredSections = menuSections
     .map((section) => ({
       ...section,
-      items: section.items.filter((item) =>
-        item.label.toLowerCase().includes(searchQuery.toLowerCase())
-      ),
+      items: section.items
+        .map((item) => {
+          const userPermissions = (typeof user?.roleId === 'object' ? user.roleId?.permissions : []) || [];
+          
+          // If item has submenus, filter them too
+          const filteredSubmenu = item.submenuItems?.filter((subItem) => {
+            // Permission filter for submenu
+            if (user?.role === "Super Admin") return true;
+            if (subItem.permission) {
+              const hasPermission = userPermissions.includes(subItem.permission);
+              if (!hasPermission) console.log(`[Sidebar] Hiding sub-item ${subItem.label} due to missing ${subItem.permission}`);
+              return hasPermission;
+            }
+            return true;
+          });
+
+          return {
+            ...item,
+            submenuItems: filteredSubmenu,
+            // If it has submenus but none are allowed, we might want to hide the parent
+            // unless the parent itself is allowed.
+          };
+        })
+        .filter((item) => {
+          // Search filter
+          const matchesSearch = item.label.toLowerCase().includes(searchQuery.toLowerCase());
+          if (!matchesSearch) return false;
+
+          // Permission filter
+          if (user?.role === "Super Admin") return true;
+
+          const userPermissions = (typeof user?.roleId === 'object' ? user.roleId?.permissions : []) || [];
+
+          // If item has a specific permission, check it
+          if (item.permission) {
+            const hasPermission = userPermissions.includes(item.permission);
+            if (!hasPermission) console.log(`[Sidebar] Hiding parent item ${item.label} due to missing ${item.permission}`);
+            if (!hasPermission) return false;
+          }
+
+          // If it's a parent menu with submenus, but all submenus are hidden, hide parent
+          if (item.hasSubmenu && item.submenuItems && item.submenuItems.length === 0) {
+            console.log(`[Sidebar] Hiding parent item ${item.label} because all submenus are restricted`);
+            return false;
+          }
+
+          return true;
+        }),
     }))
     .filter((section) => section.items.length > 0);
 

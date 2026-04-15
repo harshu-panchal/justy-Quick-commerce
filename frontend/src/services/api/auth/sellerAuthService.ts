@@ -13,6 +13,7 @@ export interface VerifyOTPResponse {
     user: {
       id: string;
       sellerName: string;
+      executiveName?: string;
       mobile: string;
       email: string;
       storeName: string;
@@ -26,6 +27,7 @@ export interface VerifyOTPResponse {
 
 export interface RegisterData {
   sellerName: string;
+  executiveName?: string;
   mobile: string;
   alternateMobile?: string;
   email: string;
@@ -76,6 +78,7 @@ export interface RegisterResponse {
     user: {
       id: string;
       sellerName: string;
+      executiveName?: string;
       mobile: string;
       email: string;
       storeName: string;

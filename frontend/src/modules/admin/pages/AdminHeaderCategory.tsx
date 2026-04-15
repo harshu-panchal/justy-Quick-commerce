@@ -22,6 +22,7 @@ export default function AdminHeaderCategory() {
   const [selectedDeliveryType, setSelectedDeliveryType] = useState<'quick' | 'scheduled'>('quick');
   const [scheduledTime, setScheduledTime] = useState('');
   const [assignedDeliveryBoy, setAssignedDeliveryBoy] = useState('');
+  const [securityDeposit, setSecurityDeposit] = useState<number>(0);
   const [selectedStatus, setSelectedStatus] = useState<'Published' | 'Unpublished'>('Published');
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -138,6 +139,7 @@ export default function AdminHeaderCategory() {
     setSelectedDeliveryType('quick');
     setScheduledTime('');
     setAssignedDeliveryBoy('');
+    setSecurityDeposit(0);
     setSelectedStatus('Published');
     setEditingId(null);
     setIconSearchTerm('');
@@ -157,6 +159,7 @@ export default function AdminHeaderCategory() {
         deliveryType: selectedDeliveryType,
         scheduledTime: selectedDeliveryType === 'scheduled' ? scheduledTime : undefined,
         assignedDeliveryBoy: selectedDeliveryType === 'scheduled' ? assignedDeliveryBoy : undefined,
+        securityDeposit: securityDeposit || 0,
         status: selectedStatus,
       };
 
@@ -185,6 +188,7 @@ export default function AdminHeaderCategory() {
     setSelectedDeliveryType(category.deliveryType || 'quick');
     setScheduledTime(category.scheduledTime || '');
     setAssignedDeliveryBoy(category.assignedDeliveryBoy || '');
+    setSecurityDeposit(category.securityDeposit || 0);
     setSelectedStatus(category.status);
     setIconSearchTerm('');
   };
@@ -384,6 +388,24 @@ export default function AdminHeaderCategory() {
             </div>
 
 
+            {/* Seller Security Deposit */}
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-2">
+                Seller Security Deposit (₹):
+              </label>
+              <input
+                type="number"
+                value={securityDeposit}
+                onChange={(e) => setSecurityDeposit(Number(e.target.value))}
+                placeholder="Enter Deposit Amount (e.g. 1000)"
+                className="w-full px-3 py-2 border border-neutral-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500"
+              />
+              <p className="mt-1 text-[10px] text-neutral-500">
+                This amount will be charged to the seller during onboarding for this category.
+              </p>
+            </div>
+
+
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-2">
                 Status:
@@ -477,7 +499,7 @@ export default function AdminHeaderCategory() {
             <table className="w-full text-left border-collapse">
               <thead className="bg-neutral-50 sticky top-0 z-10">
                 <tr>
-                  {['Name', 'Icon', 'Theme', 'Delivery', 'Status', 'Actions'].map((header) => (
+                  {['Name', 'Icon', 'Theme', 'Delivery', 'Deposit', 'Status', 'Actions'].map((header) => (
                     <th
                       key={header}
                       onClick={() => handleSort(header.toLowerCase())}
@@ -529,6 +551,9 @@ export default function AdminHeaderCategory() {
                             Partner Assigned
                           </span>
                         )}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-neutral-800 font-medium">
+                        ₹{category.securityDeposit || 0}
                       </td>
                       <td className="px-4 py-3 text-sm">
                         <span

@@ -80,6 +80,10 @@ router.get("/health", (_req, res) => {
   });
 });
 
+router.get("/ping", (req, res) => {
+  res.json({ success: true, message: "pong" });
+});
+
 // Debug all requests to v1
 router.use((req, _res, next) => {
   console.log(`[V1-DEBUG] ${req.method} ${req.originalUrl}`);
@@ -163,8 +167,15 @@ router.use("/sellers", sellerRoutes);
 // Banner routes (public)
 router.get("/banners/:type", bannerController.getBannersByType);
 
+// Role Management Routes
+import roleRoutes from "./roleRoutes";
+router.use("/admin/roles", roleRoutes);
+
 // Admin routes (protected, admin only)
-router.use("/admin", adminRoutes);
+router.use("/admin", (req, res, next) => {
+  console.log(`[ROUTE-DEBUG] Hit /admin - Path: ${req.path}`);
+  next();
+}, adminRoutes);
 
 // Upload routes (protected)
 router.use("/upload", uploadRoutes);

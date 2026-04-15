@@ -57,6 +57,7 @@ export default function SellerSignUp() {
   const { login } = useAuth();
   const [formData, setFormData] = useState({
     sellerName: '',
+    executiveName: '',
     mobile: '',
     alternateMobile: '',
     email: '',
@@ -523,6 +524,7 @@ export default function SellerSignUp() {
 
       const response = await register({
         sellerName: formData.sellerName,
+        executiveName: formData.executiveName,
         mobile: formData.mobile,
         email: formData.email,
         storeName: formData.storeName,
@@ -657,125 +659,183 @@ export default function SellerSignUp() {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Step 1: Basic Details */}
-              {formStep === 1 && (
-                <div className="space-y-4 animate-fadeIn">
-                  <h3 className="text-sm font-bold text-teal-800 uppercase tracking-wider flex items-center">
-                    <span className="w-6 h-6 bg-teal-100 text-teal-700 rounded-full flex items-center justify-center mr-2 text-[10px]">1</span>
-                    Basic Details
-                  </h3>
+            {formStep === 1 && (
+  <div className="space-y-4 animate-fadeIn">
+    <h3 className="text-sm font-bold text-teal-800 uppercase tracking-wider flex items-center">
+      <span className="w-6 h-6 bg-teal-100 text-teal-700 rounded-full flex items-center justify-center mr-2 text-[10px]">
+        1
+      </span>
+      Basic Details
+    </h3>
 
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">
-                      Seller Name <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="sellerName"
-                      value={formData.sellerName}
-                      onChange={handleInputChange}
-                      placeholder="Enter your name"
-                      required
-                      className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 transition-all"
-                      disabled={loading}
-                    />
-                  </div>
+    {/* Seller Name */}
+    <div>
+      <label className="block text-sm font-medium text-neutral-700 mb-2">
+        Seller Name <span className="text-red-500">*</span>
+      </label>
+      <input
+        type="text"
+        name="sellerName"
+        value={formData.sellerName}
+        onChange={handleInputChange}
+        placeholder="Enter your name"
+        required
+        className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 transition-all"
+        disabled={loading}
+      />
+    </div>
 
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-neutral-700">
-                      Email <span className="text-red-500">*</span>
-                    </label>
-                    <div className="flex flex-row gap-2">
-                      <div className="relative flex-1">
-                        <input
-                          type="email"
-                          name="email"
-                          value={formData.email}
-                          onChange={handleInputChange}
-                          placeholder="Enter email address"
-                          required
-                          readOnly={isEmailVerified}
-                          className={`w-full px-4 py-3 text-sm border rounded-xl focus:outline-none transition-all ${isEmailVerified ? 'bg-green-50 border-green-200 text-green-700 mt-0' : 'border-neutral-300 focus:border-teal-500'}`}
-                          disabled={loading || emailSending}
-                        />
-                        {isEmailVerified && (
-                          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-green-600">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                              <path d="M20 6L9 17L4 12" />
-                            </svg>
-                          </div>
-                        )}
-                      </div>
-                      {!isEmailVerified && (
-                        <button
-                          type="button"
-                          onClick={handleSendEmailOTP}
-                          disabled={emailSending || !formData.email}
-                          className="px-4 py-2 bg-teal-50 text-teal-700 border border-teal-200 rounded-xl text-xs font-bold hover:bg-teal-100 disabled:opacity-50 transition-colors whitespace-nowrap min-w-[90px]"
-                        >
-                          {emailSending ? '...' : emailOtpSent ? 'Resend' : 'Send'}
-                        </button>
-                      )}
-                    </div>
-                  </div>
+    {/* Executive Name (ONLY ONE FIELD) */}
+    <div>
+      <label className="block text-sm font-medium text-neutral-700 mb-2">
+        Executive Name
+      </label>
+      <input
+        type="text"
+        name="executiveName"
+        value={formData.executiveName || ""}
+        onChange={handleInputChange}
+        placeholder="Enter executive name"
+        className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 transition-all"
+        disabled={loading}
+      />
+    </div>
 
-                  {emailOtpSent && !isEmailVerified && (
-                    <div className="p-4 bg-teal-50 border border-teal-100 rounded-xl animate-scaleIn">
-                      <label className="block text-xs font-bold text-teal-800 uppercase mb-2">Enter Verification Code</label>
-                      <div className="flex flex-col sm:flex-row gap-2">
-                        <input
-                          type="text"
-                          value={emailOtp}
-                          onChange={(e) => setEmailOtp(e.target.value.replace(/\D/g, ''))}
-                          placeholder="6-digit OTP"
-                          maxLength={6}
-                          className="w-full sm:flex-1 px-4 py-3 text-center text-lg font-bold tracking-[0.5em] border border-teal-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
-                        />
-                        <button
-                          type="button"
-                          onClick={handleVerifyEmailOTP}
-                          disabled={emailVerifying || emailOtp.length !== 6}
-                          className="w-full sm:w-auto px-6 py-3 bg-teal-700 text-white rounded-xl text-sm font-bold hover:bg-teal-800 disabled:bg-teal-300 transition-all active:scale-95 shadow-md shadow-teal-100"
-                        >
-                          {emailVerifying ? (
-                             <div className="flex items-center justify-center gap-2">
-                               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                               <span>Verifying...</span>
-                             </div>
-                          ) : 'Verify OTP'}
-                        </button>
-                      </div>
-                      <p className="mt-2 text-[10px] text-teal-600">Please check your inbox (and spam) for the code.</p>
-                    </div>
-                  )}
+    {/* Email */}
+    <div className="space-y-2">
+      <label className="block text-sm font-medium text-neutral-700">
+        Email <span className="text-red-500">*</span>
+      </label>
 
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">
-                      Store Name <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="storeName"
-                      value={formData.storeName}
-                      onChange={handleInputChange}
-                      placeholder="Enter store name"
-                      required
-                      className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 transition-all"
-                      disabled={loading}
-                    />
-                  </div>
+      <div className="flex flex-row gap-2">
+        <div className="relative flex-1">
+          <input
+            type="email"
+            name="email"
+            value={formData.email}
+            onChange={handleInputChange}
+            placeholder="Enter email address"
+            required
+            readOnly={isEmailVerified}
+            className={`w-full px-4 py-3 text-sm border rounded-xl focus:outline-none transition-all ${
+              isEmailVerified
+                ? "bg-green-50 border-green-200 text-green-700"
+                : "border-neutral-300 focus:border-teal-500"
+            }`}
+            disabled={loading || emailSending}
+          />
 
-                  <button
-                    type="button"
-                    onClick={handleNextStep}
-                    className="w-full mt-6 py-4 bg-gradient-to-r from-teal-700 to-teal-900 text-white rounded-xl font-bold text-base transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center justify-center"
-                  >
-                    Continue to Verification
-                    <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-                    </svg>
-                  </button>
-                </div>
-              )}
+          {isEmailVerified && (
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-green-600">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="3"
+              >
+                <path d="M20 6L9 17L4 12" />
+              </svg>
+            </div>
+          )}
+        </div>
+
+        {!isEmailVerified && (
+          <button
+            type="button"
+            onClick={handleSendEmailOTP}
+            disabled={emailSending || !formData.email}
+            className="px-4 py-2 bg-teal-50 text-teal-700 border border-teal-200 rounded-xl text-xs font-bold hover:bg-teal-100 disabled:opacity-50 transition-colors whitespace-nowrap min-w-[90px]"
+          >
+            {emailSending ? "..." : emailOtpSent ? "Resend" : "Send"}
+          </button>
+        )}
+      </div>
+    </div>
+
+    {/* OTP */}
+    {emailOtpSent && !isEmailVerified && (
+      <div className="p-4 bg-teal-50 border border-teal-100 rounded-xl animate-scaleIn">
+        <label className="block text-xs font-bold text-teal-800 uppercase mb-2">
+          Enter Verification Code
+        </label>
+
+        <div className="flex flex-col sm:flex-row gap-2">
+          <input
+            type="text"
+            value={emailOtp}
+            onChange={(e) =>
+              setEmailOtp(e.target.value.replace(/\D/g, ""))
+            }
+            placeholder="6-digit OTP"
+            maxLength={6}
+            className="w-full sm:flex-1 px-4 py-3 text-center text-lg font-bold tracking-[0.5em] border border-teal-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
+          />
+
+          <button
+            type="button"
+            onClick={handleVerifyEmailOTP}
+            disabled={emailVerifying || emailOtp.length !== 6}
+            className="w-full sm:w-auto px-6 py-3 bg-teal-700 text-white rounded-xl text-sm font-bold hover:bg-teal-800 disabled:bg-teal-300 transition-all active:scale-95 shadow-md shadow-teal-100"
+          >
+            {emailVerifying ? (
+              <div className="flex items-center justify-center gap-2">
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <span>Verifying...</span>
+              </div>
+            ) : (
+              "Verify OTP"
+            )}
+          </button>
+        </div>
+
+        <p className="mt-2 text-[10px] text-teal-600">
+          Please check your inbox (and spam) for the code.
+        </p>
+      </div>
+    )}
+
+    {/* Store Name */}
+    <div>
+      <label className="block text-sm font-medium text-neutral-700 mb-2">
+        Store Name <span className="text-red-500">*</span>
+      </label>
+      <input
+        type="text"
+        name="storeName"
+        value={formData.storeName}
+        onChange={handleInputChange}
+        placeholder="Enter store name"
+        required
+        className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 transition-all"
+        disabled={loading}
+      />
+    </div>
+
+    {/* Button */}
+    <button
+      type="button"
+      onClick={handleNextStep}
+      className="w-full mt-6 py-4 bg-gradient-to-r from-teal-700 to-teal-900 text-white rounded-xl font-bold text-base transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center justify-center"
+    >
+      Continue to Verification
+      <svg
+        className="ml-2 w-5 h-5"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2"
+          d="M9 5l7 7-7 7"
+        />
+      </svg>
+    </button>
+  </div>
+)}
 
               {/* Step 2: Document Verification */}
               {formStep === 2 && (

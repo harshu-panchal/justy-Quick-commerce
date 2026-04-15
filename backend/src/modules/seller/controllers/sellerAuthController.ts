@@ -173,6 +173,7 @@ export const verifyOTP = asyncHandler(async (req: Request, res: Response) => {
 export const register = asyncHandler(async (req: Request, res: Response) => {
   const {
     sellerName,
+    executiveName,
     mobile,
     email,
     storeName,
@@ -268,6 +269,7 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
   // Create new seller with GeoJSON location (password not required during signup)
   const seller = await Seller.create({
     sellerName,
+    executiveName,
     mobile,
     email,
     // password field removed - sellers don't need password during signup
@@ -329,6 +331,7 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
       user: {
         id: seller._id,
         sellerName: seller.sellerName,
+        executiveName: seller.executiveName,
         mobile: seller.mobile,
         email: seller.email,
         storeName: seller.storeName,

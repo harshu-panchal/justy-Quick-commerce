@@ -43,8 +43,17 @@ type UserType = 'Customer' | 'Delivery' | 'Seller' | 'Admin';
 /**
  * Generate numeric OTP
  */
-function generateOTP(_length: number = 4): string {
-  return '1234';
+function generateOTP(length: number = 4): string {
+  if (process.env.USE_MOCK_OTP === 'true') {
+     return length === 4 ? '1234' : '123456';
+  }
+
+  const digits = '0123456789';
+  let otp = '';
+  for (let i = 0; i < length; i++) {
+    otp += digits[Math.floor(Math.random() * 10)];
+  }
+  return otp;
 }
 
 /**
@@ -206,14 +215,7 @@ function isMockMode(): boolean {
 }
 
 function isDeveloperBypass(otp: string): boolean {
-  // Always allow common dev OTPs in non-production or mock mode
-  const isDevOrMock = process.env.NODE_ENV !== 'production' || process.env.USE_MOCK_OTP === 'true';
-  const defaultOtp = process.env.DEFAULT_OTP || '9999';
-  
-  if (isDevOrMock) {
-    return otp === '1234' || otp === '9999' || otp === '999999' || otp === defaultOtp;
-  }
-  
+  // Developer bypass removed to ensure only real OTPs work
   return false;
 }
 
@@ -227,17 +229,7 @@ export async function sendSmsOtp(
 ): Promise<OtpResponse> {
   try {
     const otp = generateOTP(4);
-
-    // Special number bypass
-    if (isSpecialBypass(mobile)) {
-      const specialOtp = '1234';
-      await saveOtpToDb(mobile, specialOtp, userType);
-      return {
-        success: true,
-        sessionId: 'DB_VERIFIED_' + mobile,
-        message: 'OTP sent successfully',
-      };
-    }
+    await saveOtpToDb(mobile, otp, userType);
 
     // Mock mode
     if (isMockMode()) {
@@ -337,16 +329,7 @@ export async function sendOTP(
 ): Promise<OtpResponse> {
   try {
     const otp = generateOTP(4);
-
-    // Special number bypass
-    if (isSpecialBypass(mobile)) {
-      const specialOtp = '1234';
-      await saveOtpToDb(mobile, specialOtp, userType);
-      return {
-        success: true,
-        message: 'OTP sent successfully',
-      };
-    }
+    await saveOtpToDb(mobile, otp, userType);
 
     // Mock mode
     if (isMockMode()) {

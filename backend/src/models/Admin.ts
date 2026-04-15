@@ -6,7 +6,8 @@ export interface IAdmin extends Document {
   lastName: string;
   mobile: string;
   email: string;
-  role: 'Super Admin' | 'Admin';
+  role: string; // Can be 'Super Admin' or Custom Role Name
+  roleId?: mongoose.Types.ObjectId; // Reference to Role model for custom permissions
   password: string;
   createdAt: Date;
   updatedAt: Date;
@@ -56,8 +57,11 @@ const AdminSchema = new Schema<IAdmin>(
     role: {
       type: String,
       required: [true, 'Role is required'],
-      enum: ['Super Admin', 'Admin'],
       default: 'Admin',
+    },
+    roleId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Role',
     },
     password: {
       type: String,

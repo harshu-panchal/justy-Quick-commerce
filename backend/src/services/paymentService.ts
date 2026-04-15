@@ -4,11 +4,13 @@ import Payment from '../models/Payment';
 import Order from '../models/Order';
 import mongoose from 'mongoose';
 import AppSettings from '../models/AppSettings';
+import Seller from '../models/Seller';
+import HeaderCategory from '../models/HeaderCategory';
 
 // Initialize Razorpay instance
 const getRazorpayInstance = () => {
-    const keyId = process.env.RAZORPAY_KEY_ID;
-    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    const keyId = process.env.RAZORPAY_KEY_ID?.trim();
+    const keySecret = process.env.RAZORPAY_KEY_SECRET?.trim();
 
     if (!keyId || !keySecret) {
         throw new Error('Razorpay credentials not configured');
@@ -307,20 +309,38 @@ export const handleWebhook = async (
     }
 };
 
-/**
- * Create a Razorpay order for seller security deposit
- */
+
 export const createSellerDepositOrder = async (
     sellerId: string,
     amount?: number
 ) => {
     try {
-        const settings = await AppSettings.getSettings();
-        const depositAmount = amount || settings.sellerSecurityDeposit || 1000;
+        if (!sellerId) {
+            return { success: false, message: 'Seller ID is required' };
+        }
+
+        const seller = await Seller.findById(sellerId);
+        if (!seller) {
+            return { success: false, message: 'Seller not found' };
+        }
+
+        let depositAmount = amount;
+        
+        if (!depositAmount) {
+            // Find deposit amount from category
+            const categoryObj = await HeaderCategory.findOne({ name: seller.category });
+            if (categoryObj && categoryObj.securityDeposit > 0) {
+                depositAmount = categoryObj.securityDeposit;
+            } else {
+                const settings = await AppSettings.getSettings();
+                depositAmount = settings?.sellerSecurityDeposit ?? 1000;
+            }
+        }
+
         const razorpay = getRazorpayInstance();
 
         const options = {
-            amount: Math.round(depositAmount * 100), // Amount in paise
+            amount: Math.round(depositAmount * 100),
             currency: 'INR',
             receipt: `sdep_${sellerId.slice(-10)}_${Date.now()}`,
             notes: {
@@ -331,11 +351,8 @@ export const createSellerDepositOrder = async (
 
         const razorpayOrder = await razorpay.orders.create(options);
 
-        // Find seller to ensure they exist
-        const Seller = mongoose.models.Seller;
-        const seller = await Seller.findById(sellerId);
-        if (!seller) {
-            throw new Error('Seller not found');
+        if (!razorpayOrder || !razorpayOrder.id) {
+            return { success: false, message: 'Failed to create Razorpay order' };
         }
 
         return {
@@ -343,21 +360,24 @@ export const createSellerDepositOrder = async (
             data: {
                 razorpayOrderId: razorpayOrder.id,
                 amount: razorpayOrder.amount,
+                currency: razorpayOrder.currency,
                 razorpayKey: process.env.RAZORPAY_KEY_ID,
+                receipt: razorpayOrder.receipt,
             },
         };
     } catch (error: any) {
-        console.error('Error creating seller deposit order:', error);
+        console.error('Error creating seller deposit order:', {
+            message: error.message,
+            statusCode: error.statusCode,
+            razorpayError: error.error?.description ?? error.error,
+        });
         return {
             success: false,
-            message: error.message || 'Failed to create deposit order',
+            message: error.error?.description ?? error.message ?? 'Failed to create deposit order',
         };
     }
 };
 
-/**
- * Capture seller deposit payment and update seller status
- */
 export const captureSellerDepositPayment = async (
     sellerId: string,
     razorpayOrderId: string,
@@ -383,7 +403,6 @@ export const captureSellerDepositPayment = async (
         }
 
         // 2. Find seller
-        const Seller = mongoose.models.Seller;
         // Use lean() to get a plain object and bypass initial Mongoose hydration issues if data is broken
         const seller: any = await Seller.findById(sellerId).session(session).lean();
         if (!seller) throw new Error('Seller not found');
@@ -398,7 +417,17 @@ export const captureSellerDepositPayment = async (
             }
         }
 
-        // 3. Create payment record
+        // 3. Calculate deposit amount for record
+        let depositAmount = 1000;
+        const categoryObj = await HeaderCategory.findOne({ name: seller.category });
+        if (categoryObj && categoryObj.securityDeposit > 0) {
+            depositAmount = categoryObj.securityDeposit;
+        } else {
+            const settings = await AppSettings.getSettings();
+            depositAmount = settings.sellerSecurityDeposit || 1000;
+        }
+
+        // 4. Create payment record
         const payment = new Payment({
             seller: sellerId,
             paymentType: 'SecurityDeposit',
@@ -407,7 +436,7 @@ export const captureSellerDepositPayment = async (
             razorpayOrderId,
             razorpayPaymentId,
             razorpaySignature,
-            amount: seller.depositAmount || 1000, // Will be updated correctly in $set below
+            amount: depositAmount,
             currency: 'INR',
             status: 'Completed',
             paidAt: new Date(),
@@ -419,11 +448,7 @@ export const captureSellerDepositPayment = async (
 
         await payment.save({ session });
 
-        // Fetch current deposit amount from settings
-        const settings = await AppSettings.getSettings();
-        const depositAmount = settings.sellerSecurityDeposit || 1000;
-
-        // 4. Update seller fields using direct collection update to bypass all Mongoose and indexing overhead
+        // 5. Update seller fields using direct collection update to bypass all Mongoose and indexing overhead
         // This ensures that existing invalid GeoJSON data doesn't block the crucial payment update
         const updateResult = await mongoose.connection.db!.collection('sellers').updateOne(
             { _id: new mongoose.Types.ObjectId(sellerId) },
@@ -475,11 +500,20 @@ const handlePaymentCaptured = async (payload: any) => {
         const notes = payload.notes || {};
 
         if (notes.paymentType === 'SecurityDeposit' && notes.sellerId) {
-            const settings = await AppSettings.getSettings();
-            const depositAmount = settings.sellerSecurityDeposit || 1000;
+            const seller = await Seller.findById(notes.sellerId);
+            let depositAmount = payload.amount / 100; // Default to actual paid amount
+
+            if (seller) {
+                const categoryObj = await HeaderCategory.findOne({ name: seller.category });
+                if (categoryObj && categoryObj.securityDeposit > 0) {
+                    depositAmount = categoryObj.securityDeposit;
+                } else {
+                    const settings = await AppSettings.getSettings();
+                    depositAmount = settings.sellerSecurityDeposit || 1000;
+                }
+            }
 
             // Handle seller deposit via webhook
-            const Seller = mongoose.models.Seller;
             await Seller.findByIdAndUpdate(notes.sellerId, {
                 securityDepositStatus: 'Paid',
                 securityDepositPaidAt: new Date(),

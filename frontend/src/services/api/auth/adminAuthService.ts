@@ -17,6 +17,12 @@ export interface VerifyOTPResponse {
       mobile: string;
       email: string;
       role: string;
+      roleId?: {
+        _id: string;
+        name: string;
+        type: string;
+        permissions: string[];
+      };
     };
   };
 }
@@ -42,6 +48,12 @@ export interface RegisterResponse {
       mobile: string;
       email: string;
       role: string;
+      roleId?: {
+        _id: string;
+        name: string;
+        type: string;
+        permissions: string[];
+      };
     };
   };
 }
@@ -106,7 +118,7 @@ export interface AdminProfileResponse {
  * Get admin profile
  */
 export const getAdminProfile = async (): Promise<AdminProfileResponse> => {
-  const response = await api.get<AdminProfileResponse>('/auth/admin/profile');
+  const response = await api.get<AdminProfileResponse>('/admin/profile');
   return response.data;
 };
 
@@ -120,6 +132,6 @@ export const updateAdminProfile = async (data: {
   currentPassword?: string;
   newPassword?: string;
 }): Promise<AdminProfileResponse> => {
-  const response = await api.put<AdminProfileResponse>('/auth/admin/profile', data);
+  const response = await api.put<AdminProfileResponse>('/admin/profile', data);
   return response.data;
 };

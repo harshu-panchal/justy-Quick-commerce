@@ -67,8 +67,8 @@ export const verifyOTP = asyncHandler(async (req: Request, res: Response) => {
     });
   }
 
-  // Find admin
-  const admin = await Admin.findOne({ mobile }).select("-password");
+  // Find admin and populate roleId
+  const admin = await Admin.findOne({ mobile }).select("-password").populate("roleId");
   if (!admin) {
     return res.status(404).json({
       success: false,
@@ -91,6 +91,7 @@ export const verifyOTP = asyncHandler(async (req: Request, res: Response) => {
         mobile: admin.mobile,
         email: admin.email,
         role: admin.role,
+        roleId: admin.roleId, // Include populated role for permissions
       },
     },
   });

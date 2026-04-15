@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useToast } from '../../../context/ToastContext';
 import { getAppSettings, updateAppSettings, AppSettings } from '../../../services/api/admin/adminSettingsService';
+import { getHeaderCategoriesAdmin, updateHeaderCategory, HeaderCategory } from '../../../services/api/headerCategoryService';
 import { motion } from 'framer-motion';
 
 export default function AdminBillingSettings() {
@@ -30,9 +31,23 @@ export default function AdminBillingSettings() {
     const [minOrderValue, setMinOrderValue] = useState<number>(0);
     const [maxReferrals, setMaxReferrals] = useState<number>(10);
 
+    // Category Overrides State
+    const [categories, setCategories] = useState<HeaderCategory[]>([]);
+    const [updatingCategoryId, setUpdatingCategoryId] = useState<string | null>(null);
+
     useEffect(() => {
         fetchSettings();
+        fetchCategories();
     }, []);
+
+    const fetchCategories = async () => {
+        try {
+            const data = await getHeaderCategoriesAdmin();
+            setCategories(data);
+        } catch (error) {
+            console.error('Failed to fetch categories:', error);
+        }
+    };
 
     const fetchSettings = async () => {
         try {
@@ -72,6 +87,23 @@ export default function AdminBillingSettings() {
             showToast(error.message || 'Failed to fetch settings', 'error');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleUpdateCategoryDeposit = async (id: string, amount: number) => {
+        try {
+            setUpdatingCategoryId(id);
+            await updateHeaderCategory(id, { securityDeposit: amount });
+            showToast('Category security deposit updated');
+            // Update local state to reflect change
+            setCategories(prev => prev.map(cat => cat._id === id ? { ...cat, securityDeposit: amount } : cat));
+        } catch (error: any) {
+            console.error('Failed to update category security deposit:', error);
+            showToast(error.response?.data?.message || 'Failed to update category deposit', 'error');
+            // Refresh categories on failure
+            fetchCategories();
+        } finally {
+            setUpdatingCategoryId(null);
         }
     };
 
@@ -498,10 +530,10 @@ export default function AdminBillingSettings() {
 
                 {/* Seller Onboarding Settings */}
                 <div className="bg-white rounded-xl shadow-sm border border-neutral-200 p-6">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b">Seller Onboarding</h2>
+                    <h2 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b">Seller Onboarding (Global)</h2>
                     <div className="max-w-md">
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Seller Security Deposit (₹)
+                            Default Seller Security Deposit (₹)
                         </label>
                         <div className="relative">
                             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">₹</span>
@@ -514,8 +546,72 @@ export default function AdminBillingSettings() {
                                 placeholder="e.g. 1000"
                             />
                         </div>
-                        <p className="mt-1 text-xs text-gray-500">The amount sellers must pay after approval to start selling.</p>
+                        <p className="mt-1 text-xs text-gray-500">
+                            The fallback amount if no category-specific deposit is set.
+                        </p>
                     </div>
+                </div>
+
+                {/* Category Overrides Section */}
+                <div className="bg-white rounded-xl shadow-sm border border-neutral-200 p-6">
+                    <div className="flex justify-between items-center mb-4 pb-2 border-b">
+                        <h2 className="text-lg font-semibold text-gray-900">Category-wise Security Deposits</h2>
+                        <span className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded-full font-bold">Overrides</span>
+                    </div>
+                    
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                            <thead>
+                                <tr className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                    <th className="px-4 py-2">Category</th>
+                                    <th className="px-4 py-2">Security Deposit (₹)</th>
+                                    <th className="px-4 py-2 text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                                {categories.map((cat) => (
+                                    <tr key={cat._id} className="group">
+                                        <td className="px-4 py-3 text-sm font-medium text-gray-800">
+                                            {cat.name}
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            <div className="relative w-32">
+                                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs">₹</span>
+                                                <input
+                                                    type="number"
+                                                    defaultValue={cat.securityDeposit}
+                                                    onBlur={(e) => {
+                                                        const newVal = Number(e.target.value);
+                                                        if (newVal !== cat.securityDeposit) {
+                                                            handleUpdateCategoryDeposit(cat._id, newVal);
+                                                        }
+                                                    }}
+                                                    className="w-full pl-5 pr-2 py-1 text-sm border border-gray-200 rounded focus:ring-1 focus:ring-green-500 focus:border-green-500 outline-none"
+                                                />
+                                            </div>
+                                        </td>
+                                        <td className="px-4 py-3 text-right">
+                                            {updatingCategoryId === cat._id ? (
+                                                <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin ml-auto"></div>
+                                            ) : (
+                                                <span className="text-[10px] text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">Auto-saves on blur</span>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
+                                {categories.length === 0 && (
+                                    <tr>
+                                        <td colSpan={3} className="px-4 py-8 text-center text-sm text-gray-500 italic">
+                                            No categories found to override.
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                    <p className="mt-4 text-[11px] text-gray-500 italic">
+                        * Values greater than 0 here will override the global default setting during seller onboarding.
+                    </p>
                 </div>
             </div>
         </motion.div>

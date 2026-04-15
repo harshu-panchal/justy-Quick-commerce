@@ -40,8 +40,8 @@ import * as cashCollectionController from "../modules/admin/controllers/adminCas
 // FAQ Controllers
 import * as faqController from "../modules/admin/controllers/adminFAQController";
 
-// Role Controllers - Manage Roles functionality removed
-// import * as roleController from "../modules/admin/controllers/adminRoleController";
+// Role Controllers
+import * as roleController from "../modules/admin/controllers/adminRoleController";
 
 import * as paymentController from "../modules/admin/controllers/adminPaymentController";
 import * as policyController from "../modules/admin/controllers/adminPolicyController";
@@ -332,13 +332,12 @@ router.delete("/faqs/:id", faqController.deleteFAQ);
 router.put("/faqs/order", faqController.updateFAQOrder);
 
 // ==================== Role Routes ====================
-// Manage Roles functionality removed from admin panel
-// router.get("/roles/permissions", roleController.getPermissions);
-// router.get("/roles", roleController.getRoles);
-// router.get("/roles/:id", roleController.getRoleById);
-// router.post("/roles", roleController.createRole);
-// router.put("/roles/:id", roleController.updateRole);
-// router.delete("/roles/:id", roleController.deleteRole);
+router.get("/roles/permissions", roleController.getPermissions);
+router.get("/roles", roleController.getRoles);
+router.get("/roles/:id", roleController.getRoleById);
+router.post("/roles", roleController.createRole);
+router.put("/roles/:id", roleController.updateRole);
+router.delete("/roles/:id", roleController.deleteRole);
 
 // ==================== Policy Routes ====================
 router.post("/policies", policyController.createPolicy);

@@ -116,23 +116,40 @@ router.post('/verify', authenticate, requireUserType('Customer'), async (req: Re
 /**
  * Create Razorpay order for seller security deposit
  */
-router.post('/seller/deposit/create-order', authenticate, requireUserType('Seller'), async (req: Request, res: Response) => {
-    try {
-        const result = await createSellerDepositOrder(req.user!.userId, 1000);
 
-        if (!result.success) {
-            return res.status(400).json(result);
+router.post(
+  '/seller/deposit/create-order',
+  authenticate,
+  requireUserType('Seller'),
+    async (req: Request, res: Response) => {
+        try {
+            const sellerId = req.user?.userId;
+            if (!sellerId) {
+                return res.status(401).json({
+                    success: false,
+                    message: 'Seller authentication required',
+                });
+            }
+
+            const { amount } = req.body;
+            const result = await createSellerDepositOrder(sellerId, amount);
+
+            if (!result.success) {
+                // If message is "Authentication failed", it's likely a Razorpay credential issue
+                console.error('❌ Seller deposit order creation failed:', result.message);
+                return res.status(400).json(result);
+            }
+
+            return res.status(201).json(result);
+        } catch (error: any) {
+            console.error('Error in /seller/deposit/create-order:', error);
+            return res.status(500).json({
+                success: false,
+                message: error.message || 'Failed to create deposit order',
+            });
         }
-
-        return res.status(200).json(result);
-    } catch (error: any) {
-        console.error('Error creating seller deposit order:', error);
-        return res.status(500).json({
-            success: false,
-            message: error.message || 'Failed to create deposit order',
-        });
     }
-});
+);
 
 /**
  * Verify seller deposit payment

@@ -4,6 +4,7 @@ import bcrypt from 'bcrypt';
 export interface ISeller extends Document {
   // Authentication
   sellerName: string;
+  executiveName?: string;
   password: string;
   email: string;
   mobile: string;
@@ -123,6 +124,10 @@ const SellerSchema = new Schema<ISeller>(
     sellerName: {
       type: String,
       required: [true, 'Seller name is required'],
+      trim: true,
+    },
+    executiveName: {
+      type: String,
       trim: true,
     },
     password: {

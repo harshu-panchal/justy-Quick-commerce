@@ -16,10 +16,12 @@ export const getRoles = asyncHandler(async (req: Request, res: Response) => {
     } = req.query;
 
     const query: any = {};
+    // Exclude Super Admin and Admin roles
+    query.name = { $nin: ["Super Admin", "Admin"] };
 
     // Search filter
     if (search) {
-        query.name = { $regex: search, $options: "i" };
+        query.name = { ...query.name, $regex: search, $options: "i" };
     }
 
     // Type filter

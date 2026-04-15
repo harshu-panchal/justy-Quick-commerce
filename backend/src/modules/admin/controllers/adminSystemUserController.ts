@@ -1,6 +1,9 @@
 import { Request, Response } from "express";
 import { asyncHandler } from "../../../utils/asyncHandler";
 import Admin from "../../../models/Admin";
+import Role from "../../../models/Role";
+import { sendStaffWelcomeEmail } from "../../../services/mailService";
+import crypto from "crypto";
 
 /**
  * Get all system users (admins) with filters and pagination
@@ -18,8 +21,10 @@ export const getAllSystemUsers = asyncHandler(
 
     const query: any = {};
 
-    // Filter by role
-    if (role && (role === "Super Admin" || role === "Admin")) {
+    // Filter by role - Exclude Super Admin and Admin by default
+    query.role = { $nin: ["Super Admin", "Admin"] };
+
+    if (role && role !== "All") {
       query.role = role;
     }
 
@@ -42,6 +47,7 @@ export const getAllSystemUsers = asyncHandler(
     const [admins, total] = await Promise.all([
       Admin.find(query)
         .select("-password") // Don't return password
+        .populate("roleId")
         .sort(sort)
         .skip(skip)
         .limit(parseInt(limit as string)),
@@ -78,7 +84,7 @@ export const getSystemUserById = asyncHandler(
   async (req: Request, res: Response) => {
     const { id } = req.params;
 
-    const admin = await Admin.findById(id).select("-password");
+    const admin = await Admin.findById(id).select("-password").populate("roleId");
 
     if (!admin) {
       return res.status(404).json({
@@ -109,22 +115,29 @@ export const getSystemUserById = asyncHandler(
  */
 export const createSystemUser = asyncHandler(
   async (req: Request, res: Response) => {
-    const { firstName, lastName, mobile, email, password, role } = req.body;
+    const { firstName, lastName, mobile, email, role, roleId } = req.body;
 
     // Validation
-    if (!firstName || !lastName || !mobile || !email || !password) {
+    if (!firstName || !lastName || !mobile || !email) {
       return res.status(400).json({
         success: false,
-        message: "All fields are required",
+        message: "First name, last name, mobile and email are required",
       });
     }
 
+    // Generate random 6-digit password
+    const password = Math.floor(100000 + Math.random() * 900000).toString();
+
     // Validate role
     if (role && role !== "Admin" && role !== "Super Admin") {
-      return res.status(400).json({
-        success: false,
-        message: "Role must be either 'Admin' or 'Super Admin'",
-      });
+      // Check if role exists in Role model if it's a custom role name
+      const roleExists = await Role.findOne({ name: role });
+      if (!roleExists && !roleId) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid role or roleId",
+        });
+      }
     }
 
     // Validate mobile number format
@@ -169,13 +182,17 @@ export const createSystemUser = asyncHandler(
       lastName,
       mobile,
       email,
-      password,
-      role: role || "Admin", // Default to "Admin" if not provided
+      password, // Still required by model, but won't be used for login
+      role: role || "Admin",
+      roleId: roleId || null,
     });
+
+    // Send welcome email (no password, login via OTP)
+    await sendStaffWelcomeEmail(email, `${firstName} ${lastName}`);
 
     return res.status(201).json({
       success: true,
-      message: "System user created successfully",
+      message: "Staff account created successfully. Staff can login using Mobile + OTP.",
       data: {
         id: admin._id,
         firstName: admin.firstName,
@@ -183,6 +200,7 @@ export const createSystemUser = asyncHandler(
         mobile: admin.mobile,
         email: admin.email,
         role: admin.role,
+        roleId: admin.roleId,
         createdAt: admin.createdAt,
         updatedAt: admin.updatedAt,
       },
@@ -196,7 +214,7 @@ export const createSystemUser = asyncHandler(
 export const updateSystemUser = asyncHandler(
   async (req: Request, res: Response) => {
     const { id } = req.params;
-    const { firstName, lastName, mobile, email, password, role } = req.body;
+    const { firstName, lastName, mobile, email, password, role, roleId } = req.body;
 
     // Find the admin
     const admin = await Admin.findById(id);
@@ -265,7 +283,8 @@ export const updateSystemUser = asyncHandler(
     if (lastName) admin.lastName = lastName;
     if (email) admin.email = email;
     if (mobile) admin.mobile = mobile;
-    if (role) admin.role = role as "Admin" | "Super Admin";
+    if (role) admin.role = role;
+    if (roleId !== undefined) admin.roleId = roleId;
     if (password) {
       if (password.length < 6) {
         return res.status(400).json({
@@ -279,7 +298,7 @@ export const updateSystemUser = asyncHandler(
     await admin.save();
 
     // Return updated admin without password
-    const updatedAdmin = await Admin.findById(id).select("-password");
+    const updatedAdmin = await Admin.findById(id).select("-password").populate("roleId");
 
     return res.status(200).json({
       success: true,

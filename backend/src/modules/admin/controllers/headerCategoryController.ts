@@ -51,6 +51,7 @@ export const createHeaderCategory = async (req: Request, res: Response) => {
       deliveryType,
       scheduledTime,
       assignedDeliveryBoy,
+      securityDeposit,
       status,
       order,
     } = req.body;
@@ -73,6 +74,7 @@ export const createHeaderCategory = async (req: Request, res: Response) => {
       deliveryType,
       scheduledTime,
       assignedDeliveryBoy: assignedDeliveryBoy || undefined,
+      securityDeposit: securityDeposit || 0,
       status,
       order,
     });
@@ -100,6 +102,7 @@ export const updateHeaderCategory = async (req: Request, res: Response) => {
       deliveryType,
       scheduledTime,
       assignedDeliveryBoy,
+      securityDeposit,
       status,
       order,
     } = req.body;
@@ -133,6 +136,7 @@ export const updateHeaderCategory = async (req: Request, res: Response) => {
 
       category.status = status || category.status;
       category.order = order !== undefined ? order : category.order;
+      category.securityDeposit = securityDeposit !== undefined ? securityDeposit : category.securityDeposit;
 
       const updatedCategory = await category.save();
       return res.json(updatedCategory);

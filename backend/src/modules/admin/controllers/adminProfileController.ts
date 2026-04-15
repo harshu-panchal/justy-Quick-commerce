@@ -8,7 +8,7 @@ import { asyncHandler } from "../../../utils/asyncHandler";
 export const getProfile = asyncHandler(async (req: Request, res: Response) => {
     const userId = req.user!.userId;
 
-    const admin = await Admin.findById(userId).select("-password");
+    const admin = await Admin.findById(userId).select("-password").populate("roleId");
 
     if (!admin) {
         return res.status(404).json({
@@ -21,11 +21,13 @@ export const getProfile = asyncHandler(async (req: Request, res: Response) => {
         success: true,
         data: {
             id: admin._id,
+            _id: admin._id,
             firstName: admin.firstName,
             lastName: admin.lastName,
             mobile: admin.mobile,
             email: admin.email,
             role: admin.role,
+            roleId: admin.roleId, // Important for permissions
             createdAt: admin.createdAt,
             updatedAt: admin.updatedAt,
         },
@@ -79,17 +81,22 @@ export const updateProfile = asyncHandler(async (req: Request, res: Response) =>
 
     await admin.save();
 
+    // Fetch again to populate roleId
+    const updatedAdmin = await Admin.findById(userId).select("-password").populate("roleId");
+
     return res.status(200).json({
         success: true,
         message: "Profile updated successfully",
         data: {
-            id: admin._id,
-            firstName: admin.firstName,
-            lastName: admin.lastName,
-            mobile: admin.mobile,
-            email: admin.email,
-            role: admin.role,
-            updatedAt: admin.updatedAt,
+            id: updatedAdmin!._id,
+            _id: updatedAdmin!._id,
+            firstName: updatedAdmin!.firstName,
+            lastName: updatedAdmin!.lastName,
+            mobile: updatedAdmin!.mobile,
+            email: updatedAdmin!.email,
+            role: updatedAdmin!.role,
+            roleId: updatedAdmin!.roleId,
+            updatedAt: updatedAdmin!.updatedAt,
         },
     });
 });

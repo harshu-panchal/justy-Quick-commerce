@@ -8,6 +8,10 @@ export interface IProductField extends Document {
     section?: string;
     placeholder?: string;
     status: 'Active' | 'Inactive';
+    dependsOn?: {
+        fieldId: mongoose.Types.ObjectId | string | null;
+        value: string;
+    };
     createdAt: Date;
     updatedAt: Date;
 }
@@ -47,6 +51,10 @@ const ProductFieldSchema: Schema = new Schema(
             enum: ['Active', 'Inactive'], 
             default: 'Active' 
         },
+        dependsOn: {
+            fieldId: { type: Schema.Types.ObjectId, ref: 'ProductField', default: null },
+            value: { type: String, default: '' }
+        }
     },
     { timestamps: true }
 );

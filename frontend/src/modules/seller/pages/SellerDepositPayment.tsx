@@ -4,6 +4,7 @@ import { useAuth } from '../../../context/AuthContext';
 import { useToast } from '../../../context/ToastContext';
 import { createSellerDepositOrder, verifySellerDepositPayment } from '../../../services/api/paymentService';
 import api from '../../../services/api/config';
+import { getHeaderCategoriesPublic } from '../../../services/api/headerCategoryService';
 
 declare global {
     interface Window {
@@ -19,18 +20,33 @@ const SellerDepositPayment = () => {
     const [depositAmount, setDepositAmount] = useState<number>(1000);
 
     useEffect(() => {
-        const fetchSettings = async () => {
+        const fetchDepositAmount = async () => {
             try {
+                // 1. Try to get categories to find specific deposit
+                const categories = await getHeaderCategoriesPublic();
+                if (categories && categories.length > 0) {
+                    const sellerCategory = user?.category;
+                    const categoryObj = categories.find((c: any) => c.name === sellerCategory);
+                    
+                    if (categoryObj && categoryObj.securityDeposit > 0) {
+                        setDepositAmount(categoryObj.securityDeposit);
+                        return;
+                    }
+                }
+
+                // 2. Fallback to global settings
                 const response = await api.get('/public/settings');
                 if (response.data.success) {
                     setDepositAmount(response.data.data.sellerSecurityDeposit || 1000);
                 }
             } catch (err) {
-                console.error('Failed to fetch public settings:', err);
+                console.error('Failed to fetch deposit settings:', err);
+                // Last fallback
+                setDepositAmount(1000);
             }
         };
-        fetchSettings();
-    }, []);
+        fetchDepositAmount();
+    }, [user?.category]);
 
     const steps = [
         { id: 1, label: 'Store Registration', status: 'completed' },

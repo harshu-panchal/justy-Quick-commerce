@@ -9,6 +9,7 @@ export interface IHeaderCategory extends Document {
     deliveryType: 'quick' | 'scheduled';
     scheduledTime?: string;
     assignedDeliveryBoy?: mongoose.Types.ObjectId;
+    securityDeposit: number; // For seller onboarding
     order: number;
     status: 'Published' | 'Unpublished';
     createdAt: Date;
@@ -25,6 +26,7 @@ const HeaderCategorySchema: Schema = new Schema(
         deliveryType: { type: String, enum: ['quick', 'scheduled'], default: 'quick' },
         scheduledTime: { type: String, required: false },
         assignedDeliveryBoy: { type: Schema.Types.ObjectId, ref: 'Delivery', required: false },
+        securityDeposit: { type: Number, default: 0 },
         order: { type: Number, default: 0 },
         status: { type: String, enum: ['Published', 'Unpublished'], default: 'Published' },
     },

@@ -3,6 +3,7 @@ import Otp from '../models/Otp';
 import { sendEmail } from './mailService';
 
 // SMS India HUB Configuration
+const SMS_INDIA_HUB_USERNAME = process.env.SMS_INDIA_HUB_USERNAME;
 const SMS_INDIA_HUB_API_KEY = process.env.SMS_INDIA_HUB_API_KEY;
 const SMS_INDIA_HUB_SENDER_ID = process.env.SMS_INDIA_HUB_SENDER_ID;
 const SMS_INDIA_HUB_DLT_TEMPLATE_ID = process.env.SMS_INDIA_HUB_DLT_TEMPLATE_ID;
@@ -39,18 +40,12 @@ type UserType = 'Customer' | 'Delivery' | 'Seller' | 'Admin';
  * Generate numeric OTP
  */
 function generateOTP(length: number = 4): string {
-  // Always return static for now as requested by user
-  return length === 4 ? '1234' : '123456';
-  
-  /* 
-  // Original random logic
   const digits = '0123456789';
   let otp = '';
   for (let i = 0; i < length; i++) {
     otp += digits[Math.floor(Math.random() * 10)];
   }
   return otp;
-  */
 }
 
 /**
@@ -98,6 +93,11 @@ async function sendSmsViaApi(mobile: string, message: string): Promise<void> {
     gwid: '2',
   };
 
+  // Add Username if provided
+  if (SMS_INDIA_HUB_USERNAME?.trim()) {
+    params.user = SMS_INDIA_HUB_USERNAME.trim();
+  }
+
   if (SMS_INDIA_HUB_DLT_TEMPLATE_ID?.trim()) {
     params.DLT_TE_ID = SMS_INDIA_HUB_DLT_TEMPLATE_ID.trim();
   }
@@ -135,8 +135,6 @@ async function saveOtpToDb(identifier: { mobile?: string; email?: string }, otp:
  */
 async function verifyOtpFromDb(identifier: { mobile?: string; email?: string }, otp: string, userType: UserType): Promise<boolean> {
   // Allow Developer/Static Bypass
-  if (otp === '1234' || otp === '9999' || otp === '123456') return true;
-
   const query = identifier.mobile 
     ? { mobile: identifier.mobile.replace(/\D/g, ''), userType } 
     : { email: identifier.email?.toLowerCase(), userType };

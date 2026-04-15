@@ -10,6 +10,10 @@ export interface ProductField {
     section?: string;
     placeholder?: string;
     status: 'Active' | 'Inactive';
+    dependsOn?: {
+        fieldId: string | null;
+        value: string;
+    };
     createdAt: string;
     updatedAt: string;
 }
@@ -22,6 +26,10 @@ export interface CreateProductFieldData {
     section?: string;
     placeholder?: string;
     status?: string;
+    dependsOn?: {
+        fieldId: string | null;
+        value: string;
+    };
 }
 
 export const getProductFields = async (): Promise<ApiResponse<ProductField[]>> => {

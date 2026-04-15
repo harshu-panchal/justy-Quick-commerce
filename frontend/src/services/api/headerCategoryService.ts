@@ -13,6 +13,7 @@ export interface HeaderCategory {
     order?: number;
     scheduledTime?: string;
     assignedDeliveryBoy?: string;
+    securityDeposit: number;
 }
 
 export const getHeaderCategoriesPublic = async (includeAll = false): Promise<HeaderCategory[]> => {

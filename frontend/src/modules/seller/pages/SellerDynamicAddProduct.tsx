@@ -29,6 +29,10 @@ interface ProductField {
   placeholder?: string;
   headerCategory: any;
   status: string;
+  dependsOn?: {
+    fieldId: string | null;
+    value: string;
+  };
 }
 
 export default function SellerDynamicAddProduct() {
@@ -216,21 +220,22 @@ export default function SellerDynamicAddProduct() {
                     </div>
                 </section>
 
-                {/* Dynamic Content Grouped by Sections */}
-                {Object.entries(groupedFields).map(([sectionName, fields]) => (
+                {/* Dynamic Content — Flat List */}
+                {currentHCFields.length > 0 && (
                     <motion.section 
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        key={sectionName} 
                         className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm space-y-6"
                     >
-                        <div className="flex items-center gap-4">
-                            <h2 className="text-sm font-black text-indigo-600 uppercase tracking-widest whitespace-nowrap">{sectionName}</h2>
-                            <div className="h-px w-full bg-indigo-50"></div>
-                        </div>
-
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {fields.map(field => (
+                            {currentHCFields.map(field => {
+                                // Check for conditional visibility
+                                if (field.dependsOn?.fieldId) {
+                                  const parentValue = dynamicData[field.dependsOn.fieldId];
+                                  if (parentValue !== field.dependsOn.value) return null;
+                                }
+
+                                return (
                                 <div key={field._id} className="space-y-2">
                                     <label className="text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">
                                         {field.label} {field.required && <span className="text-rose-500">*</span>}
@@ -422,10 +427,11 @@ export default function SellerDynamicAddProduct() {
                                         </div>
                                     )}
                                 </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     </motion.section>
-                ))}
+                )}
 
                 <div className="pt-6">
                     <button 

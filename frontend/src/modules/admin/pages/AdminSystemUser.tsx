@@ -8,16 +8,17 @@ import {
   CreateSystemUserData,
   UpdateSystemUserData,
 } from '../../../services/api/admin/adminSystemUserService';
+import { getRoles, Role } from '../../../services/api/admin/roleService';
 
 export default function AdminSystemUser() {
   const [formData, setFormData] = useState({
-    role: '' as '' | 'Admin' | 'Super Admin',
+    roleId: '',
+    role: '',
     firstName: '',
     lastName: '',
     mobile: '',
     email: '',
-    password: '',
-    confirmPassword: '',
+    password: '', // Optional for updates
   });
   const [entriesPerPage, setEntriesPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
@@ -26,29 +27,32 @@ export default function AdminSystemUser() {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [systemUsers, setSystemUsers] = useState<SystemUserType[]>([]);
+  const [availableRoles, setAvailableRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [error, setError] = useState('');
   const [totalPages, setTotalPages] = useState(1);
   const [totalUsers, setTotalUsers] = useState(0);
 
-  // Only Admin and Super Admin roles
-  const roles: ('Admin' | 'Super Admin')[] = ['Admin', 'Super Admin'];
-
-  // Debounce search term
+  // Fetch available roles and users
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setCurrentPage(1); // Reset to first page when search changes
-    }, 500); // 500ms delay
+    fetchAvailableRoles();
+  }, []);
 
-    return () => clearTimeout(timer);
-  }, [searchTerm]);
-
-  // Fetch system users on component mount and when filters change
   useEffect(() => {
     fetchSystemUsers();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, entriesPerPage, searchTerm, sortColumn, sortDirection]);
+
+  const fetchAvailableRoles = async () => {
+    try {
+      const response = await getRoles({ limit: 100 });
+      if (response.success && response.data) {
+        setAvailableRoles(response.data);
+      }
+    } catch (err) {
+      console.error('Error fetching roles:', err);
+    }
+  };
 
   const fetchSystemUsers = async () => {
     setLoading(true);
@@ -80,18 +84,27 @@ export default function AdminSystemUser() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (name === 'roleId') {
+      const selectedRole = availableRoles.find(r => r._id === value);
+      setFormData(prev => ({
+        ...prev,
+        roleId: value,
+        role: selectedRole ? selectedRole.name : ''
+      }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   const resetForm = () => {
     setFormData({
+      roleId: '',
       role: '',
       firstName: '',
       lastName: '',
       mobile: '',
       email: '',
       password: '',
-      confirmPassword: '',
     });
     setEditingId(null);
   };
@@ -101,7 +114,7 @@ export default function AdminSystemUser() {
     setSuccessMessage('');
 
     // Validation
-    if (!formData.role) {
+    if (!formData.roleId) {
       setError('Please select a role');
       return;
     }
@@ -129,18 +142,6 @@ export default function AdminSystemUser() {
       setError('Please enter a valid email address');
       return;
     }
-    if (editingId === null && !formData.password.trim()) {
-      setError('Please enter password');
-      return;
-    }
-    if (formData.password.trim() && formData.password.length < 6) {
-      setError('Password must be at least 6 characters');
-      return;
-    }
-    if (formData.password !== formData.confirmPassword) {
-      setError('Password and Confirm Password do not match');
-      return;
-    }
 
     setLoading(true);
     try {
@@ -152,6 +153,7 @@ export default function AdminSystemUser() {
           mobile: formData.mobile,
           email: formData.email,
           role: formData.role,
+          roleId: formData.roleId,
         };
         if (formData.password.trim()) {
           updateData.password = formData.password;
@@ -172,13 +174,13 @@ export default function AdminSystemUser() {
           lastName: formData.lastName,
           mobile: formData.mobile,
           email: formData.email,
-          password: formData.password,
           role: formData.role,
+          roleId: formData.roleId,
         };
 
         const response = await createSystemUser(createData);
         if (response.success) {
-          setSuccessMessage('System user added successfully!');
+          setSuccessMessage('Staff account created! Staff can now log in using Mobile + OTP.');
           resetForm();
           fetchSystemUsers();
         } else {
@@ -196,15 +198,16 @@ export default function AdminSystemUser() {
     const user = systemUsers.find((u) => u.id === id);
     if (user) {
       setFormData({
+        roleId: user.roleId?._id || user.roleId || '',
         role: user.role,
         firstName: user.firstName,
         lastName: user.lastName,
         mobile: user.mobile,
         email: user.email,
         password: '',
-        confirmPassword: '',
       });
       setEditingId(id);
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 
@@ -355,20 +358,20 @@ export default function AdminSystemUser() {
                     <label className="block text-sm font-medium text-neutral-700 mb-2">
                       Select role <span className="text-red-500">*</span>
                     </label>
-                    <select
-                      name="role"
-                      value={formData.role}
-                      onChange={handleInputChange}
-                      disabled={loading}
-                      className="w-full px-3 py-2 border border-neutral-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white"
-                    >
-                      <option value="">Select role</option>
-                      {roles.map((role) => (
-                        <option key={role} value={role}>
-                          {role}
-                        </option>
-                      ))}
-                    </select>
+                      <select
+                        name="roleId"
+                        value={formData.roleId}
+                        onChange={handleInputChange}
+                        disabled={loading}
+                        className="w-full px-3 py-2 border border-neutral-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white"
+                      >
+                        <option value="">Select role</option>
+                        {availableRoles.map((role) => (
+                          <option key={role._id} value={role._id}>
+                            {role.name}
+                          </option>
+                        ))}
+                      </select>
                   </div>
 
                   <div>
@@ -432,34 +435,13 @@ export default function AdminSystemUser() {
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">
-                      Password {editingId === null && <span className="text-red-500">*</span>}
-                    </label>
-                    <input
-                      type="password"
-                      name="password"
-                      value={formData.password}
-                      onChange={handleInputChange}
-                      placeholder={editingId === null ? "Enter Password" : "Leave blank to keep current"}
-                      disabled={loading}
-                      className="w-full px-3 py-2 border border-neutral-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">
-                      Confirm Password {editingId === null && <span className="text-red-500">*</span>}
-                    </label>
-                    <input
-                      type="password"
-                      name="confirmPassword"
-                      value={formData.confirmPassword}
-                      onChange={handleInputChange}
-                      placeholder={editingId === null ? "Enter Confirm Password" : "Leave blank to keep current"}
-                      disabled={loading}
-                      className="w-full px-3 py-2 border border-neutral-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                    />
+                  <div className="md:col-span-2 p-3 bg-teal-50 text-teal-700 text-xs rounded border border-teal-100 flex items-start gap-2">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="12" y1="16" x2="12" y2="12"></line>
+                      <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                    <span>Staff members will log in securely using their registered mobile number and OTP verification. No password is required.</span>
                   </div>
                 </div>
               </div>

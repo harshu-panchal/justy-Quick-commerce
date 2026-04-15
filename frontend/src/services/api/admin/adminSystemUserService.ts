@@ -7,7 +7,8 @@ export interface SystemUser {
   lastName: string;
   mobile: string;
   email: string;
-  role: "Admin" | "Super Admin";
+  role: string;
+  roleId?: any; // New role object if populated
   createdAt?: string;
   updatedAt?: string;
 }
@@ -16,7 +17,7 @@ export interface GetSystemUsersParams {
   page?: number;
   limit?: number;
   search?: string;
-  role?: "Admin" | "Super Admin";
+  role?: string;
   sortBy?: string;
   sortOrder?: "asc" | "desc";
 }
@@ -26,8 +27,8 @@ export interface CreateSystemUserData {
   lastName: string;
   mobile: string;
   email: string;
-  password: string;
-  role?: "Admin" | "Super Admin";
+  role?: string;
+  roleId?: string;
 }
 
 export interface UpdateSystemUserData {
@@ -36,7 +37,8 @@ export interface UpdateSystemUserData {
   mobile?: string;
   email?: string;
   password?: string;
-  role?: "Admin" | "Super Admin";
+  role?: string;
+  roleId?: string;
 }
 
 /**

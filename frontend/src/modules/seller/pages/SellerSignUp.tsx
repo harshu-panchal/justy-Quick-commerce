@@ -8,6 +8,7 @@ import ServiceAreaMap from '../../../components/ServiceAreaMap';
 import { uploadPublicImage, uploadPublicDocument } from '../../../services/api/uploadService';
 import { getCategories, Category } from '../../../services/api/categoryService';
 import { getHeaderCategoriesPublic, HeaderCategory } from '../../../services/api/headerCategoryService';
+import { getPublicExecutives } from '../../../services/api/admin/executiveService';
 
 const StepIndicator = ({ currentStep }: { currentStep: number }) => {
   const steps = [
@@ -120,6 +121,7 @@ export default function SellerSignUp() {
   const [emailVerifying, setEmailVerifying] = useState(false);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [fullHeaderCategories, setFullHeaderCategories] = useState<HeaderCategory[]>([]);
+  const [executives, setExecutives] = useState<{ _id: string; name: string }[]>([]);
 
   useEffect(() => {
     const syncCategories = async () => {
@@ -153,6 +155,18 @@ export default function SellerSignUp() {
       }
     };
     syncCategories();
+
+    const fetchExecs = async () => {
+      try {
+        const res = await getPublicExecutives();
+        if (res.success) {
+          setExecutives(res.data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch executives:', err);
+      }
+    };
+    fetchExecs();
   }, []);
 
   const showFSSAI = formData.categories.some(cat => 
@@ -285,7 +299,7 @@ export default function SellerSignUp() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    if (name === 'mobile') {
+    if (name === 'mobile' || name === 'alternateMobile') {
       setFormData(prev => ({
         ...prev,
         [name]: value.replace(/\D/g, '').slice(0, 10),
@@ -363,8 +377,12 @@ export default function SellerSignUp() {
   };
 
   const handleNextStep = () => {
-    if (!formData.sellerName || !formData.email || !formData.storeName) {
-      setError('Please fill in all required fields');
+    if (!formData.sellerName || !formData.email || !formData.storeName || !formData.mobile) {
+      setError('Please fill in all required fields (Name, Email, Store Name, and Mobile)');
+      return;
+    }
+    if (formData.mobile.length !== 10) {
+      setError('Please enter a valid 10-digit mobile number');
       return;
     }
     if (!isEmailVerified) {
@@ -685,20 +703,48 @@ export default function SellerSignUp() {
       />
     </div>
 
-    {/* Executive Name (ONLY ONE FIELD) */}
+    {/* Executive Name Dropdown */}
     <div>
       <label className="block text-sm font-medium text-neutral-700 mb-2">
         Executive Name
       </label>
-      <input
-        type="text"
+      <select
         name="executiveName"
         value={formData.executiveName || ""}
         onChange={handleInputChange}
-        placeholder="Enter executive name"
-        className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 transition-all"
+        className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 transition-all bg-white"
         disabled={loading}
-      />
+      >
+        <option value="">Select Executive</option>
+        {executives.map((exec) => (
+          <option key={exec._id} value={exec.name}>
+            {exec.name}
+          </option>
+        ))}
+      </select>
+    </div>
+
+    {/* Mobile Number */}
+    <div className="space-y-2">
+      <label className="block text-sm font-medium text-neutral-700">
+        Mobile Number <span className="text-red-500">*</span>
+      </label>
+      <div className="flex items-center bg-white border border-neutral-300 rounded-xl overflow-hidden focus-within:border-teal-500 transition-all">
+        <div className="px-3 py-3 text-sm font-medium text-neutral-600 border-r border-neutral-300 bg-neutral-50">
+          +91
+        </div>
+        <input
+          type="tel"
+          name="mobile"
+          value={formData.mobile}
+          onChange={handleInputChange}
+          placeholder="Mobile number"
+          required
+          maxLength={10}
+          className="flex-1 px-3 py-3 text-sm placeholder:text-neutral-400 focus:outline-none"
+          disabled={loading}
+        />
+      </div>
     </div>
 
     {/* Email */}
@@ -842,53 +888,8 @@ export default function SellerSignUp() {
                 <div className="space-y-6 animate-fadeIn">
                   <h3 className="text-sm font-bold text-teal-800 uppercase tracking-wider flex items-center">
                     <span className="w-6 h-6 bg-teal-100 text-teal-700 rounded-full flex items-center justify-center mr-2 text-[10px]">2</span>
-                    Document Verification
+                    Verification & Location
                   </h3>
-                  
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="block text-sm font-medium text-neutral-700">
-                        Mobile Number <span className="text-red-500">*</span>
-                      </label>
-                      <div className="flex items-center bg-white border border-neutral-300 rounded-xl overflow-hidden focus-within:border-teal-500 transition-all">
-                        <div className="px-3 py-3 text-sm font-medium text-neutral-600 border-r border-neutral-300 bg-neutral-50">
-                          +91
-                        </div>
-                        <input
-                          type="tel"
-                          name="mobile"
-                          value={formData.mobile}
-                          onChange={handleInputChange}
-                          placeholder="Mobile number"
-                          required
-                          maxLength={10}
-                          className="flex-1 px-3 py-3 text-sm placeholder:text-neutral-400 focus:outline-none"
-                          disabled={loading}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="block text-sm font-medium text-neutral-700">
-                        Alternate Contact (Optional)
-                      </label>
-                      <div className="flex items-center bg-white border border-neutral-300 rounded-xl overflow-hidden focus-within:border-teal-500 transition-all">
-                        <div className="px-3 py-3 text-sm font-medium text-neutral-600 border-r border-neutral-300 bg-neutral-50">
-                          +91
-                        </div>
-                        <input
-                          type="tel"
-                          name="alternateMobile"
-                          value={formData.alternateMobile}
-                          onChange={handleInputChange}
-                          placeholder="Alternate number"
-                          maxLength={10}
-                          className="flex-1 px-3 py-3 text-sm placeholder:text-neutral-400 focus:outline-none"
-                          disabled={loading}
-                        />
-                      </div>
-                    </div>
-                  </div>
 
                   <div className="space-y-4">
                     <label className="block text-sm font-medium text-neutral-700 mb-1">
@@ -980,18 +981,38 @@ export default function SellerSignUp() {
                       disabled={loading}
                     />
 
-                    <div className="mt-4">
-                      <label className="block text-sm font-medium text-neutral-700 mb-2">Nearest Landmark *</label>
-                      <input
-                        type="text"
-                        name="nearestLandmark"
-                        value={formData.nearestLandmark}
-                        onChange={handleInputChange}
-                        placeholder="e.g. Near City Hospital"
-                        required
-                        className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 transition-all font-medium"
-                        disabled={loading}
-                      />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                      <div>
+                        <label className="block text-sm font-medium text-neutral-700 mb-2">Nearest Landmark *</label>
+                        <input
+                          type="text"
+                          name="nearestLandmark"
+                          value={formData.nearestLandmark}
+                          onChange={handleInputChange}
+                          placeholder="e.g. Near City Hospital"
+                          required
+                          className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 transition-all font-medium"
+                          disabled={loading}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-neutral-700 mb-2">Alternate Contact</label>
+                        <div className="flex items-center bg-white border border-neutral-300 rounded-xl overflow-hidden focus-within:border-teal-500 transition-all">
+                          <div className="px-3 py-3 text-[12px] font-medium text-neutral-600 border-r border-neutral-300 bg-neutral-50">
+                            +91
+                          </div>
+                          <input
+                            type="tel"
+                            name="alternateMobile"
+                            value={formData.alternateMobile}
+                            onChange={handleInputChange}
+                            placeholder="Alternate number"
+                            maxLength={10}
+                            className="flex-1 px-3 py-3 text-sm placeholder:text-neutral-400 focus:outline-none"
+                            disabled={loading}
+                          />
+                        </div>
+                      </div>
                     </div>
 
                     {formData.latitude && formData.longitude && (

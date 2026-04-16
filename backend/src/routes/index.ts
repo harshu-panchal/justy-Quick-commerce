@@ -64,6 +64,7 @@ import {
 } from "../modules/customer/controllers/customerOrderController";
 
 import faqRoutes from "./faqRoutes";
+import * as executiveController from "../modules/admin/controllers/adminExecutiveController";
 
 const router = Router();
 router.use("/faqs", faqRoutes);
@@ -118,6 +119,7 @@ router.use("/auth/delivery", deliveryAuthRoutes);
 // Public settings route
 import { getPublicSettings } from "../controllers/settingsController";
 router.get("/public/settings", getPublicSettings);
+router.get("/public/executives", executiveController.getPublicExecutives);
 
 // FCM Token routes (protected - requires authentication)
 router.use("/fcm-tokens", authenticate, fcmTokenRoutes);

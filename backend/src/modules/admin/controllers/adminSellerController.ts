@@ -3,6 +3,7 @@ import { asyncHandler } from "../../../utils/asyncHandler";
 import Seller from "../../../models/Seller";
 import SellerWalletTransaction from "../../../models/SellerWalletTransaction";
 import mongoose from "mongoose";
+import Payment from "../../../models/Payment";
 
 /**
  * Get all sellers (for dropdowns/lists)
@@ -124,4 +125,39 @@ export const applySellerPenalty = asyncHandler(async (req: Request, res: Respons
             message: error.message || "Failed to apply penalty",
         });
     }
+});
+
+/**
+ * Get onboarding (security deposit) payments
+ */
+export const getOnboardingPayments = asyncHandler(async (req: Request, res: Response) => {
+    const { page = 1, limit = 10 } = req.query;
+    
+    const query = {
+        paymentType: 'SecurityDeposit',
+        status: 'Completed'
+    };
+
+    const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
+
+    const [payments, total] = await Promise.all([
+        Payment.find(query)
+            .populate("seller", "sellerName storeName categories email mobile category")
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(parseInt(limit as string)),
+        Payment.countDocuments(query),
+    ]);
+
+    return res.status(200).json({
+        success: true,
+        message: "Onboarding payments fetched successfully",
+        data: payments,
+        pagination: {
+            page: parseInt(page as string),
+            limit: parseInt(limit as string),
+            total,
+            pages: Math.ceil(total / parseInt(limit as string)),
+        },
+    });
 });

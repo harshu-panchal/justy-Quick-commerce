@@ -214,6 +214,8 @@ export const getPermissions = asyncHandler(async (_req: Request, res: Response) 
         "content_view",
         "content_manage",
         "reports_view",
+        "executives_view",
+        "executives_manage",
     ];
 
     return res.status(200).json({

@@ -22,6 +22,25 @@ export interface UpdatePaymentMethodData {
   secretKey?: string;
 }
 
+export interface OnboardingPayment {
+  _id: string;
+  seller: {
+    _id: string;
+    sellerName: string;
+    storeName: string;
+    categories: string[];
+    email: string;
+    mobile: string;
+    category: string;
+  };
+  amount: number;
+  razorpayOrderId?: string;
+  razorpayPaymentId?: string;
+  status: string;
+  paidAt?: string;
+  createdAt: string;
+}
+
 export interface GetPaymentMethodsParams {
   status?: "Active" | "InActive";
 }
@@ -78,6 +97,17 @@ export const updatePaymentMethodStatus = async (
   const response = await api.patch<ApiResponse<PaymentMethodConfig>>(
     `/admin/payment-methods/${id}/status`,
     { status }
+  );
+  return response.data;
+};
+
+/**
+ * Get onboarding (security deposit) payments
+ */
+export const getOnboardingPayments = async (params?: any): Promise<ApiResponse<OnboardingPayment[]>> => {
+  const response = await api.get<ApiResponse<OnboardingPayment[]>>(
+    "/admin/onboarding-payments",
+    { params }
   );
   return response.data;
 };

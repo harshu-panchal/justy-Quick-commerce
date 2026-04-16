@@ -98,6 +98,7 @@ import * as adminEquipmentController from "../modules/admin/controllers/adminEqu
 import * as adminRefundController from "../modules/admin/controllers/adminRefundController";
 import * as qrController from "../modules/delivery/controllers/qrController";
 import * as productFieldController from "../modules/admin/controllers/adminProductFieldController";
+import * as executiveController from "../modules/admin/controllers/adminExecutiveController";
 
 const router = Router();
 
@@ -339,6 +340,13 @@ router.post("/roles", roleController.createRole);
 router.put("/roles/:id", roleController.updateRole);
 router.delete("/roles/:id", roleController.deleteRole);
 
+// ==================== Executive Routes ====================
+router.get("/executives", executiveController.getExecutives);
+router.get("/executives/:id", executiveController.getExecutiveById);
+router.post("/executives", executiveController.createExecutive);
+router.put("/executives/:id", executiveController.updateExecutive);
+router.delete("/executives/:id", executiveController.deleteExecutive);
+
 // ==================== Policy Routes ====================
 router.post("/policies", policyController.createPolicy);
 router.get("/policies", policyController.getPolicies);
@@ -440,9 +448,10 @@ router.get("/product-slot-earnings", productSlotController.getSlotEarnings);
 router.get("/plans", planController.listPlans);
 router.post("/plans", planController.createPlan);
 router.put("/plans/:id", planController.updatePlan);
-router.delete("/plans/:id", planController.deletePlan);
+// ==== Onboarding Payment Routes ===
+router.get("/onboarding-payments", sellerController.getOnboardingPayments);
 
-// ==================== Subscriptions (Seller/Customer/Delivery) ====================
+// ==== Subscriptions (Seller/Customer/Delivery) ===
 router.get("/subscriptions", subscriptionController.listAllSubscriptions);
 
 // ==================== Spin Wheel (Admin) ====================

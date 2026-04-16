@@ -183,6 +183,8 @@ const AdminProductForm = lazy(() => import("./modules/admin/pages/AdminProductFo
 const SpinnerManagement = lazy(() => import("./modules/admin/pages/SpinnerManagement"));
 const SellerEquipmentCart = lazy(() => import("./modules/seller/pages/SellerEquipmentCart"));
 const AdminGrowth = lazy(() => import("./modules/admin/pages/AdminGrowth"));
+const AdminExecutives = lazy(() => import("./modules/admin/pages/AdminExecutives"));
+const AdminOnboardingPayments = lazy(() => import("./modules/admin/pages/AdminOnboardingPayments"));
 
 // Warehouse routes
 const WarehouseLayout = lazy(() => import("./modules/warehouse/components/WarehouseLayout"));
@@ -430,6 +432,8 @@ function App() {
                                           <Route path="delivery-boy/cash-collection" element={<AdminCashCollection />} />
                                           <Route path="manage-location/seller-location" element={<AdminSellerLocation />} />
                                           <Route path="pincode-demands" element={<AdminDemandTracking />} />
+                                          <Route path="executives" element={<AdminExecutives />} />
+                                          <Route path="onboarding-payments" element={<AdminOnboardingPayments />} />
 
                                           <Route path="coupon" element={<AdminCoupon />} />
                                           <Route path="return" element={<AdminReturnRequest />} />

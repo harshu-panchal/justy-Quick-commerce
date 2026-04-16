@@ -274,6 +274,9 @@ export default function AdminExecutives() {
                         <th className="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider">
                           Status
                         </th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider">
+                          Total Sellers
+                        </th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider w-[100px]">
                           Actions
                         </th>
@@ -301,6 +304,13 @@ export default function AdminExecutives() {
                               }`}>
                               {exec.isActive ? "Active" : "Inactive"}
                             </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-bold border border-blue-100">
+                                {exec.sellerCount || 0}
+                              </span>
+                            </div>
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-2">

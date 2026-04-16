@@ -1,6 +1,8 @@
 import { Request, Response } from "express";
 import { asyncHandler } from "../../../utils/asyncHandler";
 import Executive from "../../../models/Executive";
+import Seller from "../../../models/Seller";
+import * as mongoose from "mongoose";
 
 /**
  * Get all executives
@@ -33,10 +35,21 @@ export const getExecutives = asyncHandler(async (req: Request, res: Response) =>
         Executive.countDocuments(query),
     ]);
 
+    // Add seller count for each executive
+    const executivesWithCount = await Promise.all(executives.map(async (exec) => {
+        const sellerCount = await Seller.countDocuments({ 
+            executiveName: exec.name 
+        });
+        return {
+            ...exec.toObject(),
+            sellerCount
+        };
+    }));
+
     return res.status(200).json({
         success: true,
         message: "Executives fetched successfully",
-        data: executives,
+        data: executivesWithCount,
         pagination: {
             page: parseInt(page as string),
             limit: parseInt(limit as string),

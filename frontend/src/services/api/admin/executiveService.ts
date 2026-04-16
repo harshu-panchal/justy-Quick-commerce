@@ -5,6 +5,7 @@ export interface Executive {
   name: string;
   mobile?: string;
   isActive: boolean;
+  sellerCount?: number;
   createdAt: string;
   updatedAt: string;
 }

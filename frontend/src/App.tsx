@@ -14,9 +14,10 @@ import IconLoader from "./components/loaders/IconLoader";
 import RouteLoaderTrigger from "./components/loaders/RouteLoaderTrigger";
 import AppLayout from "./components/AppLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
+import VideoSplashScreen from "./components/VideoSplashScreen";
 import PublicRoute from "./components/PublicRoute";
 import ErrorBoundary from "./components/ErrorBoundary";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { initializePushNotifications, setupForegroundNotificationHandler } from "./services/pushNotificationService";
 import { Toaster } from 'react-hot-toast';
 
@@ -210,6 +211,12 @@ const AdminSubscriptions = lazy(() => import("./modules/admin/pages/AdminSubscri
 import { DeliveryModeProvider } from "./context/DeliveryModeContext";
 
 function App() {
+  const isCustomerSide = !window.location.pathname.startsWith('/admin') && 
+                         !window.location.pathname.startsWith('/seller') && 
+                         !window.location.pathname.startsWith('/delivery') &&
+                         !window.location.pathname.startsWith('/warehouse');
+  
+  const [showSplash, setShowSplash] = useState(isCustomerSide);
   // Initialize push notifications on app load
   useEffect(() => {
     initializePushNotifications();
@@ -230,6 +237,7 @@ function App() {
 
   return (
     <ErrorBoundary>
+      {showSplash && <VideoSplashScreen onComplete={() => setShowSplash(false)} />}
       <LoadingProvider>
         <AxiosLoadingInterceptor>
           <IconLoader />

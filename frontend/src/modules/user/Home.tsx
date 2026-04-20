@@ -11,6 +11,7 @@ import { getHeaderCategoriesPublic } from "../../services/api/headerCategoryServ
 import { useLocation } from "../../hooks/useLocation";
 import { useLoading } from "../../context/LoadingContext";
 import PageLoader from "../../components/PageLoader";
+import SkeletonHome from "./components/SkeletonHome";
 import ComingSoon from "../../components/ComingSoon";
 import { isCategoryAvailable } from "../../config/pincodeService";
 import { getStoredPincode } from "../../components/PincodeSelector";
@@ -34,6 +35,15 @@ export default function Home() {
   const contentRef = useRef<HTMLDivElement>(null);
   const scrollHandledRef = useRef(false);
   const SCROLL_POSITION_KEY = 'home-scroll-position';
+
+  // Ensure active category is reset to "all" when on the homepage
+  useEffect(() => {
+    // Only reset if we are on the homepage path and it's not already "all"
+    const isHome = window.location.pathname === '/' || window.location.pathname === '/user/home';
+    if (isHome && activeCategory !== 'all') {
+      setActiveCategory('all');
+    }
+  }, [activeCategory, setActiveCategory]);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -236,7 +246,7 @@ export default function Home() {
 
   const filteredProducts = useMemo(() => getFilteredProducts(activeTab), [activeTab, products]);
 
-  if (loading && !products.length) return <PageLoader />;
+  if (loading && !products.length) return <SkeletonHome />;
 
   if (error && !loading) {
     return (
@@ -261,7 +271,7 @@ export default function Home() {
   return (
     <div className="bg-white min-h-screen pb-20 md:pb-0" ref={contentRef}>
       <HomeHero activeTab={activeTab} onTabChange={setActiveTab} />
-      <div className="w-full relative z-10">
+      <div className="w-full relative z-10 mt-3 md:mt-4">
         <BannerCarousel mode={deliveryMode} />
       </div>
 

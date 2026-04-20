@@ -306,13 +306,18 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
   }, [activeTab]);
 
   const handleTabClick = (tabId: string) => {
-    if (tabId === activeTab) return; // Already on this tab
+    // Standardize the tabId to lowercase to prevent mismatch
+    const standardizedId = tabId.toLowerCase();
+    const currentActive = (activeTab || 'all').toLowerCase();
+    
+    if (standardizedId === currentActive) return;
 
-    onTabChange?.(tabId);
-    if (tabId === 'all') {
+    onTabChange?.(standardizedId);
+    
+    if (standardizedId === 'all') {
       navigate('/');
     } else {
-      navigate(`/header-category/${tabId}`);
+      navigate(`/header-category/${standardizedId}`);
     }
   };
 
@@ -322,8 +327,11 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
     <div ref={heroRef} className="pb-0 mb-0">
       {/* Top Header Section - Mobile Only */}
       <div
-        className="px-4 md:px-6 lg:px-8 pt-2 pb-1.5 transition-colors duration-500 md:hidden"
-        style={{ backgroundColor: (activeTab === 'all' && deliveryMode === 'scheduled') ? '#00796B' : (theme.headerBg || '#007fb1') }}
+        className="px-4 md:px-6 lg:px-8 pb-1.5 transition-colors duration-500 md:hidden"
+        style={{ 
+          backgroundColor: (activeTab === 'all' && deliveryMode === 'scheduled') ? '#00796B' : (theme.headerBg || '#007fb1'),
+          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 8px)'
+        }}
       >
         {/* Brand Row */}
         <div className="mb-0.5 max-w-2xl mx-auto flex items-center justify-between gap-3">

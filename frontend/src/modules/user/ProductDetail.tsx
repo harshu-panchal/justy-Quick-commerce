@@ -12,10 +12,8 @@ import { useAuth } from '../../context/AuthContext';
 import { useLocation } from '../../hooks/useLocation';
 import { useLoading } from '../../context/LoadingContext';
 import Button from '../../components/ui/button';
-import Badge from '../../components/ui/badge';
 import { getProductById, getProducts } from '../../services/api/customerProductService';
 import WishlistButton from '../../components/WishlistButton';
-import StarRating from "../../components/ui/StarRating";
 import { calculateProductPrice } from '../../utils/priceUtils';
 import { getCategoryType, getDeliveryInfo, getScheduledDeliveryText } from '../../config/pincodeService';
 import ComboOfferSection from './components/ComboOfferSection';
@@ -34,8 +32,6 @@ export default function ProductDetail() {
   const addButtonRef = useRef<HTMLButtonElement>(null);
   const [isProductDetailsExpanded, setIsProductDetailsExpanded] =
     useState(false);
-  const [isHighlightsExpanded, setIsHighlightsExpanded] = useState(false);
-  const [isInfoExpanded, setIsInfoExpanded] = useState(false);
 
   const [product, setProduct] = useState<any>(null);
   const [similarProducts, setSimilarProducts] = useState<any[]>([]);
@@ -317,1071 +313,434 @@ export default function ProductDetail() {
   };
 
   return (
-    <div className="min-h-screen bg-white pb-24">
-      {/* Header with back button and action icons */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-transparent">
-        <div className="flex items-center justify-between px-4 md:px-6 lg:px-8 py-3 md:py-4">
-          {/* Back button - top left */}
+    <div className="min-h-screen bg-neutral-50 pb-32">
+      {/* ── Floating Header ── */}
+      <div className="fixed top-0 left-0 right-0 z-50 pointer-events-none">
+        <div className="flex items-center justify-between px-4 py-3">
           <button
             onClick={() => navigate(-1)}
-            className="w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-sm hover:bg-neutral-50 transition-colors"
-            aria-label="Go back">
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg">
-              <path
-                d="M6 9l6 6 6-6"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+            className="pointer-events-auto w-10 h-10 flex items-center justify-center bg-white/90 backdrop-blur-md rounded-full shadow-md active:scale-95 transition-transform"
+            aria-label="Go back"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
           </button>
-
-          {/* Action icons - top right */}
-          <div className="flex items-center gap-2">
-            {/* Heart icon */}
+          <div className="pointer-events-auto flex items-center gap-2">
             {product?.id && (
-              <WishlistButton
-                productId={product.id}
-                size="md"
-                className="bg-white rounded-full shadow-sm"
-              />
+              <WishlistButton productId={product.id} size="md" className="bg-white/90 backdrop-blur-md rounded-full shadow-md" />
             )}
           </div>
         </div>
       </div>
 
-      {/* Scrollable content */}
-      <div className="pt-16">
-        {/* Location Availability Banner */}
-        {!isAvailableAtLocation && (
-          <div className="bg-amber-50 border-l-4 border-amber-500 px-4 py-3 mx-4 mt-4 rounded-r-lg">
-            <div className="flex items-start gap-2">
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                className="flex-shrink-0 mt-0.5">
-                <path d="M12 2L2 7l10 5 10-5-10-5z" fill="#f59e0b" />
-                <path
-                  d="M2 17l10 5 10-5M2 12l10 5 10-5"
-                  stroke="#f59e0b"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-amber-900">
-                  Not available at your location
-                </p>
-                <p className="text-xs text-amber-800 mt-1">
-                  This product cannot be delivered to your current location. You
-                  can browse but cannot add to cart.
-                </p>
+      {/* ── Unavailability Banner ── */}
+      {!isAvailableAtLocation && (
+        <div className="pt-16 px-4">
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-3.5 flex items-start gap-3">
+            <span className="text-xl shrink-0">⚠️</span>
+            <div>
+              <p className="text-sm font-bold text-amber-900">Not available at your location</p>
+              <p className="text-xs text-amber-700 mt-0.5">You can browse but cannot add to cart.</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Image Gallery ── */}
+      <div className={`relative w-full bg-white overflow-hidden ${!isAvailableAtLocation ? 'mt-3' : ''}`}>
+        {/* Main Image Swiper */}
+        <div
+          className="w-full aspect-square md:aspect-[4/3] max-h-[450px] relative overflow-hidden"
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+          style={{ touchAction: allImages.length > 1 ? 'pan-x' : 'pan-y pinch-zoom' }}
+        >
+          {/* Mobile swipe strip */}
+          <div
+            className="w-full h-full flex transition-transform duration-300 ease-out md:hidden"
+            style={{ transform: `translateX(-${selectedImageIndex * 100}%)` }}
+          >
+            {allImages.map((img: string, i: number) => (
+              <div key={i} className="w-full h-full flex-shrink-0 flex items-center justify-center" style={{ minWidth: '100%' }}>
+                {img ? (
+                  <img src={img} alt={`${product.name} ${i + 1}`} className="w-full h-full object-cover" referrerPolicy="no-referrer" draggable={false} />
+                ) : (
+                  <span className="text-6xl text-neutral-300">{product.name?.charAt(0)?.toUpperCase()}</span>
+                )}
               </div>
+            ))}
+          </div>
+
+          {/* Desktop single image */}
+          <div className="hidden md:flex w-full h-full items-center justify-center">
+            {currentImage ? (
+              <img src={currentImage} alt={product.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+            ) : (
+              <span className="text-6xl text-neutral-300">{product.name?.charAt(0)?.toUpperCase()}</span>
+            )}
+          </div>
+
+          {/* Discount badge */}
+          {discount > 0 && (
+            <div className="absolute top-20 left-4 bg-red-500 text-white text-xs font-black px-2.5 py-1 rounded-xl shadow-lg">
+              {discount}% OFF
+            </div>
+          )}
+
+          {/* Image dots */}
+          {allImages.length > 1 && (
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+              {allImages.map((_: string, i: number) => (
+                <button
+                  key={i}
+                  onClick={() => { setIsTransitioning(true); setSelectedImageIndex(i); setTimeout(() => setIsTransitioning(false), 300); }}
+                  className={`rounded-full transition-all duration-300 ${i === selectedImageIndex ? 'w-5 h-1.5 bg-white' : 'w-1.5 h-1.5 bg-white/50'}`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Thumbnail strip */}
+        {allImages.length > 1 && (
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide px-4 py-2.5 bg-white border-b border-neutral-100">
+            {allImages.map((img: string, i: number) => (
+              <button
+                key={i}
+                onClick={() => { setIsTransitioning(true); setSelectedImageIndex(i); setTimeout(() => setIsTransitioning(false), 300); }}
+                className={`flex-shrink-0 w-14 h-14 rounded-xl overflow-hidden border-2 transition-all ${i === selectedImageIndex ? 'border-teal-500 ring-2 ring-teal-200' : 'border-neutral-200'}`}
+              >
+                <img src={img} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ── Product Info Card ── */}
+      <div className="bg-white rounded-t-3xl -mt-3 relative z-10 px-4 pt-4 pb-3 shadow-sm">
+        {/* Delivery pill */}
+        <div className="inline-flex items-center gap-1.5 bg-neutral-50 border border-neutral-100 rounded-full px-3 py-1 mb-3">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="text-teal-600"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" /><path d="M12 6v6l4 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+          <span className="text-[11px] font-semibold text-neutral-600">
+            {product.regionalTime || product.localTime ? (
+              <>
+                {product.localTime && <span>Local: {product.localTime}</span>}
+                {product.localTime && product.regionalTime && <span> · </span>}
+                {product.regionalTime && <span>Regional: {product.regionalTime}</span>}
+              </>
+            ) : (
+              scheduledDeliveryText || getDeliveryInfo(getCategoryType(product.category?.name)).detailText
+            )}
+          </span>
+        </div>
+
+        {/* Name */}
+        <h1 className="text-xl font-extrabold text-neutral-900 leading-tight mb-1 tracking-tight">
+          {product.name}
+        </h1>
+
+        {/* Pack */}
+        <p className="text-xs text-neutral-400 font-medium mb-3">{variantTitle}</p>
+
+        {/* Price row */}
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-2xl font-black text-neutral-900">₹{variantPrice.toLocaleString('en-IN')}</span>
+          {hasDiscount && (
+            <>
+              <span className="text-sm text-neutral-400 line-through">₹{variantMrp.toLocaleString('en-IN')}</span>
+              {discount > 0 && (
+                <span className="bg-emerald-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full">
+                  {discount}% OFF
+                </span>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Stock */}
+        {variantStock !== undefined && variantStock !== null && variantStock !== 0 && (
+          <p className={`text-xs font-semibold mb-3 ${variantStock > 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+            {variantStock > 0 ? `✓ ${variantStock} in stock` : '✗ Out of stock'}
+          </p>
+        )}
+
+        {/* Variant Selector */}
+        {product.variations && product.variations.length > 1 && (
+          <div className="mb-4">
+            <p className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider mb-2">Select {product.variationType || 'Size'}</p>
+            <div className="flex flex-wrap gap-2">
+              {product.variations.map((variant: any, i: number) => {
+                const vLabel = variant.title || variant.value || `Variant ${i + 1}`;
+                const isOOS = variant.status === 'Sold out' || (variant.stock === 0 && variant.stock !== undefined && variant.stock !== null);
+                const isSel = i === selectedVariantIndex;
+                return (
+                  <button
+                    key={i}
+                    onClick={() => setSelectedVariantIndex(i)}
+                    disabled={isOOS}
+                    className={`px-4 py-1.5 rounded-xl text-xs font-bold border-2 transition-all active:scale-95 ${
+                      isSel ? 'border-teal-500 bg-teal-50 text-teal-700' :
+                      isOOS ? 'border-neutral-200 bg-neutral-100 text-neutral-300 cursor-not-allowed line-through' :
+                      'border-neutral-200 bg-white text-neutral-700 hover:border-teal-400'
+                    }`}
+                  >
+                    {vLabel}
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}
 
-        {/* Main Content Grid Wrapper - Two Column on Desktop */}
-        <div className="max-w-7xl mx-auto md:grid md:grid-cols-12 md:gap-8 md:items-start md:px-6 lg:px-8">
-          
-          {/* Left Column: Product Image Gallery */}
-          <div className="md:col-span-5 lg:col-span-5 md:sticky md:top-24">
-            <div className="relative w-full bg-gradient-to-br from-neutral-100 to-neutral-200 overflow-hidden md:rounded-2xl md:shadow-md">
-          {/* Main Product Image - Swipeable on mobile */}
-          <div
-            className="w-full aspect-square md:aspect-auto md:h-[450px] lg:h-[500px] relative overflow-hidden"
-            onTouchStart={onTouchStart}
-            onTouchMove={onTouchMove}
-            onTouchEnd={onTouchEnd}
-            style={{
-              touchAction: allImages.length > 1 ? 'pan-x' : 'pan-y pinch-zoom',
-              cursor: allImages.length > 1 ? 'grab' : 'default',
-            }}
-          >
-            {/* Image Container with swipe animation - Mobile swipe carousel */}
-            <div
-              className="w-full h-full flex transition-transform duration-300 ease-out md:hidden"
-              style={{
-                transform: `translateX(-${selectedImageIndex * 100}%)`,
-              }}
-            >
-              {allImages.map((image: string, index: number) => (
-                <div
-                  key={index}
-                  className="w-full h-full flex-shrink-0 flex items-center justify-center relative"
-                  style={{ minWidth: '100%' }}
-                >
-                  {image ? (
-                    <img
-                      src={image}
-                      alt={`${product.name} - Image ${index + 1}`}
-                      className="w-full h-full object-cover"
-                      referrerPolicy="no-referrer"
-                      draggable={false}
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-neutral-400 text-6xl">
-                      {(product.name || product.productName || "?")
-                        .charAt(0)
-                        .toUpperCase()}
-                    </div>
-                  )}
-                </div>
-              ))}
+        {/* Service Guarantee Strip */}
+        <div className="grid grid-cols-4 gap-2 pt-3 border-t border-neutral-100">
+          {[
+            { label: product.cancelAvailable ? 'Cancellable' : 'Non-Cancel', sub: '', icon: '🚫', ok: product.cancelAvailable },
+            { label: product.isReturnable ? `${product.maxReturnDays || 2}D Return` : 'No Return', sub: '', icon: '🔄', ok: product.isReturnable },
+            { label: '24/7', sub: 'Support', icon: '💬', ok: true },
+            { label: 'Safe', sub: 'Delivery', icon: '🚚', ok: true },
+          ].map((item, i) => (
+            <div key={i} className="flex flex-col items-center gap-1 text-center">
+              <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-base ${item.ok ? 'bg-emerald-50' : 'bg-red-50'}`}>{item.icon}</div>
+              <span className="text-[9px] font-bold text-neutral-800 leading-tight">{item.label}</span>
+              {item.sub && <span className="text-[8px] text-neutral-400">{item.sub}</span>}
             </div>
-
-            {/* Desktop: Single image display */}
-            <div className="hidden md:flex w-full h-full items-center justify-center">
-              {currentImage ? (
-                <img
-                  src={currentImage}
-                  alt={product.name}
-                  className="w-full h-full object-cover"
-                  referrerPolicy="no-referrer"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-neutral-400 text-6xl">
-                  {(product.name || product.productName || "?")
-                    .charAt(0)
-                    .toUpperCase()}
-                </div>
-              )}
-            </div>
-
-            {/* Image Gallery Navigation - Only show if multiple images */}
-            {allImages.length > 1 && (
-              <>
-                {/* Previous Image Button - Desktop only */}
-                {selectedImageIndex > 0 && (
-                  <button
-                    onClick={() => {
-                      setIsTransitioning(true);
-                      setSelectedImageIndex(selectedImageIndex - 1);
-                      setTimeout(() => setIsTransitioning(false), 300);
-                    }}
-                    className="hidden md:flex absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full items-center justify-center shadow-md hover:bg-white transition-colors z-10"
-                    aria-label="Previous image">
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg">
-                      <path
-                        d="M15 18l-6-6 6-6"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </button>
-                )}
-
-                {/* Next Image Button - Desktop only */}
-                {selectedImageIndex < allImages.length - 1 && (
-                  <button
-                    onClick={() => {
-                      setIsTransitioning(true);
-                      setSelectedImageIndex(selectedImageIndex + 1);
-                      setTimeout(() => setIsTransitioning(false), 300);
-                    }}
-                    className="hidden md:flex absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full items-center justify-center shadow-md hover:bg-white transition-colors z-10"
-                    aria-label="Next image">
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg">
-                      <path
-                        d="M9 18l6-6-6-6"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </button>
-                )}
-
-                {/* Image Indicators - Show on both mobile and desktop */}
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
-                  {allImages.map((_: string, index: number) => (
-                    <button
-                      key={index}
-                      onClick={() => {
-                        setIsTransitioning(true);
-                        setSelectedImageIndex(index);
-                        setTimeout(() => setIsTransitioning(false), 300);
-                      }}
-                      className={`w-2 h-2 rounded-full transition-all ${index === selectedImageIndex
-                        ? "bg-white w-6"
-                        : "bg-white/50 hover:bg-white/75"
-                        }`}
-                      aria-label={`Go to image ${index + 1}`}
-                    />
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* Thumbnail Gallery - Show below main image if multiple images */}
-          {allImages.length > 1 && (
-            <div className="px-4 py-2 bg-white/50 backdrop-blur-sm mb-4">
-              {/* Mobile swipe hint */}
-              <div className="md:hidden flex items-center justify-center gap-1 mb-2">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-neutral-500">
-                  <path d="M7 12l5-5M17 12l-5-5M12 7l-5 5M12 17l5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                <span className="text-xs text-neutral-500">Swipe to view more</span>
-              </div>
-              <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2 scroll-smooth">
-                {allImages.map((image: string, index: number) => (
-                  <button
-                    key={index}
-                    onClick={() => {
-                      setIsTransitioning(true);
-                      setSelectedImageIndex(index);
-                      setTimeout(() => setIsTransitioning(false), 300);
-                    }}
-                    className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${index === selectedImageIndex
-                      ? "border-green-600 ring-2 ring-green-200"
-                      : "border-neutral-200 hover:border-neutral-300"
-                      }`}>
-                    <img
-                      src={image}
-                      alt={`${product.name} - Image ${index + 1}`}
-                      className="w-full h-full object-cover"
-                      referrerPolicy="no-referrer"
-                    />
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-            </div>
-          </div>
-
-          {/* Right Column: Product Details and Offers */}
-          <div className="md:col-span-7 lg:col-span-7 mt-6 md:mt-0">
-            {/* Product Details Card - White section */}
-            <div className="bg-white rounded-t-3xl md:rounded-none -mt-6 md:mt-0 relative z-10 px-4 md:px-0 pt-2.5 md:pt-0 pb-2 md:pb-4">
-          {/* Delivery time */}
-          <div className="flex items-center gap-0.5 mb-1">
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg">
-              <circle
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="2"
-              />
-              <path
-                d="M12 6v6l4 2"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
-            </svg>
-            <span className="text-sm text-neutral-700 font-medium">
-              {product.regionalTime || product.localTime ? (
-                <div className="flex flex-col gap-0.5">
-                  {product.localTime && <div>Local Delivery: {product.localTime}</div>}
-                  {product.regionalTime && <div>Regional Delivery: {product.regionalTime}</div>}
-                </div>
-              ) : (
-                scheduledDeliveryText || getDeliveryInfo(getCategoryType(product.category?.name)).detailText
-              )}
-            </span>
-          </div>
-
-          {/* Product name */}
-          <h2 className="text-lg md:text-2xl font-bold text-neutral-900 mb-0 leading-tight">
-            {product.name}
-          </h2>
-
-          {/* Variant Selection - Only show if multiple variants */}
-          {product.variations && product.variations.length > 1 && (
-            <div className="mb-2">
-              <label className="block text-xs md:text-sm font-medium text-neutral-700 mb-1.5">
-                Select {product.variationType || "Variant"}:
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {product.variations.map((variant: any, index: number) => {
-                  const variantTitle = variant.title || variant.value || `Variant ${index + 1}`;
-                  const isOutOfStock = variant.status === "Sold out" || (variant.stock === 0 && variant.stock !== undefined && variant.stock !== null);
-                  const isSelected = index === selectedVariantIndex;
-
-                  return (
-                    <button
-                      key={index}
-                      onClick={() => setSelectedVariantIndex(index)}
-                      disabled={isOutOfStock}
-                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all border-2 ${isSelected
-                        ? "border-green-600 bg-green-50 text-green-700"
-                        : isOutOfStock
-                          ? "border-neutral-200 bg-neutral-100 text-neutral-400 cursor-not-allowed"
-                          : "border-neutral-300 bg-white text-neutral-700 hover:border-green-500 hover:bg-green-50"
-                        }`}>
-                      {variantTitle}
-                      {isOutOfStock && (
-                        <span className="ml-1 text-xs">(Out of Stock)</span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Quantity/Pack */}
-          <p className="text-sm md:text-base text-neutral-600 mb-1">
-            {variantTitle}
-          </p>
-
-          {/* Price section */}
-          <div className="flex items-center gap-1.5 mb-1.5">
-            <span className="text-xl font-bold text-neutral-900">
-              ₹{variantPrice.toLocaleString('en-IN')}
-            </span>
-            {hasDiscount && (
-              <>
-                <span className="text-sm text-neutral-500 line-through">
-                  ₹{variantMrp.toLocaleString('en-IN')}
-                </span>
-                {discount > 0 && (
-                  <Badge className="!bg-blue-500 !text-white !border-blue-500 text-xs px-1.5 py-0.5 rounded-full font-semibold">
-                    {discount}% OFF
-                  </Badge>
-                )}
-              </>
-            )}
-          </div>
-
-          {/* Stock Status */}
-          {variantStock !== 0 && variantStock !== undefined && variantStock !== null && (
-            <p className="text-sm text-neutral-600 mb-1">
-              {variantStock > 0 ? `${variantStock} in stock` : "Out of stock"}
-            </p>
-          )}
-
-          {/* Divider line */}
-          <div className="border-t border-neutral-200 mb-1.5"></div>
-
-          {/* View product details link */}
-          <button
-            onClick={() =>
-              setIsProductDetailsExpanded(!isProductDetailsExpanded)
-            }
-            className="flex items-center gap-0.5 text-sm text-green-600 font-medium">
-            View product details
-            <svg
-              width="11"
-              height="11"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              className={`transition-transform ${isProductDetailsExpanded ? "rotate-180" : ""
-                }`}>
-              <path
-                d="M6 9l6 6 6-6"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </button>
-          
+          ))}
         </div>
+      </div>
 
-        {/* Expanded Product Details Section */}
-        {isProductDetailsExpanded && (
-          <div className="mt-1.5">
-            {/* Service Guarantees Card */}
-            <div className="bg-white rounded-lg p-3 mb-2">
-              <div className="grid grid-cols-4 gap-2">
-                {/* Cancellation */}
-                <div className="flex flex-col items-center">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-1 ${product.cancelAvailable ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg">
-                      <path
-                        d="M18 6L6 18M6 6l12 12"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </div>
-                  <span className="text-[10px] font-bold text-neutral-900 text-center uppercase">
-                    {product.cancelAvailable ? 'Cancellable' : 'Non-Cancellable'}
-                  </span>
-                </div>
-
-                {/* Replacement/Return */}
-                <div className="flex flex-col items-center">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-1 ${product.isReturnable ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg">
-                      <path
-                        d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3M20.49 15a9 9 0 0 1-14.85 3"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </div>
-                  <span className="text-[10px] font-bold text-neutral-900 text-center uppercase">
-                    {product.isReturnable ? `${product.maxReturnDays || 2} Days` : 'No Return'}
-                  </span>
-                  <span className="text-[9px] text-neutral-600 uppercase">
-                    Returnable
-                  </span>
-                </div>
-
-                {/* Support */}
-                <div className="flex flex-col items-center">
-                  <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mb-1">
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg">
-                      <path
-                        d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </div>
-                  <span className="text-[10px] font-bold text-neutral-900 uppercase">
-                    24/7
-                  </span>
-                  <span className="text-[9px] text-neutral-600 uppercase">Support</span>
-                </div>
-
-                {/* Delivery */}
-                <div className="flex flex-col items-center">
-                  <div className="w-10 h-10 rounded-full bg-orange-50 text-orange-600 flex items-center justify-center mb-1">
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg">
-                      <path
-                        d="M5 17H2l1-7h18l1 7h-3M5 17l-1-5h20l-1 5M5 17v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-5M9 22h6"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </div>
-                  <span className="text-[10px] font-bold text-neutral-900 uppercase">
-                    Safe
-                  </span>
-                  <span className="text-[9px] text-neutral-600 uppercase">Delivery</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Highlights Section */}
-            <div className="bg-neutral-100 rounded-lg mb-2 overflow-hidden">
-              <button
-                onClick={() => setIsHighlightsExpanded(!isHighlightsExpanded)}
-                className="w-full px-2 py-2.5 flex items-center justify-between bg-neutral-100">
-                <span className="text-sm font-semibold text-neutral-700">
-                  Highlights
-                </span>
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                  className={`transition-transform ${isHighlightsExpanded ? "rotate-180" : ""
-                    }`}>
-                  <path
-                    d="M6 9l6 6 6-6"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </button>
-              {isHighlightsExpanded && (
-                <div className="bg-white px-2 py-2">
-                  <div className="space-y-1.5">
+      {/* ── Expandable Sections ── */}
+      <div className="mt-2 space-y-1 px-4">
+        {/* Product Details */}
+        <div className="bg-white rounded-2xl overflow-hidden shadow-sm">
+          <button
+            onClick={() => setIsProductDetailsExpanded(!isProductDetailsExpanded)}
+            className="w-full flex items-center justify-between px-4 py-3.5"
+          >
+            <span className="text-sm font-bold text-neutral-900">Product Details</span>
+            <svg className={`w-4 h-4 text-neutral-400 transition-transform ${isProductDetailsExpanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+          </button>
+          <AnimatePresence>
+            {isProductDetailsExpanded && (
+              <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="overflow-hidden border-t border-neutral-50">
+                {/* Highlights */}
+                <div className="px-4 py-3">
+                  <p className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-2">Highlights</p>
+                  <div className="space-y-2">
                     {product.tags && product.tags.length > 0 && (
-                      <div className="flex items-start">
-                        <span className="text-xs font-semibold text-neutral-800 w-[180px] flex-shrink-0">
-                          Key Features:
-                        </span>
-                        <span className="text-xs text-neutral-600">
-                          {product.tags.map((tag: string, index: number) => (
-                            <span key={tag}>
-                              {tag
-                                .replace(/-/g, " ")
-                                .split(" ")
-                                .map(
-                                  (word: string) =>
-                                    word.charAt(0).toUpperCase() + word.slice(1)
-                                )
-                                .join(" ")}
-                              {index < (product.tags?.length || 0) - 1
-                                ? ", "
-                                : ""}
-                            </span>
-                          ))}
-                        </span>
+                      <div className="flex gap-2">
+                        <span className="text-xs font-bold text-neutral-500 w-28 shrink-0">Key Features</span>
+                        <span className="text-xs text-neutral-700">{product.tags.join(', ')}</span>
                       </div>
                     )}
-                    <div className="flex items-start">
-                      <span className="text-xs font-semibold text-neutral-800 w-[180px] flex-shrink-0">
-                        Source:
-                      </span>
-                      <span className="text-xs text-neutral-600">
-                        {product.madeIn || "From India"}
-                      </span>
+                    <div className="flex gap-2">
+                      <span className="text-xs font-bold text-neutral-500 w-28 shrink-0">Source</span>
+                      <span className="text-xs text-neutral-700">{product.madeIn || 'India'}</span>
                     </div>
                     {category && (
-                      <div className="flex items-start">
-                        <span className="text-xs font-semibold text-neutral-800 w-[180px] flex-shrink-0">
-                          Category:
-                        </span>
-                        <span className="text-xs text-neutral-600">
-                          {category.name}
-                        </span>
+                      <div className="flex gap-2">
+                        <span className="text-xs font-bold text-neutral-500 w-28 shrink-0">Category</span>
+                        <span className="text-xs text-neutral-700">{category.name}</span>
                       </div>
                     )}
                   </div>
                 </div>
-              )}
-            </div>
 
-            {/* Info Section */}
-            <div className="bg-neutral-100 rounded-lg overflow-hidden">
-              <button
-                onClick={() => setIsInfoExpanded(!isInfoExpanded)}
-                className="w-full px-2 py-2.5 flex items-center justify-between bg-neutral-100">
-                <span className="text-sm font-semibold text-neutral-700">
-                  Info
-                </span>
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                  className={`transition-transform ${isInfoExpanded ? "rotate-180" : ""
-                    }`}>
-                  <path
-                    d="M6 9l6 6 6-6"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </button>
-              {isInfoExpanded && (
-                <div className="bg-white px-2 py-2">
-                  <div className="space-y-1.5">
+                <div className="h-px bg-neutral-50 mx-4" />
+
+                {/* Info */}
+                <div className="px-4 py-3">
+                  <p className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-2">Info</p>
+                  <div className="space-y-2">
                     {(product.description || product.smallDescription) && (
-                      <div className="flex items-start">
-                        <span className="text-xs font-semibold text-neutral-800 w-[180px] flex-shrink-0">
-                          Description:
-                        </span>
-                        <span className="text-xs text-neutral-600 leading-relaxed flex-1">
-                          {product.description || product.smallDescription}
-                        </span>
+                      <div className="flex gap-2">
+                        <span className="text-xs font-bold text-neutral-500 w-28 shrink-0">Description</span>
+                        <span className="text-xs text-neutral-700 leading-relaxed flex-1">{product.description || product.smallDescription}</span>
                       </div>
                     )}
-                    <div className="flex items-start">
-                      <span className="text-xs font-semibold text-neutral-800 w-[180px] flex-shrink-0">
-                        Unit:
-                      </span>
-                      <span className="text-xs text-neutral-600">
-                        {product.pack}
-                      </span>
+                    <div className="flex gap-2">
+                      <span className="text-xs font-bold text-neutral-500 w-28 shrink-0">Unit</span>
+                      <span className="text-xs text-neutral-700">{product.pack}</span>
                     </div>
                     {product.fssaiLicNo && (
-                      <div className="flex items-start">
-                        <span className="text-xs font-semibold text-neutral-800 w-[180px] flex-shrink-0">
-                          FSSAI License:
-                        </span>
-                        <span className="text-xs text-neutral-600">
-                          {product.fssaiLicNo}
-                        </span>
+                      <div className="flex gap-2">
+                        <span className="text-xs font-bold text-neutral-500 w-28 shrink-0">FSSAI License</span>
+                        <span className="text-xs text-neutral-700">{product.fssaiLicNo}</span>
                       </div>
                     )}
-                    <div className="flex items-start">
-                      <span className="text-xs font-semibold text-neutral-800 w-[180px] flex-shrink-0">
-                        Shelf Life:
-                      </span>
-                      <span className="text-xs text-neutral-600">
-                        Refer to package
-                      </span>
-                    </div>
-                    <div className="flex items-start">
-                      <span className="text-xs font-semibold text-neutral-800 w-[180px] flex-shrink-0">
-                        Disclaimer:
-                      </span>
-                      <span className="text-xs text-neutral-600 leading-relaxed flex-1">
-                        Every effort is made to maintain accuracy of all
-                        Information. However, actual product packaging and
-                        materials may contain more and/or different information.
-                        It is recommended not to solely rely on the information
-                        presented.
-                      </span>
-                    </div>
-                    <div className="flex items-start">
-                      <span className="text-xs font-semibold text-neutral-800 w-[180px] flex-shrink-0">
-                        Customer Care Details:
-                      </span>
-                      <span className="text-xs text-neutral-600">
-                        Email: help@justi.com
-                      </span>
-                    </div>
-                    <div className="flex items-start">
-                      <span className="text-xs font-semibold text-neutral-800 w-[180px] flex-shrink-0">
-                        Country of Origin:
-                      </span>
-                      <span className="text-xs text-neutral-600">
-                        {product.madeIn || "India"}
-                      </span>
+                    <div className="flex gap-2">
+                      <span className="text-xs font-bold text-neutral-500 w-28 shrink-0">Country of Origin</span>
+                      <span className="text-xs text-neutral-700">{product.madeIn || 'India'}</span>
                     </div>
                     {product.manufacturer && (
-                      <div className="flex items-start">
-                        <span className="text-xs font-semibold text-neutral-800 w-[180px] flex-shrink-0">
-                          Manufacturer:
-                        </span>
-                        <span className="text-xs text-neutral-600 leading-relaxed flex-1">
-                          {product.manufacturer}
-                        </span>
+                      <div className="flex gap-2">
+                        <span className="text-xs font-bold text-neutral-500 w-28 shrink-0">Manufacturer</span>
+                        <span className="text-xs text-neutral-700 flex-1">{product.manufacturer}</span>
                       </div>
                     )}
-                    {/* Marketer same as manufacturer if not present, or hidden */}
-
-                    <div className="flex items-start">
-                      <span className="text-xs font-semibold text-neutral-800 w-[180px] flex-shrink-0">
-                        Detailed Policy:
-                      </span>
-                      <div className="space-y-1">
-                        <p className="text-xs text-neutral-600 leading-relaxed">
-                          Cancellation: {product.cancelAvailable ? "Available before shipping." : "Non-cancellable once ordered."}
-                        </p>
-                        <p className="text-xs text-neutral-600 leading-relaxed">
-                          Returns: {product.isReturnable
-                            ? `Eligible for return within ${product.maxReturnDays || 2} days of delivery.`
-                            : "This product is non-returnable."}
-                        </p>
+                    <div className="flex gap-2">
+                      <span className="text-xs font-bold text-neutral-500 w-28 shrink-0">Policy</span>
+                      <div className="flex-1">
+                        <p className="text-xs text-neutral-700">Cancellation: {product.cancelAvailable ? 'Available before shipping.' : 'Non-cancellable.'}</p>
+                        <p className="text-xs text-neutral-700 mt-0.5">Returns: {product.isReturnable ? `Within ${product.maxReturnDays || 2} days.` : 'Non-returnable.'}</p>
                       </div>
                     </div>
                     {product.sellerId && (
-                      <div className="flex items-start">
-                        <span className="text-xs font-semibold text-neutral-800 w-[180px] flex-shrink-0">
-                          Seller:
-                        </span>
-                        <span className="text-xs text-neutral-600 leading-relaxed flex-1">
-                          JYASTI builds trust Partner (
-                          {product.sellerId.slice(-6).toUpperCase()})
-                        </span>
+                      <div className="flex gap-2">
+                        <span className="text-xs font-bold text-neutral-500 w-28 shrink-0">Seller</span>
+                        <span className="text-xs text-neutral-700">JYASTI Partner ({product.sellerId.slice(-6).toUpperCase()})</span>
                       </div>
                     )}
+                    <div className="flex gap-2">
+                      <span className="text-xs font-bold text-neutral-500 w-28 shrink-0">Support</span>
+                      <span className="text-xs text-neutral-700">help@justi.com</span>
+                    </div>
                   </div>
                 </div>
-              )}
-            </div>
-            {/* Category Disclaimer - Moved here for better UX */}
-            {(() => {
-              const disclaimer = 
-                product.subSubCategory?.disclaimer || 
-                product.subcategory?.disclaimer || 
-                product.category?.disclaimer;
-              return <CategoryDisclaimer disclaimer={disclaimer} className="mt-4 mb-2 mx-1" label="Before You Buy" />;
-            })()}
-          </div>
-        )}
 
-        {/* Combo Offers Section */}
-        <div className="px-4 md:px-6 lg:px-8">
-          <ComboOfferSection
-            categoryId={product.category?.slug || product.category?._id || product.categoryId}
-            categoryName={product.category?.name}
-            currentProductId={product.id || product._id}
-          />
-        </div>
-
-        {/* Buy Together Section */}
-        {similarProducts.length > 0 && (
-          <div className="px-4 md:px-6 lg:px-8">
-            <BuyTogetherSection
-              currentProduct={product}
-              products={similarProducts}
-            />
-          </div>
+                {/* Disclaimer */}
+                {(() => {
+                  const disclaimer = product.subSubCategory?.disclaimer || product.subcategory?.disclaimer || product.category?.disclaimer;
+                  return <CategoryDisclaimer disclaimer={disclaimer} className="mx-4 mb-3" label="Before You Buy" />;
+                })()}
+              </motion.div>
             )}
-
-            {/* Product Reviews */}
-            <div className="px-4 md:px-6 lg:px-8 mt-10 bg-white rounded-2xl p-5 md:p-6 border border-neutral-100">
-                <ProductReviews 
-                    productId={product.id || product._id} 
-                    productName={product.productName}
-                    productImage={product.mainImage}
-                />
-            </div>
-
-          </div>
+          </AnimatePresence>
         </div>
-
-
-
-        {/* Top products in this category */}
-        {similarProducts.length > 0 && (
-          <div className="mt-6 mb-24">
-            <div className="bg-neutral-100/50 border-t border-b border-neutral-200/50 py-4 px-3">
-              <h3 className="text-lg font-semibold text-neutral-900 mb-4 px-1">
-                Top products in this category
-              </h3>
-              <div className="flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth pb-2 px-1">
-                {similarProducts.map((similarProduct) => {
-                  const similarCartItem = cart.items.find(
-                    (item) =>
-                      item?.product &&
-                      (item.product.id === similarProduct.id ||
-                        item.product.id === similarProduct._id)
-                  );
-                  const similarInCartQty = similarCartItem?.quantity || 0;
-
-                  const isSimilarOutOfStock = similarProduct.status === "Sold out" ||
-                    (similarProduct.variations && similarProduct.variations.length > 0
-                      ? similarProduct.variations.every((v: any) => v.status === "Sold out" || (v.stock !== undefined && v.stock <= 0))
-                      : (similarProduct.stock !== undefined && similarProduct.stock <= 0));
-
-                  return (
-                    <div
-                      key={similarProduct.id}
-                      className="flex-shrink-0 w-40 bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden relative">
-                      {/* Heart icon - top right */}
-                      <WishlistButton
-                        productId={similarProduct.id || similarProduct._id}
-                        size="sm"
-                        className="absolute top-2 right-2 shadow-md"
-                      />
-
-                      {/* Image */}
-                      <div
-                        onClick={() =>
-                          navigate(
-                            `/product/${similarProduct.id || similarProduct._id
-                            }`,
-                            { state: { fromStore: true } }
-                          )
-                        }
-                        className="w-full h-32 bg-neutral-100 flex items-center justify-center overflow-hidden cursor-pointer">
-                        {similarProduct.imageUrl || similarProduct.mainImage ? (
-                          <img
-                            src={
-                              similarProduct.imageUrl ||
-                              similarProduct.mainImage
-                            }
-                            alt={
-                              similarProduct.name || similarProduct.productName
-                            }
-                            className="w-full h-full object-cover"
-                            referrerPolicy="no-referrer"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-neutral-100 text-neutral-400 text-2xl">
-                            {(
-                              similarProduct.name ||
-                              similarProduct.productName ||
-                              "P"
-                            )
-                              .charAt(0)
-                              .toUpperCase()}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Info */}
-                      <div className="p-3">
-                        <h4 className="text-sm font-semibold text-neutral-900 mb-1 line-clamp-2 min-h-[2.5rem]">
-                          {similarProduct.name || similarProduct.productName}
-                        </h4>
-
-                        {/* Rating and Delivery time */}
-                        <div className="flex flex-col gap-1 mb-2">
-                          <StarRating
-                            rating={similarProduct.rating || 0}
-                            reviewCount={similarProduct.reviews || 0}
-                            size="sm"
-                            showCount={true}
-                          />
-                          <p className="text-[10px] text-neutral-600 flex items-center gap-1">
-                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
-                              <path d="M12 6v6l4 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                            </svg>
-                            <span>{similarProduct.deliveryTime || 15} MINS</span>
-                          </p>
-                        </div>
-
-                        {/* Price display for similar products */}
-                        <div className="mb-2">
-                          {(() => {
-                            const { displayPrice, mrp, discount: sDiscount, hasDiscount: sHasDiscount } = calculateProductPrice(similarProduct);
-                            return (
-                              <div className="flex flex-col">
-                                {sHasDiscount && (
-                                  <Badge className="!bg-blue-500 !text-white !border-blue-500 text-[10px] px-1.5 py-0.5 rounded-full font-semibold mb-1 w-fit">
-                                    {sDiscount}% OFF
-                                  </Badge>
-                                )}
-                                <div className="flex items-center gap-1.5">
-                                  <span className="text-sm font-bold text-neutral-900">
-                                    ₹{displayPrice.toLocaleString('en-IN')}
-                                  </span>
-                                  {sHasDiscount && (
-                                    <span className="text-[10px] text-neutral-500 line-through">
-                                      ₹{mrp.toLocaleString('en-IN')}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          })()}
-                        </div>
-
-                        {/* ADD button or Quantity stepper */}
-                        <AnimatePresence mode="wait">
-                          {similarInCartQty === 0 ? (
-                            <motion.div
-                              key="add-button"
-                              initial={{ opacity: 0, scale: 0.8 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              exit={{ opacity: 0, scale: 0.8 }}
-                              transition={{ duration: 0.2 }}
-                              className="flex justify-center w-full">
-                              <Button
-                                variant="outline"
-                                size="default"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  addToCart(similarProduct);
-                                }}
-                                className="w-full border-2 border-green-600 text-green-600 bg-transparent hover:bg-green-50 rounded-full font-semibold text-sm h-9">
-                                ADD
-                              </Button>
-                            </motion.div>
-                          ) : (
-                            <motion.div
-                              key="stepper"
-                              initial={{ opacity: 0, scale: 0.8 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              exit={{ opacity: 0, scale: 0.8 }}
-                              transition={{ duration: 0.2 }}
-                              className="flex items-center justify-center gap-2 bg-white border-2 border-green-600 rounded-full px-2 py-1.5 w-full">
-                              <motion.div whileTap={{ scale: 0.9 }}>
-                                <Button
-                                  variant="default"
-                                  size="icon"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    updateQuantity(
-                                      similarProduct.id,
-                                      similarInCartQty - 1
-                                    );
-                                  }}
-                                  className="w-7 h-7 p-0"
-                                  aria-label="Decrease quantity">
-                                  −
-                                </Button>
-                              </motion.div>
-                              <motion.span
-                                key={similarInCartQty}
-                                initial={{ scale: 1.2, y: -4 }}
-                                animate={{ scale: 1, y: 0 }}
-                                transition={{
-                                  type: "spring",
-                                  stiffness: 500,
-                                  damping: 15,
-                                }}
-                                className="text-sm font-bold text-green-600 min-w-[1.5rem] text-center">
-                                {similarInCartQty}
-                              </motion.span>
-                              <motion.div whileTap={{ scale: 0.9 }}>
-                                <Button
-                                  variant="default"
-                                  size="icon"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    updateQuantity(
-                                      similarProduct.id,
-                                      similarInCartQty + 1
-                                    );
-                                  }}
-                                  disabled={similarInCartQty >= (similarProduct.stock || 0)}
-                                  className={`w-7 h-7 p-0 ${similarInCartQty >= (similarProduct.stock || 0) ? 'opacity-30 cursor-not-allowed' : ''}`}
-                                  aria-label="Increase quantity">
-                                  +
-                                </Button>
-                              </motion.div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
-      {/* Sticky Footer */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-neutral-200 shadow-lg">
-        <div className="px-4 py-2.5 flex items-center justify-between">
-          {/* Left side - Product details */}
-          <div className="flex-1">
-            {/* First line - Pack size */}
-            <div>
-              <span className="text-sm text-neutral-900 font-medium">
-                {variantTitle}
-              </span>
-            </div>
-            {/* Second line - Price, MRP, and OFF */}
-            <div className="flex items-center gap-1.5">
-              <span className="text-base font-bold text-neutral-900">
-                ₹{variantPrice.toLocaleString('en-IN')}
-              </span>
+      {/* ── Combo & Buy Together ── */}
+      <div className="mt-2 px-4">
+        <ComboOfferSection
+          categoryId={product.category?.slug || product.category?._id || product.categoryId}
+          categoryName={product.category?.name}
+          currentProductId={product.id || product._id}
+        />
+      </div>
+      {similarProducts.length > 0 && (
+        <div className="mt-2 px-4">
+          <BuyTogetherSection currentProduct={product} products={similarProducts} />
+        </div>
+      )}
+
+      {/* ── Reviews ── */}
+      <div className="mt-2 mx-4 bg-white rounded-2xl p-4 shadow-sm">
+        <ProductReviews productId={product.id || product._id} productName={product.productName} productImage={product.mainImage} />
+      </div>
+
+      {/* ── Similar Products ── */}
+      {similarProducts.length > 0 && (
+        <div className="mt-4">
+          <div className="flex items-center justify-between px-4 mb-3">
+            <h3 className="text-sm font-extrabold text-neutral-900">More Like This</h3>
+          </div>
+          <div className="flex gap-3 overflow-x-auto scrollbar-hide px-4 pb-3" style={{ scrollSnapType: 'x mandatory' }}>
+            {similarProducts.map((sp) => {
+              const simCartItem = cart.items.find(item => item?.product && (item.product.id === sp.id || item.product.id === sp._id));
+              const simQty = simCartItem?.quantity || 0;
+              const { displayPrice: spPrice, mrp: spMrp, discount: spDiscount, hasDiscount: spHasDiscount } = calculateProductPrice(sp);
+
+              return (
+                <div key={sp.id || sp._id} className="flex-shrink-0 w-36 bg-white rounded-2xl border border-neutral-100 shadow-sm overflow-hidden" style={{ scrollSnapAlign: 'start' }}>
+                  <WishlistButton productId={sp.id || sp._id} size="sm" className="absolute top-2 right-2 shadow-md" />
+                  <div onClick={() => navigate(`/product/${sp.id || sp._id}`, { state: { fromStore: true } })} className="w-full h-28 bg-neutral-50 flex items-center justify-center overflow-hidden cursor-pointer relative">
+                    {(sp.imageUrl || sp.mainImage) ? (
+                      <img src={sp.imageUrl || sp.mainImage} alt={sp.name || sp.productName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                    ) : (
+                      <span className="text-3xl text-neutral-300">{(sp.name || sp.productName || 'P').charAt(0)}</span>
+                    )}
+                    {spDiscount > 0 && (
+                      <span className="absolute top-1.5 left-1.5 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-lg">{spDiscount}% OFF</span>
+                    )}
+                  </div>
+                  <div className="p-2.5">
+                    <p className="text-[11px] font-bold text-neutral-900 line-clamp-2 mb-1 leading-tight">{sp.name || sp.productName}</p>
+                    <div className="flex items-baseline gap-1 mb-2">
+                      <span className="text-sm font-black text-neutral-900">₹{spPrice}</span>
+                      {spHasDiscount && <span className="text-[10px] text-neutral-400 line-through">₹{spMrp}</span>}
+                    </div>
+                    <AnimatePresence mode="wait">
+                      {simQty === 0 ? (
+                        <motion.button
+                          key="add"
+                          initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}
+                          onClick={e => { e.stopPropagation(); addToCart(sp); }}
+                          className="w-full py-1.5 rounded-xl border-2 border-teal-500 text-teal-600 text-xs font-bold active:scale-95 transition-transform"
+                        >ADD</motion.button>
+                      ) : (
+                        <motion.div
+                          key="stepper"
+                          initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}
+                          className="flex items-center justify-between bg-teal-500 rounded-xl px-2 py-1.5"
+                          onClick={e => e.stopPropagation()}
+                        >
+                          <button onClick={e => { e.stopPropagation(); updateQuantity(sp.id, simQty - 1); }} className="text-white font-black text-sm w-5 h-5 flex items-center justify-center">−</button>
+                          <span className="text-white font-black text-sm">{simQty}</span>
+                          <button onClick={e => { e.stopPropagation(); updateQuantity(sp.id, simQty + 1); }} className="text-white font-black text-sm w-5 h-5 flex items-center justify-center">+</button>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── Sticky Footer ── */}
+      <div className="fixed bottom-0 left-0 right-0 z-50">
+        <div className="bg-white/95 backdrop-blur-xl border-t border-neutral-100 shadow-[0_-8px_30px_rgba(0,0,0,0.08)] px-4 py-3 flex items-center gap-3" style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))' }}>
+          {/* Left: variant + price */}
+          <div className="flex-1 min-w-0">
+            <p className="text-[11px] text-neutral-400 font-medium truncate">{variantTitle}</p>
+            <div className="flex items-baseline gap-1.5 mt-0.5">
+              <span className="text-base font-black text-neutral-900">₹{variantPrice.toLocaleString('en-IN')}</span>
               {hasDiscount && (
                 <>
-                  <span className="text-xs text-neutral-500 line-through">
-                    MRP ₹{variantMrp.toLocaleString('en-IN')}
-                  </span>
+                  <span className="text-xs text-neutral-400 line-through">₹{variantMrp.toLocaleString('en-IN')}</span>
                   {discount > 0 && (
-                    <Badge className="!bg-blue-500 !text-white !border-blue-500 text-[10px] px-1.5 py-0.5 rounded-full font-semibold">
-                      {discount}% OFF
-                    </Badge>
+                    <span className="text-[9px] font-black text-emerald-500">{discount}% OFF</span>
                   )}
                 </>
               )}
             </div>
-            {/* Third line - Inclusive of all taxes */}
-            <p className="text-[11px] text-neutral-500 leading-none">
-              Inclusive of all taxes
-            </p>
+            <p className="text-[10px] text-neutral-300 leading-none mt-0.5">Inclusive of all taxes</p>
           </div>
 
-          {/* Right side - Add to cart button or Quantity Stepper */}
-          <div className="ml-3 flex items-center">
+          {/* Right: Add to cart / Stepper */}
+          <div className="shrink-0">
             <AnimatePresence mode="wait">
               {inCartQty === 0 ? (
-                <motion.div
-                  key="add-button"
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{ duration: 0.2 }}
-                  className="flex items-center">
-                  <Button
-                    ref={addButtonRef}
-                    variant="default"
-                    size="default"
-                    onClick={handleAddToCart}
-                    disabled={!isAvailableAtLocation || !isVariantAvailable}
-                    className={`px-6 py-2 text-sm font-semibold h-[36px] ${!isAvailableAtLocation || !isVariantAvailable
-                      ? "opacity-50 cursor-not-allowed"
-                      : ""
-                      }`}
-                    title={
-                      !isAvailableAtLocation
-                        ? "Not available at your location"
-                        : !isVariantAvailable
-                          ? "This variant is out of stock"
-                          : ""
-                    }>
-                    {!isAvailableAtLocation
-                      ? "Unavailable"
-                      : !isVariantAvailable
-                        ? "Out of Stock"
-                        : "Add to cart"}
-                  </Button>
-                </motion.div>
+                <motion.button
+                  key="add"
+                  ref={addButtonRef}
+                  initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
+                  onClick={handleAddToCart}
+                  disabled={!isAvailableAtLocation || !isVariantAvailable}
+                  className="px-7 py-3 rounded-2xl text-white text-sm font-black shadow-lg active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ background: 'linear-gradient(135deg, #0d9488, #0f766e)' }}
+                >
+                  {!isAvailableAtLocation ? 'Unavailable' : !isVariantAvailable ? 'Out of Stock' : 'Add to Cart'}
+                </motion.button>
               ) : (
                 <motion.div
                   key="stepper"
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{ duration: 0.2 }}
-                  className="flex items-center gap-2 bg-white border-2 border-green-600 rounded-full px-2 py-1 h-[36px]">
-                  <motion.button
-                    whileTap={{ scale: 0.9 }}
-                    onClick={() => {
-                      const productId = product.id || product._id;
-                      const variantId = selectedVariant?._id;
-                      updateQuantity(productId, inCartQty - 1, variantId, variantTitle);
-                    }}
-                    className="w-6 h-6 flex items-center justify-center text-green-600 font-bold hover:bg-green-50 rounded-full transition-colors border border-green-600 p-0 leading-none text-base"
-                    style={{ lineHeight: 1 }}>
-                    <span className="relative top-[-1px]">−</span>
-                  </motion.button>
-                  <motion.span
-                    key={inCartQty}
-                    initial={{ scale: 1.2, y: -2 }}
-                    animate={{ scale: 1, y: 0 }}
-                    transition={{ type: "spring", stiffness: 500, damping: 15 }}
-                    className="text-sm font-bold text-green-600 min-w-[1.5rem] text-center">
-                    {inCartQty}
-                  </motion.span>
-                  <motion.button
-                    whileTap={{ scale: 0.9 }}
-                    onClick={() => {
-                      const productId = product.id || product._id;
-                      const variantId = selectedVariant?._id;
-                      updateQuantity(productId, inCartQty + 1, variantId, variantTitle);
-                    }}
+                  initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
+                  className="flex items-center gap-3 rounded-2xl px-3 py-2.5 shadow-lg"
+                  style={{ background: 'linear-gradient(135deg, #0d9488, #0f766e)' }}
+                >
+                  <button
+                    onClick={() => { updateQuantity(product.id || product._id, inCartQty - 1, selectedVariant?._id, variantTitle); }}
+                    className="w-7 h-7 flex items-center justify-center text-white font-black text-lg bg-white/20 rounded-xl active:scale-90 transition-transform"
+                  >−</button>
+                  <motion.span key={inCartQty} initial={{ scale: 1.3 }} animate={{ scale: 1 }} className="text-white font-black text-base min-w-[1.5rem] text-center">{inCartQty}</motion.span>
+                  <button
+                    onClick={() => { updateQuantity(product.id || product._id, inCartQty + 1, selectedVariant?._id, variantTitle); }}
                     disabled={inCartQty >= variantStock}
-                    className={`w-6 h-6 flex items-center justify-center text-green-600 font-bold hover:bg-green-50 rounded-full transition-colors border border-green-600 p-0 leading-none text-base ${inCartQty >= variantStock ? 'opacity-30 cursor-not-allowed' : ''}`}
-                    style={{ lineHeight: 1 }}>
-                    <span className="relative top-[-1px]">+</span>
-                  </motion.button>
+                    className="w-7 h-7 flex items-center justify-center text-white font-black text-lg bg-white/20 rounded-xl active:scale-90 transition-transform disabled:opacity-40"
+                  >+</button>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -1391,4 +750,3 @@ export default function ProductDetail() {
     </div>
   );
 }
-

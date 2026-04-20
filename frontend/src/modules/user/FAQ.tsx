@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface FAQItem {
   id: string;
@@ -171,13 +172,23 @@ export default function FAQ() {
                       />
                     </svg>
                   </button>
-                  {isOpen && (
-                    <div className="px-4 pb-3 pt-0">
-                      <p className="text-xs text-neutral-500 leading-relaxed">
-                        {item.answer}
-                      </p>
-                    </div>
-                  )}
+                  <AnimatePresence initial={false}>
+                    {isOpen && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: 'easeInOut' }}
+                        className="overflow-hidden"
+                      >
+                        <div className="px-4 pb-3 pt-0">
+                          <p className="text-xs text-neutral-500 leading-relaxed">
+                            {item.answer}
+                          </p>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               );
             })}

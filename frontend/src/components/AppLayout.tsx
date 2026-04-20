@@ -1,4 +1,5 @@
 import { ReactNode, useEffect, useRef, useState, useMemo } from 'react';
+import { cn } from '../utils/cn';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import FloatingCartPill from './FloatingCartPill';
@@ -295,213 +296,107 @@ export default function AppLayout({ children }: AppLayoutProps) {
           {/* Fixed Bottom Navigation - Mobile Only, Hidden on checkout pages */}
           {showBottomNavbar && (
             <nav
-              className="fixed bottom-0 left-0 right-0 z-50 md:hidden pb-[env(safe-area-inset-bottom,0)] transition-all duration-300"
+              className="fixed bottom-0 left-0 right-0 z-50 md:hidden transition-all duration-300"
             >
+              {/* Main Container with Glassmorphism */}
               <div
-                className="absolute inset-0 border-t transition-all duration-300 shadow-[0_-10px_40px_rgba(0,0,0,0.15)]"
+                className="absolute inset-0 shadow-[0_-8px_30px_rgba(0,0,0,0.08)] backdrop-blur-xl border-t"
                 style={{
                   background: (activeCategory === 'all' && deliveryMode === 'scheduled')
                     ? '#00796B'
                     : currentTheme.headerBg
-                      ? `linear-gradient(to right, ${currentTheme.headerBg}, ${currentTheme.searchBarBg || currentTheme.headerBg})`
-                      : 'rgba(255, 255, 255, 0.95)',
-                  backdropFilter: currentTheme.headerBg ? 'none' : 'blur(20px)',
-                  borderColor: currentTheme.headerBg ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)'
+                      ? `linear-gradient(to bottom, ${currentTheme.headerBg}ee, ${currentTheme.headerBg})`
+                      : 'rgba(255, 255, 255, 0.85)',
+                  borderColor: currentTheme.headerBg ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+                  paddingBottom: 'env(safe-area-inset-bottom, 0)'
                 }}
               />
-              <div className="flex justify-around items-center h-16 relative z-10 px-2">
-                {/* Home */}
-                <motion.div
-                  whileTap={{ scale: 0.9 }}
-                  className="flex-1 h-full"
-                >
-                  <Link
-                    to="/"
-                    className="flex flex-col items-center justify-center h-full gap-1"
-                  >
-                    <motion.svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
+              
+              <div 
+                className="flex justify-around items-center h-[72px] relative z-10 px-4"
+                style={{ paddingBottom: 'env(safe-area-inset-bottom, 0)' }}
+              >
+                {[
+                  { id: '/', label: 'Home', to: '/', icon: (active: boolean) => (
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? "2.5" : "2"}>
+                      <path d="M3 9.5L12 3.5L21 9.5V19C21 20.1 20.1 21 19 21H5C3.9 21 3 20.1 3 19V9.5Z" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M9 21V12H15V21" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )},
+                  { id: '/order-again', label: 'Repeat', to: '/order-again', icon: (active: boolean) => (
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? "2.5" : "2"}>
+                      <path d="M4 6H20V10H4V6Z" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M4 10V19C4 20.1 4.9 21 6 21H18C19.1 21 20 20.1 20 19V10" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M9 21V10H15V21" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )},
+                  { id: '/categories', label: 'Items', to: '/categories', icon: (active: boolean) => (
+                    <motion.svg 
+                      width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? "2.5" : "2"}
+                      animate={{ rotate: (isActive('/categories') || location.pathname.startsWith('/category/')) ? 90 : 0 }}
                     >
-                      {isActive('/') ? (
-                        <>
-                          <path d="M2.25 12L12 3.25L21.75 12" stroke={currentTheme.headerBg ? '#ffffff' : currentTheme.accentColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                          <path d="M4.75 11.25V19.75C4.75 20.3 5.2 20.75 5.75 20.75H18.25C18.8 20.75 19.25 20.3 19.25 19.75V11.25" stroke={currentTheme.headerBg ? '#ffffff' : currentTheme.accentColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill={currentTheme.headerBg ? '#ffffff' : currentTheme.primary[0]} fillOpacity={currentTheme.headerBg ? 0.3 : 0.2} />
-                          <path d="M9.75 20.75V14.75H14.25V20.75" stroke={currentTheme.headerBg ? '#ffffff' : currentTheme.accentColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                        </>
-                      ) : (
-                        <>
-                          <path d="M2.25 12L12 3.25L21.75 12" stroke={currentTheme.headerBg ? '#ffffff' : '#6b7280'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" strokeOpacity={currentTheme.headerBg ? 0.8 : 1} />
-                          <path d="M4.75 11.25V19.75C4.75 20.3 5.2 20.75 5.75 20.75H18.25C18.8 20.75 19.25 20.3 19.25 19.75V11.25" stroke={currentTheme.headerBg ? '#ffffff' : '#6b7280'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" strokeOpacity={currentTheme.headerBg ? 0.8 : 1} />
-                        </>
-                      )}
+                      <rect x="3" y="3" width="7" height="7" rx="1.5" />
+                      <rect x="14" y="3" width="7" height="7" rx="1.5" />
+                      <rect x="3" y="14" width="7" height="7" rx="1.5" />
+                      <rect x="14" y="14" width="7" height="7" rx="1.5" />
                     </motion.svg>
-                    <span
-                      className={`text-[10px] uppercase tracking-wider font-bold ${isActive('/') ? '' : (currentTheme.headerBg ? 'text-white/60' : 'text-neutral-500')}`}
-                      style={{ color: isActive('/') ? (currentTheme.headerBg ? '#ffffff' : currentTheme.accentColor) : '' }}
+                  )},
+                  { id: '/account', label: 'Me', to: '/account', icon: (active: boolean) => (
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? "2.5" : "2"}>
+                      <path d="M20 21C20 18.2386 16.4183 16 12 16C7.58172 16 4 18.2386 4 21" strokeLinecap="round" />
+                      <circle cx="12" cy="7" r="4" strokeLinecap="round" />
+                    </svg>
+                  )}
+                ].map((item) => {
+                  const active = item.id === '/' ? isActive('/') : (item.id === '/categories' ? (isActive('/categories') || location.pathname.startsWith('/category/')) : isActive(item.to));
+                  const color = currentTheme.headerBg ? '#ffffff' : (active ? currentTheme.accentColor : '#94a3b8');
+                  
+                  return (
+                    <Link
+                      key={item.id}
+                      to={item.to}
+                      className="relative flex flex-col items-center justify-center flex-1 h-full py-1"
                     >
-                      Home
-                    </span>
-                    {isActive('/') && (
                       <motion.div
-                        layoutId="activeTab"
-                        className="absolute bottom-0 w-1.5 h-1.5 rounded-full"
-                        style={{ backgroundColor: currentTheme.headerBg ? '#ffffff' : currentTheme.accentColor }}
-                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                      />
-                    )}
-                  </Link>
-                </motion.div>
+                        initial={false}
+                        animate={{ 
+                          scale: active ? 1.1 : 1,
+                          color: color
+                        }}
+                        className="relative z-10 flex flex-col items-center gap-1"
+                      >
+                        <div className="relative">
+                          {item.icon(active)}
+                          {active && (
+                            <motion.div
+                              layoutId="nav-bg"
+                              className="absolute -inset-3 rounded-2xl -z-10"
+                              style={{ 
+                                background: currentTheme.headerBg ? 'rgba(255,255,255,0.15)' : `${currentTheme.accentColor}15`,
+                              }}
+                              transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                            />
+                          )}
+                        </div>
+                        <span className={cn(
+                          "text-[11px] font-bold tracking-tight transition-colors duration-300",
+                          active ? "opacity-100" : "opacity-70"
+                        )}>
+                          {item.label}
+                        </span>
+                      </motion.div>
 
-                {/* Order Again */}
-                <motion.div
-                  whileTap={{ scale: 0.9 }}
-                  className="flex-1 h-full"
-                >
-                  <Link
-                    to="/order-again"
-                    className="flex flex-col items-center justify-center h-full gap-1"
-                  >
-                    <motion.svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      {isActive('/order-again') ? (
-                        <>
-                          <path d="M4.5 9.5V6C4.5 4.34 5.84 3 7.5 3H16.5C18.16 3 19.5 4.34 19.5 6V9.5H21.5C21.91 9.5 22.25 9.84 22.25 10.25V20.75C22.25 21.16 21.91 21.5 21.5 21.5H2.5C2.09 21.5 1.75 21.16 1.75 20.75V10.25C1.75 9.84 2.09 9.5 2.5 9.5H4.5Z" stroke={currentTheme.headerBg ? '#ffffff' : currentTheme.accentColor} strokeWidth="2.5" strokeLinejoin="round" fill={currentTheme.headerBg ? '#ffffff' : currentTheme.primary[0]} fillOpacity={currentTheme.headerBg ? 0.3 : 0.2} />
-                          <path d="M7.75 9.5V6C7.75 5.59 8.09 5.25 8.5 5.25H15.5C15.91 5.25 16.25 5.59 16.25 6V9.5" stroke={currentTheme.headerBg ? '#ffffff' : currentTheme.accentColor} strokeWidth="2.5" strokeLinecap="round" />
-                          <path d="M10 13L12 15L16 11" stroke={currentTheme.headerBg ? '#ffffff' : currentTheme.accentColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                        </>
-                      ) : (
-                        <>
-                          <path d="M4.5 9.5V6C4.5 4.34 5.84 3 7.5 3H16.5C18.16 3 19.5 4.34 19.5 6V9.5H21.5C21.91 9.5 22.25 9.84 22.25 10.25V20.75C22.25 21.16 21.91 21.5 21.5 21.5H2.5C2.09 21.5 1.75 21.16 1.75 20.75V10.25C1.75 9.84 2.09 9.5 2.5 9.5H4.5Z" stroke={currentTheme.headerBg ? '#ffffff' : '#6b7280'} strokeWidth="2" strokeLinejoin="round" strokeOpacity={currentTheme.headerBg ? 0.7 : 1} />
-                          <path d="M7.75 9.5V6C7.75 5.59 8.09 5.25 8.5 5.25H15.5C15.91 5.25 16.25 5.59 16.25 6V9.5" stroke={currentTheme.headerBg ? '#ffffff' : '#6b7280'} strokeWidth="2" strokeLinecap="round" strokeOpacity={currentTheme.headerBg ? 0.7 : 1} />
-                        </>
+                      {active && (
+                        <motion.div
+                          layoutId="nav-indicator"
+                          className="absolute bottom-1 w-1.5 h-1.5 rounded-full"
+                          style={{ backgroundColor: color }}
+                          transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                        />
                       )}
-                    </motion.svg>
-                    <span
-                      className={`text-[10px] uppercase tracking-wider font-bold ${isActive('/order-again') ? '' : (currentTheme.headerBg ? 'text-white/60' : 'text-neutral-500')}`}
-                      style={{ color: isActive('/order-again') ? (currentTheme.headerBg ? '#ffffff' : currentTheme.accentColor) : '' }}
-                    >
-                      Repeat
-                    </span>
-                    {isActive('/order-again') && (
-                      <motion.div
-                        layoutId="activeTab"
-                        className="absolute bottom-0 w-1.5 h-1.5 rounded-full"
-                        style={{ backgroundColor: currentTheme.headerBg ? '#ffffff' : currentTheme.accentColor }}
-                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                      />
-                    )}
-                  </Link>
-                </motion.div>
-
-                {/* Categories */}
-                <motion.div
-                  whileTap={{ scale: 0.9 }}
-                  className="flex-1 h-full"
-                >
-                  <Link
-                    to="/categories"
-                    className="flex flex-col items-center justify-center h-full gap-1"
-                  >
-                    <motion.svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                      animate={{
-                        rotate: categoriesRotation
-                      }}
-                      transition={{
-                        duration: 0.6,
-                        ease: [0.34, 1.56, 0.64, 1]
-                      }}
-                    >
-                      {isActive('/categories') || location.pathname.startsWith('/category/') ? (
-                        <>
-                          <rect x="3.25" y="3.25" width="7.5" height="7.5" rx="2" stroke={currentTheme.headerBg ? '#ffffff' : currentTheme.accentColor} strokeWidth="2.5" fill={currentTheme.headerBg ? '#ffffff' : currentTheme.primary[0]} fillOpacity={currentTheme.headerBg ? 0.3 : 1} />
-                          <rect x="13.25" y="3.25" width="7.5" height="7.5" rx="2" stroke={currentTheme.headerBg ? '#ffffff' : currentTheme.accentColor} strokeWidth="2.5" />
-                          <rect x="3.25" y="13.25" width="7.5" height="7.5" rx="2" stroke={currentTheme.headerBg ? '#ffffff' : currentTheme.accentColor} strokeWidth="2.5" />
-                          <rect x="13.25" y="13.25" width="7.5" height="7.5" rx="2" stroke={currentTheme.headerBg ? '#ffffff' : currentTheme.accentColor} strokeWidth="2.5" fill={currentTheme.headerBg ? '#ffffff' : currentTheme.primary[0]} fillOpacity={currentTheme.headerBg ? 0.3 : 1} />
-                        </>
-                      ) : (
-                        <>
-                          <rect x="3" y="3" width="8" height="8" rx="2" stroke={currentTheme.headerBg ? '#ffffff' : '#6b7280'} strokeWidth="2" strokeOpacity={currentTheme.headerBg ? 0.7 : 1} />
-                          <rect x="13" y="3" width="8" height="8" rx="2" stroke={currentTheme.headerBg ? '#ffffff' : '#6b7280'} strokeWidth="2" strokeOpacity={currentTheme.headerBg ? 0.7 : 1} />
-                          <rect x="3" y="13" width="8" height="8" rx="2" stroke={currentTheme.headerBg ? '#ffffff' : '#6b7280'} strokeWidth="2" strokeOpacity={currentTheme.headerBg ? 0.7 : 1} />
-                          <rect x="13" y="13" width="8" height="8" rx="2" stroke={currentTheme.headerBg ? '#ffffff' : '#6b7280'} strokeWidth="2" strokeOpacity={currentTheme.headerBg ? 0.7 : 1} />
-                        </>
-                      )}
-                    </motion.svg>
-                    <span
-                      className={`text-[10px] uppercase tracking-wider font-bold ${(isActive('/categories') || location.pathname.startsWith('/category/')) ? '' : (currentTheme.headerBg ? 'text-white/60' : 'text-neutral-500')}`}
-                      style={{ color: (isActive('/categories') || location.pathname.startsWith('/category/')) ? (currentTheme.headerBg ? '#ffffff' : currentTheme.accentColor) : '' }}
-                    >
-                      Items
-                    </span>
-                    {(isActive('/categories') || location.pathname.startsWith('/category/')) && (
-                      <motion.div
-                        layoutId="activeTab"
-                        className="absolute bottom-0 w-1.5 h-1.5 rounded-full"
-                        style={{ backgroundColor: currentTheme.headerBg ? '#ffffff' : currentTheme.accentColor }}
-                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                      />
-                    )}
-                  </Link>
-                </motion.div>
-
-                {/* Profile */}
-                <motion.div
-                  whileTap={{ scale: 0.9 }}
-                  className="flex-1 h-full"
-                >
-                  <Link
-                    to="/account"
-                    className="flex flex-col items-center justify-center h-full gap-1"
-                  >
-                    <motion.svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      {isActive('/account') ? (
-                        <>
-                          <circle cx="12" cy="7.25" r="4.25" stroke={currentTheme.headerBg ? '#ffffff' : currentTheme.accentColor} strokeWidth="2.5" fill={currentTheme.headerBg ? '#ffffff' : currentTheme.primary[0]} fillOpacity={currentTheme.headerBg ? 0.3 : 0.2} />
-                          <path d="M4.25 20.25C4.25 16.384 7.71904 13.25 12 13.25C16.281 13.25 19.75 16.384 19.75 20.25" stroke={currentTheme.headerBg ? '#ffffff' : currentTheme.accentColor} strokeWidth="2.5" strokeLinecap="round" />
-                        </>
-                      ) : (
-                        <>
-                          <circle cx="12" cy="7.25" r="4.25" stroke={currentTheme.headerBg ? '#ffffff' : '#6b7280'} strokeWidth="2" strokeOpacity={currentTheme.headerBg ? 0.7 : 1} />
-                          <path d="M4.25 20.25C4.25 16.384 7.71904 13.25 12 13.25C16.281 13.25 19.75 16.384 19.75 20.25" stroke={currentTheme.headerBg ? '#ffffff' : '#6b7280'} strokeWidth="2" strokeLinecap="round" strokeOpacity={currentTheme.headerBg ? 0.7 : 1} />
-                        </>
-                      )}
-                    </motion.svg>
-                    <span
-                      className={`text-[10px] uppercase tracking-wider font-bold ${isActive('/account') ? '' : (currentTheme.headerBg ? 'text-white/60' : 'text-neutral-500')}`}
-                      style={{ color: isActive('/account') ? (currentTheme.headerBg ? '#ffffff' : currentTheme.accentColor) : '' }}
-                    >
-                      Me
-                    </span>
-                    {isActive('/account') && (
-                      <motion.div
-                        layoutId="activeTab"
-                        className="absolute bottom-0 w-1.5 h-1.5 rounded-full"
-                        style={{ backgroundColor: currentTheme.headerBg ? '#ffffff' : currentTheme.accentColor }}
-                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                      />
-                    )}
-                  </Link>
-                </motion.div>
+                    </Link>
+                  );
+                })}
               </div>
             </nav>
           )}

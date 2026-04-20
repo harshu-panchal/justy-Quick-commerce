@@ -150,7 +150,7 @@ app.use("/api/v1", routes);
 app.use(notFound);
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5002;
 let lastRazorpaySubCronRunAt: Date | null = null;
 let lastRazorpaySubCronStats: { checked: number; updated: number; errors: number } | null = null;
 let lastRazorpaySubCronError: string | null = null;

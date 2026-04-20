@@ -1,126 +1,84 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import HomeHero from './components/HomeHero';
 import { useOrders } from '../../hooks/useOrders';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import { getProducts } from '../../services/api/customerProductService';
 import WishlistButton from '../../components/WishlistButton';
 import { calculateProductPrice } from '../../utils/priceUtils';
+import { useThemeContext } from '../../context/ThemeContext';
+import jyastiLogo from '@assets/jyastiLogo.png';
 
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
-  return date.toLocaleDateString('en-IN', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return 'Yesterday';
+  if (diffDays < 7) return `${diffDays} days ago`;
+  return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
 };
 
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case 'Delivered':
-      return 'bg-green-100 text-green-700';
-    case 'On the way':
-      return 'bg-blue-100 text-blue-700';
-    case 'Accepted':
-      return 'bg-yellow-100 text-yellow-700';
-    case 'Received':
-      return 'bg-neutral-100 text-neutral-700';
-    default:
-      return 'bg-neutral-100 text-neutral-700';
-  }
+const STATUS_STYLES: Record<string, { bg: string; text: string; dot: string }> = {
+  Delivered: { bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-500' },
+  'On the way': { bg: 'bg-blue-50', text: 'text-blue-700', dot: 'bg-blue-500' },
+  Accepted: { bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-400' },
+  Received: { bg: 'bg-neutral-100', text: 'text-neutral-600', dot: 'bg-neutral-400' },
 };
+const getStatusStyle = (status: string) => STATUS_STYLES[status] || { bg: 'bg-neutral-100', text: 'text-neutral-600', dot: 'bg-neutral-400' };
 
 export default function OrderAgain() {
   const { orders } = useOrders();
   const { cart, addToCart, addComboToCart, updateQuantity } = useCart();
   const { isAuthenticated } = useAuth();
+  const { currentTheme } = useThemeContext();
   const navigate = useNavigate();
   const [addedOrders, setAddedOrders] = useState<Set<string>>(new Set());
+  const [bestsellerProducts, setBestsellerProducts] = useState<any[]>([]);
+  const accentColor = currentTheme.headerBg || '#0d9488';
 
-  // Handle "Order Again" - Add all items from an order to cart
   const handleOrderAgain = (order: any, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-
-    // Redirect to login if not authenticated
-    if (!isAuthenticated) {
-      navigate('/login');
-      return;
-    }
-
-    // Mark this order as added
+    if (!isAuthenticated) { navigate('/login'); return; }
     setAddedOrders(prev => new Set(prev).add(order.id));
-
-    // Add each item from the order to the cart
     order.items
       .filter((item: any) => item && (item.product || item.comboOffer))
       .forEach((item: any) => {
         const isCombo = !!item.comboOffer;
         const itemId = isCombo ? (item.comboOffer.id || item.comboOffer._id) : (item.product.id || item.product._id);
-
         if (isCombo) {
-            // Check if combo already in cart
-            const existingCartItem = cart.items.find(cartItem => 
-                cartItem?.comboOffer && (cartItem.comboOffer.id === itemId || cartItem.comboOffer._id === itemId)
-            );
-            if (existingCartItem) {
-                updateQuantity(itemId, existingCartItem.quantity + item.quantity);
-            } else {
-                addComboToCart(itemId, item.quantity);
-            }
+          const existing = cart.items.find(c => c?.comboOffer && (c.comboOffer.id === itemId || c.comboOffer._id === itemId));
+          existing ? updateQuantity(itemId, existing.quantity + item.quantity) : addComboToCart(itemId, item.quantity);
         } else {
-            // Check if product is already in cart
-            const existingCartItem = cart.items.find(cartItem => cartItem?.product && (cartItem.product.id === itemId || cartItem.product._id === itemId));
-
-            if (existingCartItem) {
-                // If already in cart, add the order quantity to existing quantity
-                updateQuantity(itemId, existingCartItem.quantity + item.quantity);
-            } else {
-                // If not in cart, add it
-                addToCart(item.product);
-                // Then update to the correct quantity if needed
-                if (item.quantity > 1) {
-                    setTimeout(() => {
-                        updateQuantity(itemId, item.quantity);
-                    }, 50);
-                }
-            }
+          const existing = cart.items.find(c => c?.product && (c.product.id === itemId || c.product._id === itemId));
+          if (existing) {
+            updateQuantity(itemId, existing.quantity + item.quantity);
+          } else {
+            addToCart(item.product);
+            if (item.quantity > 1) setTimeout(() => updateQuantity(itemId, item.quantity), 50);
+          }
         }
       });
   };
 
-  // Get bestseller products
-  const [bestsellerProducts, setBestsellerProducts] = useState<any[]>([]);
-
   useEffect(() => {
     const fetchBestsellers = async () => {
       try {
-        const response = await getProducts({ sort: 'popular', limit: 6 });
+        const response = await getProducts({ sort: 'popular', limit: 8 });
         if (response.success && response.data) {
-          const mapped = (response.data as any[]).map(p => {
-            // Clean product name - remove description suffixes
-            let productName = p.productName || p.name || '';
-            productName = productName.replace(/\s*-\s*(Fresh|Quality|Assured|Premium|Best|Top|Hygienic|Carefully|Selected).*$/i, '').trim();
-
-            return {
-              ...p,
-              id: p._id || p.id,
-              name: productName,
-              imageUrl: p.mainImage || p.imageUrl,
-              mrp: p.mrp || p.price,
-              pack: p.variations?.[0]?.title || p.smallDescription || 'Standard'
-            };
-          });
-          setBestsellerProducts(mapped);
+          setBestsellerProducts((response.data as any[]).map(p => ({
+            ...p,
+            id: p._id || p.id,
+            name: (p.productName || p.name || '').replace(/\s*-\s*(Fresh|Quality|Assured|Premium|Best|Top|Hygienic|Carefully|Selected).*$/i, '').trim(),
+            imageUrl: p.mainImage || p.imageUrl,
+            mrp: p.mrp || p.price,
+            pack: p.variations?.[0]?.title || p.smallDescription || '',
+          })));
         }
-      } catch (error) {
-        console.error('Failed to fetch bestsellers:', error);
-      }
+      } catch (err) { console.error('Failed to fetch bestsellers:', err); }
     };
     fetchBestsellers();
   }, []);
@@ -128,178 +86,203 @@ export default function OrderAgain() {
   const hasOrders = orders && orders.length > 0;
 
   return (
-    <div className="pb-4">
-      {/* BESSELLERS SECTION REMOVED - If you see this comment, new code is loaded */}
+    <div className="min-h-screen bg-neutral-50 pb-28 md:pb-10">
 
+      {/* ── Page Header ── */}
+      <div className="px-4 pt-5 pb-3 flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-extrabold text-neutral-900 tracking-tight">Order Again</h1>
+          <p className="text-xs text-neutral-400 font-medium mt-0.5">
+            {hasOrders ? `${orders!.length} previous order${orders!.length > 1 ? 's' : ''}` : 'Your order history will appear here'}
+          </p>
+        </div>
+        {hasOrders && (
+          <button onClick={() => navigate('/orders')} className="text-xs font-bold px-3 py-1.5 rounded-xl border border-neutral-200 bg-white text-neutral-600 active:scale-95 transition-transform">
+            All Orders
+          </button>
+        )}
+      </div>
 
-      {/* Orders Section - Show when orders exist */}
-      {hasOrders && (
-        <div className="px-4 mt-6 mb-2">
-          <h2 className="text-sm font-semibold text-neutral-900 mb-2">Your Previous Orders</h2>
-          <div className="space-y-1.5">
-            {orders.map((order) => {
-              const shortId = order.id.split('-').slice(-1)[0];
-              const previewItems = order.items.slice(0, 3);
+      {/* ── Orders List ── */}
+      {hasOrders ? (
+        <div className="px-4 space-y-2.5 mb-6">
+          {orders!.map((order, idx) => {
+            const shortId = order.id.split('-').slice(-1)[0];
+            const previewItems = order.items.slice(0, 4);
+            const style = getStatusStyle(order.status);
+            const isAdded = addedOrders.has(order.id);
 
-              return (
-                <div
-                  key={order.id}
-                  onClick={() => navigate(`/orders/${order.id}`)}
-                  className="bg-white rounded-lg border border-neutral-200 p-2 hover:shadow-sm transition-shadow cursor-pointer"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <div className="text-xs font-semibold text-neutral-900">
-                          Order #{shortId}
-                        </div>
-                        <span
-                          className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium flex-shrink-0 ${getStatusColor(
-                            order.status
-                          )}`}
-                        >
-                          {order.status}
-                        </span>
-                      </div>
-                      <div className="text-[10px] text-neutral-500 mb-1">{formatDate(order.createdAt)}</div>
-
-                      {/* Product Images Preview - Compact */}
-                      <div className="flex items-center gap-1">
-                        {previewItems
-                          .filter(item => item && (item.product || item.comboOffer))
-                          .map((item, idx) => {
-                            const itemProduct = item.product || {
-                                id: item.comboOffer?.id || item.comboOffer?._id,
-                                imageUrl: item.comboOffer?.image,
-                                name: item.comboOffer?.name
-                            };
-                            return (
-                              <div
-                                key={itemProduct.id || idx}
-                                className="w-6 h-6 bg-neutral-100 rounded flex items-center justify-center flex-shrink-0 overflow-hidden"
-                                style={{ marginLeft: idx > 0 ? '-4px' : '0' }}
-                              >
-                                {itemProduct.imageUrl ? (
-                                  <img
-                                    src={itemProduct.imageUrl}
-                                    alt={itemProduct.name}
-                                    className="w-full h-full object-contain"
-                                  />
-                                ) : (
-                                  <span className="text-[8px] text-neutral-400">
-                                    {(itemProduct.name || (itemProduct as any).productName || '?').charAt(0).toUpperCase()}
-                                  </span>
-                                )}
-                              </div>
-                            );
-                          })}
-                        {order.items.length > 3 && (
-                          <div className="w-6 h-6 bg-neutral-200 rounded flex items-center justify-center text-[8px] font-medium text-neutral-600">
-                            +{order.items.length - 3}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                      <div className="text-xs font-bold text-neutral-900">
-                        ₹{(order.totalAmount || 0).toFixed(0)}
-                      </div>
-                      <div className="text-[10px] text-neutral-500">
-                        {order.totalItems || 0} {(order.totalItems || 0) === 1 ? 'item' : 'items'}
-                      </div>
-                      {/* Order Again Button */}
-                      <button
-                        onClick={(e) => handleOrderAgain(order, e)}
-                        disabled={addedOrders.has(order.id)}
-                        className={`mt-1 text-[10px] font-semibold px-3 py-1 rounded-md transition-colors shadow-sm ${addedOrders.has(order.id)
-                          ? 'bg-orange-200 text-neutral-600 cursor-not-allowed'
-                          : 'bg-green-600 text-white hover:bg-green-700 cursor-pointer'
-                          }`}
-                      >
-                        {addedOrders.has(order.id) ? 'Added to Cart!' : 'Order Again'}
-                      </button>
+            return (
+              <motion.div
+                key={order.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.05 }}
+                onClick={() => navigate(`/orders/${order.id}`)}
+                className="bg-white rounded-2xl border border-neutral-100 shadow-sm overflow-hidden cursor-pointer active:scale-[0.99] transition-transform"
+              >
+                {/* Order Header */}
+                <div className="flex items-center justify-between px-4 pt-3.5 pb-2.5 border-b border-neutral-50">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div>
+                      <p className="text-[11px] font-bold text-neutral-900">Order #{shortId}</p>
+                      <p className="text-[10px] text-neutral-400">{formatDate(order.createdAt)}</p>
                     </div>
                   </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${style.bg} ${style.text}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${style.dot}`} />
+                      {order.status}
+                    </span>
+                    <span className="text-sm font-black text-neutral-900">₹{(order.totalAmount || 0).toFixed(0)}</span>
+                  </div>
                 </div>
-              );
-            })}
-          </div>
+
+                {/* Product Thumbnails */}
+                <div className="px-4 py-3 flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                    {previewItems
+                      .filter(item => item && (item.product || item.comboOffer))
+                      .map((item, i) => {
+                        const img = item.product?.imageUrl || item.comboOffer?.image;
+                        const nm = item.product?.name || item.comboOffer?.name || '';
+                        return (
+                          <div key={i} className="w-10 h-10 rounded-xl bg-neutral-50 border border-neutral-100 overflow-hidden flex items-center justify-center shrink-0">
+                            {img ? <img src={img} alt={nm} className="w-full h-full object-contain" /> : <span className="text-sm text-neutral-300">{nm.charAt(0)}</span>}
+                          </div>
+                        );
+                      })}
+                    {order.items.length > 4 && (
+                      <div className="w-10 h-10 rounded-xl bg-neutral-100 flex items-center justify-center text-[10px] font-bold text-neutral-500 shrink-0">
+                        +{order.items.length - 4}
+                      </div>
+                    )}
+                    <div className="ml-1 min-w-0">
+                      <p className="text-[10px] text-neutral-500">{order.totalItems || order.items.length} items</p>
+                    </div>
+                  </div>
+
+                  {/* Order Again Button */}
+                  <button
+                    onClick={e => handleOrderAgain(order, e)}
+                    disabled={isAdded}
+                    className={`shrink-0 px-3 py-2 rounded-xl text-[11px] font-bold transition-all active:scale-95 flex items-center gap-1 ${
+                      isAdded
+                        ? 'bg-neutral-100 text-neutral-400 cursor-not-allowed'
+                        : 'text-white shadow-sm'
+                    }`}
+                    style={isAdded ? {} : { background: accentColor }}
+                  >
+                    {isAdded ? (
+                      <>✓ Added</>
+                    ) : (
+                      <>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 4 1 10 7 10" /><path d="M3.51 15a9 9 0 1 0 .49-3.66" /></svg>
+                        Repeat
+                      </>
+                    )}
+                  </button>
+                </div>
+              </motion.div>
+            );
+          })}
         </div>
+      ) : (
+        /* ── Premium Empty State ── */
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="px-4 flex flex-col items-center text-center"
+        >
+          {/* Illustration */}
+          <div className="relative w-full max-w-[240px] mx-auto mb-5 mt-6">
+            {/* Glow background */}
+            <div className="absolute inset-0 rounded-full blur-3xl opacity-20" style={{ background: accentColor }} />
+
+            {/* Bag Shape */}
+            <div className="relative flex flex-col items-center">
+              {/* Bag Handle */}
+              <div className="w-24 h-8 border-[5px] border-t-0 rounded-b-3xl mb-0 relative z-10" style={{ borderColor: accentColor }} />
+
+              {/* Bag Body */}
+              <div className="w-48 h-44 rounded-3xl relative overflow-hidden flex flex-col items-center justify-center shadow-2xl" style={{ background: `linear-gradient(145deg, ${accentColor}22 0%, ${accentColor}10 100%)`, border: `2px solid ${accentColor}30` }}>
+                {/* Decorative circles */}
+                <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full opacity-10" style={{ background: accentColor }} />
+                <div className="absolute -bottom-6 -left-6 w-24 h-24 rounded-full opacity-10" style={{ background: accentColor }} />
+
+                {/* Logo */}
+                <img src={jyastiLogo} alt="Jyasti" className="h-16 w-auto object-contain relative z-10 opacity-80" />
+
+                {/* Repeat icon */}
+                <div className="mt-2 w-8 h-8 rounded-full flex items-center justify-center relative z-10" style={{ background: accentColor }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="1 4 1 10 7 10" /><path d="M3.51 15a9 9 0 1 0 .49-3.66" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <h2 className="text-lg font-extrabold text-neutral-900 mb-1.5 tracking-tight">No Orders Yet</h2>
+          <p className="text-xs text-neutral-400 leading-relaxed max-w-xs mb-6">
+            Once you place an order, it'll appear here so you can easily reorder your favourites.
+          </p>
+          <button
+            onClick={() => navigate('/')}
+            className="px-8 py-3 rounded-2xl text-white text-sm font-bold shadow-md active:scale-95 transition-transform flex items-center gap-2"
+            style={{ background: `linear-gradient(135deg, ${accentColor}, ${accentColor}cc)` }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9.5L12 3.5L21 9.5V19C21 20.1 20.1 21 19 21H5C3.9 21 3 20.1 3 19V9.5Z" /><path d="M9 21V12H15V21" /></svg>
+            Start Shopping
+          </button>
+        </motion.div>
       )}
 
-      {/* Bestsellers Section - Using checkout-style cards */}
-      <div className="px-4 py-2.5 border-b border-neutral-200">
-        <h2 className="text-sm font-semibold text-neutral-900 mb-2">Bestsellers</h2>
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-3" style={{ scrollSnapType: 'x mandatory' }}>
-          {bestsellerProducts.map((product) => {
-            // Get Price and MRP using utility
-            const { displayPrice, mrp, discount, hasDiscount } = calculateProductPrice(product);
+      {/* ── Bestsellers Section ── */}
+      <div className="mt-2">
+        <div className="px-4 mb-2 flex items-center justify-between">
+          <h2 className="text-sm font-extrabold text-neutral-900">Popular Right Now</h2>
+          <button onClick={() => navigate('/categories')} className="text-[11px] font-bold" style={{ color: accentColor }}>See All</button>
+        </div>
 
-            // Get quantity in cart
+        <div className="flex gap-3 overflow-x-auto scrollbar-hide px-4 pb-3" style={{ scrollSnapType: 'x mandatory' }}>
+          {bestsellerProducts.map((product) => {
+            const { displayPrice, mrp, discount, hasDiscount } = calculateProductPrice(product);
             const cartItem = cart.items.find(item => item?.product && item.product.id === product.id);
             const inCartQty = cartItem?.quantity || 0;
 
             return (
-              <div
-                key={product.id}
-                className="flex-shrink-0 w-[140px]"
-                style={{ scrollSnapAlign: 'start' }}
-              >
-                <div className="bg-white rounded-lg overflow-hidden flex flex-col relative h-full" style={{ boxShadow: '0 1px 1px rgba(0, 0, 0, 0.03)' }}>
-                  {/* Product Image Area */}
-                  <div
-                    onClick={() => navigate(`/product/${product.id}`)}
-                    className="relative block cursor-pointer"
-                  >
-                    <div className="w-full h-28 bg-neutral-100 flex items-center justify-center overflow-hidden relative">
+              <div key={product.id} className="flex-shrink-0 w-[140px]" style={{ scrollSnapAlign: 'start' }}>
+                <div className="bg-white rounded-2xl overflow-hidden border border-neutral-100 shadow-sm flex flex-col h-full">
+                  {/* Image */}
+                  <div onClick={() => navigate(`/product/${product.id}`)} className="relative cursor-pointer">
+                    <div className="w-full h-28 bg-neutral-50 flex items-center justify-center overflow-hidden relative">
                       {product.imageUrl ? (
-                        <img
-                          src={product.imageUrl}
-                          alt={product.name}
-                          className="w-full h-full object-contain"
-                        />
+                        <img src={product.imageUrl} alt={product.name} className="w-full h-full object-contain" />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-neutral-100 text-neutral-400 text-4xl">
-                          {(product.name || product.productName || '?').charAt(0).toUpperCase()}
-                        </div>
+                        <span className="text-3xl text-neutral-300">{product.name.charAt(0)}</span>
                       )}
 
-                      {/* Red Discount Badge - Top Left */}
                       {discount > 0 && (
-                        <div className="absolute top-1 left-1 z-10 bg-red-600 text-white text-[9px] font-bold px-1 py-0.5 rounded">
+                        <div className="absolute top-1.5 left-1.5 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-lg">
                           {discount}% OFF
                         </div>
                       )}
+                      <WishlistButton productId={product.id} size="sm" className="top-1.5 right-1.5 shadow-sm" />
 
-                      {/* Heart Icon - Top Right */}
-                      <WishlistButton
-                        productId={product.id}
-                        size="sm"
-                        className="top-1 right-1 shadow-sm"
-                      />
-
-                      {/* ADD Button or Quantity Stepper - Overlaid on bottom right of image */}
+                      {/* Cart control */}
                       <div className="absolute bottom-1.5 right-1.5 z-10">
                         <AnimatePresence mode="wait">
                           {inCartQty === 0 ? (
                             <motion.button
-                              key="add-button"
-                              type="button"
+                              key="add"
                               initial={{ opacity: 0, scale: 0.8 }}
                               animate={{ opacity: 1, scale: 1 }}
                               exit={{ opacity: 0, scale: 0.8 }}
-                              transition={{ duration: 0.2 }}
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                if (!isAuthenticated) {
-                                  navigate('/login');
-                                  return;
-                                }
-                                addToCart(product, e.currentTarget);
-                              }}
-                              className="bg-white/95 backdrop-blur-sm text-green-600 border-2 border-green-600 text-[10px] font-semibold px-2 py-1 rounded shadow-md hover:bg-white transition-colors"
+                              onClick={e => { e.preventDefault(); e.stopPropagation(); if (!isAuthenticated) { navigate('/login'); return; } addToCart(product, e.currentTarget); }}
+                              className="bg-white/95 backdrop-blur-sm border-2 text-[10px] font-bold px-2 py-1 rounded-xl shadow-md active:scale-95 transition-transform"
+                              style={{ color: accentColor, borderColor: accentColor }}
                             >
                               ADD
                             </motion.button>
@@ -309,176 +292,48 @@ export default function OrderAgain() {
                               initial={{ opacity: 0, scale: 0.8 }}
                               animate={{ opacity: 1, scale: 1 }}
                               exit={{ opacity: 0, scale: 0.8 }}
-                              transition={{ duration: 0.2 }}
-                              className="flex items-center gap-1 bg-green-600 rounded px-1.5 py-1 shadow-md"
-                              onClick={(e) => e.stopPropagation()}
+                              onClick={e => e.stopPropagation()}
+                              className="flex items-center gap-1 rounded-xl px-1.5 py-1 shadow-md"
+                              style={{ background: accentColor }}
                             >
-                              <motion.button
-                                whileTap={{ scale: 0.9 }}
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  updateQuantity(product.id, inCartQty - 1);
-                                }}
-                                className="w-4 h-4 flex items-center justify-center text-white font-bold hover:bg-green-700 rounded transition-colors p-0 leading-none"
-                                style={{ lineHeight: 1, fontSize: '14px' }}
-                              >
-                                <span className="relative top-[-1px]">−</span>
-                              </motion.button>
-                              <motion.span
-                                key={inCartQty}
-                                initial={{ scale: 1.2, y: -2 }}
-                                animate={{ scale: 1, y: 0 }}
-                                transition={{ type: 'spring', stiffness: 500, damping: 15 }}
-                                className="text-white font-bold min-w-[0.75rem] text-center"
-                                style={{ fontSize: '12px' }}
-                              >
-                                {inCartQty}
-                              </motion.span>
-                              <motion.button
-                                whileTap={{ scale: 0.9 }}
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  updateQuantity(product.id, inCartQty + 1);
-                                }}
-                                className="w-4 h-4 flex items-center justify-center text-white font-bold hover:bg-green-700 rounded transition-colors p-0 leading-none"
-                                style={{ lineHeight: 1, fontSize: '14px' }}
-                              >
-                                <span className="relative top-[-1px]">+</span>
-                              </motion.button>
+                              <button onClick={e => { e.stopPropagation(); updateQuantity(product.id, inCartQty - 1); }} className="w-4 h-4 flex items-center justify-center text-white font-bold text-sm">−</button>
+                              <span className="text-white font-bold text-xs min-w-[0.75rem] text-center">{inCartQty}</span>
+                              <button onClick={e => { e.stopPropagation(); updateQuantity(product.id, inCartQty + 1); }} className="w-4 h-4 flex items-center justify-center text-white font-bold text-sm">+</button>
                             </motion.div>
                           )}
                         </AnimatePresence>
                       </div>
-
                     </div>
                   </div>
 
-                  {/* Product Details */}
-                  <div className="p-1.5 flex-1 flex flex-col bg-white">
-                    {/* Product Name */}
-                    <div
-                      onClick={() => navigate(`/product/${product.id}`)}
-                      className="mb-0.5 cursor-pointer"
-                    >
-                      <h3 className="text-[10px] font-bold text-neutral-900 line-clamp-2 leading-tight">
-                        {(() => {
-                          // Remove description suffixes like " - Fresh & Quality Assured", " - Premium Quality", etc.
-                          const productName = product.name || product.productName || '';
-                          return productName.replace(/\s*-\s*(Fresh|Quality|Assured|Premium|Best|Top|Hygienic|Carefully|Selected).*$/i, '').trim();
-                        })()}
-                      </h3>
-                    </div>
+                  {/* Details */}
+                  <div className="p-2 flex-1 flex flex-col" onClick={() => navigate(`/product/${product.id}`)} style={{ cursor: 'pointer' }}>
+                    <p className="text-[11px] font-bold text-neutral-900 line-clamp-2 leading-tight mb-1">{product.name}</p>
+                    {product.pack && <p className="text-[9px] text-neutral-400 mb-1">{product.pack}</p>}
 
-                    {/* Rating and Reviews */}
-                    <div className="flex items-center gap-0.5 mb-0.5">
-                      <div className="flex items-center">
-                        {[...Array(5)].map((_, i) => (
-                          <svg
-                            key={i}
-                            width="8"
-                            height="8"
-                            viewBox="0 0 24 24"
-                            fill={i < 4 ? '#fbbf24' : '#e5e7eb'}
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                          </svg>
-                        ))}
-                      </div>
-                      <span className="text-[8px] text-neutral-500">(85)</span>
-                    </div>
-
-                    {/* Delivery Time */}
-                    <div className="text-[9px] text-neutral-600 mb-0.5">
-                      20 MINS
-                    </div>
-
-                    {/* Discount - Blue Text */}
-                    {discount > 0 && (
-                      <div className="text-[9px] text-blue-600 font-semibold mb-0.5">
-                        {discount}% OFF
-                      </div>
-                    )}
-
-                    {/* Price */}
-                    <div className="mb-1">
+                    <div className="mt-auto">
                       <div className="flex items-baseline gap-1">
-                        <span className="text-[13px] font-bold text-neutral-900">
-                          ₹{displayPrice.toLocaleString('en-IN')}
-                        </span>
-                        {hasDiscount && (
-                          <span className="text-[10px] text-neutral-400 line-through">
-                            ₹{mrp.toLocaleString('en-IN')}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Bottom Link */}
-                    <div
-                      onClick={() => navigate(`/category/${product.categoryId || 'all'}`)}
-                      className="w-full bg-green-100 text-green-700 text-[8px] font-medium py-0.5 rounded-lg flex items-center justify-between px-1 hover:bg-green-200 transition-colors mt-auto cursor-pointer"
-                    >
-                      <span>See more like this</span>
-                      <div className="flex items-center gap-0.5">
-                        <div className="w-px h-2 bg-green-300"></div>
-                        <svg width="6" height="6" viewBox="0 0 8 8" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M0 0L8 4L0 8Z" fill="#16a34a" />
-                        </svg>
+                        <span className="text-sm font-black text-neutral-900">₹{displayPrice}</span>
+                        {hasDiscount && <span className="text-[10px] text-neutral-400 line-through">₹{mrp}</span>}
                       </div>
                     </div>
                   </div>
+
+                  {/* See more */}
+                  <button
+                    onClick={e => { e.stopPropagation(); navigate(`/category/${product.categoryId || 'all'}`); }}
+                    className="w-full text-[9px] font-semibold py-1.5 flex items-center justify-between px-2.5 border-t border-neutral-50 transition-colors"
+                    style={{ color: accentColor, background: `${accentColor}0a` }}
+                  >
+                    <span>See more like this</span>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+                  </button>
                 </div>
               </div>
             );
           })}
         </div>
       </div>
-
-      {/* Empty State Illustration - Show when no orders */}
-      {!hasOrders && (
-        <div className="bg-stone-50 py-6 px-4">
-          <div className="flex flex-col items-center justify-center max-w-md mx-auto">
-            {/* Grocery Illustration */}
-            <div className="relative w-full max-w-xs mb-4">
-              <div className="relative flex items-center justify-center">
-                {/* Yellow Shopping Bag */}
-                <div className="relative w-40 h-48 bg-gradient-to-b from-yellow-400 via-yellow-300 to-yellow-500 rounded-b-2xl rounded-t-lg shadow-xl border-2 border-yellow-500/30 flex items-center justify-center">
-                  {/* Enhanced bag opening/top with depth */}
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-36 h-8 bg-gradient-to-b from-yellow-500 to-yellow-400 rounded-t-lg shadow-inner"></div>
-
-                  {/* Enhanced bag handle with 3D effect */}
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-20 h-7 border-[4px] border-yellow-600 rounded-full border-b-transparent shadow-lg">
-                    <div className="absolute top-1 left-1/2 -translate-x-1/2 w-12 h-4 border-[2px] border-yellow-500/50 rounded-full border-b-transparent"></div>
-                  </div>
-
-                  {/* Decorative pattern/stitching on bag */}
-                  <div className="absolute top-12 left-1/2 -translate-x-1/2 w-32 h-0.5 bg-yellow-600/30"></div>
-                  <div className="absolute top-20 left-1/2 -translate-x-1/2 w-28 h-0.5 bg-yellow-600/20"></div>
-
-                  {/* JYASTI builds trust text inside basket */}
-                  <div className="relative z-10 text-center px-4">
-                    <span className="text-2xl font-extrabold text-neutral-900 tracking-tight drop-shadow-sm">JYASTI builds trust</span>
-                    <span className="inline-block w-2.5 h-2.5 bg-green-500 rounded-full ml-1.5 shadow-sm"></span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Reordering Message */}
-            <h2 className="text-xl font-bold text-neutral-900 mb-1.5 text-center">
-              Reordering will be easy
-            </h2>
-            <p className="text-xs text-neutral-600 text-center max-w-xs leading-snug">
-              Items you order will show up here so you can buy them again easily
-            </p>
-          </div>
-        </div>
-      )}
-
     </div>
   );
 }
-

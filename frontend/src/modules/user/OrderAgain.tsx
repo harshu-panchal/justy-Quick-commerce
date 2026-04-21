@@ -86,7 +86,7 @@ export default function OrderAgain() {
   const hasOrders = orders && orders.length > 0;
 
   return (
-    <div className="min-h-screen bg-neutral-50 pb-28 md:pb-10">
+    <div className="min-h-screen bg-neutral-50 pb-28 md:pb-10 pt-[env(safe-area-inset-top,12px)]">
 
       {/* ── Page Header ── */}
       <div className="px-4 pt-5 pb-3 flex items-center justify-between">

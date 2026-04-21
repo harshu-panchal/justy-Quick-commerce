@@ -171,7 +171,7 @@ function SpinWheelSVG({ segments, wheelRef, isSpinning }: { segments: Segment[];
         <circle cx={cx} cy={cy} r={r} fill="url(#wheelGradient)" pointerEvents="none" />
 
         {/* Center hub */}
-        <circle cx={cx} cy={cy} r="28" fill="#ffffff" stroke="#14b8a6" strokeWidth="4" shadow="true" />
+        <circle cx={cx} cy={cy} r="28" fill="#ffffff" stroke="#14b8a6" strokeWidth="4" style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))' }} />
         <text x={cx} y={cy + 1} textAnchor="middle" dominantBaseline="middle"
           fontSize="8" fontWeight="900" fill="#14b8a6" fontFamily="Inter" className="tracking-widest">JUSTY</text>
       </svg>

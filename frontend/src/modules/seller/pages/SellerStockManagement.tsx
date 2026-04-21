@@ -141,7 +141,7 @@ export default function SellerStockManagement() {
         setUpdatingStock(variationId);
         const stockToast = toast.loading('Updating inventory...');
         try {
-            const response = await updateStock(productId, variationId, newStock);
+            const response = await (updateStock as any)(productId, variationId, newStock);
             if (response.success) {
                 toast.success('Inventory Updated!', { id: stockToast });
                 // Update local state

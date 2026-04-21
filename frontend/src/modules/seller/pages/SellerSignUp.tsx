@@ -607,23 +607,6 @@ export default function SellerSignUp() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-50 to-green-50 flex flex-col items-center justify-center px-4 sm:px-6 py-12 sm:py-8">
-      {/* Back Button */}
-      <button
-        onClick={() => {
-          if (formStep === 2) {
-            setFormStep(1);
-          } else {
-            navigate(-1);
-          }
-        }}
-        className="absolute top-4 left-4 z-10 w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center hover:bg-neutral-50 transition-colors"
-        aria-label="Back"
-      >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </button>
-
       {/* Sign Up Card */}
       <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden mt-8">
         {/* Header Section */}
@@ -1549,5 +1532,4 @@ export default function SellerSignUp() {
     </div>
   );
 }
-
 

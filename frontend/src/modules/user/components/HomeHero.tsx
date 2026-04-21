@@ -97,6 +97,9 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
   }, [deliveryMode, activeTab]);
 
   const navigate = useNavigate();
+  const openSellerSignupInBrowser = () => {
+    window.open(`${window.location.origin}/seller/signup`, '_blank', 'noopener,noreferrer');
+  };
   const { totalCoins } = useCoins();
   const [prevCoins, setPrevCoins] = useState(totalCoins);
   const [animateBalance, setAnimateBalance] = useState(false);
@@ -474,7 +477,7 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
             {/* Become a Seller Button */}
             <button
               type="button"
-              onClick={() => navigate('/seller/signup')}
+              onClick={openSellerSignupInBrowser}
               className="flex items-center gap-1.5 bg-white/20 hover:bg-white/30 px-2.5 py-1.5 rounded-full transition-all border border-white/20 text-white shadow-lg active:scale-95"
             >
               <span className="text-[9px] font-black uppercase tracking-tight whitespace-nowrap">Become a Seller</span>

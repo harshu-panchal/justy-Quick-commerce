@@ -25,7 +25,7 @@ export default function Cart() {
 
   if (cart.items.length === 0) {
     return (
-      <div className="flex items-start justify-center min-h-[60vh] bg-white pt-8">
+      <div className="flex items-start justify-center min-h-[60vh] bg-white pt-[calc(env(safe-area-inset-top,0px)+2rem)]">
         <EmptyState 
             title="Your cart is empty"
             description="Add some items to get started! We have amazing deals waiting for you."
@@ -37,9 +37,9 @@ export default function Cart() {
   }
 
   return (
-    <div className="pb-4 md:pb-8 max-w-7xl mx-auto">
+    <div className="pt-[env(safe-area-inset-top,0px)] pb-4 md:pt-0 md:pb-8 max-w-7xl mx-auto">
       {/* Header - Desktop/Tablet layout adjustments */}
-      <div className="px-4 md:px-6 lg:px-8 py-4 md:py-8 bg-white border-b md:border-none border-neutral-200 mb-4 md:mb-2 sticky md:static top-0 z-10">
+      <div className="px-4 md:px-6 lg:px-8 py-4 md:py-8 bg-white border-b md:border-none border-neutral-200 mb-4 md:mb-2 sticky md:static top-[env(safe-area-inset-top,0px)] md:top-auto z-10">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl md:text-3xl font-extrabold text-neutral-900">Your Basket</h1>
@@ -94,6 +94,9 @@ export default function Cart() {
                     let displayPrice = 0;
                     let mrp = 0;
                     let hasDiscount = false;
+                    const itemStock = isCombo
+                      ? ((item.comboOffer as any)?.stock ?? 999)
+                      : (item.product?.stock ?? 0);
 
                     if (isCombo) {
                       displayPrice = item.comboOffer.comboPrice;
@@ -156,10 +159,6 @@ export default function Cart() {
                           )}
 
                           <div className="flex items-end justify-between mt-auto">
-                            <div className="flex gap-2">
-                               {/* Buttons removed as requested */}
-                            </div>
-
                             <div className="flex items-center gap-3">
                               {/* Remove button - subtle */}
                               <button
@@ -181,8 +180,8 @@ export default function Cart() {
                                 <span className="text-sm md:text-base font-bold text-neutral-900 min-w-[2rem] text-center">{item.quantity}</span>
                                 <button
                                   onClick={() => updateQuantity(itemId, item.quantity + 1, item.variant)}
-                                  disabled={item.quantity >= (item.product?.stock || 0)}
-                                  className={`w-8 h-8 flex items-center justify-center text-neutral-600 font-bold hover:bg-white hover:shadow-sm rounded-lg transition-all ${item.quantity >= (item.product?.stock || 0) ? 'opacity-30 cursor-not-allowed' : ''}`}
+                                  disabled={item.quantity >= itemStock}
+                                  className={`w-8 h-8 flex items-center justify-center text-neutral-600 font-bold hover:bg-white hover:shadow-sm rounded-lg transition-all ${item.quantity >= itemStock ? 'opacity-30 cursor-not-allowed' : ''}`}
                                 >
                                   +
                                 </button>

@@ -4,6 +4,7 @@ import { sendOTP, verifyOTP } from '../../../services/api/auth/deliveryAuthServi
 import OTPInput from '../../../components/OTPInput';
 import { useAuth } from '../../../context/AuthContext';
 import { removeAuthToken } from '../../../services/api/config';
+import jyastiLogo from '@assets/jyastiLogo.png';
 
 export default function DeliveryLogin() {
   const navigate = useNavigate();
@@ -73,6 +74,13 @@ export default function DeliveryLogin() {
     }
   };
 
+  const handleChangeNumber = () => {
+    setShowOTP(false);
+    setError('');
+    setIsNotRegistered(false);
+    setSessionId('');
+  };
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-50 to-green-50 flex flex-col items-center justify-center px-4 py-8">
@@ -93,7 +101,7 @@ export default function DeliveryLogin() {
         <div className="px-6 py-6 text-center bg-gradient-to-br from-teal-700 to-teal-900">
           <div className="flex justify-center mb-4">
             <img
-              src="/assets/jyastiLogo.png"
+              src={jyastiLogo}
               alt="JYASTI builds trust"
               className="h-28 w-auto object-contain bg-white/90 rounded-xl p-2 shadow-sm"
             />
@@ -172,10 +180,7 @@ export default function DeliveryLogin() {
 
               <div className="flex gap-2">
                 <button
-                  onClick={() => {
-                    setShowOTP(false);
-                    setError('');
-                  }}
+                  onClick={handleChangeNumber}
                   disabled={loading}
                   className="flex-1 py-2.5 rounded-lg font-semibold text-sm bg-neutral-100 text-neutral-700 hover:bg-neutral-200 transition-colors border border-neutral-300"
                 >
@@ -186,7 +191,7 @@ export default function DeliveryLogin() {
                   disabled={loading}
                   className="flex-1 py-3 rounded-lg font-bold text-sm bg-gradient-to-r from-teal-700 to-teal-900 text-white hover:from-teal-800 hover:to-teal-950 transition-all shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
                 >
-                  {loading ? 'Verifying...' : 'Resend OTP'}
+                  {loading ? 'Sending...' : 'Resend OTP'}
                 </button>
               </div>
             </div>
@@ -216,4 +221,3 @@ export default function DeliveryLogin() {
     </div>
   );
 }
-

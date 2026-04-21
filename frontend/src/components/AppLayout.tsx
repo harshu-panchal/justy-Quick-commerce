@@ -174,6 +174,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const showHeader = isSearchPage && !isCheckoutPage && !isCartPage;
   const showSearchBar = isSearchPage && !isCheckoutPage && !isCartPage;
   const showBottomNavbar = !isCheckoutPage && !isProductDetailPage;
+  const openSellerSignupInBrowser = () => {
+    window.open(`${window.location.origin}/seller/signup`, '_blank', 'noopener,noreferrer');
+  };
 
   return (
     <div 
@@ -195,7 +198,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
               </div>
 
               {/* Location line - only show if user has provided location */}
-              {userLocation && (userLocation.address || userLocation.city) && (
+                    {userLocation && (userLocation.address || userLocation.city) && (
                 <div className="px-4 md:px-6 lg:px-8 py-1.5 flex items-center justify-between text-xs">
                   <span className="text-neutral-700 line-clamp-1" title={userLocation?.address || ''}>
                     {userLocation?.address
@@ -208,7 +211,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                   </span>
                   <div className="flex items-center gap-3">
                     <button 
-                      onClick={() => navigate('/seller/signup')} 
+                      onClick={openSellerSignupInBrowser}
                       className="text-emerald-700 font-bold bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg text-[9px] uppercase tracking-tighter shadow-sm active:scale-95"
                     >
                       <span className="whitespace-nowrap">Become a Seller</span>
@@ -408,4 +411,3 @@ export default function AppLayout({ children }: AppLayoutProps) {
     </div>
   );
 }
-

@@ -86,53 +86,49 @@ export default function FAQ() {
   };
 
   return (
-    <div className="pb-12 bg-white min-h-screen">
-      {/* Header */}
-      <div className="bg-gradient-to-b from-green-100 via-green-50 to-white pb-4 pt-8 sticky top-0 z-10 border-b border-green-50">
-        <div className="px-4 md:px-6 lg:px-8 max-w-3xl mx-auto">
-          <div className="flex items-center gap-3 mb-4">
-            <button
-              onClick={() => navigate(-1)}
-              className="text-neutral-900 p-1 hover:bg-white/50 rounded-full transition-colors"
-              aria-label="Back"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                <path
-                  d="M15 18L9 12L15 6"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </button>
-            <h1 className="text-lg font-bold text-neutral-900">FAQ</h1>
+    <div className="pb-12 bg-neutral-50 min-h-screen">
+      {/* ── Premium Floating Header ── */}
+      <div className="bg-gradient-to-br from-emerald-600 to-teal-700 rounded-b-[40px] shadow-lg relative pb-12 overflow-hidden mb-8">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl pointer-events-none" />
+        
+        <div className="flex items-center justify-between px-4 py-4 pt-6 relative z-10">
+          <button
+            onClick={() => navigate(-1)}
+            className="w-10 h-10 flex items-center justify-center bg-white/20 backdrop-blur-md rounded-full text-white active:scale-95 transition-transform"
+            aria-label="Go back"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+          <div className="px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-md border border-white/10 text-[10px] font-black text-white uppercase tracking-widest">
+            Support Center
           </div>
-          <div className="flex flex-col items-center">
-            <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center mb-3 border-2 border-white shadow-sm">
-              <svg
-                width="28"
-                height="28"
-                viewBox="0 0 24 24"
-                fill="none"
-                className="text-green-600"
-              >
-                <path
-                  d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </div>
-            <h2 className="text-base font-bold text-neutral-900 mb-1">
-              Frequently Asked Questions
-            </h2>
-            <p className="text-xs text-neutral-500 text-center px-4 max-w-md">
-              Find answers to common questions about our services
-            </p>
-          </div>
+        </div>
+
+        <div className="px-8 pb-4 text-white relative z-10 text-center">
+          <motion.div 
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="w-16 h-16 rounded-3xl bg-white/15 backdrop-blur-xl border border-white/20 flex items-center justify-center mx-auto mb-4 shadow-xl"
+          >
+             <span className="text-3xl">❓</span>
+          </motion.div>
+          <motion.h1 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-3xl font-black mb-2 drop-shadow-sm"
+          >
+            How can we help?
+          </motion.h1>
+          <motion.p 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="text-xs text-emerald-100 font-medium opacity-90 max-w-[280px] mx-auto"
+          >
+            Search our FAQ for quick answers to common questions about Justy.
+          </motion.p>
         </div>
       </div>
 

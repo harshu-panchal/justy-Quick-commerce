@@ -176,7 +176,10 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const showBottomNavbar = !isCheckoutPage && !isProductDetailPage;
 
   return (
-    <div className="flex flex-col min-h-screen w-full overflow-x-hidden">
+    <div 
+      className="flex flex-col min-h-screen w-full overflow-x-hidden"
+      style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+    >
       {/* Desktop Container Wrapper */}
       <div className="md:w-full md:bg-white md:min-h-screen overflow-x-hidden">
         <div className="md:w-full md:min-h-screen md:flex md:flex-col overflow-x-hidden">

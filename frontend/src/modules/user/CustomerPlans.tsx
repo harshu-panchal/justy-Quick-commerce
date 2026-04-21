@@ -94,7 +94,7 @@ export default function CustomerPlans() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-[100dvh] bg-neutral-50 pb-32">
+    <div className="flex-1 min-h-screen bg-neutral-50 pb-10">
       {/* ── Floating Header ── */}
       <div className="bg-gradient-to-br from-teal-600 to-emerald-600 rounded-b-3xl shadow-lg relative pb-10">
         <div className="flex items-center justify-between px-4 py-4 pt-6">

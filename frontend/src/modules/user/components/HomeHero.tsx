@@ -330,7 +330,7 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
         className="px-4 md:px-6 lg:px-8 pb-1.5 transition-colors duration-500 md:hidden"
         style={{ 
           backgroundColor: (activeTab === 'all' && deliveryMode === 'scheduled') ? '#00796B' : (theme.headerBg || '#007fb1'),
-          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 8px)'
+          paddingTop: '12px'
         }}
       >
         {/* Brand Row */}

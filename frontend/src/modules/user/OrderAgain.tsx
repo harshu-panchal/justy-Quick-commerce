@@ -86,10 +86,10 @@ export default function OrderAgain() {
   const hasOrders = orders && orders.length > 0;
 
   return (
-    <div className="min-h-screen bg-neutral-50 pb-28 md:pb-10 pt-[env(safe-area-inset-top,12px)]">
+    <div className="min-h-screen bg-neutral-50 pb-28 md:pb-10">
 
       {/* ── Page Header ── */}
-      <div className="px-4 pt-5 pb-3 flex items-center justify-between">
+      <div className="px-4 pt-0 pb-3 flex items-center justify-between">
         <div>
           <h1 className="text-xl font-extrabold text-neutral-900 tracking-tight">Order Again</h1>
           <p className="text-xs text-neutral-400 font-medium mt-0.5">

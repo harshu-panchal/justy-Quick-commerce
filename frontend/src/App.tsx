@@ -282,7 +282,7 @@ function App() {
                               <Route
                                 path="/seller/signup"
                                 element={
-                                  <PublicRoute>
+                                  <PublicRoute userType="Seller">
                                     <Suspense fallback={<IconLoader forceShow />}>
                                       <SellerSignUp />
                                     </Suspense>

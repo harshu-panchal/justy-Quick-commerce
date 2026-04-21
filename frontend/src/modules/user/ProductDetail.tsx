@@ -315,7 +315,10 @@ export default function ProductDetail() {
   return (
     <div className="min-h-screen bg-neutral-50 pb-32">
       {/* ── Floating Header ── */}
-      <div className="fixed top-0 left-0 right-0 z-50 pointer-events-none">
+      <div
+        className="fixed left-0 right-0 z-50 pointer-events-none"
+        style={{ top: 'env(safe-area-inset-top, 0px)' }}
+      >
         <div className="flex items-center justify-between px-4 py-3">
           <button
             onClick={() => navigate(-1)}

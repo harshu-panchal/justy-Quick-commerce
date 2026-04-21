@@ -432,7 +432,12 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
         {/* 3. Redesigned Location & Delivery Strip */}
         <div className="max-w-2xl mx-auto flex flex-col gap-0 px-1">
           {/* Top Row: Delivery To text */}
-          <div className="flex items-center justify-between text-white/95">
+          <button
+            type="button"
+            onClick={() => setIsLocationModalOpen(true)}
+            className="w-full flex items-center justify-between text-white/95 rounded-xl -mx-1 px-1 py-1.5 active:bg-white/10 transition-colors"
+            aria-label="Open location selector"
+          >
             <div className="flex items-center gap-1.5 flex-1 min-w-0">
               <span className="font-semibold text-[10px] opacity-90">Delivery To:</span>
               <span className="truncate font-bold text-xs tracking-tight">{locationDisplayText || 'Select Location'}</span>
@@ -440,7 +445,7 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-white/80 ml-2">
               <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-          </div>
+          </button>
 
           {/* Bottom Row: Delivery Mode Indicator/Badge */}
           <div className="flex items-center justify-between mt-1 mb-1">
@@ -467,14 +472,13 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
             </div>
             
             {/* Become a Seller Button */}
-            <a 
-              href="/seller/signup" 
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              type="button"
+              onClick={() => navigate('/seller/signup')}
               className="flex items-center gap-1.5 bg-white/20 hover:bg-white/30 px-2.5 py-1.5 rounded-full transition-all border border-white/20 text-white shadow-lg active:scale-95"
             >
               <span className="text-[9px] font-black uppercase tracking-tight whitespace-nowrap">Become a Seller</span>
-            </a>
+            </button>
           </div>
         </div>
       </div>

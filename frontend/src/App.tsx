@@ -126,6 +126,14 @@ const SellerGeneralReports = lazy(() => import("./modules/seller/pages/SellerGen
 const SellerProductDetail = lazy(() => import("./modules/seller/pages/SellerProductDetail"));
 const SellerDynamicAddProduct = lazy(() => import("./modules/seller/pages/SellerDynamicAddProduct"));
 
+// Lazy load executive routes
+const ExecutiveLogin = lazy(() => import("./modules/executive/pages/ExecutiveLogin"));
+const ExecutiveRegister = lazy(() => import("./modules/executive/pages/ExecutiveRegister"));
+const ExecutiveDashboard = lazy(() => import("./modules/executive/pages/ExecutiveDashboard"));
+const ExecutiveSellers = lazy(() => import("./modules/executive/pages/ExecutiveSellers"));
+const ExecutiveWallet = lazy(() => import("./modules/executive/pages/ExecutiveWallet"));
+const ExecutiveProfile = lazy(() => import("./modules/executive/pages/ExecutiveProfile"));
+
 // Lazy load admin routes
 const AdminLayout = lazy(() => import("./modules/admin/components/AdminLayout"));
 const AdminDashboard = lazy(() => import("./modules/admin/pages/AdminDashboard"));
@@ -148,6 +156,9 @@ const AdminDemandTracking = lazy(() => import("./modules/admin/pages/AdminDemand
 const AdminManageDeliveryBoy = lazy(() => import("./modules/admin/pages/AdminManageDeliveryBoy"));
 const AdminFundTransfer = lazy(() => import("./modules/admin/pages/AdminFundTransfer"));
 const AdminCashCollection = lazy(() => import("./modules/admin/pages/AdminCashCollection"));
+const AdminExecutives = lazy(() => import("./modules/admin/pages/executive/AdminExecutives"));
+const AdminExecutiveCommissions = lazy(() => import("./modules/admin/pages/executive/AdminExecutiveCommissions"));
+const AdminExecutiveWithdrawals = lazy(() => import("./modules/admin/pages/executive/AdminExecutiveWithdrawals"));
 const AdminReturnRequest = lazy(() => import("./modules/admin/pages/AdminReturnRequest"));
 const AdminPaymentList = lazy(() => import("./modules/admin/pages/AdminPaymentList"));
 const AdminSmsGateway = lazy(() => import("./modules/admin/pages/AdminSmsGateway"));
@@ -184,7 +195,6 @@ const AdminProductForm = lazy(() => import("./modules/admin/pages/AdminProductFo
 const SpinnerManagement = lazy(() => import("./modules/admin/pages/SpinnerManagement"));
 const SellerEquipmentCart = lazy(() => import("./modules/seller/pages/SellerEquipmentCart"));
 const AdminGrowth = lazy(() => import("./modules/admin/pages/AdminGrowth"));
-const AdminExecutives = lazy(() => import("./modules/admin/pages/AdminExecutives"));
 const AdminOnboardingPayments = lazy(() => import("./modules/admin/pages/AdminOnboardingPayments"));
 
 // Warehouse routes
@@ -272,7 +282,7 @@ function App() {
                               <Route
                                 path="/seller/login"
                                 element={
-                                  <PublicRoute>
+                                  <PublicRoute userType="Seller">
                                     <Suspense fallback={<IconLoader forceShow />}>
                                       <SellerLogin />
                                     </Suspense>
@@ -292,7 +302,7 @@ function App() {
                               <Route
                                 path="/delivery/login"
                                 element={
-                                  <PublicRoute>
+                                  <PublicRoute userType="Delivery">
                                     <Suspense fallback={<IconLoader forceShow />}>
                                       <DeliveryLogin />
                                     </Suspense>
@@ -302,7 +312,7 @@ function App() {
                               <Route
                                 path="/delivery/signup"
                                 element={
-                                  <PublicRoute>
+                                  <PublicRoute userType="Delivery">
                                     <Suspense fallback={<IconLoader forceShow />}>
                                       <DeliverySignUp />
                                     </Suspense>
@@ -312,7 +322,7 @@ function App() {
                               <Route
                                 path="/admin/login"
                                 element={
-                                  <PublicRoute>
+                                  <PublicRoute userType="Admin">
                                     <Suspense fallback={<IconLoader forceShow />}>
                                       <AdminLogin />
                                     </Suspense>
@@ -441,6 +451,8 @@ function App() {
                                           <Route path="manage-location/seller-location" element={<AdminSellerLocation />} />
                                           <Route path="pincode-demands" element={<AdminDemandTracking />} />
                                           <Route path="executives" element={<AdminExecutives />} />
+                                          <Route path="executives/commissions" element={<AdminExecutiveCommissions />} />
+                                          <Route path="executives/withdrawals" element={<AdminExecutiveWithdrawals />} />
                                           <Route path="onboarding-payments" element={<AdminOnboardingPayments />} />
 
                                           <Route path="coupon" element={<AdminCoupon />} />
@@ -496,8 +508,22 @@ function App() {
                                 }
                               />
 
-                              <Route path="/warehouse/login" element={<WarehouseLogin />} />
-                              <Route path="/warehouse/signup" element={<WarehouseSignUp />} />
+                              <Route 
+                                path="/warehouse/login" 
+                                element={
+                                  <PublicRoute userType="Admin">
+                                    <WarehouseLogin />
+                                  </PublicRoute>
+                                } 
+                              />
+                              <Route 
+                                path="/warehouse/signup" 
+                                element={
+                                  <PublicRoute userType="Admin">
+                                    <WarehouseSignUp />
+                                  </PublicRoute>
+                                } 
+                              />
                               <Route path="/warehouse" element={<Navigate to="/warehouse/login" replace />} />
 
                               <Route
@@ -513,6 +539,39 @@ function App() {
                                           <Route path="*" element={<WarehouseDashboard />} />
                                         </Routes>
                                       </WarehouseLayout>
+                                    </Suspense>
+                                  </ProtectedRoute>
+                                }
+                              />
+
+                              <Route 
+                                path="/executive/login" 
+                                element={
+                                  <PublicRoute userType="Executive">
+                                    <ExecutiveLogin />
+                                  </PublicRoute>
+                                } 
+                              />
+                              <Route 
+                                path="/executive/signup" 
+                                element={
+                                  <PublicRoute userType="Executive">
+                                    <ExecutiveRegister />
+                                  </PublicRoute>
+                                } 
+                              />
+                              <Route
+                                path="/executive/*"
+                                element={
+                                  <ProtectedRoute requiredUserType="Executive" redirectTo="/executive/login">
+                                    <Suspense fallback={<IconLoader forceShow />}>
+                                      <Routes>
+                                        <Route path="dashboard" element={<ExecutiveDashboard />} />
+                                        <Route path="sellers" element={<ExecutiveSellers />} />
+                                        <Route path="wallet" element={<ExecutiveWallet />} />
+                                        <Route path="profile" element={<ExecutiveProfile />} />
+                                        <Route path="*" element={<Navigate to="dashboard" replace />} />
+                                      </Routes>
                                     </Suspense>
                                   </ProtectedRoute>
                                 }

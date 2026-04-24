@@ -110,6 +110,12 @@ export interface ISeller extends Document {
   freeProductsAdded: number;
   paidSlotsTotal: number;
 
+  // Referral
+  referredBy?: mongoose.Types.ObjectId;
+  commissionAmount?: number;
+  commissionCredited?: boolean;
+  hasAddedFirstProduct?: boolean;
+
   createdAt: Date;
   updatedAt: Date;
   // FCM Push Notification Tokens
@@ -483,6 +489,24 @@ const SellerSchema = new Schema<ISeller>(
       type: Number,
       default: 0,
       min: 0,
+    },
+
+    // Referral
+    referredBy: {
+      type: Schema.Types.ObjectId,
+      ref: 'Executive',
+    },
+    commissionAmount: {
+      type: Number,
+      default: 0,
+    },
+    commissionCredited: {
+      type: Boolean,
+      default: false,
+    },
+    hasAddedFirstProduct: {
+      type: Boolean,
+      default: false,
     },
   },
   {

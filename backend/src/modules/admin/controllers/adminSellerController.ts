@@ -11,7 +11,8 @@ import Payment from "../../../models/Payment";
 export const getAllSellers = asyncHandler(async (_req: Request, res: Response) => {
     // Select essential fields plus fallbacks
     const sellers = await Seller.find({})
-        .select("sellerName storeName profile status balance securityDeposit depositAmount email mobile")
+        .populate("referredBy", "name")
+        .select("sellerName storeName profile status balance securityDeposit depositAmount email mobile referredBy")
         .sort({ storeName: 1 });
 
     const processedSellers = sellers.map(seller => {
@@ -28,7 +29,8 @@ export const getAllSellers = asyncHandler(async (_req: Request, res: Response) =
         return {
             ...s,
             email: s.email || s.mobile || "No Contact Info",
-            securityDeposit: securityDeposit
+            securityDeposit: securityDeposit,
+            referredBy: (s.referredBy as any)?.name || "N/A"
         };
     });
 

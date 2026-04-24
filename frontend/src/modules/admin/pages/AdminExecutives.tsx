@@ -6,6 +6,7 @@ import {
   deleteExecutive,
   Executive,
 } from "../../../services/api/admin/executiveService";
+import ExecutiveKycModal from "../components/ExecutiveKycModal";
 
 export default function AdminExecutives() {
   const [executives, setExecutives] = useState<Executive[]>([]);
@@ -13,6 +14,7 @@ export default function AdminExecutives() {
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [selectedKycExec, setSelectedKycExec] = useState<Executive | null>(null);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -272,12 +274,12 @@ export default function AdminExecutives() {
                           Mobile
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider">
-                          Status
+                          KYC Status
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider">
-                          Total Sellers
+                          Sellers
                         </th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider w-[100px]">
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider w-[120px]">
                           Actions
                         </th>
                       </tr>
@@ -289,6 +291,7 @@ export default function AdminExecutives() {
                             <div className="text-sm font-medium text-neutral-900">
                               {exec.name}
                             </div>
+                            <div className="text-[10px] text-neutral-400 font-bold">{exec.status || 'Pending'}</div>
                           </td>
                           <td className="px-4 py-3">
                             <div className="text-sm text-neutral-600">
@@ -298,11 +301,11 @@ export default function AdminExecutives() {
                           <td className="px-4 py-3">
                             <span
                               className={`px-2 py-0.5 rounded-full text-[10px] uppercase font-bold ${
-                                exec.isActive
-                                  ? "bg-green-100 text-green-700"
-                                  : "bg-red-100 text-red-700"
+                                exec.kycStatus === 'Approved' ? 'bg-green-100 text-green-700' :
+                                exec.kycStatus === 'Submitted' ? 'bg-blue-100 text-blue-700' :
+                                exec.kycStatus === 'Rejected' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'
                               }`}>
-                              {exec.isActive ? "Active" : "Inactive"}
+                              {exec.kycStatus || 'Pending'}
                             </span>
                           </td>
                           <td className="px-4 py-3">
@@ -314,6 +317,15 @@ export default function AdminExecutives() {
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => setSelectedKycExec(exec)}
+                                className="p-1.5 text-teal-600 hover:bg-teal-50 rounded transition-colors"
+                                title="View KYC">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                  <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                              </button>
                               <button
                                 onClick={() => handleEdit(exec)}
                                 className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"
@@ -343,6 +355,15 @@ export default function AdminExecutives() {
           </div>
         </div>
       </div>
+      
+      {/* KYC Modal */}
+      {selectedKycExec && (
+        <ExecutiveKycModal 
+          executive={selectedKycExec}
+          onClose={() => setSelectedKycExec(null)}
+          onUpdate={fetchExecutives}
+        />
+      )}
     </div>
   );
 }

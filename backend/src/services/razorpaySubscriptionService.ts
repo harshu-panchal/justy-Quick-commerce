@@ -1,20 +1,33 @@
 import Razorpay from "razorpay";
 import crypto from "crypto";
+import AppSettings from "../models/AppSettings";
 
 export type RazorpayPlanPeriod = "daily" | "weekly" | "monthly" | "yearly";
 
-function getRazorpayInstance() {
-  const keyId = process.env.RAZORPAY_KEY_ID;
-  const keySecret = process.env.RAZORPAY_KEY_SECRET;
+async function getRazorpayInstance() {
+  const settings = await AppSettings.getSettings();
+  const dbConfig = settings?.paymentGateways?.razorpay;
+  
+  const keyId = (dbConfig?.enabled && dbConfig?.keyId) 
+    ? dbConfig.keyId.trim() 
+    : process.env.RAZORPAY_KEY_ID?.trim();
+    
+  const keySecret = (dbConfig?.enabled && dbConfig?.keySecret) 
+    ? dbConfig.keySecret.trim() 
+    : process.env.RAZORPAY_KEY_SECRET?.trim();
 
   if (!keyId || !keySecret) {
     throw new Error("Razorpay credentials not configured");
   }
 
-  return new Razorpay({
-    key_id: keyId,
-    key_secret: keySecret,
-  });
+  return {
+    instance: new Razorpay({
+      key_id: keyId,
+      key_secret: keySecret,
+    }),
+    keyId,
+    keySecret
+  };
 }
 
 export async function createRazorpayPlan(input: {
@@ -25,7 +38,7 @@ export async function createRazorpayPlan(input: {
   period: RazorpayPlanPeriod;
   interval: number;
 }): Promise<{ id: string }> {
-  const razorpay = getRazorpayInstance();
+  const { instance: razorpay } = await getRazorpayInstance();
 
   // Razorpay expects amount in paise
   const amount = Math.round(Number(input.amountInRupees) * 100);
@@ -53,7 +66,7 @@ export async function createRazorpaySubscription(input: {
   customerNotify?: 0 | 1;
   notes?: Record<string, string>;
 }): Promise<{ id: string; status: string; shortUrl?: string }> {
-  const razorpay = getRazorpayInstance();
+  const { instance: razorpay } = await getRazorpayInstance();
   const subscription = await (razorpay as any).subscriptions.create({
     plan_id: input.planId,
     total_count: typeof input.totalCount === "number" ? input.totalCount : 12,
@@ -64,16 +77,16 @@ export async function createRazorpaySubscription(input: {
 }
 
 export async function fetchRazorpaySubscription(subscriptionId: string): Promise<any> {
-  const razorpay = getRazorpayInstance();
+  const { instance: razorpay } = await getRazorpayInstance();
   return await (razorpay as any).subscriptions.fetch(subscriptionId);
 }
 
-export function verifyRazorpaySubscriptionSignature(input: {
+export async function verifyRazorpaySubscriptionSignature(input: {
   razorpaySubscriptionId: string;
   razorpayPaymentId: string;
   razorpaySignature: string;
-}): boolean {
-  const keySecret = process.env.RAZORPAY_KEY_SECRET;
+}): Promise<boolean> {
+  const { keySecret } = await getRazorpayInstance();
   if (!keySecret) {
     throw new Error("Razorpay key secret not configured");
   }

@@ -186,6 +186,7 @@ router.post('/seller/deposit/verify', authenticate, requireUserType('Seller'), a
     }
 });
 
+
 /**
  * Razorpay webhook endpoint
  */

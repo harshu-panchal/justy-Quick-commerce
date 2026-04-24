@@ -101,6 +101,16 @@ export const updateSellerStatus = asyncHandler(
     seller.status = status;
     await seller.save();
 
+    // Commission Check
+    if (status === 'Approved') {
+      try {
+        const { checkAndCreditCommission } = await import('../../executive/utils/commissionHelper');
+        await checkAndCreditCommission(id);
+      } catch (err) {
+        console.error('Commission credit error:', err);
+      }
+    }
+
     // Emit real-time notification via Socket.io
     const io = req.app.get("io");
     if (io) {

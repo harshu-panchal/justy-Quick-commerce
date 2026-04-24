@@ -54,6 +54,7 @@ export interface Seller {
     regional?: string;
     local?: string;
   };
+  referredBy?: string | any;
   createdAt?: string;
   updatedAt?: string;
 }

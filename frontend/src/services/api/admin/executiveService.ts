@@ -4,8 +4,18 @@ export interface Executive {
   _id: string;
   name: string;
   mobile?: string;
+  email?: string;
   isActive: boolean;
   sellerCount?: number;
+  kycDocuments?: {
+    aadhaar?: string;
+    pan?: string;
+    resume?: string;
+    bankPassbook?: string;
+  };
+  kycStatus: 'Pending' | 'Submitted' | 'Approved' | 'Rejected';
+  rejectionReason?: string;
+  status: 'Pending' | 'Active' | 'Suspended';
   createdAt: string;
   updatedAt: string;
 }

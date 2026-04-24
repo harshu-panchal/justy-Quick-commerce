@@ -1257,6 +1257,16 @@ export const approveProductRequest = asyncHandler(
     // Invalidate product caches
     cache.invalidatePattern(/home-content/);
 
+    // Commission Check
+    if (status === 'Active') {
+      try {
+        const { checkAndCreditCommission } = await import('../../executive/utils/commissionHelper');
+        await checkAndCreditCommission(product.seller.toString());
+      } catch (err) {
+        console.error('Commission credit error:', err);
+      }
+    }
+
     return res.status(200).json({
       success: true,
       message: `Product ${status === 'Active' ? 'approved' : 'rejected'} successfully`,

@@ -13,7 +13,7 @@ import {
 
 interface User {
   id: string;
-  userType?: "Admin" | "Seller" | "Customer" | "Delivery";
+  userType?: "Admin" | "Seller" | "Customer" | "Delivery" | "Executive";
   depositPaid?: boolean;
   securityDepositStatus?: "Pending" | "Paid" | "Refunded";
   depositAmount?: number;
@@ -91,22 +91,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsAuthenticated(false);
     }
 
-    // Every time we mount with a token, let's refresh the profile/permissions
-    if (storedToken) {
-      import("../services/api/auth/adminAuthService").then(({ getAdminProfile }) => {
-        getAdminProfile().then(profileResponse => {
-          if (profileResponse.success) {
-            const userData = JSON.parse(storedUser || '{}');
-            const fullUserData = {
-              ...userData,
-              ...profileResponse.data,
-              id: profileResponse.data._id || userData.id
-            };
-            setUser(fullUserData);
-            localStorage.setItem("userData", JSON.stringify(fullUserData));
-          }
-        }).catch(err => console.error("Mount profile sync failed:", err));
-      });
+    // Every time we mount with a token, let's refresh the profile/permissions (Admin only)
+    if (storedToken && storedUser) {
+      try {
+        const userData = JSON.parse(storedUser);
+        if (userData.userType === 'Admin') {
+          import("../services/api/auth/adminAuthService").then(({ getAdminProfile }) => {
+            getAdminProfile().then(profileResponse => {
+              if (profileResponse.success) {
+                const fullUserData = {
+                  ...userData,
+                  ...profileResponse.data,
+                  id: profileResponse.data._id || userData.id
+                };
+                setUser(fullUserData);
+                localStorage.setItem("userData", JSON.stringify(fullUserData));
+              }
+            }).catch(err => console.error("Mount profile sync failed:", err));
+          });
+        }
+      } catch (e) {
+        console.error("Auth mount effect error:", e);
+      }
     }
   }, []);
 
@@ -117,21 +123,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAuthToken(newToken);
     localStorage.setItem("userData", JSON.stringify(userData));
 
-    // Fetch full profile immediately after login to sync permissions
-    try {
-      const { getAdminProfile } = await import("../services/api/auth/adminAuthService");
-      const profileResponse = await getAdminProfile();
-      if (profileResponse.success) {
-        const fullUserData = {
-          ...userData,
-          ...profileResponse.data,
-          id: profileResponse.data._id || userData.id // Map _id to id if needed
-        };
-        setUser(fullUserData);
-        localStorage.setItem("userData", JSON.stringify(fullUserData));
+    // Fetch full profile immediately after login to sync permissions (Admin only)
+    if (userData.userType === 'Admin') {
+      try {
+        const { getAdminProfile } = await import("../services/api/auth/adminAuthService");
+        const profileResponse = await getAdminProfile();
+        if (profileResponse.success) {
+          const fullUserData = {
+            ...userData,
+            ...profileResponse.data,
+            id: profileResponse.data._id || userData.id // Map _id to id if needed
+          };
+          setUser(fullUserData);
+          localStorage.setItem("userData", JSON.stringify(fullUserData));
+        }
+      } catch (error) {
+        console.error("Failed to sync profile after login:", error);
       }
-    } catch (error) {
-      console.error("Failed to sync profile after login:", error);
     }
 
     // Register FCM token for push notifications after successful login

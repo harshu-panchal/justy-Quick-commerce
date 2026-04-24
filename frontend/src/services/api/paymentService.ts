@@ -47,9 +47,9 @@ export const getPaymentHistory = async () => {
 /**
  * Create Razorpay order for seller security deposit
  */
-export const createSellerDepositOrder = async () => {
+export const createSellerDepositOrder = async (amount?: number) => {
     try {
-        const response = await api.post('/payment/seller/deposit/create-order');
+        const response = await api.post('/payment/seller/deposit/create-order', { amount });
         return response.data;
     } catch (error: any) {
         console.error('Error creating seller deposit order:', error);
@@ -70,6 +70,16 @@ export const verifySellerDepositPayment = async (paymentData: {
         return response.data;
     } catch (error: any) {
         console.error('Error verifying seller deposit payment:', error);
+        throw error;
+    }
+};
+
+export const bypassSellerDepositPayment = async () => {
+    try {
+        const response = await api.post('/payment/seller/deposit/bypass');
+        return response.data;
+    } catch (error: any) {
+        console.error('Error bypassing seller deposit payment:', error);
         throw error;
     }
 };

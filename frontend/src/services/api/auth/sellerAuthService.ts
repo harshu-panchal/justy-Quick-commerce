@@ -27,6 +27,7 @@ export interface VerifyOTPResponse {
 
 export interface RegisterData {
   sellerName: string;
+  referralCode?: string;
   executiveName?: string;
   mobile: string;
   alternateMobile?: string;

@@ -69,84 +69,80 @@ const SellerDepositPayment = () => {
         try {
             setLoading(true);
 
-            // Step 1: Load Razorpay script & Call backend create-order API
-            const scriptLoaded = await loadRazorpayScript();
-            if (!scriptLoaded) {
-                showToast('Failed to load Razorpay SDK.', 'error');
-                setLoading(false);
+            // 1. Load Razorpay script
+            const res = await loadRazorpayScript();
+            if (!res) {
+                showToast('Razorpay SDK failed to load. Are you online?', 'error');
                 return;
             }
 
-            const orderResponse = await createSellerDepositOrder();
+            // 2. Create Order
+            const orderResponse = await createSellerDepositOrder(depositAmount);
             if (!orderResponse.success) {
-                showToast(orderResponse.message || 'Failed to create payment order', 'error');
-                setLoading(false);
+                showToast(orderResponse.message || 'Failed to initiate payment', 'error');
                 return;
             }
 
-            const { razorpayOrderId, razorpayKey, amount, currency } = orderResponse.data;
+            const { order, key } = orderResponse.data;
 
-            // Step 2: Open Razorpay checkout with order_id
+            // 3. Open Checkout
             const options = {
-                key: razorpayKey,
-                amount: amount,
-                currency: currency,
-                name: 'JYASTI builds trust',
-                description: 'Security Deposit for Seller Panel',
-                order_id: razorpayOrderId,
-                prefill: {
-                    name: user?.sellerName || '',
-                    email: user?.email || '',
-                    contact: user?.mobile || '',
-                },
-                theme: { color: '#0d9488' },
-                // Step 3 & 4: After success, send for verification
-                handler: async function (response: any) {
+                key: key,
+                amount: order.amount,
+                currency: order.currency,
+                name: "JYASTI Quick-commerce",
+                description: "Seller Security Deposit",
+                order_id: order.id,
+                handler: async (response: any) => {
                     try {
                         setLoading(true);
-                        const verificationResponse = await verifySellerDepositPayment({
+                        const verifyRes = await verifySellerDepositPayment({
                             razorpayOrderId: response.razorpay_order_id,
                             razorpayPaymentId: response.razorpay_payment_id,
-                            razorpaySignature: response.razorpay_signature,
+                            razorpaySignature: response.razorpay_signature
                         });
 
-                        if (verificationResponse.success) {
-                            showToast('Payment successful! Your store is now fully activated.', 'success');
-
-                            // Step 5: Update state and redirect
+                        if (verifyRes.success) {
+                            showToast('Payment successful! Your store is now active.', 'success');
+                            
+                            // Update local user state
                             if (user) {
                                 updateUser({
                                     ...user,
-                                    ...(verificationResponse.data || {}),
                                     securityDepositStatus: 'Paid',
                                     depositPaid: true,
-                                    userType: 'Seller'
+                                    status: 'Approved'
                                 } as any);
                             }
+                            
                             navigate('/seller', { replace: true });
                         } else {
-                            showToast(verificationResponse.message || 'Payment verification failed', 'error');
+                            showToast(verifyRes.message || 'Payment verification failed', 'error');
                         }
-                    } catch (error: any) {
-                        console.error('Payment verification error:', error);
-                        showToast('Payment verification failed', 'error');
+                    } catch (err: any) {
+                        showToast(err.response?.data?.message || 'Payment verification failed', 'error');
                     } finally {
                         setLoading(false);
                     }
                 },
-                modal: {
-                    ondismiss: () => {
-                        setLoading(false);
-                        showToast('Payment cancelled', 'info');
-                    },
+                prefill: {
+                    name: user?.sellerName || "",
+                    email: user?.email || "",
+                    contact: user?.mobile || ""
                 },
+                theme: {
+                    color: "#0d9488"
+                }
             };
 
-            const razorpay = new (window as any).Razorpay(options);
-            razorpay.open();
+            const paymentObject = new window.Razorpay(options);
+            paymentObject.open();
+
         } catch (error: any) {
-            console.error('Payment error:', error);
-            showToast('Failed to initiate payment', 'error');
+            console.error('Payment initiation error:', error);
+            const message = error.response?.data?.message || error.message || 'Failed to initiate payment';
+            showToast(message, 'error');
+        } finally {
             setLoading(false);
         }
     };

@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import Seller from "../../../models/Seller";
+import Executive from "../../../models/Executive";
 import {
   sendOTP as sendOTPService,
   verifyOTP as verifyOTPService,
@@ -178,6 +179,7 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
     email,
     storeName,
     category,
+    referralCode,
     address,
     city,
     state,
@@ -257,6 +259,22 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
     });
   }
 
+  // Handle Referral Code
+  let referredBy = undefined;
+  let finalExecutiveName = executiveName;
+
+  if (referralCode) {
+    const executive = await Executive.findOne({ referralCode: referralCode.toUpperCase() });
+    if (!executive) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid referral code. Please input a valid referral code or leave it empty.",
+      });
+    }
+    referredBy = executive._id;
+    finalExecutiveName = executive.name; // Use executive's real name if linked via code
+  }
+
   // Create GeoJSON location point [longitude, latitude] if provided
   const location =
     longitude && latitude
@@ -269,7 +287,8 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
   // Create new seller with GeoJSON location (password not required during signup)
   const seller = await Seller.create({
     sellerName,
-    executiveName,
+    executiveName: finalExecutiveName,
+    referredBy,
     mobile,
     email,
     // password field removed - sellers don't need password during signup

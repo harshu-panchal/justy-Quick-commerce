@@ -1,7 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyToken, TokenPayload } from '../services/jwtService';
+import Executive from '../models/Executive';
 
-export type AuthUserType = 'Admin' | 'Seller' | 'Customer' | 'Delivery';
+export type AuthUserType = 'Admin' | 'Seller' | 'Customer' | 'Delivery' | 'Executive';
 
 // Extend Express Request to include user info
 declare global {
@@ -79,7 +80,7 @@ export const authorize = (...roles: string[]) => {
  * Require specific user type(s)
  */
 export const requireUserType = (...userTypes: AuthUserType[]) => {
-  return (req: Request, res: Response, next: NextFunction): void => {
+  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     if (!req.user) {
       res.status(401).json({
         success: false,
@@ -94,6 +95,18 @@ export const requireUserType = (...userTypes: AuthUserType[]) => {
         message: 'Access denied. Required user type: ' + userTypes.join(' or '),
       });
       return;
+    }
+
+    // Special check for Executive status
+    if (req.user.userType === 'Executive') {
+      const executive = await Executive.findById(req.user.userId);
+      if (!executive || executive.status === 'Suspended') {
+        res.status(403).json({
+          success: false,
+          message: 'Your account has been suspended. Please contact admin.',
+        });
+        return;
+      }
     }
 
     next();

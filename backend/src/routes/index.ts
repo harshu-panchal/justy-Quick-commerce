@@ -5,6 +5,7 @@ import dashboardRoutes from "./dashboardRoutes";
 import customerAuthRoutes from "./customerAuthRoutes";
 import deliveryRoutes from "./deliveryRoutes";
 import deliveryAuthRoutes from "./deliveryAuthRoutes";
+import executiveRoutes from "./executiveRoutes";
 
 // ... (other imports)
 import { authenticate, requireUserType } from "../middleware/auth";
@@ -247,6 +248,9 @@ router.use("/admin/withdrawals", authenticate, requireUserType("Admin"), adminWi
 
 // Seller Review Routes
 router.use("/seller/reviews", sellerReviewRoutes);
+
+// Executive Routes
+router.use("/executive", executiveRoutes);
 
 // Admin commission management routes (protected, admin only)
 

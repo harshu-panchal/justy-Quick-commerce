@@ -341,9 +341,17 @@ router.put("/roles/:id", roleController.updateRole);
 router.delete("/roles/:id", roleController.deleteRole);
 
 // ==================== Executive Routes ====================
+// Category Commissions for Executives
+router.get("/executives/commissions/categories", executiveController.getCategoryCommissions);
+router.put("/executives/commissions/categories", executiveController.updateCategoryCommission);
+
+// Withdrawal Requests for Executives
+router.get("/executives/withdrawals", executiveController.getWithdrawalRequests);
+router.put("/executives/withdrawals/:id/process", executiveController.processWithdrawal);
+
 router.get("/executives", executiveController.getExecutives);
-router.get("/executives/:id", executiveController.getExecutiveById);
 router.post("/executives", executiveController.createExecutive);
+router.get("/executives/:id", executiveController.getExecutiveById);
 router.put("/executives/:id", executiveController.updateExecutive);
 router.delete("/executives/:id", executiveController.deleteExecutive);
 

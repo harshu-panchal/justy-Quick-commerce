@@ -99,6 +99,10 @@ api.interceptors.response.use(
       // Just reject the promise so the component can handle it gracefully
     }
     // For 403 and other errors, just reject the promise so the UI can handle it
+    if (error.response?.status === 403 && error.response?.data?.message?.toLowerCase().includes('suspended')) {
+        const message = error.response.data.message || "Your account has been suspended. Please contact admin.";
+        window.dispatchEvent(new CustomEvent('account-suspended', { detail: { message } }));
+    }
     return Promise.reject(error);
   }
 );

@@ -55,6 +55,7 @@ interface Seller {
         regional?: string;
         local?: string;
     };
+    referredBy?: string;
 }
 
 // Helper function to convert backend seller to frontend format
@@ -107,6 +108,7 @@ const mapSellerToFrontend = (seller: SellerType): Seller => {
         isPincodeActive: seller.isPincodeActive ?? true,
         pincode: seller.pincode,
         deliveryTime: seller.deliveryTime,
+        referredBy: (seller as any).referredBy || 'N/A',
     };
 };
 
@@ -579,6 +581,9 @@ export default function AdminManageSellerList() {
                                             </div>
                                         </th>
                                         <th className="p-4">
+                                            Referred By
+                                        </th>
+                                        <th className="p-4">
                                             Category
                                         </th>
                                         <th
@@ -628,6 +633,9 @@ export default function AdminManageSellerList() {
                                             </td>
                                             <td className="p-4 align-middle">{seller.balance.toFixed(2)}</td>
                                             <td className="p-4 align-middle">{seller.commission.toFixed(2)}%</td>
+                                            <td className="p-4 align-middle font-medium text-teal-700">
+                                                {seller.referredBy}
+                                            </td>
                                             <td className="p-4 align-middle">
                                                 <button
                                                     onClick={() => handleViewCategories(seller)}

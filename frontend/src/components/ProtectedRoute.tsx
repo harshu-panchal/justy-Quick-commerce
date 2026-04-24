@@ -5,7 +5,7 @@ import { useAuth } from "../context/AuthContext";
 interface ProtectedRouteProps {
   children: ReactNode;
   requiredRole?: string;
-  requiredUserType?: "Admin" | "Seller" | "Customer" | "Delivery";
+  requiredUserType?: "Admin" | "Seller" | "Customer" | "Delivery" | "Executive";
   redirectTo?: string;
 }
 
@@ -34,16 +34,10 @@ export default function ProtectedRoute({
     if (requiredUserType === "Admin") {
       const isAdmin = userType === "Admin" || userType === "Super Admin";
       if (!isAdmin) {
-        return <Navigate to="/" replace />;
+        return <Navigate to={redirectTo} state={{ from: location }} replace />;
       }
     } else if (userType && userType !== requiredUserType) {
-      if (requiredUserType === "Seller")
-        return <Navigate to="/seller/login" replace />;
-      if (requiredUserType === "Delivery")
-        return <Navigate to="/delivery/login" replace />;
-      if (requiredUserType === "Customer")
-        return <Navigate to="/login" replace />;
-      return <Navigate to="/" replace />;
+      return <Navigate to={redirectTo} state={{ from: location }} replace />;
     }
   }
 

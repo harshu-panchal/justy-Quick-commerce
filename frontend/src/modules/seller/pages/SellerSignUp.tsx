@@ -59,6 +59,7 @@ export default function SellerSignUp() {
   const [formData, setFormData] = useState({
     sellerName: '',
     executiveName: '',
+    referralCode: '',
     mobile: '',
     alternateMobile: '',
     email: '',
@@ -542,7 +543,7 @@ export default function SellerSignUp() {
 
       const response = await register({
         sellerName: formData.sellerName,
-        executiveName: formData.executiveName,
+        referralCode: formData.referralCode,
         mobile: formData.mobile,
         email: formData.email,
         storeName: formData.storeName,
@@ -686,25 +687,21 @@ export default function SellerSignUp() {
       />
     </div>
 
-    {/* Executive Name Dropdown */}
+    {/* Referral Code */}
     <div>
       <label className="block text-sm font-medium text-neutral-700 mb-2">
-        Executive Name
+        Referral Code (Optional)
       </label>
-      <select
-        name="executiveName"
-        value={formData.executiveName || ""}
-        onChange={handleInputChange}
-        className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 transition-all bg-white"
+      <input
+        type="text"
+        name="referralCode"
+        value={formData.referralCode}
+        onChange={(e) => setFormData(prev => ({ ...prev, referralCode: e.target.value.toUpperCase() }))}
+        placeholder="Enter referral code"
+        className="w-full px-4 py-3 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-teal-500 transition-all font-bold tracking-widest placeholder:tracking-normal placeholder:font-normal uppercase"
         disabled={loading}
-      >
-        <option value="">Select Executive</option>
-        {executives.map((exec) => (
-          <option key={exec._id} value={exec.name}>
-            {exec.name}
-          </option>
-        ))}
-      </select>
+      />
+      <p className="text-[10px] text-neutral-400 mt-1.5 ml-1">Input code if you were onboarded by an executive</p>
     </div>
 
     {/* Mobile Number */}

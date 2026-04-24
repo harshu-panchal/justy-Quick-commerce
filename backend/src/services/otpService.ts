@@ -34,7 +34,7 @@ interface SmsIndiaHubResponse {
   }>;
 }
 
-type UserType = 'Customer' | 'Delivery' | 'Seller' | 'Admin';
+type UserType = 'Customer' | 'Delivery' | 'Seller' | 'Admin' | 'Executive';
 
 /**
  * Generate numeric OTP

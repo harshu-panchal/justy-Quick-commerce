@@ -7,19 +7,42 @@ import AppSettings from '../models/AppSettings';
 import Seller from '../models/Seller';
 import HeaderCategory from '../models/HeaderCategory';
 
-// Initialize Razorpay instance
-const getRazorpayInstance = () => {
-    const keyId = process.env.RAZORPAY_KEY_ID?.trim();
-    const keySecret = process.env.RAZORPAY_KEY_SECRET?.trim();
+// Initialize Razorpay instance with dynamic keys from settings or environment
+const getRazorpayInstance = async () => {
+    try {
+        const settings = await AppSettings.getSettings();
+        const dbConfig = settings?.paymentGateways?.razorpay;
+        
+        const keyId = (dbConfig?.enabled && dbConfig?.keyId) 
+            ? dbConfig.keyId.trim() 
+            : process.env.RAZORPAY_KEY_ID?.trim();
+            
+        const keySecret = (dbConfig?.enabled && dbConfig?.keySecret) 
+            ? dbConfig.keySecret.trim() 
+            : process.env.RAZORPAY_KEY_SECRET?.trim();
 
-    if (!keyId || !keySecret) {
-        throw new Error('Razorpay credentials not configured');
+        if (!keyId || !keySecret) {
+            console.error('❌ Razorpay credentials missing in both Settings and ENV');
+            throw new Error('Razorpay credentials not configured');
+        }
+
+        // Basic validation: Check if keys start with rzp_
+        if (!keyId.startsWith('rzp_')) {
+            console.warn('⚠️ Razorpay Key ID does not start with rzp_:', keyId);
+        }
+
+        return {
+            instance: new Razorpay({
+                key_id: keyId,
+                key_secret: keySecret,
+            }),
+            keyId,
+            keySecret
+        };
+    } catch (error: any) {
+        console.error('Error initializing Razorpay:', error);
+        throw error;
     }
-
-    return new Razorpay({
-        key_id: keyId,
-        key_secret: keySecret,
-    });
 };
 
 /**
@@ -31,7 +54,7 @@ export const createRazorpayOrder = async (
     currency: string = 'INR'
 ) => {
     try {
-        const razorpay = getRazorpayInstance();
+        const { instance: razorpay, keyId } = await getRazorpayInstance();
 
         const options = {
             amount: Math.round(amount * 100), // Amount in paise
@@ -66,17 +89,13 @@ export const createRazorpayOrder = async (
 /**
  * Verify Razorpay payment signature
  */
-export const verifyPaymentSignature = (
+export const verifyPaymentSignature = async (
     razorpayOrderId: string,
     razorpayPaymentId: string,
     razorpaySignature: string
-): boolean => {
+): Promise<boolean> => {
     try {
-        const keySecret = process.env.RAZORPAY_KEY_SECRET;
-
-        if (!keySecret) {
-            throw new Error('Razorpay key secret not configured');
-        }
+        const { keySecret } = await getRazorpayInstance();
 
         const body = razorpayOrderId + '|' + razorpayPaymentId;
         const expectedSignature = crypto
@@ -111,8 +130,9 @@ export const capturePayment = async (
     session.startTransaction();
 
     try {
+        const { instance: razorpay } = await getRazorpayInstance();
         // Verify signature
-        const isValid = verifyPaymentSignature(
+        const isValid = await verifyPaymentSignature(
             razorpayOrderId,
             razorpayPaymentId,
             razorpaySignature
@@ -213,7 +233,7 @@ export const processRefund = async (
             throw new Error('Razorpay payment ID not found');
         }
 
-        const razorpay = getRazorpayInstance();
+        const { instance: razorpay } = await getRazorpayInstance();
 
         const refundAmount = amount || payment.amount;
 
@@ -337,7 +357,9 @@ export const createSellerDepositOrder = async (
             }
         }
 
-        const razorpay = getRazorpayInstance();
+        console.log(`[Razorpay] Creating order for seller ${sellerId}, amount: ${depositAmount}`);
+
+        const { instance: razorpay, keyId } = await getRazorpayInstance();
 
         const options = {
             amount: Math.round(depositAmount * 100),
@@ -352,8 +374,11 @@ export const createSellerDepositOrder = async (
         const razorpayOrder = await razorpay.orders.create(options);
 
         if (!razorpayOrder || !razorpayOrder.id) {
+            console.error('[Razorpay] Failed to create order: No order ID returned');
             return { success: false, message: 'Failed to create Razorpay order' };
         }
+
+        console.log(`[Razorpay] Order created successfully: ${razorpayOrder.id}`);
 
         return {
             success: true,
@@ -361,7 +386,7 @@ export const createSellerDepositOrder = async (
                 razorpayOrderId: razorpayOrder.id,
                 amount: razorpayOrder.amount,
                 currency: razorpayOrder.currency,
-                razorpayKey: process.env.RAZORPAY_KEY_ID,
+                razorpayKey: keyId,
                 receipt: razorpayOrder.receipt,
             },
         };
@@ -370,6 +395,8 @@ export const createSellerDepositOrder = async (
             message: error.message,
             statusCode: error.statusCode,
             razorpayError: error.error?.description ?? error.error,
+            sellerId,
+            depositAmount: amount
         });
         return {
             success: false,
@@ -389,8 +416,7 @@ export const captureSellerDepositPayment = async (
 
     try {
         // 1. Verify Razorpay Signature (HMAC SHA256)
-        const keySecret = process.env.RAZORPAY_KEY_SECRET;
-        if (!keySecret) throw new Error('Razorpay secret not configured');
+        const { keySecret } = await getRazorpayInstance();
 
         const body = razorpayOrderId + '|' + razorpayPaymentId;
         const expectedSignature = crypto
@@ -475,6 +501,14 @@ export const captureSellerDepositPayment = async (
         await session.commitTransaction();
         console.log('✅ [Verification] Seller status updated and GeoJSON sanitized. Payment verification complete.');
 
+        // Commission Check
+        try {
+            const { checkAndCreditCommission } = await import('../modules/executive/utils/commissionHelper');
+            await checkAndCreditCommission(sellerId);
+        } catch (err) {
+            console.error('Commission credit error:', err);
+        }
+
         return {
             success: true,
             message: "Seller deposit payment successful",
@@ -522,6 +556,14 @@ const handlePaymentCaptured = async (payload: any) => {
                 depositPaidAt: new Date(),
                 status: 'Approved'
             });
+
+            // Commission Check
+            try {
+                const { checkAndCreditCommission } = await import('../modules/executive/utils/commissionHelper');
+                await checkAndCreditCommission(notes.sellerId);
+            } catch (err) {
+                console.error('Commission credit error:', err);
+            }
 
             // Create payment record if it doesn't exist
             const existingPayment = await Payment.findOne({ razorpayOrderId });

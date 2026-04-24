@@ -213,9 +213,18 @@ export const createProduct = asyncHandler(
 
     const product = await Product.create(newProductData);
 
-    // 7. Update seller counter if it was a free slot
-    if ((req as any).shouldIncrementFree) {
-      await Seller.findByIdAndUpdate(sellerId, { $inc: { freeProductsAdded: 1 } });
+    // 7. Update seller counter and mark as having added first product
+    await Seller.findByIdAndUpdate(sellerId, { 
+      $set: { hasAddedFirstProduct: true },
+      ...((req as any).shouldIncrementFree && { $inc: { freeProductsAdded: 1 } })
+    });
+
+    // 8. Trigger commission credit for executive
+    try {
+      const { checkAndCreditCommission } = await import('../../executive/utils/commissionHelper');
+      await checkAndCreditCommission(sellerId);
+    } catch (error) {
+      console.error("Error triggering commission credit:", error);
     }
 
     // Invalidate home page cache

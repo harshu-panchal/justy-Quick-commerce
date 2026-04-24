@@ -1,6 +1,6 @@
 import api from '../../../services/api/config';
 
-const API_URL = '/auth/executive';
+const API_URL = 'auth/executive';
 
 // ==================== Auth Services ====================
 

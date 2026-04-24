@@ -117,6 +117,7 @@ router.use("/auth/seller", sellerAuthRoutes);
 router.use("/auth/customer", customerAuthRoutes);
 router.use("/auth/delivery", deliveryAuthRoutes);
 router.use("/auth/executive", executiveRoutes);
+router.use("/executive", executiveRoutes);
 
 // Public settings route
 import { getPublicSettings } from "../controllers/settingsController";

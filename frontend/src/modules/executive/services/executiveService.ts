@@ -1,21 +1,21 @@
 import api from '../../../services/api/config';
 
-const API_URL = '/executive';
+const API_URL = '/auth/executive';
 
 // ==================== Auth Services ====================
 
 export const sendOTP = async (mobile: string) => {
-    const response = await api.post(`${API_URL}/auth/send-otp`, { mobile });
+    const response = await api.post(`${API_URL}/send-otp`, { mobile });
     return response.data;
 };
 
 export const verifyOTP = async (mobile: string, otp: string) => {
-    const response = await api.post(`${API_URL}/auth/verify-otp`, { mobile, otp });
+    const response = await api.post(`${API_URL}/verify-otp`, { mobile, otp });
     return response.data;
 };
 
 export const register = async (data: any) => {
-    const response = await api.post(`${API_URL}/auth/register`, data);
+    const response = await api.post(`${API_URL}/register`, data);
     return response.data;
 };
 

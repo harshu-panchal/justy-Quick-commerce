@@ -116,6 +116,7 @@ router.use("/auth/admin", adminAuthRoutes);
 router.use("/auth/seller", sellerAuthRoutes);
 router.use("/auth/customer", customerAuthRoutes);
 router.use("/auth/delivery", deliveryAuthRoutes);
+router.use("/auth/executive", executiveRoutes);
 
 // Public settings route
 import { getPublicSettings } from "../controllers/settingsController";
@@ -249,8 +250,6 @@ router.use("/admin/withdrawals", authenticate, requireUserType("Admin"), adminWi
 // Seller Review Routes
 router.use("/seller/reviews", sellerReviewRoutes);
 
-// Executive Routes
-router.use("/executive", executiveRoutes);
 
 // Admin commission management routes (protected, admin only)
 

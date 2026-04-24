@@ -6,9 +6,10 @@ import { authenticate, requireUserType } from "../middleware/auth";
 const router = Router();
 
 // ==================== Public Auth Routes ====================
-router.post("/auth/send-otp", executiveAuthController.sendOTP);
-router.post("/auth/verify-otp", executiveAuthController.verifyOTP);
-router.post("/auth/register", executiveAuthController.register);
+router.post("/send-otp", executiveAuthController.sendOTP);
+router.post("/verify-otp", executiveAuthController.verifyOTP);
+router.post("/register", executiveAuthController.register);
+router.get("/ping", (req, res) => res.json({ success: true, message: "Executive API is reachable" }));
 
 // ==================== Protected Routes ====================
 router.use(authenticate);

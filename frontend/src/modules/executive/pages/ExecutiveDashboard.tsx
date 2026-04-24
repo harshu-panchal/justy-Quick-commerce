@@ -4,6 +4,7 @@ import ReferralCodeCard from '../components/ReferralCodeCard';
 import { getDashboardStats } from '../services/executiveService';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 export default function ExecutiveDashboard() {
     const [stats, setStats] = useState<any>(null);

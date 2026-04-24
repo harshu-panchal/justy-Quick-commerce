@@ -49,7 +49,7 @@ export default function ExecutiveLogin() {
                 navigate('/executive/signup', { state: { mobile: response.data.mobile } });
                 return;
             }
-            login(response.data.token, response.data.user);
+            await login(response.data.token, response.data.user);
             toast.success('Login successful');
             navigate('/executive/dashboard');
         } catch (error: any) {

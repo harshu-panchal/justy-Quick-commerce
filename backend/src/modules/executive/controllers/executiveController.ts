@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { Request, Response } from "express";
 import Executive from "../../../models/Executive";
 import Seller from "../../../models/Seller";
@@ -52,7 +53,7 @@ export const getDashboardStats = asyncHandler(async (req: Request, res: Response
     await executive.save();
   }
 
-  const onboardedSellers = await Seller.countDocuments({ referredBy: executiveId, status: 'Approved' });
+  const onboardedSellers = await Seller.countDocuments({ referredBy: new mongoose.Types.ObjectId(executiveId) });
   const pendingKYC = executive.kycStatus === 'Pending' || !executive.kycDocuments?.aadhaar;
 
   console.log('📊 Dashboard stats being sent:', {
@@ -90,7 +91,7 @@ export const getOnboardedSellers = asyncHandler(async (req: Request, res: Respon
       console.error("Sellers list sync error:", err);
   }
 
-  const sellers = await Seller.find({ referredBy: executiveId })
+  const sellers = await Seller.find({ referredBy: new mongoose.Types.ObjectId(executiveId) })
     .select("storeName sellerName mobile status depositPaid createdAt category hasAddedFirstProduct commissionCredited commissionAmount")
     .sort({ createdAt: -1 });
 

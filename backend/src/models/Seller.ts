@@ -561,6 +561,7 @@ SellerSchema.index({ pincode: 1, status: 1, isShopOpen: 1, isPincodeActive: 1 })
 SellerSchema.index({ mobile: 1 }, { unique: true });
 SellerSchema.index({ pincode: 1, status: 1 });
 SellerSchema.index({ status: 1 }); // Compound index for status + location queries
+SellerSchema.index({ referredBy: 1 }); // Index for executive referral lookups
 
 const Seller = (mongoose.models.Seller as mongoose.Model<ISeller>) || mongoose.model<ISeller>('Seller', SellerSchema);
 

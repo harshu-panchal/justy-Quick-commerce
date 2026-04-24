@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import Seller from "../../../models/Seller";
 import Product from "../../../models/Product";
 import Executive from "../../../models/Executive";
@@ -102,8 +103,7 @@ export const syncExecutiveCommissions = async (executiveId: string) => {
   console.log(`[Commission Sync] Syncing for Executive ID: ${executiveId}`);
   try {
     const pendingSellers = await Seller.find({ 
-      referredBy: executiveId, 
-      hasAddedFirstProduct: true, 
+      referredBy: new mongoose.Types.ObjectId(executiveId), 
       commissionCredited: { $ne: true },
       depositPaid: true,
       status: 'Approved'

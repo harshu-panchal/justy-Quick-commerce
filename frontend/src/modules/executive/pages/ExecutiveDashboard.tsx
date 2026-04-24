@@ -16,7 +16,8 @@ export default function ExecutiveDashboard() {
                 setStats(data.data);
             } catch (error: any) {
                 console.error("Error fetching dashboard stats:", error);
-                if (error.response?.status === 403 && error.response?.data?.message?.toLowerCase().includes('suspended')) {
+                if (error.response?.status === 403 || error.response?.data?.message?.toLowerCase().includes('suspended')) {
+                    toast.error(error.response?.data?.message || "Account suspended");
                     localStorage.removeItem("authToken");
                     localStorage.removeItem("userData");
                     window.location.href = "/executive/login";

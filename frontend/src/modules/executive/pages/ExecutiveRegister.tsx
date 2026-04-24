@@ -3,8 +3,10 @@ import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { register } from '../services/executiveService';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
+import { useAuth } from '../../../context/AuthContext';
 
 export default function ExecutiveRegister() {
+    const { login } = useAuth();
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
@@ -42,9 +44,17 @@ export default function ExecutiveRegister() {
         e.preventDefault();
         setLoading(true);
         try {
-            await register(formData);
-            toast.success('Application submitted successfully! Admin will review your profile.');
-            navigate('/executive/login');
+            const response = await register(formData);
+            
+            if (response.success && response.data?.token) {
+                // Auto-login after successful registration
+                await login(response.data.token, response.data.user);
+                toast.success('Welcome! Your application has been submitted and is active.');
+                navigate('/executive/dashboard');
+            } else {
+                toast.success('Application submitted successfully! Admin will review your profile.');
+                navigate('/executive/login');
+            }
         } catch (error: any) {
             toast.error(error.response?.data?.message || 'Registration failed');
         } finally {

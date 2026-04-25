@@ -118,10 +118,10 @@ export default function AdminExecutiveWithdrawals() {
 
                 <div className="space-y-6">
                     {selectedRequest ? (
-                        <div className="bg-neutral-900 rounded-lg p-6 text-white shadow-lg">
+                        <div className="bg-white rounded-lg p-6 text-neutral-900 border border-neutral-200 shadow-xl">
                             <div className="flex justify-between items-center mb-6">
                                 <h3 className="text-lg font-black tracking-tight">Process Payout</h3>
-                                <button onClick={() => setSelectedRequest(null)} className="text-neutral-500 hover:text-white">
+                                <button onClick={() => setSelectedRequest(null)} className="text-neutral-400 hover:text-neutral-900">
                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                                         <line x1="18" y1="6" x2="6" y2="18" />
                                         <line x1="6" y1="6" x2="18" y2="18" />
@@ -129,34 +129,63 @@ export default function AdminExecutiveWithdrawals() {
                                 </button>
                             </div>
 
-                            <div className="p-4 bg-white/5 rounded-lg border border-white/5 mb-6">
+                            <div className="p-4 bg-neutral-50 rounded-lg border border-neutral-100 mb-6">
                                 <div className="flex justify-between items-center mb-2">
-                                    <span className="text-[10px] font-black text-neutral-500 uppercase">Amount to Pay</span>
-                                    <span className="text-xl font-black text-emerald-400">₹{selectedRequest.amount}</span>
+                                    <span className="text-[10px] font-black text-neutral-400 uppercase">Amount to Pay</span>
+                                    <span className="text-xl font-black text-emerald-600">₹{selectedRequest.amount}</span>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                    <span className="text-[10px] font-black text-neutral-500 uppercase">To Executive</span>
-                                    <span className="text-xs font-bold text-white">{selectedRequest.executive?.name}</span>
+                                    <span className="text-[10px] font-black text-neutral-400 uppercase">To Executive</span>
+                                    <span className="text-xs font-bold text-neutral-900">{selectedRequest.executive?.name}</span>
+                                </div>
+                            </div>
+
+                            {/* Bank Details Section */}
+                            <div className="mb-6 p-4 bg-blue-50/50 rounded-lg border border-blue-100/50">
+                                <h4 className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                                        <rect x="2" y="5" width="20" height="14" rx="2" />
+                                        <line x1="2" y1="10" x2="22" y2="10" />
+                                    </svg>
+                                    Bank Settlement Details
+                                </h4>
+                                <div className="space-y-2">
+                                    <div className="flex justify-between">
+                                        <span className="text-[9px] font-bold text-neutral-400 uppercase">A/C Name</span>
+                                        <span className="text-[11px] font-black text-neutral-800">{selectedRequest.bankDetails?.accountName || 'N/A'}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-[9px] font-bold text-neutral-400 uppercase">A/C Number</span>
+                                        <span className="text-[11px] font-black text-neutral-800 select-all">{selectedRequest.bankDetails?.accountNumber || 'N/A'}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-[9px] font-bold text-neutral-400 uppercase">Bank Name</span>
+                                        <span className="text-[11px] font-black text-neutral-800">{selectedRequest.bankDetails?.bankName || 'N/A'}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-[9px] font-bold text-neutral-400 uppercase">IFSC Code</span>
+                                        <span className="text-[11px] font-black text-neutral-800 select-all">{selectedRequest.bankDetails?.ifsc || 'N/A'}</span>
+                                    </div>
                                 </div>
                             </div>
 
                             <div className="space-y-4">
                                 <div>
-                                    <label className="text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">Transaction ID *</label>
+                                    <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest ml-1">Transaction ID *</label>
                                     <input 
                                         type="text"
                                         value={processingData.transactionId}
                                         onChange={(e) => setProcessingData({...processingData, transactionId: e.target.value})}
-                                        className="w-full px-4 py-3 bg-white/10 rounded-lg text-white font-black text-sm border border-white/10 focus:border-white/30 outline-none transition-all"
+                                        className="w-full px-4 py-3 bg-neutral-50 rounded-lg text-neutral-900 font-bold text-sm border border-neutral-200 focus:border-emerald-500 outline-none transition-all"
                                         placeholder="UTR / Ref No."
                                     />
                                 </div>
                                 <div>
-                                    <label className="text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">Admin Note (Optional)</label>
+                                    <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest ml-1">Admin Note (Optional)</label>
                                     <textarea 
                                         value={processingData.adminNote}
                                         onChange={(e) => setProcessingData({...processingData, adminNote: e.target.value})}
-                                        className="w-full px-4 py-3 bg-white/10 rounded-lg text-white font-medium text-sm border border-white/10 focus:border-white/30 outline-none transition-all h-20 resize-none"
+                                        className="w-full px-4 py-3 bg-neutral-50 rounded-lg text-neutral-900 font-medium text-sm border border-neutral-200 focus:border-emerald-500 outline-none transition-all h-20 resize-none"
                                         placeholder="Internal remarks..."
                                     />
                                 </div>
@@ -164,13 +193,13 @@ export default function AdminExecutiveWithdrawals() {
                                 <div className="flex gap-3 pt-4">
                                     <button 
                                         onClick={() => handleProcess('Rejected')}
-                                        className="flex-1 py-4 bg-red-600/20 text-red-500 rounded-lg text-xs font-black hover:bg-red-600/30 transition-all"
+                                        className="flex-1 py-4 bg-rose-50 text-rose-600 rounded-lg text-xs font-black hover:bg-rose-100 transition-all"
                                     >
                                         Reject
                                     </button>
                                     <button 
                                         onClick={() => handleProcess('Paid')}
-                                        className="flex-[2] py-4 bg-emerald-500 text-white rounded-lg text-xs font-black hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20"
+                                        className="flex-[2] py-4 bg-emerald-600 text-white rounded-lg text-xs font-black hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200"
                                     >
                                         Mark as Paid
                                     </button>

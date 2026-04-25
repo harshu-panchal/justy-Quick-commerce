@@ -1,6 +1,7 @@
 import { Router } from "express";
 import * as executiveAuthController from "../modules/executive/controllers/executiveAuthController";
 import * as executiveController from "../modules/executive/controllers/executiveController";
+import * as executiveKycFieldController from "../modules/admin/controllers/adminExecutiveKycFieldController";
 import { authenticate, requireUserType } from "../middleware/auth";
 
 const router = Router();
@@ -18,6 +19,7 @@ router.use(requireUserType("Executive"));
 // Profile
 router.patch("/profile", executiveAuthController.updateProfile);
 router.patch("/profile/kyc", executiveAuthController.updateKYC);
+router.get("/kyc-fields", executiveKycFieldController.getExecutiveKycFields);
 
 // Dashboard & Stats
 router.get("/dashboard/stats", executiveController.getDashboardStats);

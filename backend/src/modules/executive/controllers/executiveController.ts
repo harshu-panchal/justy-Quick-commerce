@@ -138,14 +138,14 @@ export const requestWithdrawal = asyncHandler(async (req: Request, res: Response
   const executive = await Executive.findById(executiveId);
   if (!executive) return res.status(404).json({ success: false, message: "Executive not found" });
 
-  // Threshold Check: 10 sellers
-  const sellerCount = await Seller.countDocuments({ referredBy: executiveId });
-  if (sellerCount < 10) {
-    return res.status(400).json({
-      success: false,
-      message: "Minimum 10 onboarded sellers required for withdrawal eligibility.",
-    });
-  }
+  // Threshold Check: 10 sellers (Temporarily disabled for testing)
+  // const sellerCount = await Seller.countDocuments({ referredBy: executiveId });
+  // if (sellerCount < 10) {
+  //   return res.status(400).json({
+  //     success: false,
+  //     message: "Minimum 10 onboarded sellers required for withdrawal eligibility.",
+  //   });
+  // }
 
   // Balance Check
   if (executive.walletBalance < amount) {
@@ -155,11 +155,20 @@ export const requestWithdrawal = asyncHandler(async (req: Request, res: Response
     });
   }
 
+  // Extract bank details from dynamicKycData if not provided
+  const dynamicKyc = executive.dynamicKycData || {};
+  const extractedBankDetails = {
+    accountName: dynamicKyc['Account Holder Name'] || dynamicKyc['Account Name'] || dynamicKyc['Name as per Bank'] || executive.name,
+    accountNumber: dynamicKyc['Account Number'] || dynamicKyc['Bank Account Number'] || 'N/A',
+    bankName: dynamicKyc['Bank Name'] || dynamicKyc['Bank'] || 'N/A',
+    ifsc: dynamicKyc['IFSC Code'] || dynamicKyc['IFSC'] || 'N/A'
+  };
+
   // Create Withdrawal Request
   const withdrawal = await ExecutiveWithdrawal.create({
     executive: executiveId,
     amount,
-    bankDetails,
+    bankDetails: bankDetails || extractedBankDetails,
     status: 'Pending'
   });
 

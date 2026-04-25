@@ -264,6 +264,13 @@ export default function AdminWallet() {
           color="text-amber-600"
           bg="bg-amber-50"
         />
+        <StatsCard
+          title="Executive Pending Payouts"
+          value={`₹${stats?.executivePendingPayouts?.toLocaleString("en-IN") || "0"}`}
+          icon={WalletIcon}
+          color="text-teal-600"
+          bg="bg-teal-50"
+        />
       </div>
 
       {/* Tabs & Content */}
@@ -304,6 +311,7 @@ export default function AdminWallet() {
                   <option value="">All Users</option>
                   <option value="SELLER">Sellers</option>
                   <option value="DELIVERY_BOY">Delivery Partners</option>
+                  <option value="EXECUTIVE">Field Executives</option>
                 </select>
                 <select
                   className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"

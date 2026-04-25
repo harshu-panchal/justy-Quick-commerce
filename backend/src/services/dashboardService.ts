@@ -5,6 +5,8 @@ import Product from "../models/Product";
 import Order from "../models/Order";
 // import OrderItem from "../models/OrderItem";
 // import Seller from "../models/Seller";
+import Executive from "../models/Executive";
+import ExecutiveWithdrawal from "../models/ExecutiveWithdrawal";
 
 export interface DashboardStats {
   totalUser: number;
@@ -19,6 +21,8 @@ export interface DashboardStats {
   lowStockProducts: number;
   totalRevenue: number;
   avgCompletedOrderValue: number;
+  totalExecutives: number;
+  pendingExecutiveWithdrawals: number;
 }
 
 export interface SalesData {
@@ -52,6 +56,8 @@ export const getDashboardStats = async (): Promise<DashboardStats> => {
       lowStockProducts,
       revenueData,
       avgOrderValue,
+      totalExecutives,
+      pendingExecutiveWithdrawals,
     ] = await Promise.all([
       Customer.countDocuments({ status: "Active" }).catch(() => 0),
       Category.countDocuments().catch(() => 0),
@@ -76,6 +82,8 @@ export const getDashboardStats = async (): Promise<DashboardStats> => {
         { $match: { status: "Delivered", paymentStatus: "Paid" } },
         { $group: { _id: null, avg: { $avg: { $ifNull: ["$total", 0] } } } },
       ]).catch(() => []),
+      Executive.countDocuments().catch(() => 0),
+      ExecutiveWithdrawal.countDocuments({ status: 'Pending' }).catch(() => 0),
     ]);
 
     const totalRevenue = revenueData[0]?.total || 0;
@@ -94,6 +102,8 @@ export const getDashboardStats = async (): Promise<DashboardStats> => {
       lowStockProducts: lowStockProducts || 0,
       totalRevenue: totalRevenue || 0,
       avgCompletedOrderValue: Math.round((avgCompletedOrderValue || 0) * 100) / 100,
+      totalExecutives: totalExecutives || 0,
+      pendingExecutiveWithdrawals: pendingExecutiveWithdrawals || 0,
     };
   } catch (error) {
     console.error("Error fetching dashboard stats:", error);
@@ -111,6 +121,8 @@ export const getDashboardStats = async (): Promise<DashboardStats> => {
       lowStockProducts: 0,
       totalRevenue: 0,
       avgCompletedOrderValue: 0,
+      totalExecutives: 0,
+      pendingExecutiveWithdrawals: 0,
     };
   }
 };

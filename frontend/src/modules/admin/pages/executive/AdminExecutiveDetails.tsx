@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState } from 'react';
 import toast from 'react-hot-toast';
+import { getExecutiveKycFields } from '../../../../services/api/admin/executiveKycFieldService';
+import { useEffect, useState } from 'react';
 
 interface AdminExecutiveDetailsProps {
     executive: any;
@@ -12,6 +13,21 @@ export default function AdminExecutiveDetails({ executive, onClose, onUpdate }: 
     const [rejectionMode, setRejectionMode] = useState(false);
     const [rejectionReason, setRejectionReason] = useState('');
     const [submitting, setSubmitting] = useState(false);
+    const [fieldDefinitions, setFieldDefinitions] = useState<any[]>([]);
+
+    useEffect(() => {
+        const fetchFieldDefs = async () => {
+            try {
+                const res = await getExecutiveKycFields();
+                if (res.success) {
+                    setFieldDefinitions(res.data);
+                }
+            } catch (error) {
+                console.error("Failed to fetch field definitions", error);
+            }
+        };
+        fetchFieldDefs();
+    }, []);
 
     const handleApprove = async () => {
         if (!window.confirm('Are you sure you want to approve this executive?')) return;
@@ -76,62 +92,57 @@ export default function AdminExecutiveDetails({ executive, onClose, onUpdate }: 
                         <InfoCard label="Mobile Number" value={executive.mobile} />
                         <InfoCard label="Email Address" value={executive.email || 'N/A'} />
                         <InfoCard label="Referral Code" value={executive.referralCode} />
-                        <InfoCard label="Status" value={executive.status} statusColor={executive.status === 'Active' ? 'text-emerald-600' : 'text-red-600'} />
+                        <InfoCard label="Total Earnings" value={`₹${executive.walletBalance}`} statusColor="text-emerald-600" />
                         <InfoCard label="KYC Status" value={executive.kycStatus} statusColor={executive.kycStatus === 'Approved' ? 'text-emerald-600' : 'text-orange-600'} />
                     </section>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                        {/* KYC Documents */}
-                        <div className="space-y-4">
-                            <h3 className="text-xs font-black text-neutral-400 uppercase tracking-widest ml-1">Identity Documents</h3>
-                            <div className="bg-white p-6 rounded-lg border border-neutral-200 shadow-sm space-y-6">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-1">
-                                        <p className="text-[10px] font-black text-neutral-400 uppercase">Aadhar Number</p>
-                                        <p className="font-bold text-neutral-900">{executive.kycDetails?.aadharNumber || 'N/A'}</p>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <p className="text-[10px] font-black text-neutral-400 uppercase">PAN Number</p>
-                                        <p className="font-bold text-neutral-900">{executive.kycDetails?.panNumber || 'N/A'}</p>
-                                    </div>
-                                </div>
-                                
-                                <div className="grid grid-cols-2 gap-4">
-                                    <DocPreview label="Aadhar Front" url={executive.kycDetails?.aadharFront} />
-                                    <DocPreview label="Aadhar Back" url={executive.kycDetails?.aadharBack} />
-                                    <DocPreview label="PAN Card" url={executive.kycDetails?.panCard} />
-                                    <DocPreview label="Resume" url={executive.kycDetails?.resume} />
-                                    <DocPreview label="Bank Passbook" url={executive.kycDetails?.bankPassbook} className="col-span-2" />
-                                </div>
-                            </div>
+                    {executive.rejectionReason && (
+                        <div className="p-4 bg-red-50 rounded-lg border border-red-100 space-y-1">
+                            <p className="text-[10px] font-black text-red-600 uppercase tracking-widest">Rejection Reason</p>
+                            <p className="text-xs font-bold text-red-900 italic">"{executive.rejectionReason}"</p>
                         </div>
+                    )}
 
-                        {/* Bank Details */}
-                        <div className="space-y-4">
-                            <h3 className="text-xs font-black text-neutral-400 uppercase tracking-widest ml-1">Bank Account Information</h3>
-                            <div className="bg-white p-6 rounded-lg border border-neutral-200 shadow-sm space-y-6">
-                                <div className="space-y-4">
-                                    <InfoLine label="Account Holder" value={executive.bankDetails?.accountHolderName} />
-                                    <InfoLine label="Bank Name" value={executive.bankDetails?.bankName} />
-                                    <InfoLine label="Account Number" value={executive.bankDetails?.accountNumber} />
-                                    <InfoLine label="IFSC Code" value={executive.bankDetails?.ifscCode} />
-                                </div>
-                                <div className="p-4 bg-emerald-50 rounded-lg border border-emerald-100">
-                                    <p className="text-[10px] font-black text-emerald-700 uppercase tracking-tight">Earnings Info</p>
-                                    <div className="flex justify-between items-end mt-1">
-                                        <p className="text-2xl font-black text-emerald-900">₹{executive.walletBalance}</p>
-                                        <p className="text-[10px] font-bold text-emerald-600 italic">Total Wallet Balance</p>
+                    {/* Dynamic KYC Data Sections */}
+                    <div className="space-y-8">
+                        {/* Group fields by section if possible, otherwise list all */}
+                        {(() => {
+                            const sections = Array.from(new Set(fieldDefinitions.map(f => f.section || 'General Details')));
+                            
+                            return sections.map(section => {
+                                const sectionFields = fieldDefinitions.filter(f => (f.section || 'General Details') === section);
+                                const hasData = sectionFields.some(f => executive.dynamicKycData?.[f._id]);
+
+                                if (!hasData) return null;
+
+                                return (
+                                    <div key={section} className="space-y-4">
+                                        <h3 className="text-xs font-black text-neutral-400 uppercase tracking-widest ml-1">{section}</h3>
+                                        <div className="bg-white p-6 rounded-lg border border-neutral-200 shadow-sm">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                                                {sectionFields.map(fieldDef => {
+                                                    const value = executive.dynamicKycData?.[fieldDef._id];
+                                                    if (!value) return null;
+
+                                                    if (fieldDef.type === 'file') {
+                                                        return <DocPreview key={fieldDef._id} label={fieldDef.label} url={value} className="col-span-1" />;
+                                                    }
+
+                                                    return (
+                                                        <div key={fieldDef._id} className="space-y-1">
+                                                            <p className="text-[10px] font-black text-neutral-400 uppercase">{fieldDef.label}</p>
+                                                            <p className="font-bold text-neutral-900">
+                                                                {typeof value === 'boolean' ? (value ? 'YES' : 'NO') : value}
+                                                            </p>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                            </div>
-
-                            {executive.rejectionReason && (
-                                <div className="p-4 bg-red-50 rounded-lg border border-red-100 space-y-1">
-                                    <p className="text-[10px] font-black text-red-600 uppercase tracking-widest">Previous Rejection Reason</p>
-                                    <p className="text-xs font-bold text-red-900 italic">"{executive.rejectionReason}"</p>
-                                </div>
-                            )}
-                        </div>
+                                );
+                            });
+                        })()}
                     </div>
                 </div>
 

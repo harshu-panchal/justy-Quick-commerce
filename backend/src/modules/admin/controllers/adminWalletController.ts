@@ -9,6 +9,9 @@ import {
   rejectWithdrawal,
   completeWithdrawal,
 } from "./adminWithdrawalController";
+import Executive from "../../../models/Executive";
+import ExecutiveWithdrawal from "../../../models/ExecutiveWithdrawal";
+import ExecutiveWalletTransaction from "../../../models/ExecutiveWalletTransaction";
 
 /**
  * Get Financial Dashboard Stats
@@ -42,6 +45,12 @@ export const getFinancialDashboard = asyncHandler(
     ]);
     const realTimeDeliveryPendingPayouts = deliveryBalanceResult.length > 0 ? deliveryBalanceResult[0].totalBalance : 0;
     const realTimePendingFromDeliveryBoy = deliveryBalanceResult.length > 0 ? deliveryBalanceResult[0].totalPendingDebt : 0;
+    
+    // 3. Calculate Real-time Executive Pending Payouts
+    const executiveBalanceResult = await Executive.aggregate([
+      { $group: { _id: null, total: { $sum: "$walletBalance" } } },
+    ]);
+    const realTimeExecutivePending = executiveBalanceResult.length > 0 ? executiveBalanceResult[0].total : 0;
 
     if (platformWallet) {
       // Use platform wallet for overall earnings but real-time aggregates for payouts
@@ -57,6 +66,7 @@ export const getFinancialDashboard = asyncHandler(
           pendingFromDeliveryBoy: realTimePendingFromDeliveryBoy,
           sellerPendingPayouts: realTimeSellerPending,
           deliveryBoyPendingPayouts: realTimeDeliveryPendingPayouts,
+          executivePendingPayouts: realTimeExecutivePending,
 
           // Legacy fields for backward compatibility
           totalGMV: platformWallet.totalPlatformEarning,
@@ -67,7 +77,7 @@ export const getFinancialDashboard = asyncHandler(
           // Additional stats
           pendingWithdrawalsCount: await WithdrawRequest.countDocuments({
             status: "Pending",
-          }),
+          }) + await ExecutiveWithdrawal.countDocuments({ status: "Pending" }),
         },
       });
     }
@@ -183,10 +193,11 @@ export const getFinancialDashboard = asyncHandler(
         sellerPendingPayouts,
         deliveryPendingPayouts,
         pendingAmountFromDeliveryBoy,
+        executivePendingPayouts: realTimeExecutivePending,
         // Legacy field just in case
         pendingWithdrawalsCount: await WithdrawRequest.countDocuments({
           status: "Pending",
-        }),
+        }) + await ExecutiveWithdrawal.countDocuments({ status: "Pending" }),
       },
     });
   },
@@ -269,43 +280,120 @@ export const getWalletTransactions = asyncHandler(
 
     const skip = (Number(page) - 1) * Number(limit);
 
-    const transactions = await WalletTransaction.find(query)
-      .populate({
-        path: "userId", // This will populate based on refPath 'userType'
-        select: "name firstName lastName storeName sellerName mobile email",
-      })
-      .populate("relatedOrder", "orderNumber")
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(Number(limit));
+    let transactions: any[] = [];
+    let total = 0;
 
-    const total = await WalletTransaction.countDocuments(query);
+    // Build specific filters for different models
+    const walletFilter: any = { ...query };
+    const executiveFilter: any = {};
+    if (type) executiveFilter.type = type;
+
+    if (userType === 'EXECUTIVE') {
+      transactions = await ExecutiveWalletTransaction.find(executiveFilter)
+        .populate({
+          path: "executive",
+          select: "name mobile email",
+        })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(Number(limit));
+      
+      total = await ExecutiveWalletTransaction.countDocuments(executiveFilter);
+      
+      // Normalize executive transactions to match WalletTransaction format
+      transactions = transactions.map(t => ({
+        ...t.toObject(),
+        userId: t.executive,
+        userType: 'EXECUTIVE',
+        relatedOrder: t.referenceId && t.source === 'Commission' ? { orderNumber: 'Referral' } : undefined
+      }));
+    } else if (userType && userType !== 'EXECUTIVE') {
+      transactions = await WalletTransaction.find(walletFilter)
+        .populate({
+          path: "userId",
+          select: "name firstName lastName storeName sellerName mobile email",
+        })
+        .populate("relatedOrder", "orderNumber")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(Number(limit));
+      
+      total = await WalletTransaction.countDocuments(walletFilter);
+    } else {
+      // Fetch from both and merge if no specific userType filter is applied
+      // Note: WalletTransaction might contain some 'EXECUTIVE' records if created there
+      const [walletTrx, executiveTrx] = await Promise.all([
+        WalletTransaction.find(walletFilter)
+          .populate({
+            path: "userId",
+            select: "name firstName lastName storeName sellerName mobile email",
+          })
+          .populate("relatedOrder", "orderNumber")
+          .sort({ createdAt: -1 })
+          .limit(Number(limit) + skip),
+        ExecutiveWalletTransaction.find(executiveFilter)
+          .populate({
+            path: "executive",
+            select: "name mobile email",
+          })
+          .sort({ createdAt: -1 })
+          .limit(Number(limit) + skip)
+      ]);
+
+      const normalizedExecutiveTrx = executiveTrx.map(t => ({
+        ...t.toObject(),
+        userId: t.executive,
+        userType: 'EXECUTIVE',
+        relatedOrder: t.referenceId && t.source === 'Commission' ? { orderNumber: 'Referral' } : undefined
+      }));
+
+      const allTrx = [...walletTrx, ...normalizedExecutiveTrx].sort((a: any, b: any) => 
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+
+      transactions = allTrx.slice(skip, skip + Number(limit));
+      total = await WalletTransaction.countDocuments(walletFilter) + await ExecutiveWalletTransaction.countDocuments(executiveFilter);
+    }
 
     // Format transactions to ensure user name is accessible
     const formattedTransactions = transactions.map((t: any) => {
-      let userName = "Unknown";
-      if (t.userId) {
+      let userName = "Unknown User";
+      
+      // Handle both normalized (t.userId) and raw (t.executive) formats
+      // and check if they are actually populated (not just an ID)
+      const userData = t.userId || t.executive;
+      const isPopulated = userData && 
+                         typeof userData === 'object' && 
+                         !mongoose.Types.ObjectId.isValid(userData.toString()) &&
+                         (userData.name || userData.storeName || userData.sellerName || userData.firstName);
+
+      if (isPopulated) {
         if (t.userType === "SELLER") {
-          userName = t.userId.storeName || t.userId.sellerName;
+          userName = userData.storeName || userData.sellerName || "Unnamed Seller";
+        } else if (t.userType === "EXECUTIVE") {
+          userName = userData.name || "Unnamed Executive";
         } else {
-          userName =
-            t.userId.name || t.userId.firstName + " " + t.userId.lastName;
+          userName = userData.name || 
+                     (userData.firstName ? `${userData.firstName} ${userData.lastName || ""}`.trim() : "Unnamed Delivery Partner");
         }
+      } else if (userData) {
+        // Fallback for ID-only data
+        userName = `User (${userData.toString().substring(0, 8)}...)`;
       }
 
       return {
         _id: t._id,
         type: t.type,
-        userType: t.userType,
+        userType: t.userType || 'Unknown',
         userName: userName,
-        userId: t.userId?._id,
-        amount: t.amount,
-        description: t.description,
-        status: t.status,
+        userId: isPopulated ? (userData._id || userData.id) : userData,
+        amount: t.amount || 0,
+        description: t.description || "No description",
+        status: t.status || "Completed",
         createdAt: t.createdAt,
         reference: t.reference,
-        relatedOrder: t.relatedOrder
-          ? { orderNumber: t.relatedOrder.orderNumber }
+        relatedOrder: t.relatedOrder && typeof t.relatedOrder === 'object' && 'orderNumber' in t.relatedOrder
+          ? { orderNumber: (t.relatedOrder as any).orderNumber }
           : undefined,
       };
     });
@@ -383,8 +471,8 @@ export const getSellerTransactions = asyncHandler(
  * Process Withdrawal Wrapper (to match frontend service expectation)
  */
 export const processWithdrawalWrapper = asyncHandler(
-  async (req: Request, res: Response) => {
-    const { requestId, action, remark, transactionReference } = req.body;
+  async (req: Request, res: Response, next: any) => {
+    const { requestId, action, remark, transactionReference, userType } = req.body;
 
     if (!requestId || !action) {
       return res.status(400).json({
@@ -393,7 +481,32 @@ export const processWithdrawalWrapper = asyncHandler(
       });
     }
 
-    // Mock the params for the existing controllers
+    // Determine if this is an executive withdrawal
+    let isExecutive = userType === 'EXECUTIVE';
+    
+    if (!userType) {
+      const exists = await ExecutiveWithdrawal.exists({ _id: requestId });
+      if (exists) isExecutive = true;
+    }
+
+    if (isExecutive) {
+      const { processWithdrawal: processExecWithdrawal } = await import("./adminExecutiveController");
+      
+      // Map wallet actions to executive statuses
+      let execStatus = '';
+      if (action === 'Approve') execStatus = 'Approved';
+      else if (action === 'Reject') execStatus = 'Rejected';
+      else if (action === 'Complete') execStatus = 'Paid';
+
+      req.params.id = requestId;
+      req.body.status = execStatus;
+      req.body.adminNote = remark;
+      req.body.transactionId = transactionReference;
+      
+      return processExecWithdrawal(req, res, next);
+    }
+
+    // Standard withdrawal processing (Sellers/Delivery Boys)
     req.params.id = requestId;
 
     if (action === "Approve") {

@@ -23,7 +23,7 @@ const WalletTransactionSchema = new Schema<IWalletTransaction>(
         },
         userType: {
             type: String,
-            enum: ['SELLER', 'DELIVERY_BOY', 'CUSTOMER'],
+            enum: ['SELLER', 'DELIVERY_BOY', 'CUSTOMER', 'EXECUTIVE'],
             required: [true, 'User type is required'],
         },
         amount: {

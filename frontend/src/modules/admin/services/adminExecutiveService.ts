@@ -32,3 +32,7 @@ export const processWithdrawal = async (id: string, data: { status: string, admi
     const response = await api.put(`${API_URL}/withdrawals/${id}/process`, data);
     return response.data;
 };
+export const deleteExecutive = async (id: string) => {
+    const response = await api.delete(`${API_URL}/${id}`);
+    return response.data;
+};

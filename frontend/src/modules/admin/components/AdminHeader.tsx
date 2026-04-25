@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import jyastiLogo from '@assets/jyastiLogo.png';
+import { getDashboardStats } from '../../../services/api/admin/adminDashboardService';
 
 interface AdminHeaderProps {
   onMenuClick: () => void;
@@ -15,6 +16,7 @@ export default function AdminHeader({ onMenuClick, isSidebarOpen }: AdminHeaderP
   const [showNotificationsDropdown, setShowNotificationsDropdown] = useState(false);
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [pendingPayouts, setPendingPayouts] = useState(0);
   const notificationsRef = useRef<HTMLDivElement>(null);
 
   const isActive = (path: string) => location.pathname.includes(path);
@@ -30,6 +32,23 @@ export default function AdminHeader({ onMenuClick, isSidebarOpen }: AdminHeaderP
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
+  }, []);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await getDashboardStats();
+        if (res.success) {
+          setPendingPayouts(res.data.pendingExecutiveWithdrawals || 0);
+        }
+      } catch (error) {
+        console.error("Failed to fetch notification stats", error);
+      }
+    };
+    fetchStats();
+    // Refresh every minute
+    const interval = setInterval(fetchStats, 60000);
+    return () => clearInterval(interval);
   }, []);
 
   const handleLogout = () => {
@@ -195,15 +214,42 @@ export default function AdminHeader({ onMenuClick, isSidebarOpen }: AdminHeaderP
                 <path d="M18 8A6 6 0 0 0 6 8C6 11.3137 4 14 4 17H20C20 14 18 11.3137 18 8Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 <path d="M13.73 21C13.5542 21.3031 13.3019 21.5547 12.9982 21.7295C12.6946 21.9044 12.3504 21.9965 12 21.9965C11.6496 21.9965 11.3054 21.9044 11.0018 21.7295C10.6982 21.5547 10.4458 21.3031 10.27 21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
-              <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
+              {pendingPayouts > 0 && (
+                <span className="absolute top-0 right-0 w-4 h-4 bg-red-500 rounded-full text-[10px] text-white flex items-center justify-center font-black animate-pulse">
+                  {pendingPayouts}
+                </span>
+              )}
             </button>
             {showNotificationsDropdown && (
               <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-neutral-200 py-2 z-50 max-h-96 overflow-y-auto">
                 <div className="px-4 py-2 border-b border-neutral-200">
                   <h3 className="text-sm font-semibold text-neutral-900">Notifications</h3>
                 </div>
-                <div className="py-4 px-4 text-center text-sm text-neutral-500">
-                  <p>No new notifications</p>
+                <div className="py-2">
+                  {pendingPayouts > 0 ? (
+                    <button 
+                      onClick={() => {
+                        navigate('/admin/executives/withdrawals');
+                        setShowNotificationsDropdown(false);
+                      }}
+                      className="w-full px-4 py-3 hover:bg-neutral-50 flex items-start gap-3 transition-colors text-left"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center text-orange-600 shrink-0">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                          <rect x="2" y="5" width="20" height="14" rx="2" />
+                          <line x1="2" y1="10" x2="22" y2="10" />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="text-xs font-black text-neutral-900">Pending Payout Requests</p>
+                        <p className="text-[10px] font-bold text-neutral-500">There are {pendingPayouts} new payout requests to process.</p>
+                      </div>
+                    </button>
+                  ) : (
+                    <div className="py-8 px-4 text-center text-sm text-neutral-500">
+                      <p>No new notifications</p>
+                    </div>
+                  )}
                 </div>
                 <div className="px-4 py-2 border-t border-neutral-200">
                   <button

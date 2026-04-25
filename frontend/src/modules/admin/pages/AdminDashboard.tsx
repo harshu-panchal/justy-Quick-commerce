@@ -350,6 +350,23 @@ export default function AdminDashboard() {
     </svg>
   );
 
+  const executiveIcon = (
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+
+  const payoutIcon = (
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="2" y="5" width="20" height="14" rx="2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <line x1="2" y1="10" x2="22" y2="10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M7 15h.01M11 15h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+
   // Transform sales analytics data for charts
   const salesThisMonth = salesAnalytics?.thisPeriod || [];
   const salesLastMonth = salesAnalytics?.lastPeriod || [];
@@ -509,6 +526,20 @@ export default function AdminDashboard() {
           title="Product low on Stock"
           value={stats.lowStockProducts}
           accentColor="#eab308"
+        />
+        <DashboardCard
+          icon={executiveIcon}
+          title="Total Executives"
+          value={stats.totalExecutives}
+          accentColor="#0ea5e9"
+          onClick={() => window.location.href = '/admin/executives'}
+        />
+        <DashboardCard
+          icon={payoutIcon}
+          title="Pending Payouts"
+          value={stats.pendingExecutiveWithdrawals}
+          accentColor="#f97316"
+          onClick={() => window.location.href = '/admin/executives/withdrawals'}
         />
       </div>
 

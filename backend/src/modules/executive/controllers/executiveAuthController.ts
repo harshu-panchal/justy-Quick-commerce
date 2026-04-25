@@ -100,14 +100,23 @@ export const verifyOTP = asyncHandler(async (req: Request, res: Response) => {
  * Register Executive (Step 1)
  */
 export const register = asyncHandler(async (req: Request, res: Response) => {
-  const { name, email, mobile, alternateMobile, workExperience } = req.body;
+  const { name, email, mobile, alternateMobile, workExperience, otp } = req.body;
 
   console.log('Registering Executive:', { name, email, mobile });
 
-  if (!name || !email || !mobile) {
+  if (!name || !email || !mobile || !otp) {
     return res.status(400).json({
       success: false,
-      message: "Name, email, and mobile are required",
+      message: "Name, email, mobile, and OTP are required",
+    });
+  }
+
+  // Verify OTP
+  const isValid = await verifyOTPService(mobile, otp, "Executive");
+  if (!isValid) {
+    return res.status(401).json({
+      success: false,
+      message: "Invalid or expired OTP",
     });
   }
 
@@ -175,7 +184,8 @@ export const updateKYC = asyncHandler(async (req: Request, res: Response) => {
     bankName,
     ifscCode,
     accountNumber,
-    accountHolderName
+    accountHolderName,
+    dynamicKycData
   } = req.body;
 
   // Validation
@@ -217,6 +227,10 @@ export const updateKYC = asyncHandler(async (req: Request, res: Response) => {
     ...(accountNumber && { accountNumber }),
     ...(accountHolderName && { accountHolderName }),
   };
+  
+  if (dynamicKycData) {
+    executive.dynamicKycData = dynamicKycData;
+  }
   
   executive.kycStatus = 'Submitted';
   await executive.save();

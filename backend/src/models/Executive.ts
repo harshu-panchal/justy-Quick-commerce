@@ -37,6 +37,7 @@ export interface IExecutive extends Document {
   status: 'Pending' | 'Active' | 'Suspended';
   isOtpVerified: boolean;
   isActive: boolean; // Legacy support
+  dynamicKycData?: Record<string, any>;
   
   createdAt: Date;
   updatedAt: Date;
@@ -137,6 +138,10 @@ const executiveSchema = new Schema<IExecutive>(
       type: Boolean,
       default: true,
     },
+    dynamicKycData: {
+      type: Schema.Types.Mixed,
+      default: {},
+    },
   },
   {
     timestamps: true,
@@ -167,5 +172,10 @@ executiveSchema.pre('save', async function(next) {
 });
 
 const Executive = mongoose.models.Executive || model<IExecutive>("Executive", executiveSchema);
+
+// Register Alias for refPath 'EXECUTIVE'
+if (!(mongoose.models.EXECUTIVE as mongoose.Model<IExecutive>)) {
+  mongoose.model<IExecutive>("EXECUTIVE", executiveSchema, "executives");
+}
 
 export default Executive;

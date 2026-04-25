@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import api from '../../../services/api/config';
+import { getExecutiveKycFieldsForExecutive } from '../../../services/api/admin/executiveKycFieldService';
 
 export default function ExecutiveKYC() {
     const navigate = useNavigate();
@@ -28,6 +29,9 @@ export default function ExecutiveKYC() {
         accountNumber: '',
         accountHolderName: ''
     });
+
+    const [dynamicFields, setDynamicFields] = useState<any[]>([]);
+    const [dynamicData, setDynamicData] = useState<Record<string, any>>({});
 
     useEffect(() => {
         const fetchStats = async () => {
@@ -67,7 +71,20 @@ export default function ExecutiveKYC() {
                 setLoading(false);
             }
         };
+
+        const fetchDynamicFields = async () => {
+            try {
+                const res = await getExecutiveKycFieldsForExecutive();
+                if (res.success) {
+                    setDynamicFields(res.data.filter((f: any) => f.status === 'Active'));
+                }
+            } catch (error) {
+                console.error("Error fetching dynamic fields:", error);
+            }
+        };
+
         fetchStats();
+        fetchDynamicFields();
     }, [navigate]);
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: string) => {
@@ -110,38 +127,24 @@ export default function ExecutiveKYC() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         
-        // Validation
-        if (!kycData.aadharNumber || !kycData.panNumber || !kycData.aadharFront || !kycData.aadharBack || 
-            !kycData.panCard || !kycData.resume || !kycData.bankPassbook) {
-            toast.error('Please upload all mandatory documents');
+        // Dynamic fields validation
+        for (const field of dynamicFields) {
+            if (field.isRequired && !dynamicData[field._id]) {
+                toast.error(`${field.label} is required`);
+                return;
+            }
+        }
+
+        if (Object.keys(dynamicData).length === 0 && dynamicFields.length > 0) {
+            toast.error('Please fill in the required fields');
             return;
         }
 
-        if (!bankDetails.bankName || !bankDetails.ifscCode || !bankDetails.accountNumber || !bankDetails.accountHolderName) {
-            toast.error('Please fill all bank details');
-            return;
-        }
-
-        if (!/^[0-9]{12}$/.test(kycData.aadharNumber)) {
-            toast.error('Aadhar number must be exactly 12 digits');
-            return;
-        }
-
-        if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(kycData.panNumber)) {
-            toast.error('Invalid PAN card format');
-            return;
-        }
-
-        if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(bankDetails.ifscCode)) {
-            toast.error('Invalid IFSC code format (11 characters)');
-            return;
-        }
 
         setSubmitting(true);
         try {
             await updateKYC({
-                ...kycData,
-                ...bankDetails
+                dynamicKycData: dynamicData
             });
             toast.success('KYC details submitted for verification');
             navigate('/executive/profile');
@@ -165,162 +168,131 @@ export default function ExecutiveKYC() {
     return (
         <ExecutiveLayout title="KYC Verification" showBack>
             <form onSubmit={handleSubmit} className="space-y-8 pb-10">
-                {/* ID Proofs Section */}
-                <div className="space-y-6">
-                    <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-emerald-100 text-emerald-600 rounded-lg flex items-center justify-center font-black">1</div>
-                        <h3 className="text-sm font-black text-neutral-900 uppercase tracking-widest">Identity Proofs</h3>
-                    </div>
-
-                    <div className="bg-white p-6 rounded-lg border border-neutral-200 shadow-sm space-y-4">
-                        <div className="space-y-1">
-                            <label className="text-[10px] font-black text-neutral-400 uppercase ml-1">Aadhar Number</label>
-                            <input
-                                type="text"
-                                value={kycData.aadharNumber}
-                                onChange={(e) => {
-                                    const val = e.target.value.replace(/[^0-9]/g, '').slice(0, 12);
-                                    setKycData({...kycData, aadharNumber: val});
-                                }}
-                                placeholder="12-digit Aadhar Number"
-                                className="w-full px-4 py-3 bg-neutral-50 border-2 border-neutral-100 rounded-lg focus:border-emerald-500 focus:bg-white outline-none transition-all font-bold text-sm"
-                                required
-                                maxLength={12}
-                            />
+                {/* Grouped Dynamic Sections */}
+                {Object.entries(
+                    dynamicFields.reduce((acc: any, field: any) => {
+                        const section = field.section || 'General Information';
+                        if (!acc[section]) acc[section] = [];
+                        acc[section].push(field);
+                        return acc;
+                    }, {})
+                ).map(([sectionName, fields]: [string, any], index) => (
+                    <div key={sectionName} className="space-y-6">
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-emerald-100 text-emerald-600 rounded-lg flex items-center justify-center font-black">{index + 1}</div>
+                            <h3 className="text-sm font-black text-neutral-900 uppercase tracking-widest">{sectionName}</h3>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-3">
-                            <UploadCard 
-                                label="Aadhar Front" 
-                                value={kycData.aadharFront} 
-                                field="aadharFront" 
-                                isUploading={uploadingField === 'aadharFront'} 
-                                onUpload={handleFileUpload} 
-                                accept=".jpg,.jpeg,.png"
-                                helpText="JPG/PNG"
-                            />
-                            <UploadCard 
-                                label="Aadhar Back" 
-                                value={kycData.aadharBack} 
-                                field="aadharBack" 
-                                isUploading={uploadingField === 'aadharBack'} 
-                                onUpload={handleFileUpload} 
-                                accept=".jpg,.jpeg,.png"
-                                helpText="JPG/PNG"
-                            />
-                        </div>
+                        <div className="bg-white p-6 rounded-lg border border-neutral-200 shadow-sm space-y-5">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                {fields.map((field: any) => {
+                                    // Check dependency
+                                    if (field.dependsOn?.fieldId) {
+                                        const parentValue = dynamicData[field.dependsOn.fieldId];
+                                        if (parentValue !== field.dependsOn.value) return null;
+                                    }
 
-                        <div className="space-y-1">
-                            <label className="text-[10px] font-black text-neutral-400 uppercase ml-1">PAN Number</label>
-                            <input
-                                type="text"
-                                value={kycData.panNumber}
-                                onChange={(e) => {
-                                    const val = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10);
-                                    setKycData({...kycData, panNumber: val});
-                                }}
-                                placeholder="10-digit PAN Number"
-                                className="w-full px-4 py-3 bg-neutral-50 border-2 border-neutral-100 rounded-lg focus:border-emerald-500 focus:bg-white outline-none transition-all font-bold text-sm"
-                                required
-                                maxLength={10}
-                            />
-                        </div>
+                                    return (
+                                        <div key={field._id} className={`space-y-1 ${field.type === 'file' ? 'md:col-span-1' : ''}`}>
+                                            <label className="text-[10px] font-black text-neutral-400 uppercase ml-1">
+                                                {field.label} {field.isRequired && <span className="text-rose-500">*</span>}
+                                            </label>
+                                            
+                                            {field.type === 'text' && (
+                                                <input
+                                                    type="text"
+                                                    value={dynamicData[field._id] || ''}
+                                                    onChange={(e) => setDynamicData({...dynamicData, [field._id]: e.target.value})}
+                                                    placeholder={field.placeholder}
+                                                    className="w-full px-4 py-3 bg-neutral-50 border-2 border-neutral-100 rounded-lg focus:border-emerald-500 focus:bg-white outline-none transition-all font-bold text-sm"
+                                                    required={field.isRequired}
+                                                />
+                                            )}
 
-                        <UploadCard 
-                            label="PAN Card Photo" 
-                            value={kycData.panCard} 
-                            field="panCard" 
-                            isUploading={uploadingField === 'panCard'} 
-                            onUpload={handleFileUpload} 
-                            accept=".jpg,.jpeg,.png"
-                            helpText="JPG/PNG"
-                        />
-                    </div>
-                </div>
+                                            {field.type === 'number' && (
+                                                <input
+                                                    type="number"
+                                                    value={dynamicData[field._id] || ''}
+                                                    onChange={(e) => setDynamicData({...dynamicData, [field._id]: e.target.value})}
+                                                    placeholder={field.placeholder}
+                                                    className="w-full px-4 py-3 bg-neutral-50 border-2 border-neutral-100 rounded-lg focus:border-emerald-500 focus:bg-white outline-none transition-all font-bold text-sm"
+                                                    required={field.isRequired}
+                                                />
+                                            )}
 
-                {/* Professional Section */}
-                <div className="space-y-6">
-                    <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center font-black">2</div>
-                        <h3 className="text-sm font-black text-neutral-900 uppercase tracking-widest">Documents</h3>
-                    </div>
+                                            {field.type === 'select' && (
+                                                <select
+                                                    value={dynamicData[field._id] || ''}
+                                                    onChange={(e) => setDynamicData({...dynamicData, [field._id]: e.target.value})}
+                                                    className="w-full px-4 py-3 bg-neutral-50 border-2 border-neutral-100 rounded-lg focus:border-emerald-500 focus:bg-white outline-none transition-all font-bold text-sm appearance-none"
+                                                    required={field.isRequired}
+                                                >
+                                                    <option value="">Select {field.label}</option>
+                                                    {field.options?.map((opt: string) => (
+                                                        <option key={opt} value={opt}>{opt}</option>
+                                                    ))}
+                                                </select>
+                                            )}
 
-                    <div className="bg-white p-6 rounded-lg border border-neutral-200 shadow-sm space-y-4">
-                        <UploadCard 
-                            label="Resume / CV" 
-                            value={kycData.resume} 
-                            field="resume" 
-                            isUploading={uploadingField === 'resume'} 
-                            onUpload={handleFileUpload} 
-                            accept=".pdf"
-                            helpText="PDF ONLY"
-                        />
-                        <UploadCard 
-                            label="Bank Passbook / Cancelled Cheque" 
-                            value={kycData.bankPassbook} 
-                            field="bankPassbook" 
-                            isUploading={uploadingField === 'bankPassbook'} 
-                            onUpload={handleFileUpload} 
-                            accept=".jpg,.jpeg,.png"
-                            helpText="JPG/PNG"
-                        />
-                    </div>
-                </div>
+                                            {field.type === 'date' && (
+                                                <input
+                                                    type="date"
+                                                    value={dynamicData[field._id] || ''}
+                                                    onChange={(e) => setDynamicData({...dynamicData, [field._id]: e.target.value})}
+                                                    className="w-full px-4 py-3 bg-neutral-50 border-2 border-neutral-100 rounded-lg focus:border-emerald-500 focus:bg-white outline-none transition-all font-bold text-sm"
+                                                    required={field.isRequired}
+                                                />
+                                            )}
 
-                {/* Bank Details Section */}
-                <div className="space-y-6">
-                    <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center font-black">3</div>
-                        <h3 className="text-sm font-black text-neutral-900 uppercase tracking-widest">Settlement Bank Account</h3>
-                    </div>
+                                            {field.type === 'file' && (
+                                                <UploadCard 
+                                                    label={field.label}
+                                                    value={dynamicData[field._id]}
+                                                    field={field._id}
+                                                    isUploading={uploadingField === field._id}
+                                                    onUpload={async (e: any, fId: string) => {
+                                                        const file = e.target.files?.[0];
+                                                        if (!file) return;
+                                                        const formData = new FormData();
+                                                        formData.append('document', file);
+                                                        setUploadingField(fId);
+                                                        try {
+                                                            const response = await api.post('/upload/document', formData, {
+                                                                headers: { 'Content-Type': 'multipart/form-data' }
+                                                            });
+                                                            setDynamicData(prev => ({ ...prev, [fId]: response.data.data.url }));
+                                                            toast.success('File uploaded');
+                                                        } catch (error) {
+                                                            toast.error('Upload failed');
+                                                        } finally {
+                                                            setUploadingField(null);
+                                                        }
+                                                    }}
+                                                    accept="*"
+                                                    helpText="Document/Image"
+                                                />
+                                            )}
 
-                    <div className="bg-white p-6 rounded-lg border border-neutral-200 shadow-sm space-y-4">
-                        <div className="space-y-1">
-                            <label className="text-[10px] font-black text-neutral-400 uppercase ml-1">Account Holder Name</label>
-                            <input
-                                type="text"
-                                value={bankDetails.accountHolderName}
-                                onChange={(e) => setBankDetails({...bankDetails, accountHolderName: e.target.value})}
-                                placeholder="As per bank records"
-                                className="w-full px-4 py-3 bg-neutral-50 border-2 border-neutral-100 rounded-lg focus:border-emerald-500 focus:bg-white outline-none transition-all font-bold text-sm"
-                                required
-                            />
-                        </div>
-                        <div className="space-y-1">
-                            <label className="text-[10px] font-black text-neutral-400 uppercase ml-1">Bank Name</label>
-                            <input
-                                type="text"
-                                value={bankDetails.bankName}
-                                onChange={(e) => setBankDetails({...bankDetails, bankName: e.target.value})}
-                                className="w-full px-4 py-3 bg-neutral-50 border-2 border-neutral-100 rounded-lg focus:border-emerald-500 focus:bg-white outline-none transition-all font-bold text-sm"
-                                required
-                            />
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-black text-neutral-400 uppercase ml-1">Account Number</label>
-                                <input
-                                    type="text"
-                                    value={bankDetails.accountNumber}
-                                    onChange={(e) => setBankDetails({...bankDetails, accountNumber: e.target.value})}
-                                    className="w-full px-4 py-3 bg-neutral-50 border-2 border-neutral-100 rounded-lg focus:border-emerald-500 focus:bg-white outline-none transition-all font-bold text-sm"
-                                    required
-                                />
-                            </div>
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-black text-neutral-400 uppercase ml-1">IFSC Code</label>
-                                <input
-                                    type="text"
-                                    value={bankDetails.ifscCode}
-                                    onChange={(e) => setBankDetails({...bankDetails, ifscCode: e.target.value.toUpperCase().slice(0, 11)})}
-                                    className="w-full px-4 py-3 bg-neutral-50 border-2 border-neutral-100 rounded-lg focus:border-emerald-500 focus:bg-white outline-none transition-all font-bold text-sm"
-                                    required
-                                    maxLength={11}
-                                />
+                                            {field.type === 'toggle' && (
+                                                <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-lg border-2 border-neutral-100">
+                                                    <span className="text-sm font-bold text-neutral-600">{field.label}</span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setDynamicData({...dynamicData, [field._id]: !dynamicData[field._id]})}
+                                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all ${dynamicData[field._id] ? 'bg-emerald-600' : 'bg-neutral-300'}`}
+                                                    >
+                                                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${dynamicData[field._id] ? 'translate-x-6' : 'translate-x-1'}`} />
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
                     </div>
-                </div>
+                ))}
+
 
                 <button
                     type="submit"

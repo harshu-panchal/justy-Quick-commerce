@@ -99,6 +99,7 @@ import * as adminRefundController from "../modules/admin/controllers/adminRefund
 import * as qrController from "../modules/delivery/controllers/qrController";
 import * as productFieldController from "../modules/admin/controllers/adminProductFieldController";
 import * as executiveController from "../modules/admin/controllers/adminExecutiveController";
+import * as executiveKycFieldController from "../modules/admin/controllers/adminExecutiveKycFieldController";
 
 const router = Router();
 
@@ -111,6 +112,12 @@ router.get("/product-fields", productFieldController.getProductFields);
 router.post("/product-fields", productFieldController.createProductField);
 router.put("/product-fields/:id", productFieldController.updateProductField);
 router.delete("/product-fields/:id", productFieldController.deleteProductField);
+
+// ==================== Executive KYC Field Routes ====================
+router.get("/executive-kyc-fields", executiveKycFieldController.getExecutiveKycFields);
+router.post("/executive-kyc-fields", executiveKycFieldController.createExecutiveKycField);
+router.put("/executive-kyc-fields/:id", executiveKycFieldController.updateExecutiveKycField);
+router.delete("/executive-kyc-fields/:id", executiveKycFieldController.deleteExecutiveKycField);
 
 // ==================== Profile Routes ====================
 router.get("/profile", profileController.getProfile);

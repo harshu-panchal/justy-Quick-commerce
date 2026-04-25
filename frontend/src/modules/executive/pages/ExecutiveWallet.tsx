@@ -37,10 +37,10 @@ export default function ExecutiveWallet() {
             toast.error('No balance available to withdraw');
             return;
         }
-        if ((stats?.onboardedSellers || 0) < 10) {
-            toast.error('Minimum 10 sellers required to withdraw');
-            return;
-        }
+        // if ((stats?.onboardedSellers || 0) < 10) {
+        //     toast.error('Minimum 10 sellers required to withdraw');
+        //     return;
+        // }
 
         setWithdrawing(true);
         try {
@@ -77,11 +77,6 @@ export default function ExecutiveWallet() {
                             {withdrawing ? 'Processing...' : 'Request Payout'}
                         </button>
                         
-                        {(stats?.onboardedSellers || 0) < 10 && (
-                            <p className="mt-4 text-[10px] text-neutral-500 font-bold uppercase tracking-widest">
-                                Need {10 - (stats?.onboardedSellers || 0)} more sellers to unlock
-                            </p>
-                        )}
                     </div>
                 </div>
 

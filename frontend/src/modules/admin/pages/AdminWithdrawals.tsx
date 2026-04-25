@@ -46,10 +46,10 @@ export default function AdminWithdrawals() {
         }
     };
 
-    const handleApprove = async (id: string) => {
+    const handleApprove = async (id: string, userType?: string) => {
         try {
             setIsProcessing(true);
-            const response = await processWithdrawal({ requestId: id, action: 'Approve' });
+            const response = await processWithdrawal({ requestId: id, action: 'Approve', userType });
             if (response.success) {
                 showToast('Withdrawal approved successfully', 'success');
                 fetchWithdrawals();
@@ -61,13 +61,13 @@ export default function AdminWithdrawals() {
         }
     };
 
-    const handleReject = async (id: string) => {
+    const handleReject = async (id: string, userType?: string) => {
         const remarks = prompt('Enter rejection reason (optional):');
         if (remarks === null) return; // User cancelled
 
         try {
             setIsProcessing(true);
-            const response = await processWithdrawal({ requestId: id, action: 'Reject', remark: remarks });
+            const response = await processWithdrawal({ requestId: id, action: 'Reject', remark: remarks, userType });
             if (response.success) {
                 showToast('Withdrawal rejected', 'success');
                 fetchWithdrawals();
@@ -90,7 +90,8 @@ export default function AdminWithdrawals() {
             const response = await processWithdrawal({
                 requestId: selectedWithdrawal._id || selectedWithdrawal.id,
                 action: 'Complete',
-                transactionReference: transactionRef
+                transactionReference: transactionRef,
+                userType: selectedWithdrawal.userType
             });
             if (response.success) {
                 showToast('Withdrawal completed successfully', 'success');
@@ -150,9 +151,9 @@ export default function AdminWithdrawals() {
                                 <div>
                                     <div className="flex items-center gap-2 mb-1">
                                         <h3 className="font-semibold text-lg">
-                                            {withdrawal.userType === 'SELLER' ? 'Seller' : 'Delivery Boy'} Withdrawal
+                                            {withdrawal.userType === 'SELLER' ? 'Seller' : withdrawal.userType === 'EXECUTIVE' ? 'Executive' : 'Delivery Boy'} Withdrawal
                                         </h3>
-                                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${withdrawal.userType === 'SELLER' ? 'bg-purple-100 text-purple-700' : 'bg-orange-100 text-orange-700'
+                                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${withdrawal.userType === 'SELLER' ? 'bg-purple-100 text-purple-700' : withdrawal.userType === 'EXECUTIVE' ? 'bg-teal-100 text-teal-700' : 'bg-orange-100 text-orange-700'
                                             }`}>
                                             {withdrawal.userType}
                                         </span>
@@ -211,14 +212,14 @@ export default function AdminWithdrawals() {
                             {withdrawal.status === 'Pending' && (
                                 <div className="flex gap-3 mt-4 border-t pt-4">
                                     <button
-                                        onClick={() => handleApprove(withdrawal._id || withdrawal.id)}
+                                        onClick={() => handleApprove(withdrawal._id || withdrawal.id, withdrawal.userType)}
                                         disabled={isProcessing}
                                         className="flex-1 bg-green-600 text-white py-2 rounded-lg font-medium hover:bg-green-700 transition disabled:opacity-50"
                                     >
                                         Approve
                                     </button>
                                     <button
-                                        onClick={() => handleReject(withdrawal._id || withdrawal.id)}
+                                        onClick={() => handleReject(withdrawal._id || withdrawal.id, withdrawal.userType)}
                                         disabled={isProcessing}
                                         className="flex-1 bg-white text-red-600 border border-red-200 py-2 rounded-lg font-medium hover:bg-red-50 transition disabled:opacity-50"
                                     >

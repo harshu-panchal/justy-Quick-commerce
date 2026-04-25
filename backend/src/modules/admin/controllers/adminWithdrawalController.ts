@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import WithdrawRequest from '../../../models/WithdrawRequest';
+import ExecutiveWithdrawal from '../../../models/ExecutiveWithdrawal';
 import { debitWallet } from '../../../services/walletManagementService';
 import mongoose from 'mongoose';
 
@@ -16,14 +17,68 @@ export const getAllWithdrawals = async (req: Request, res: Response) => {
 
         const skip = (Number(page) - 1) * Number(limit);
 
-        const requests = await WithdrawRequest.find(query)
-            .populate('userId', 'sellerName storeName name email mobile accountNumber bankName ifscCode')
-            .populate('processedBy', 'name email')
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(Number(limit));
+        let requests: any[] = [];
+        let total = 0;
 
-        const total = await WithdrawRequest.countDocuments(query);
+        if (userType === 'EXECUTIVE') {
+            requests = await ExecutiveWithdrawal.find(query)
+                .populate('executive', 'name email mobile')
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(Number(limit));
+            
+            total = await ExecutiveWithdrawal.countDocuments(query);
+
+            // Normalize
+            requests = requests.map(r => {
+                const doc = r.toObject();
+                return {
+                    ...doc,
+                    userId: doc.executive,
+                    userType: 'EXECUTIVE',
+                    paymentMethod: 'Bank Transfer',
+                    accountDetails: `A/C: ${doc.bankDetails?.accountNumber}, IFSC: ${doc.bankDetails?.ifsc}`
+                };
+            });
+        } else if (userType && userType !== 'EXECUTIVE') {
+            requests = await WithdrawRequest.find(query)
+                .populate('userId', 'sellerName storeName name email mobile accountNumber bankName ifscCode')
+                .populate('processedBy', 'name email')
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(Number(limit));
+            total = await WithdrawRequest.countDocuments(query);
+        } else {
+            // Merge both
+            const [standardRequests, executiveRequests] = await Promise.all([
+                WithdrawRequest.find(query)
+                    .populate('userId', 'sellerName storeName name email mobile accountNumber bankName ifscCode')
+                    .sort({ createdAt: -1 })
+                    .limit(Number(limit) + skip),
+                ExecutiveWithdrawal.find(query)
+                    .populate('executive', 'name email mobile')
+                    .sort({ createdAt: -1 })
+                    .limit(Number(limit) + skip)
+            ]);
+
+            const normalizedExecutive = executiveRequests.map(r => {
+                const doc = r.toObject();
+                return {
+                    ...doc,
+                    userId: doc.executive,
+                    userType: 'EXECUTIVE',
+                    paymentMethod: 'Bank Transfer',
+                    accountDetails: `A/C: ${doc.bankDetails?.accountNumber}, IFSC: ${doc.bankDetails?.ifsc}`
+                };
+            });
+
+            const allRequests = [...standardRequests, ...normalizedExecutive].sort((a: any, b: any) => 
+                new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            );
+
+            requests = allRequests.slice(skip, skip + Number(limit));
+            total = (await WithdrawRequest.countDocuments(query)) + (await ExecutiveWithdrawal.countDocuments(query));
+        }
 
         return res.status(200).json({
             success: true,

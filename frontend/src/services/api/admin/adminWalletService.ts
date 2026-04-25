@@ -9,6 +9,7 @@ export interface WalletStats {
   totalAdminEarnings: number;
   sellerPendingPayouts: number;
   deliveryPendingPayouts: number;
+  executivePendingPayouts: number;
   pendingAmountFromDeliveryBoy: number;
   pendingWithdrawalsCount?: number;
 }
@@ -127,6 +128,7 @@ export const getWithdrawalRequests = async (params?: {
 export const processWithdrawal = async (data: {
   requestId: string;
   action: "Approve" | "Reject" | "Complete";
+  userType?: string;
   remark?: string;
   transactionReference?: string;
 }): Promise<ApiResponse<any>> => {

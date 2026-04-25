@@ -194,6 +194,7 @@ const AdminProfile = lazy(() => import("./modules/admin/pages/AdminProfile"));
 const AdminProductEdit = lazy(() => import("./modules/admin/pages/AdminProductEdit"));
 const AdminProductForm = lazy(() => import("./modules/admin/pages/AdminProductForm"));
 const SpinnerManagement = lazy(() => import("./modules/admin/pages/SpinnerManagement"));
+const AdminExecutiveKycForm = lazy(() => import("./modules/admin/pages/AdminExecutiveKycForm"));
 const SellerEquipmentCart = lazy(() => import("./modules/seller/pages/SellerEquipmentCart"));
 const AdminGrowth = lazy(() => import("./modules/admin/pages/AdminGrowth"));
 const AdminOnboardingPayments = lazy(() => import("./modules/admin/pages/AdminOnboardingPayments"));
@@ -454,6 +455,7 @@ function App() {
                                           <Route path="executives" element={<AdminExecutives />} />
                                           <Route path="executives/commissions" element={<AdminExecutiveCommissions />} />
                                           <Route path="executives/withdrawals" element={<AdminExecutiveWithdrawals />} />
+                                          <Route path="executives/kyc-form" element={<AdminExecutiveKycForm />} />
                                           <Route path="onboarding-payments" element={<AdminOnboardingPayments />} />
 
                                           <Route path="coupon" element={<AdminCoupon />} />

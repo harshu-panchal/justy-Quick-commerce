@@ -45,7 +45,7 @@ type UserType = 'Customer' | 'Delivery' | 'Seller' | 'Admin';
  */
 function generateOTP(length: number = 4): string {
   if (process.env.USE_MOCK_OTP === 'true') {
-     return length === 4 ? '1234' : '123456';
+    return length === 4 ? '1234' : '123456';
   }
 
   const digits = '0123456789';
@@ -77,7 +77,7 @@ function normalizeMobileNumber(mobile: string): string {
  * Build DLT-compliant message
  */
 function buildOtpMessage(otp: string): string {
-  const appName = process.env.APP_NAME || 'dhakadsnazzy';
+  const appName = process.env.APP_NAME || 'Jyasti';
   return `Welcome to the ${appName} powered by SMSINDIAHUB. Your OTP for registration is ${otp}`;
 }
 

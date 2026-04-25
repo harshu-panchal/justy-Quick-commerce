@@ -275,6 +275,36 @@ export const getWalletTransactions = asyncHandler(
   async (req: Request, res: Response) => {
     const { page = 1, limit = 20, type, userType, search: _search } = req.query;
 
+    // Safety check: ensure models are registered (especially for production bundling)
+    try {
+      if (!mongoose.models.CUSTOMER) {
+        const CustomerModel = (await import("../../../models/Customer")).default;
+        if (!mongoose.models.CUSTOMER) {
+          mongoose.model('CUSTOMER', CustomerModel.schema, 'customers');
+        }
+      }
+      if (!mongoose.models.SELLER) {
+        const SellerModel = (await import("../../../models/Seller")).default;
+        if (!mongoose.models.SELLER) {
+          mongoose.model('SELLER', SellerModel.schema, 'sellers');
+        }
+      }
+      if (!mongoose.models.DELIVERY_BOY) {
+        const DeliveryModel = (await import("../../../models/Delivery")).default;
+        if (!mongoose.models.DELIVERY_BOY) {
+          mongoose.model('DELIVERY_BOY', DeliveryModel.schema, 'deliveries');
+        }
+      }
+      if (!mongoose.models.EXECUTIVE) {
+        const ExecutiveModel = (await import("../../../models/Executive")).default;
+        if (!mongoose.models.EXECUTIVE) {
+          mongoose.model('EXECUTIVE', ExecutiveModel.schema, 'executives');
+        }
+      }
+    } catch (e) {
+      console.warn("Model registration warning:", e);
+    }
+
     const query: any = {};
     if (type) query.type = type;
     if (userType) query.userType = userType;

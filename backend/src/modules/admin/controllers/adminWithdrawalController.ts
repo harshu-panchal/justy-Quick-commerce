@@ -11,6 +11,24 @@ export const getAllWithdrawals = async (req: Request, res: Response) => {
     try {
         const { status, userType, page = 1, limit = 20 } = req.query;
 
+        // Safety check for model registration (production bundle compatibility)
+        try {
+            if (!mongoose.models.CUSTOMER) {
+                const CustomerModel = (await import("../../../models/Customer")).default;
+                if (!mongoose.models.CUSTOMER) mongoose.model('CUSTOMER', CustomerModel.schema, 'customers');
+            }
+            if (!mongoose.models.SELLER) {
+                const SellerModel = (await import("../../../models/Seller")).default;
+                if (!mongoose.models.SELLER) mongoose.model('SELLER', SellerModel.schema, 'sellers');
+            }
+            if (!mongoose.models.DELIVERY_BOY) {
+                const DeliveryModel = (await import("../../../models/Delivery")).default;
+                if (!mongoose.models.DELIVERY_BOY) mongoose.model('DELIVERY_BOY', DeliveryModel.schema, 'deliveries');
+            }
+        } catch (e) {
+            console.warn("Withdrawal model registration warning:", e);
+        }
+
         const query: any = {};
         if (status) query.status = status;
         if (userType) query.userType = userType;

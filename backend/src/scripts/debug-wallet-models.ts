@@ -10,6 +10,7 @@ async function checkDatabase() {
         await mongoose.connect(process.env.MONGODB_URI!);
         console.log("Connected.");
 
+        if (!mongoose.connection.db) throw new Error("Database connection failed");
         const collections = await mongoose.connection.db.listCollections().toArray();
         console.log("Collections:", collections.map(c => c.name));
 

@@ -60,3 +60,6 @@ export { default as SpinAttempt } from "./SpinAttempt";
 export { default as EquipmentItem } from "./EquipmentItem";
 export { default as EquipmentOrder } from "./EquipmentOrder";
 export { default as RefundRequest } from "./RefundRequest";
+export { default as Executive } from "./Executive";
+export { default as ExecutiveWithdrawal } from "./ExecutiveWithdrawal";
+export { default as ExecutiveWalletTransaction } from "./ExecutiveWalletTransaction";

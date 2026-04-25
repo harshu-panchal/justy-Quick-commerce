@@ -37,7 +37,7 @@ export const getAllWithdrawals = async (req: Request, res: Response) => {
                     userId: doc.executive,
                     userType: 'EXECUTIVE',
                     paymentMethod: 'Bank Transfer',
-                    accountDetails: `A/C: ${doc.bankDetails?.accountNumber}, IFSC: ${doc.bankDetails?.ifsc}`
+                    accountDetails: `Name: ${doc.bankDetails?.accountName}, A/C: ${doc.bankDetails?.accountNumber}, Bank: ${doc.bankDetails?.bankName}, IFSC: ${doc.bankDetails?.ifsc}`
                 };
             });
         } else if (userType && userType !== 'EXECUTIVE') {
@@ -68,7 +68,7 @@ export const getAllWithdrawals = async (req: Request, res: Response) => {
                     userId: doc.executive,
                     userType: 'EXECUTIVE',
                     paymentMethod: 'Bank Transfer',
-                    accountDetails: `A/C: ${doc.bankDetails?.accountNumber}, IFSC: ${doc.bankDetails?.ifsc}`
+                    accountDetails: `Name: ${doc.bankDetails?.accountName}, A/C: ${doc.bankDetails?.accountNumber}, Bank: ${doc.bankDetails?.bankName}, IFSC: ${doc.bankDetails?.ifsc}`
                 };
             });
 

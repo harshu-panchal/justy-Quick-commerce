@@ -256,18 +256,48 @@ export default function AdminWithdrawals() {
                         className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl"
                     >
                         <h2 className="text-xl font-bold mb-4">Complete Withdrawal</h2>
-                        <div className="mb-4">
+                        
+                        <div className="bg-blue-50 p-4 rounded-xl mb-4 border border-blue-100">
+                            <div className="flex justify-between items-center mb-2">
+                                <p className="text-xs text-blue-600 font-semibold uppercase">Transfer Details</p>
+                                <button 
+                                    onClick={() => {
+                                        const text = `Amount: ₹${selectedWithdrawal?.amount?.toFixed(2)}\n${selectedWithdrawal?.accountDetails}`;
+                                        navigator.clipboard.writeText(text);
+                                        showToast('Transfer details copied to clipboard', 'success');
+                                    }}
+                                    className="text-[10px] bg-blue-600 text-white px-2 py-0.5 rounded hover:bg-blue-700 transition"
+                                >
+                                    Copy All
+                                </button>
+                            </div>
+                            <div className="space-y-2">
+                                <div className="flex justify-between">
+                                    <span className="text-gray-600 text-sm">Amount:</span>
+                                    <span className="font-bold text-gray-900 text-lg">₹{selectedWithdrawal?.amount?.toFixed(2)}</span>
+                                </div>
+                                <div className="flex flex-col gap-1 mt-2 border-t border-blue-100 pt-2">
+                                    <span className="text-gray-600 text-xs uppercase tracking-wider">Account Info:</span>
+                                    <span className="font-mono text-sm text-gray-900 bg-white p-2 rounded border border-blue-50 leading-relaxed">
+                                        {selectedWithdrawal?.accountDetails || 'N/A'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="mb-6">
                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Transaction Reference ID
+                                UTR / Transaction Reference ID
                             </label>
                             <input
                                 type="text"
                                 value={transactionRef}
                                 onChange={(e) => setTransactionRef(e.target.value)}
-                                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
-                                placeholder="e.g. UPI Ref No. or Bank TRN ID"
+                                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none font-mono"
+                                placeholder="Enter 12-digit UTR or Ref No."
                                 autoFocus
                             />
+                            <p className="text-[10px] text-gray-400 mt-1 uppercase font-semibold">Copy the UTR number from your banking app and paste it here</p>
                         </div>
                         <div className="flex gap-3">
                             <button

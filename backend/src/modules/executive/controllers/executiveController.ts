@@ -61,7 +61,10 @@ export const getDashboardStats = asyncHandler(async (req: Request, res: Response
     await executive.save();
   }
 
-  const onboardedSellers = await Seller.countDocuments({ referredBy: new mongoose.Types.ObjectId(executiveId) });
+  const totalSellers = await Seller.countDocuments({ referredBy: new mongoose.Types.ObjectId(executiveId) });
+  const pendingVerification = await Seller.countDocuments({ referredBy: new mongoose.Types.ObjectId(executiveId), status: 'Pending' });
+  const paidSellers = await Seller.countDocuments({ referredBy: new mongoose.Types.ObjectId(executiveId), depositPaid: true });
+  const commissionedSellers = await Seller.countDocuments({ referredBy: new mongoose.Types.ObjectId(executiveId), commissionCredited: true });
   
   // Updated KYC check logic for new kycDetails structure
   const kyc = executive.kycDetails || {};
@@ -72,14 +75,21 @@ export const getDashboardStats = asyncHandler(async (req: Request, res: Response
     id: executive._id,
     name: executive.name,
     referralCode: executive.referralCode,
-    walletBalance: executive.walletBalance
+    walletBalance: executive.walletBalance,
+    totalSellers,
+    pendingVerification,
+    paidSellers,
+    commissionedSellers
   });
 
   return res.status(200).json({
     success: true,
     data: {
       walletBalance: executive.walletBalance,
-      onboardedSellers,
+      onboardedSellers: totalSellers,
+      pendingVerification,
+      paidSellers,
+      commissionedSellers,
       kycStatus: executive.kycStatus,
       status: executive.status,
       referralCode: executive.referralCode,

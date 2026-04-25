@@ -158,6 +158,22 @@ export default function ExecutiveDashboard() {
                     </div>
                 </div>
 
+                {/* Granular Seller Stats */}
+                <div className="grid grid-cols-3 gap-3">
+                    <div className="p-3 rounded-lg bg-orange-50 border border-orange-100 shadow-sm flex flex-col items-center text-center">
+                        <p className="text-[9px] font-black text-orange-400 uppercase tracking-tight mb-1">Pending Verify</p>
+                        <h4 className="text-xl font-black text-orange-600">{stats?.pendingVerification || 0}</h4>
+                    </div>
+                    <div className="p-3 rounded-lg bg-blue-50 border border-blue-100 shadow-sm flex flex-col items-center text-center">
+                        <p className="text-[9px] font-black text-blue-400 uppercase tracking-tight mb-1">Paid Sellers</p>
+                        <h4 className="text-xl font-black text-blue-600">{stats?.paidSellers || 0}</h4>
+                    </div>
+                    <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-100 shadow-sm flex flex-col items-center text-center">
+                        <p className="text-[9px] font-black text-emerald-400 uppercase tracking-tight mb-1">Commissioned</p>
+                        <h4 className="text-xl font-black text-emerald-600">{stats?.commissionedSellers || 0}</h4>
+                    </div>
+                </div>
+
                 {/* Progress Card */}
                 <div className="p-6 rounded-lg bg-white border border-neutral-200 shadow-sm overflow-hidden relative">
                     <div className="absolute top-0 right-0 p-6 opacity-5">
@@ -195,8 +211,8 @@ export default function ExecutiveDashboard() {
                     <h4 className="text-xs font-black text-neutral-400 uppercase tracking-widest ml-1">Quick Actions</h4>
                     <div className="grid grid-cols-2 gap-3">
                         <a 
-                            href="/seller/signup"
-                            className="p-4 rounded-lg bg-neutral-900 text-white flex flex-col items-center gap-2 hover:bg-neutral-800 transition-colors active:scale-95 w-full"
+                            href={`/seller/signup?ref=${stats?.referralCode}`}
+                            className="p-4 rounded-lg bg-neutral-900 text-white flex flex-col items-center gap-2 hover:bg-neutral-800 transition-colors active:scale-95 w-full text-center"
                         >
                             <div className="p-2 rounded-lg bg-white/10">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">

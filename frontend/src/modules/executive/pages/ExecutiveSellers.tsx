@@ -54,9 +54,12 @@ export default function ExecutiveSellers() {
                             </svg>
                         </div>
                         <p className="text-neutral-400 font-bold">No sellers onboarded yet.</p>
-                        <button className="px-6 py-3 bg-emerald-600 text-white rounded-2xl font-black text-sm">
+                        <a 
+                            href={`/seller/signup?ref=${JSON.parse(localStorage.getItem('userData') || '{}').referralCode}`}
+                            className="px-6 py-3 bg-emerald-600 text-white rounded-2xl font-black text-sm inline-block"
+                        >
                             Onboard Your First Seller
-                        </button>
+                        </a>
                     </div>
                 ) : (
                     <div className="space-y-3">

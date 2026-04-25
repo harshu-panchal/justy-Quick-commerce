@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { getExecutives, updateExecutive } from '../../services/adminExecutiveService';
 import toast from 'react-hot-toast';
+import AdminExecutiveDetails from './AdminExecutiveDetails';
 
 export default function AdminExecutives() {
     const [executives, setExecutives] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState({ search: '', status: '' });
+    const [selectedExecutive, setSelectedExecutive] = useState<any>(null);
 
     const fetchExecutives = async () => {
         setLoading(true);
@@ -33,13 +35,12 @@ export default function AdminExecutives() {
         }
     };
 
-    const handleKYCUpdate = async (id: string, kycStatus: string) => {
+    const handleKYCUpdate = async (id: string, data: any) => {
         try {
-            await updateExecutive(id, { kycStatus });
-            toast.success(`KYC status updated to ${kycStatus}`);
+            await updateExecutive(id, data);
             fetchExecutives();
         } catch (error) {
-            toast.error('Failed to update KYC status');
+            throw error;
         }
     };
 
@@ -54,14 +55,14 @@ export default function AdminExecutives() {
                     <input 
                         type="text" 
                         placeholder="Search name, mobile..." 
-                        className="px-4 py-2 bg-white border border-neutral-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500/20"
+                        className="px-4 py-2 bg-neutral-100 border-none rounded-lg outline-none focus:ring-1 focus:ring-emerald-500 text-sm w-64"
                         value={filter.search}
                         onChange={(e) => setFilter({...filter, search: e.target.value})}
                     />
                 </div>
             </div>
 
-            <div className="bg-white rounded-[32px] border border-neutral-100 shadow-sm overflow-hidden">
+            <div className="bg-white rounded-lg border border-neutral-200 shadow-sm overflow-hidden">
                 <table className="w-full text-left border-collapse">
                     <thead>
                         <tr className="bg-neutral-50/50 border-b border-neutral-100">
@@ -103,33 +104,15 @@ export default function AdminExecutives() {
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">
-                                        <div className="flex flex-col gap-2">
-                                            <span className={`px-2 py-0.5 w-fit rounded-full text-[9px] font-black uppercase ${
-                                                exec.kycStatus === 'Approved' ? 'bg-emerald-100 text-emerald-700' :
-                                                exec.kycStatus === 'Pending' ? 'bg-orange-100 text-orange-700' : 'bg-red-100 text-red-700'
-                                            }`}>
-                                                {exec.kycStatus || 'Not Started'}
-                                            </span>
-                                            {exec.kycStatus === 'Pending' && (
-                                                <div className="flex gap-1">
-                                                    <button 
-                                                        onClick={() => handleKYCUpdate(exec._id, 'Approved')}
-                                                        className="px-2 py-0.5 bg-emerald-600 text-white rounded text-[9px] font-black hover:bg-emerald-700"
-                                                    >
-                                                        Approve
-                                                    </button>
-                                                    <button 
-                                                        onClick={() => handleKYCUpdate(exec._id, 'Rejected')}
-                                                        className="px-2 py-0.5 bg-red-600 text-white rounded text-[9px] font-black hover:bg-red-700"
-                                                    >
-                                                        Reject
-                                                    </button>
-                                                </div>
-                                            )}
-                                        </div>
+                                        <span className={`px-2 py-0.5 w-fit rounded-lg text-[9px] font-black uppercase ${
+                                            exec.kycStatus === 'Approved' ? 'bg-emerald-100 text-emerald-700' :
+                                            exec.kycStatus === 'Pending' || exec.kycStatus === 'Submitted' ? 'bg-orange-100 text-orange-700' : 'bg-red-100 text-red-700'
+                                        }`}>
+                                            {exec.kycStatus || 'Not Started'}
+                                        </span>
                                     </td>
                                     <td className="px-6 py-4">
-                                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${
+                                        <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase ${
                                             exec.status === 'Active' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
                                         }`}>
                                             {exec.status}
@@ -137,10 +120,20 @@ export default function AdminExecutives() {
                                     </td>
                                     <td className="px-6 py-4 text-right">
                                         <div className="flex justify-end gap-2">
+                                            <button 
+                                                onClick={() => setSelectedExecutive(exec)}
+                                                className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                                                title="View Details / KYC"
+                                            >
+                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                                    <circle cx="12" cy="12" r="3" />
+                                                </svg>
+                                            </button>
                                             {exec.status === 'Active' ? (
                                                 <button 
                                                     onClick={() => handleStatusUpdate(exec._id, 'Suspended')}
-                                                    className="p-2 text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+                                                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                                                     title="Suspend Account"
                                                 >
                                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -151,7 +144,7 @@ export default function AdminExecutives() {
                                             ) : (
                                                 <button 
                                                     onClick={() => handleStatusUpdate(exec._id, 'Active')}
-                                                    className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-xl transition-colors"
+                                                    className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
                                                     title="Activate Account"
                                                 >
                                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -168,6 +161,14 @@ export default function AdminExecutives() {
                     </tbody>
                 </table>
             </div>
+
+            {selectedExecutive && (
+                <AdminExecutiveDetails 
+                    executive={selectedExecutive} 
+                    onClose={() => setSelectedExecutive(null)}
+                    onUpdate={handleKYCUpdate}
+                />
+            )}
         </div>
     );
 }

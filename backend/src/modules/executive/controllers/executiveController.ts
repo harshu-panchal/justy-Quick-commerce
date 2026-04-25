@@ -22,6 +22,14 @@ export const getDashboardStats = asyncHandler(async (req: Request, res: Response
     });
   }
 
+  // Check for suspension
+  if (executive.status === 'Suspended') {
+    return res.status(403).json({
+      success: false,
+      message: "Your account has been suspended. Please contact admin.",
+    });
+  }
+
   // Passive Sync: Check for missing commissions before sending stats
   try {
     console.log(`[Dashboard] Triggering syncExecutiveCommissions...`);
@@ -54,7 +62,11 @@ export const getDashboardStats = asyncHandler(async (req: Request, res: Response
   }
 
   const onboardedSellers = await Seller.countDocuments({ referredBy: new mongoose.Types.ObjectId(executiveId) });
-  const pendingKYC = executive.kycStatus === 'Pending' || !executive.kycDocuments?.aadhaar;
+  
+  // Updated KYC check logic for new kycDetails structure
+  const kyc = executive.kycDetails || {};
+  const isKycMissing = !kyc.aadharFront || !kyc.panCard || !kyc.resume || !kyc.bankPassbook;
+  const pendingKYC = executive.kycStatus === 'Pending' || isKycMissing;
 
   console.log('📊 Dashboard stats being sent:', {
     id: executive._id,

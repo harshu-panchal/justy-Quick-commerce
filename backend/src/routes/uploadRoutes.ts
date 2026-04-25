@@ -211,6 +211,8 @@ router.post(
       folder = CLOUDINARY_FOLDERS.DELIVERY_DOCUMENTS;
     } else if (userType === "Seller") {
       folder = CLOUDINARY_FOLDERS.SELLER_DOCUMENTS;
+    } else if (userType === "Executive") {
+      folder = CLOUDINARY_FOLDERS.EXECUTIVE_DOCUMENTS;
     }
 
     // Check if it's an image or PDF
@@ -254,6 +256,8 @@ router.post(
       folder = CLOUDINARY_FOLDERS.DELIVERY_DOCUMENTS;
     } else if (userType === "Seller") {
       folder = CLOUDINARY_FOLDERS.SELLER_DOCUMENTS;
+    } else if (userType === "Executive") {
+      folder = CLOUDINARY_FOLDERS.EXECUTIVE_DOCUMENTS;
     }
 
     const files = (req as any).files as any[];

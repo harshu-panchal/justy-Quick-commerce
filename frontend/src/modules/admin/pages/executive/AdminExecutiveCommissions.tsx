@@ -53,7 +53,7 @@ export default function AdminExecutiveCommissions() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="md:col-span-2 bg-white rounded-3xl border border-neutral-100 shadow-sm overflow-hidden">
+                <div className="md:col-span-2 bg-white rounded-lg border border-neutral-200 shadow-sm overflow-hidden">
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-neutral-50/50 border-b border-neutral-100">
@@ -86,14 +86,14 @@ export default function AdminExecutiveCommissions() {
                                                 <div className="flex items-center gap-2">
                                                     <p className="font-black text-emerald-600 text-lg">₹{amount}</p>
                                                     {isDefault && (
-                                                        <span className="px-2 py-0.5 bg-neutral-100 text-neutral-500 text-[9px] font-black uppercase tracking-widest rounded-md">Default</span>
+                                                        <span className="px-2 py-0.5 bg-neutral-100 text-neutral-500 text-[9px] font-black uppercase tracking-widest rounded-lg">Default</span>
                                                     )}
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 text-right">
                                                 <button 
                                                     onClick={() => setEditing({ name: cat.name, amount })}
-                                                    className="px-4 py-2 bg-neutral-900 text-white rounded-xl text-xs font-black hover:bg-neutral-800 transition-all active:scale-95"
+                                                    className="px-4 py-2 bg-neutral-900 text-white rounded-lg text-xs font-black hover:bg-neutral-800 transition-all active:scale-95"
                                                 >
                                                     {isDefault ? 'Set Commission' : 'Edit Amount'}
                                                 </button>
@@ -107,7 +107,7 @@ export default function AdminExecutiveCommissions() {
                 </div>
 
                 <div className="space-y-6">
-                    <div className="bg-emerald-900 rounded-3xl p-6 text-white shadow-xl shadow-emerald-100">
+                    <div className="bg-emerald-900 rounded-lg p-6 text-white shadow-lg">
                         <h3 className="text-lg font-black tracking-tight mb-2">Update Commission</h3>
                         <p className="text-emerald-100/60 text-xs font-medium mb-6">Select a category from the list to update its commission amount.</p>
                         
@@ -115,7 +115,7 @@ export default function AdminExecutiveCommissions() {
                             <form onSubmit={handleUpdate} className="space-y-4">
                                 <div>
                                     <label className="text-[10px] font-black text-emerald-100/50 uppercase tracking-widest ml-1">Category</label>
-                                    <div className="px-4 py-3 bg-white/10 rounded-2xl text-white font-black text-sm border border-white/10">
+                                    <div className="px-4 py-3 bg-white/10 rounded-lg text-white font-black text-sm border border-white/10">
                                         {editing.name}
                                     </div>
                                 </div>
@@ -125,7 +125,7 @@ export default function AdminExecutiveCommissions() {
                                         type="number"
                                         value={editing.amount}
                                         onChange={(e) => setEditing({...editing, amount: Number(e.target.value)})}
-                                        className="w-full px-4 py-3 bg-white/10 rounded-2xl text-white font-black text-lg border border-white/10 focus:border-white/30 outline-none transition-all"
+                                        className="w-full px-4 py-3 bg-white/10 rounded-lg text-white font-black text-lg border border-white/10 focus:border-white/30 outline-none transition-all"
                                         placeholder="e.g. 100"
                                         required
                                     />
@@ -134,13 +134,13 @@ export default function AdminExecutiveCommissions() {
                                     <button 
                                         type="button"
                                         onClick={() => setEditing(null)}
-                                        className="flex-1 py-3 bg-white/10 text-white rounded-2xl text-xs font-black hover:bg-white/20 transition-all"
+                                        className="flex-1 py-3 bg-white/10 text-white rounded-lg text-xs font-black hover:bg-white/20 transition-all"
                                     >
                                         Cancel
                                     </button>
                                     <button 
                                         type="submit"
-                                        className="flex-[2] py-3 bg-white text-emerald-900 rounded-2xl text-xs font-black hover:bg-emerald-50 transition-all shadow-lg"
+                                        className="flex-[2] py-3 bg-white text-emerald-900 rounded-lg text-xs font-black hover:bg-emerald-50 transition-all shadow-lg"
                                     >
                                         Save Changes
                                     </button>
@@ -169,7 +169,7 @@ export default function AdminExecutiveCommissions() {
                         )}
                     </div>
 
-                    <div className="bg-white rounded-3xl border border-neutral-100 p-6 shadow-sm">
+                    <div className="bg-white rounded-lg border border-neutral-200 p-6 shadow-sm">
                         <h4 className="text-sm font-black text-neutral-900 uppercase tracking-widest mb-4">How it works?</h4>
                         <ul className="space-y-3">
                             <li className="flex gap-3 items-start">

@@ -168,6 +168,20 @@ export default function SellerSignUp() {
       }
     };
     fetchExecs();
+
+    // Check for referral code in localStorage (set by App.tsx from URL)
+    const pendingCode = localStorage.getItem('pendingReferralCode');
+    if (pendingCode) {
+      setFormData(prev => ({ ...prev, referralCode: pendingCode.toUpperCase() }));
+      // Optionally clear it after picking it up, or keep it until success
+    } else {
+      // Fallback: check URL directly if not caught by App.tsx
+      const urlParams = new URLSearchParams(window.location.search);
+      const refFromUrl = urlParams.get('ref');
+      if (refFromUrl) {
+        setFormData(prev => ({ ...prev, referralCode: refFromUrl.toUpperCase() }));
+      }
+    }
   }, []);
 
   const showFSSAI = formData.categories.some(cat => 

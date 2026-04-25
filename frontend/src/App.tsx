@@ -133,6 +133,7 @@ const ExecutiveDashboard = lazy(() => import("./modules/executive/pages/Executiv
 const ExecutiveSellers = lazy(() => import("./modules/executive/pages/ExecutiveSellers"));
 const ExecutiveWallet = lazy(() => import("./modules/executive/pages/ExecutiveWallet"));
 const ExecutiveProfile = lazy(() => import("./modules/executive/pages/ExecutiveProfile"));
+const ExecutiveKYC = lazy(() => import("./modules/executive/pages/ExecutiveKYC"));
 
 // Lazy load admin routes
 const AdminLayout = lazy(() => import("./modules/admin/components/AdminLayout"));
@@ -570,6 +571,7 @@ function App() {
                                         <Route path="sellers" element={<ExecutiveSellers />} />
                                         <Route path="wallet" element={<ExecutiveWallet />} />
                                         <Route path="profile" element={<ExecutiveProfile />} />
+                                        <Route path="kyc" element={<ExecutiveKYC />} />
                                         <Route path="*" element={<Navigate to="dashboard" replace />} />
                                       </Routes>
                                     </Suspense>

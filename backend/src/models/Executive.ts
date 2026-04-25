@@ -8,13 +8,25 @@ export interface IExecutive extends Document {
   referralCode: string;
   workExperience?: string;
   
-  // KYC Documents
-  kycDocuments?: {
-    aadhaar?: string;
-    pan?: string;
+  // KYC Details
+  kycDetails?: {
+    aadharNumber?: string;
+    panNumber?: string;
+    aadharFront?: string;
+    aadharBack?: string;
+    panCard?: string;
     resume?: string;
     bankPassbook?: string;
   };
+
+  // Bank Details
+  bankDetails?: {
+    bankName?: string;
+    ifscCode?: string;
+    accountNumber?: string;
+    accountHolderName?: string;
+  };
+
   kycStatus: 'Pending' | 'Submitted' | 'Approved' | 'Rejected';
   rejectionReason?: string;
   kycVerifiedAt?: Date;
@@ -63,11 +75,34 @@ const executiveSchema = new Schema<IExecutive>(
       type: String,
       trim: true,
     },
-    kycDocuments: {
-      aadhaar: { type: String },
-      pan: { type: String },
+    kycDetails: {
+      aadharNumber: { 
+        type: String, 
+        trim: true,
+        match: [/^[0-9]{12}$/, "Aadhar number must be 12 digits"]
+      },
+      panNumber: { 
+        type: String, 
+        trim: true,
+        uppercase: true,
+        match: [/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, "Invalid PAN card format"]
+      },
+      aadharFront: { type: String },
+      aadharBack: { type: String },
+      panCard: { type: String },
       resume: { type: String },
       bankPassbook: { type: String },
+    },
+    bankDetails: {
+      bankName: { type: String, trim: true },
+      ifscCode: { 
+        type: String, 
+        trim: true,
+        uppercase: true,
+        match: [/^[A-Z]{4}0[A-Z0-9]{6}$/, "Invalid IFSC code format"]
+      },
+      accountNumber: { type: String, trim: true },
+      accountHolderName: { type: String, trim: true },
     },
     kycStatus: {
       type: String,

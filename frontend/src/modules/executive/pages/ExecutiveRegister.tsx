@@ -48,11 +48,16 @@ export default function ExecutiveRegister() {
             
             if (response.success && response.data?.token) {
                 // Auto-login after successful registration
-                await login(response.data.token, response.data.user);
-                toast.success('Welcome! Your application has been submitted and is active.');
+                const userData = { 
+                    ...response.data.user, 
+                    userType: 'Executive' as const 
+                };
+                await login(response.data.token, userData);
+                toast.success('Welcome! Your account is active. Please complete your KYC.');
                 navigate('/executive/dashboard');
-            } else {
-                toast.success('Application submitted successfully! Admin will review your profile.');
+            } else if (response.success) {
+                // If success but no token (should not happen normally)
+                toast.success('Application submitted successfully!');
                 navigate('/executive/login');
             }
         } catch (error: any) {
@@ -94,7 +99,7 @@ export default function ExecutiveRegister() {
                                     value={formData.name}
                                     onChange={handleChange}
                                     placeholder="Enter your full name"
-                                    className="w-full px-4 py-4 bg-neutral-50 border-2 border-neutral-100 rounded-2xl focus:border-emerald-500 focus:bg-white outline-none transition-all font-bold"
+                                    className="w-full px-4 py-4 bg-neutral-50 border-2 border-neutral-100 rounded-lg focus:border-emerald-500 focus:bg-white outline-none transition-all font-bold"
                                     required
                                 />
                             </div>
@@ -109,7 +114,7 @@ export default function ExecutiveRegister() {
                                         onChange={(e) => setFormData({...formData, mobile: e.target.value.replace(/\D/g, '').slice(0, 10)})}
                                         placeholder="10-digit mobile"
                                         readOnly={!!location.state?.mobile}
-                                        className={`w-full pl-12 pr-4 py-4 ${location.state?.mobile ? 'bg-neutral-100 opacity-70' : 'bg-neutral-50'} border-2 border-neutral-100 rounded-2xl focus:border-emerald-500 focus:bg-white outline-none transition-all font-bold`}
+                                        className={`w-full pl-12 pr-4 py-4 ${location.state?.mobile ? 'bg-neutral-100 opacity-70' : 'bg-neutral-50'} border-2 border-neutral-100 rounded-lg focus:border-emerald-500 focus:bg-white outline-none transition-all font-bold`}
                                         required
                                     />
                                 </div>
@@ -122,13 +127,13 @@ export default function ExecutiveRegister() {
                                     value={formData.email}
                                     onChange={handleChange}
                                     placeholder="example@mail.com"
-                                    className="w-full px-4 py-4 bg-neutral-50 border-2 border-neutral-100 rounded-2xl focus:border-emerald-500 focus:bg-white outline-none transition-all font-bold"
+                                    className="w-full px-4 py-4 bg-neutral-50 border-2 border-neutral-100 rounded-lg focus:border-emerald-500 focus:bg-white outline-none transition-all font-bold"
                                     required
                                 />
                             </div>
                             <button
                                 type="submit"
-                                className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black text-lg transition-all active:scale-[0.98] shadow-lg shadow-emerald-100 mt-4"
+                                className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-black text-lg transition-all active:scale-[0.98] shadow-lg shadow-emerald-100 mt-4"
                             >
                                 Continue
                             </button>
@@ -150,7 +155,7 @@ export default function ExecutiveRegister() {
                                     value={formData.alternateMobile}
                                     onChange={(e) => setFormData({...formData, alternateMobile: e.target.value.replace(/\D/g, '').slice(0, 10)})}
                                     placeholder="Optional mobile"
-                                    className="w-full px-4 py-4 bg-neutral-50 border-2 border-neutral-100 rounded-2xl focus:border-emerald-500 focus:bg-white outline-none transition-all font-bold"
+                                    className="w-full px-4 py-4 bg-neutral-50 border-2 border-neutral-100 rounded-lg focus:border-emerald-500 focus:bg-white outline-none transition-all font-bold"
                                 />
                             </div>
                             <div className="space-y-1">
@@ -165,7 +170,7 @@ export default function ExecutiveRegister() {
                                 />
                             </div>
                             
-                            <div className="p-4 rounded-2xl bg-blue-50 border border-blue-100 text-[10px] text-blue-700 font-bold leading-relaxed">
+                            <div className="p-4 rounded-lg bg-blue-50 border border-blue-100 text-[10px] text-blue-700 font-bold leading-relaxed">
                                 NOTE: AFTER REGISTRATION, YOU NEED TO UPLOAD YOUR KYC DOCUMENTS (AADHAR & PAN) FROM THE DASHBOARD TO BE ELIGIBLE FOR PAYOUTS.
                             </div>
 
@@ -173,14 +178,14 @@ export default function ExecutiveRegister() {
                                 <button
                                     type="button"
                                     onClick={() => setStep(1)}
-                                    className="flex-1 py-4 bg-neutral-100 hover:bg-neutral-200 text-neutral-600 rounded-2xl font-black transition-all active:scale-[0.98]"
+                                    className="flex-1 py-4 bg-neutral-100 hover:bg-neutral-200 text-neutral-600 rounded-lg font-black transition-all active:scale-[0.98]"
                                 >
                                     Back
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={loading}
-                                    className="flex-[2] py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black text-lg transition-all active:scale-[0.98] disabled:opacity-50 shadow-lg shadow-emerald-100"
+                                    className="flex-[2] py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-black text-lg transition-all active:scale-[0.98] disabled:opacity-50 shadow-lg shadow-emerald-100"
                                 >
                                     {loading ? 'Submitting...' : 'Submit Application'}
                                 </button>

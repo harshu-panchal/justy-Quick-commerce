@@ -70,7 +70,7 @@ export default function ExecutiveLogin() {
                     <motion.div 
                         initial={{ scale: 0.5, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
-                        className="w-16 h-16 bg-emerald-600 rounded-2xl flex items-center justify-center text-white mb-6 shadow-xl shadow-emerald-200"
+                        className="w-16 h-16 bg-emerald-600 rounded-lg flex items-center justify-center text-white mb-6 shadow-xl shadow-emerald-200"
                     >
                         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
@@ -94,14 +94,14 @@ export default function ExecutiveLogin() {
                                 value={mobile}
                                 onChange={(e) => setMobile(e.target.value.replace(/\D/g, '').slice(0, 10))}
                                 placeholder="Mobile Number"
-                                className="w-full pl-12 pr-4 py-4 bg-neutral-50 border-2 border-neutral-100 rounded-2xl focus:border-emerald-500 focus:bg-white outline-none transition-all font-bold text-lg"
+                                className="w-full pl-12 pr-4 py-4 bg-neutral-50 border-2 border-neutral-100 rounded-lg focus:border-emerald-500 focus:bg-white outline-none transition-all font-bold text-lg"
                                 required
                             />
                         </div>
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black text-lg transition-all active:scale-[0.98] disabled:opacity-50 shadow-lg shadow-emerald-100"
+                            className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-black text-lg transition-all active:scale-[0.98] disabled:opacity-50 shadow-lg shadow-emerald-100"
                         >
                             {loading ? 'Sending...' : 'Get Started'}
                         </button>
@@ -140,7 +140,7 @@ export default function ExecutiveLogin() {
                             initial={{ opacity: 0, scale: 0.9, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                            className="bg-white rounded-[32px] w-full max-w-sm overflow-hidden shadow-2xl"
+                            className="bg-white rounded-lg w-full max-w-sm overflow-hidden shadow-2xl"
                         >
                             <div className="p-8 text-center">
                                 <div className="w-20 h-20 bg-red-50 text-red-600 rounded-3xl flex items-center justify-center mx-auto mb-6">
@@ -156,7 +156,7 @@ export default function ExecutiveLogin() {
                                 </p>
                                 <button 
                                     onClick={() => setSuspendedMessage(null)}
-                                    className="w-full py-4 bg-neutral-900 hover:bg-neutral-800 text-white rounded-2xl font-black transition-all active:scale-95"
+                                    className="w-full py-4 bg-neutral-900 hover:bg-neutral-800 text-white rounded-lg font-black transition-all active:scale-95"
                                 >
                                     Okay
                                 </button>

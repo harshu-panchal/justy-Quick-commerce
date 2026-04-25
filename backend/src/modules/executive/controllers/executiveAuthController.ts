@@ -164,7 +164,30 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
  */
 export const updateKYC = asyncHandler(async (req: Request, res: Response) => {
   const id = (req as any).user.userId;
-  const { aadhaar, pan, resume, bankPassbook } = req.body;
+  const { 
+    aadharNumber, 
+    panNumber, 
+    aadharFront, 
+    aadharBack, 
+    panCard, 
+    resume, 
+    bankPassbook,
+    bankName,
+    ifscCode,
+    accountNumber,
+    accountHolderName
+  } = req.body;
+
+  // Validation
+  if (aadharNumber && !/^[0-9]{12}$/.test(aadharNumber)) {
+    return res.status(400).json({ success: false, message: "Aadhar number must be exactly 12 digits" });
+  }
+  if (panNumber && !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(panNumber)) {
+    return res.status(400).json({ success: false, message: "Invalid PAN card format (e.g. ABCDE1234F)" });
+  }
+  if (ifscCode && !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifscCode)) {
+    return res.status(400).json({ success: false, message: "Invalid IFSC code format (11 characters)" });
+  }
 
   const executive = await Executive.findById(id);
   if (!executive) {
@@ -174,12 +197,25 @@ export const updateKYC = asyncHandler(async (req: Request, res: Response) => {
     });
   }
 
-  executive.kycDocuments = {
-    ...executive.kycDocuments,
-    ...(aadhaar && { aadhaar }),
-    ...(pan && { pan }),
+  // Update KYC Details
+  executive.kycDetails = {
+    ...executive.kycDetails,
+    ...(aadharNumber && { aadharNumber }),
+    ...(panNumber && { panNumber }),
+    ...(aadharFront && { aadharFront }),
+    ...(aadharBack && { aadharBack }),
+    ...(panCard && { panCard }),
     ...(resume && { resume }),
     ...(bankPassbook && { bankPassbook }),
+  };
+
+  // Update Bank Details
+  executive.bankDetails = {
+    ...executive.bankDetails,
+    ...(bankName && { bankName }),
+    ...(ifscCode && { ifscCode }),
+    ...(accountNumber && { accountNumber }),
+    ...(accountHolderName && { accountHolderName }),
   };
   
   executive.kycStatus = 'Submitted';

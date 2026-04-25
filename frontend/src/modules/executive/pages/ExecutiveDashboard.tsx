@@ -3,10 +3,11 @@ import ExecutiveLayout from '../components/ExecutiveLayout';
 import ReferralCodeCard from '../components/ReferralCodeCard';
 import { getDashboardStats } from '../services/executiveService';
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 export default function ExecutiveDashboard() {
+    const navigate = useNavigate();
     const [stats, setStats] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
@@ -16,12 +17,19 @@ export default function ExecutiveDashboard() {
                 const data = await getDashboardStats();
                 setStats(data.data);
             } catch (error: any) {
-                console.error("Error fetching dashboard stats:", error);
-                if (error.response?.status === 403 || error.response?.data?.message?.toLowerCase().includes('suspended')) {
-                    toast.error(error.response?.data?.message || "Account suspended");
+                console.error("Dashboard error:", error);
+                const status = error.response?.status;
+                const message = error.response?.data?.message || "";
+                
+                if (status === 403 || message.toLowerCase().includes('suspended')) {
+                    toast.error(message || "Account suspended");
                     localStorage.removeItem("authToken");
                     localStorage.removeItem("userData");
                     window.location.href = "/executive/login";
+                } else if (status === 401) {
+                    navigate('/executive/login');
+                } else {
+                    toast.error(message || "Failed to load dashboard. Please try again.");
                 }
             } finally {
                 setLoading(false);
@@ -34,10 +42,10 @@ export default function ExecutiveDashboard() {
         return (
             <ExecutiveLayout title="Dashboard">
                 <div className="space-y-6 animate-pulse">
-                    <div className="h-44 bg-neutral-200 rounded-3xl" />
+                    <div className="h-44 bg-neutral-200 rounded-lg" />
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="h-28 bg-neutral-200 rounded-3xl" />
-                        <div className="h-28 bg-neutral-200 rounded-3xl" />
+                        <div className="h-28 bg-neutral-200 rounded-lg" />
+                        <div className="h-28 bg-neutral-200 rounded-lg" />
                     </div>
                 </div>
             </ExecutiveLayout>
@@ -53,9 +61,9 @@ export default function ExecutiveDashboard() {
                         <motion.div 
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            className="p-4 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-start gap-3"
+                            className="p-4 rounded-lg bg-emerald-50 border border-emerald-100 flex items-start gap-3"
                         >
-                            <div className="p-2 rounded-xl bg-emerald-100 text-emerald-600">
+                            <div className="p-2 rounded-lg bg-emerald-100 text-emerald-600">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                                     <polyline points="20 6 9 17 4 12" />
                                 </svg>
@@ -70,9 +78,9 @@ export default function ExecutiveDashboard() {
                     <motion.div 
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
-                        className="p-4 rounded-2xl bg-blue-50 border border-blue-100 flex items-start gap-3"
+                        className="p-4 rounded-lg bg-blue-50 border border-blue-100 flex items-start gap-3"
                     >
-                        <div className="p-2 rounded-xl bg-blue-100 text-blue-600">
+                        <div className="p-2 rounded-lg bg-blue-100 text-blue-600">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                             </svg>
@@ -86,9 +94,9 @@ export default function ExecutiveDashboard() {
                     <motion.div 
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
-                        className="p-4 rounded-2xl bg-red-50 border border-red-100 flex items-start gap-3"
+                        className="p-4 rounded-lg bg-red-50 border border-red-100 flex items-start gap-3"
                     >
-                        <div className="p-2 rounded-xl bg-red-100 text-red-600">
+                        <div className="p-2 rounded-lg bg-red-100 text-red-600">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                                 <circle cx="12" cy="12" r="10" />
                                 <line x1="15" y1="9" x2="9" y2="15" />
@@ -104,9 +112,9 @@ export default function ExecutiveDashboard() {
                     <motion.div 
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
-                        className="p-4 rounded-2xl bg-orange-50 border border-orange-100 flex items-start gap-3"
+                        className="p-4 rounded-lg bg-orange-50 border border-orange-100 flex items-start gap-3"
                     >
-                        <div className="p-2 rounded-xl bg-orange-100 text-orange-600">
+                        <div className="p-2 rounded-lg bg-orange-100 text-orange-600">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                                 <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
                                 <line x1="12" y1="9" x2="12" y2="13" />
@@ -125,8 +133,8 @@ export default function ExecutiveDashboard() {
 
                 {/* Main Stats */}
                 <div className="grid grid-cols-2 gap-4">
-                    <div className="p-5 rounded-3xl bg-white border border-neutral-100 shadow-sm">
-                        <div className="p-2.5 w-fit rounded-2xl bg-blue-50 text-blue-600 mb-3">
+                    <div className="p-5 rounded-lg bg-white border border-neutral-200 shadow-sm">
+                        <div className="p-2.5 w-fit rounded-lg bg-blue-50 text-blue-600 mb-3">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
                                 <circle cx="9" cy="7" r="4" />
@@ -138,8 +146,8 @@ export default function ExecutiveDashboard() {
                         <h3 className="text-2xl font-black text-neutral-900">{stats?.onboardedSellers || 0}</h3>
                     </div>
 
-                    <div className="p-5 rounded-3xl bg-white border border-neutral-100 shadow-sm">
-                        <div className="p-2.5 w-fit rounded-2xl bg-purple-50 text-purple-600 mb-3">
+                    <div className="p-5 rounded-lg bg-white border border-neutral-200 shadow-sm">
+                        <div className="p-2.5 w-fit rounded-lg bg-purple-50 text-purple-600 mb-3">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                                 <line x1="12" y1="1" x2="12" y2="23" />
                                 <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
@@ -151,7 +159,7 @@ export default function ExecutiveDashboard() {
                 </div>
 
                 {/* Progress Card */}
-                <div className="p-6 rounded-3xl bg-white border border-neutral-100 shadow-sm overflow-hidden relative">
+                <div className="p-6 rounded-lg bg-white border border-neutral-200 shadow-sm overflow-hidden relative">
                     <div className="absolute top-0 right-0 p-6 opacity-5">
                         <svg width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
                             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
@@ -161,17 +169,17 @@ export default function ExecutiveDashboard() {
                     <div className="relative z-10">
                         <div className="flex justify-between items-center mb-4">
                             <h4 className="text-sm font-black text-neutral-900">Withdrawal Eligibility</h4>
-                            <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full uppercase">
+                            <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg uppercase">
                                 {(stats?.onboardedSellers || 0) >= 10 ? 'Eligible' : `${10 - (stats?.onboardedSellers || 0)} more to go`}
                             </span>
                         </div>
                         
                         <div className="space-y-3">
-                            <div className="h-3 w-full bg-neutral-100 rounded-full overflow-hidden">
+                            <div className="h-3 w-full bg-neutral-100 rounded-lg overflow-hidden">
                                 <motion.div 
                                     initial={{ width: 0 }}
                                     animate={{ width: `${Math.min(((stats?.onboardedSellers || 0) / 10) * 100, 100)}%` }}
-                                    className="h-full bg-emerald-500 rounded-full shadow-[0_0_12px_rgba(16,185,129,0.3)]" 
+                                    className="h-full bg-emerald-500 rounded-lg shadow-[0_0_12px_rgba(16,185,129,0.3)]" 
                                 />
                             </div>
                             <div className="flex justify-between text-[10px] font-bold text-neutral-400">
@@ -188,9 +196,9 @@ export default function ExecutiveDashboard() {
                     <div className="grid grid-cols-2 gap-3">
                         <a 
                             href="/seller/signup"
-                            className="p-4 rounded-2xl bg-neutral-900 text-white flex flex-col items-center gap-2 hover:bg-neutral-800 transition-colors active:scale-95 w-full"
+                            className="p-4 rounded-lg bg-neutral-900 text-white flex flex-col items-center gap-2 hover:bg-neutral-800 transition-colors active:scale-95 w-full"
                         >
-                            <div className="p-2 rounded-xl bg-white/10">
+                            <div className="p-2 rounded-lg bg-white/10">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                                     <path d="M12 5v14M5 12h14" />
                                 </svg>
@@ -199,9 +207,9 @@ export default function ExecutiveDashboard() {
                         </a>
                         <Link 
                             to="/executive/wallet" 
-                            className="p-4 rounded-2xl bg-white border border-neutral-100 text-neutral-900 flex flex-col items-center gap-2 hover:bg-neutral-50 transition-colors active:scale-95 shadow-sm w-full text-center"
+                            className="p-4 rounded-lg bg-white border border-neutral-200 text-neutral-900 flex flex-col items-center gap-2 hover:bg-neutral-50 transition-colors active:scale-95 shadow-sm w-full text-center"
                         >
-                            <div className="p-2 rounded-xl bg-neutral-50">
+                            <div className="p-2 rounded-lg bg-neutral-50">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                                     <polyline points="7 10 12 15 17 10" />

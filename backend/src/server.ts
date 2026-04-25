@@ -16,6 +16,7 @@ import { syncRazorpaySubscriptionsOnce } from "./cron/razorpaySubscriptionSync";
 import { syncRazorpayCustomerSubscriptionsOnce } from "./cron/razorpayCustomerSubscriptionSync";
 import { syncRazorpayDeliverySubscriptionsOnce } from "./cron/razorpayDeliverySubscriptionSync";
 import SpinAttempt from "./models/SpinAttempt";
+import { registerModelAliases } from "./utils/modelRegistration";
 
 /** Drop any unique indexes on SpinAttempt that should NOT be unique */
 async function fixSpinAttemptIndexes() {
@@ -158,6 +159,7 @@ let lastRazorpaySubCronError: string | null = null;
 async function startServer() {
   // Connect DB then ensure default admin exists
   await connectDB();
+  registerModelAliases();
   await fixSpinAttemptIndexes();
   await ensureDefaultAdmin();
   await seedHeaderCategories();

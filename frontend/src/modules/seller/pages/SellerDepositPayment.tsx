@@ -83,16 +83,16 @@ const SellerDepositPayment = () => {
                 return;
             }
 
-            const { order, key } = orderResponse.data;
+            const { razorpayOrderId, razorpayKey, amount, currency } = orderResponse.data;
 
             // 3. Open Checkout
             const options = {
-                key: key,
-                amount: order.amount,
-                currency: order.currency,
+                key: razorpayKey,
+                amount: amount,
+                currency: currency,
                 name: "JYASTI Quick-commerce",
                 description: "Seller Security Deposit",
-                order_id: order.id,
+                order_id: razorpayOrderId,
                 handler: async (response: any) => {
                     try {
                         setLoading(true);

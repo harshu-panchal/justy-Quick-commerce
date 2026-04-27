@@ -81,9 +81,15 @@ export default function ExecutiveProfile() {
                         {stats?.email && <p className="text-neutral-400 text-xs font-medium">{stats.email}</p>}
                     </div>
                     <div className="flex items-center gap-2">
-                        <span className="px-3 py-1 bg-neutral-100 rounded-lg text-[10px] font-black uppercase text-neutral-500">
-                            {stats?.referralCode}
-                        </span>
+                        {stats?.kycStatus === 'Approved' ? (
+                            <span className="px-3 py-1 bg-neutral-100 rounded-lg text-[10px] font-black uppercase text-neutral-500">
+                                {stats?.referralCode}
+                            </span>
+                        ) : (
+                            <span className="px-3 py-1 bg-neutral-100 rounded-lg text-[10px] font-black uppercase text-neutral-400 italic">
+                                Verification Pending
+                            </span>
+                        )}
                         <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase ${
                             stats?.status === 'Active' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
                         }`}>

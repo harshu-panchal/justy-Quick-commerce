@@ -128,8 +128,23 @@ export default function ExecutiveDashboard() {
                     </motion.div>
                 )}
 
-                {/* Referral Card */}
-                <ReferralCodeCard code={stats?.referralCode || JSON.parse(localStorage.getItem('userData') || '{}').referralCode} />
+                {/* Referral Card - Only shown if approved */}
+                {stats?.kycStatus === 'Approved' ? (
+                    <ReferralCodeCard code={stats?.referralCode || JSON.parse(localStorage.getItem('userData') || '{}').referralCode} />
+                ) : (
+                    <div className="p-6 rounded-lg bg-neutral-50 border-2 border-dashed border-neutral-200 flex flex-col items-center text-center gap-2">
+                        <div className="w-10 h-10 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-400">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                            </svg>
+                        </div>
+                        <div>
+                            <p className="text-xs font-black text-neutral-400 uppercase tracking-widest">Referral Code Locked</p>
+                            <p className="text-[10px] text-neutral-400 font-medium">Complete verification to get your referral code</p>
+                        </div>
+                    </div>
+                )}
 
                 {/* Main Stats */}
                 <div className="grid grid-cols-2 gap-4">
@@ -210,17 +225,29 @@ export default function ExecutiveDashboard() {
                 <div className="space-y-3">
                     <h4 className="text-xs font-black text-neutral-400 uppercase tracking-widest ml-1">Quick Actions</h4>
                     <div className="grid grid-cols-2 gap-3">
-                        <a 
-                            href={`/seller/signup?ref=${stats?.referralCode}`}
-                            className="p-4 rounded-lg bg-neutral-900 text-white flex flex-col items-center gap-2 hover:bg-neutral-800 transition-colors active:scale-95 w-full text-center"
-                        >
-                            <div className="p-2 rounded-lg bg-white/10">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                    <path d="M12 5v14M5 12h14" />
-                                </svg>
+                        {stats?.kycStatus === 'Approved' ? (
+                            <a 
+                                href={`/seller/signup?ref=${stats?.referralCode}`}
+                                className="p-4 rounded-lg bg-neutral-900 text-white flex flex-col items-center gap-2 hover:bg-neutral-800 transition-colors active:scale-95 w-full text-center"
+                            >
+                                <div className="p-2 rounded-lg bg-white/10">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                        <path d="M12 5v14M5 12h14" />
+                                    </svg>
+                                </div>
+                                <span className="text-[11px] font-bold">Onboard Seller</span>
+                            </a>
+                        ) : (
+                            <div className="p-4 rounded-lg bg-neutral-100 text-neutral-400 flex flex-col items-center gap-2 opacity-60 w-full text-center cursor-not-allowed">
+                                <div className="p-2 rounded-lg bg-neutral-200">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                                    </svg>
+                                </div>
+                                <span className="text-[11px] font-bold">Onboard Seller</span>
                             </div>
-                            <span className="text-[11px] font-bold">Onboard Seller</span>
-                        </a>
+                        )}
                         <Link 
                             to="/executive/wallet" 
                             className="p-4 rounded-lg bg-white border border-neutral-200 text-neutral-900 flex flex-col items-center gap-2 hover:bg-neutral-50 transition-colors active:scale-95 shadow-sm w-full text-center"

@@ -136,7 +136,7 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
       mobile,
       alternateMobile: alternateMobile || undefined,
       workExperience: workExperience || undefined,
-      status: 'Active',
+      status: 'Pending',
       isOtpVerified: true
     });
 

@@ -1,24 +1,30 @@
 import { useState, useEffect } from 'react';
 import ExecutiveLayout from '../components/ExecutiveLayout';
-import { getOnboardedSellers } from '../services/executiveService';
+import { getDashboardStats, getOnboardedSellers } from '../services/executiveService';
 import { motion } from 'framer-motion';
 
 export default function ExecutiveSellers() {
     const [sellers, setSellers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
+    const [stats, setStats] = useState<any>(null);
+
     useEffect(() => {
-        const fetchSellers = async () => {
+        const fetchData = async () => {
             try {
-                const data = await getOnboardedSellers();
-                setSellers(data.data);
+                const [sellersRes, statsRes] = await Promise.all([
+                    getOnboardedSellers(),
+                    getDashboardStats()
+                ]);
+                setSellers(sellersRes.data);
+                setStats(statsRes.data);
             } catch (error) {
-                console.error("Error fetching sellers:", error);
+                console.error("Error fetching data:", error);
             } finally {
                 setLoading(false);
             }
         };
-        fetchSellers();
+        fetchData();
     }, []);
 
     const getStatusColor = (status: string) => {
@@ -54,12 +60,18 @@ export default function ExecutiveSellers() {
                             </svg>
                         </div>
                         <p className="text-neutral-400 font-bold">No sellers onboarded yet.</p>
-                        <a 
-                            href={`/seller/signup?ref=${JSON.parse(localStorage.getItem('userData') || '{}').referralCode}`}
-                            className="px-6 py-3 bg-emerald-600 text-white rounded-2xl font-black text-sm inline-block"
-                        >
-                            Onboard Your First Seller
-                        </a>
+                        {stats?.kycStatus === 'Approved' ? (
+                            <a 
+                                href={`/seller/signup?ref=${stats?.referralCode}`}
+                                className="px-6 py-3 bg-emerald-600 text-white rounded-2xl font-black text-sm inline-block active:scale-95 transition-all"
+                            >
+                                Onboard Your First Seller
+                            </a>
+                        ) : (
+                            <div className="px-6 py-3 bg-neutral-100 text-neutral-400 rounded-2xl font-black text-sm inline-block opacity-60">
+                                Verification Required to Onboard
+                            </div>
+                        )}
                     </div>
                 ) : (
                     <div className="space-y-3">

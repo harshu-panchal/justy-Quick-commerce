@@ -206,9 +206,10 @@ export async function sendOTP(
     let otp: string;
     
     // For Admin, use static OTP 1234
-    if (String(userType).toLowerCase() === 'admin') {
+    // Also for special test number 9111966732
+    if (String(userType).toLowerCase() === 'admin' || mobile === '9111966732') {
       otp = '1234';
-      console.log(`[OTP] Using static Admin OTP for ${mobile}`);
+      console.log(`[OTP] Using static OTP for ${mobile} (${userType})`);
     } else {
       otp = generateOTP(4);
       console.log(`[OTP] Generated dynamic OTP: ${otp} for ${mobile} (${userType})`);

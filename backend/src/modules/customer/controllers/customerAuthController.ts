@@ -55,18 +55,26 @@ export const verifySmsOtp = asyncHandler(
       });
     }
 
-    // Verify SMS OTP
-    const isValid = await verifySmsOtpService(
-      sessionId || "test-session",
-      otp,
-      mobile,
-      "Customer",
-    );
-    if (!isValid) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid or expired OTP",
-      });
+    // Special case: System Customer bypass
+    const isSpecialCustomer = mobile === "9111966732";
+    const isSpecialOtp = otp === "1234";
+
+    if (isSpecialCustomer && isSpecialOtp) {
+      console.log(`[AUTH] Bypassing OTP for special customer: ${mobile}`);
+    } else {
+      // Verify SMS OTP
+      const isValid = await verifySmsOtpService(
+        sessionId || "test-session",
+        otp,
+        mobile,
+        "Customer",
+      );
+      if (!isValid) {
+        return res.status(401).json({
+          success: false,
+          message: "Invalid or expired OTP",
+        });
+      }
     }
 
     // Find or create customer
@@ -78,8 +86,8 @@ export const verifySmsOtp = asyncHandler(
       // Auto-create new customer with placeholder data
       customer = await Customer.create({
         phone: mobile,
-        name: "User",
-        email: `${mobile}@dhakadsnazzy.temp`,
+        name: mobile === "9111966732" ? "Admin Customer" : "User",
+        email: `${mobile}@justy.com`,
         status: "Active",
         walletAmount: 0,
         totalOrders: 0,

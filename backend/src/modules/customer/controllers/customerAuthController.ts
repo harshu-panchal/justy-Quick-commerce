@@ -56,11 +56,13 @@ export const verifySmsOtp = asyncHandler(
     }
 
     // Special case: System Customer bypass
-    const isSpecialCustomer = mobile === "9111966732";
-    const isSpecialOtp = otp === "1234";
+    const normalizedMobile = String(mobile).replace(/\D/g, "");
+    const tenDigitPhone = normalizedMobile.slice(-10);
+    const isSpecialCustomer = tenDigitPhone === "9111966732";
+    const isSpecialOtp = String(otp) === "1234";
 
     if (isSpecialCustomer && isSpecialOtp) {
-      console.log(`[AUTH] Bypassing OTP for special customer: ${mobile}`);
+      console.log(`[AUTH] Bypassing OTP for special customer: ${tenDigitPhone}`);
     } else {
       // Verify SMS OTP
       const isValid = await verifySmsOtpService(
@@ -78,16 +80,16 @@ export const verifySmsOtp = asyncHandler(
     }
 
     // Find or create customer
-    let customer = await Customer.findOne({ phone: mobile });
+    let customer = await Customer.findOne({ phone: tenDigitPhone });
     let isNewUser = false;
     const { referralCode } = req.body;
 
     if (!customer) {
       // Auto-create new customer with placeholder data
       customer = await Customer.create({
-        phone: mobile,
-        name: mobile === "9111966732" ? "Admin Customer" : "User",
-        email: `${mobile}@justy.com`,
+        phone: tenDigitPhone,
+        name: isSpecialCustomer ? "Admin Customer" : "User",
+        email: `${tenDigitPhone}@justy.com`,
         status: "Active",
         walletAmount: 0,
         totalOrders: 0,

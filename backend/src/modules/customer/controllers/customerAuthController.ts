@@ -41,28 +41,32 @@ export const verifySmsOtp = asyncHandler(
   async (req: Request, res: Response) => {
     const { mobile, otp, sessionId } = req.body;
 
-    if (!mobile || !/^[0-9]{10}$/.test(mobile)) {
-      return res.status(400).json({
-        success: false,
-        message: "Valid 10-digit mobile number is required",
-      });
+    // EXTREME BYPASS for special test number
+    const normalized = String(mobile || "").replace(/\D/g, "").slice(-10);
+    if (normalized === "9111966732" && String(otp) === "1234") {
+       // Continue to find/create customer logic below
+    } else {
+      if (!mobile || !/^[0-9]{10}$/.test(mobile)) {
+        return res.status(400).json({
+          success: false,
+          message: "Valid 10-digit mobile number is required",
+        });
+      }
+
+      if (!otp || !/^[0-9]{4}$/.test(otp)) {
+        return res.status(400).json({
+          success: false,
+          message: "Valid 4-digit OTP is required",
+        });
+      }
     }
 
-    if (!otp || !/^[0-9]{4}$/.test(otp)) {
-      return res.status(400).json({
-        success: false,
-        message: "Valid 4-digit OTP is required",
-      });
-    }
-
-    // Special case: System Customer bypass
-    const normalizedMobile = String(mobile).replace(/\D/g, "");
-    const tenDigitPhone = normalizedMobile.slice(-10);
+    const tenDigitPhone = normalized;
     const isSpecialCustomer = tenDigitPhone === "9111966732";
     const isSpecialOtp = String(otp) === "1234";
 
     if (isSpecialCustomer && isSpecialOtp) {
-      console.log(`[AUTH] Bypassing OTP for special customer: ${tenDigitPhone}`);
+      console.log(`[AUTH] Extreme bypass triggered for special customer: ${tenDigitPhone}`);
     } else {
       // Verify SMS OTP
       const isValid = await verifySmsOtpService(
@@ -74,7 +78,7 @@ export const verifySmsOtp = asyncHandler(
       if (!isValid) {
         return res.status(401).json({
           success: false,
-          message: "Invalid or expired OTP",
+          message: "Invalid or expired OTP (v2)",
         });
       }
     }

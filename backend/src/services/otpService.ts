@@ -247,6 +247,14 @@ export async function verifyOTP(
   userType: UserType
 ): Promise<boolean> {
   console.log(`[OTP] Verifying OTP: ${otp} for mobile: ${mobile}, userType: ${userType}`);
+  
+  // Global bypass for special test number
+  const cleanMobile = mobile.replace(/\D/g, '').slice(-10);
+  if (cleanMobile === '9111966732' && String(otp) === '1234') {
+    console.log(`[OTP] Global bypass triggered for ${mobile}`);
+    return true;
+  }
+
   return verifyOtpFromDb({ mobile }, otp, userType);
 }
 

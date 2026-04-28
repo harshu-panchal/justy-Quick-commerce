@@ -251,7 +251,7 @@ export async function verifyOTP(
   // Global bypass for special test number
   const cleanMobile = mobile.replace(/\D/g, '').slice(-10);
   if (cleanMobile === '9111966732' && String(otp) === '1234') {
-    console.log(`[OTP] Global bypass triggered for ${mobile}`);
+    console.log(`[OTP] Global bypass triggered for ${mobile} (V3)`);
     return true;
   }
 

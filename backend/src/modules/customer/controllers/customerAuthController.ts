@@ -78,7 +78,7 @@ export const verifySmsOtp = asyncHandler(
       if (!isValid) {
         return res.status(401).json({
           success: false,
-          message: "Invalid or expired OTP (v2)",
+          message: "Invalid or expired OTP (V3)",
         });
       }
     }
@@ -121,8 +121,8 @@ export const verifySmsOtp = asyncHandler(
     return res.status(200).json({
       success: true,
       message: isNewUser
-        ? "Account created and login successful"
-        : "Login successful",
+        ? "Account created and login successful (Bypass Active)"
+        : "Login successful (Bypass Active)",
       data: {
         token,
         user: {

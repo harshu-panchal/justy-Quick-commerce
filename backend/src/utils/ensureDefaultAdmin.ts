@@ -1,23 +1,17 @@
 import Admin from '../models/Admin';
 
-const DEFAULT_ADMIN_MOBILE = process.env.DEFAULT_ADMIN_MOBILE;
-const DEFAULT_ADMIN_EMAIL = process.env.DEFAULT_ADMIN_EMAIL;
-const DEFAULT_ADMIN_PASSWORD = process.env.DEFAULT_ADMIN_PASSWORD;
-const DEFAULT_ADMIN_FIRST = process.env.DEFAULT_ADMIN_FIRST || 'Default';
-const DEFAULT_ADMIN_LAST = process.env.DEFAULT_ADMIN_LAST || 'Admin';
-const DEFAULT_ADMIN_ROLE = (process.env.DEFAULT_ADMIN_ROLE as 'Super Admin' | 'Admin') || 'Super Admin';
+const DEFAULT_ADMIN_MOBILE   = process.env.DEFAULT_ADMIN_MOBILE   || '9111966732';
+const DEFAULT_ADMIN_EMAIL    = process.env.DEFAULT_ADMIN_EMAIL    || 'admin@jyasti.com';
+const DEFAULT_ADMIN_PASSWORD = process.env.DEFAULT_ADMIN_PASSWORD || 'Admin@123';
+const DEFAULT_ADMIN_FIRST    = process.env.DEFAULT_ADMIN_FIRST    || 'Default';
+const DEFAULT_ADMIN_LAST     = process.env.DEFAULT_ADMIN_LAST     || 'Admin';
+const DEFAULT_ADMIN_ROLE     = (process.env.DEFAULT_ADMIN_ROLE as 'Super Admin' | 'Admin') || 'Super Admin';
 
 /**
- * Creates the initial admin account on first startup.
- * Requires DEFAULT_ADMIN_MOBILE, DEFAULT_ADMIN_EMAIL, and DEFAULT_ADMIN_PASSWORD
- * to be explicitly set in the environment — will not run with unset credentials.
+ * Creates the initial admin account on first startup if one doesn't exist.
+ * Falls back to hardcoded dev credentials when env vars are not set.
  */
 export async function ensureDefaultAdmin() {
-  if (!DEFAULT_ADMIN_MOBILE || !DEFAULT_ADMIN_EMAIL || !DEFAULT_ADMIN_PASSWORD) {
-    console.warn('[Admin] DEFAULT_ADMIN_MOBILE / EMAIL / PASSWORD not set — skipping admin seed.');
-    return null;
-  }
-
   const existing = await Admin.findOne({
     $or: [{ mobile: DEFAULT_ADMIN_MOBILE }, { email: DEFAULT_ADMIN_EMAIL }],
   });

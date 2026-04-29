@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /seller/
+Disallow: /executive/
+Disallow: /delivery/
+Disallow: /api/
+
+Sitemap: https://jyasti.com/sitemap.xml

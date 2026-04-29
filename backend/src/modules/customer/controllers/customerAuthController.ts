@@ -21,9 +21,14 @@ export const sendSmsOtp = asyncHandler(async (req: Request, res: Response) => {
     });
   }
 
-  // Send SMS OTP - no need to check if customer exists
-  // New customers will be auto-created upon OTP verification
   const result = await sendSmsOtpService(mobile, "Customer");
+
+  if (!result.success) {
+    return res.status(500).json({
+      success: false,
+      message: result.message,
+    });
+  }
 
   return res.status(200).json({
     success: true,
@@ -41,59 +46,43 @@ export const verifySmsOtp = asyncHandler(
   async (req: Request, res: Response) => {
     const { mobile, otp, sessionId } = req.body;
 
-    // EXTREME BYPASS for special test number
-    const normalized = String(mobile || "").replace(/\D/g, "").slice(-10);
-    if (normalized === "9111966732" && String(otp) === "1234") {
-       // Continue to find/create customer logic below
-    } else {
-      if (!mobile || !/^[0-9]{10}$/.test(mobile)) {
-        return res.status(400).json({
-          success: false,
-          message: "Valid 10-digit mobile number is required",
-        });
-      }
-
-      if (!otp || !/^[0-9]{4}$/.test(otp)) {
-        return res.status(400).json({
-          success: false,
-          message: "Valid 4-digit OTP is required",
-        });
-      }
+    if (!mobile || !/^[0-9]{10}$/.test(mobile)) {
+      return res.status(400).json({
+        success: false,
+        message: "Valid 10-digit mobile number is required",
+      });
     }
 
-    const tenDigitPhone = normalized;
-    const isSpecialCustomer = tenDigitPhone === "9111966732";
-    const isSpecialOtp = String(otp) === "1234";
+    if (!otp || !/^[0-9]{4}$/.test(otp)) {
+      return res.status(400).json({
+        success: false,
+        message: "Valid 4-digit OTP is required",
+      });
+    }
 
-    if (isSpecialCustomer && isSpecialOtp) {
-      console.log(`[AUTH] Extreme bypass triggered for special customer: ${tenDigitPhone}`);
-    } else {
-      // Verify SMS OTP
-      const isValid = await verifySmsOtpService(
-        sessionId || "test-session",
-        otp,
-        mobile,
-        "Customer",
-      );
-      if (!isValid) {
-        return res.status(401).json({
-          success: false,
-          message: "Invalid or expired OTP (V3)",
-        });
-      }
+    const isValid = await verifySmsOtpService(
+      sessionId || "",
+      otp,
+      mobile,
+      "Customer",
+    );
+
+    if (!isValid) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid or expired OTP",
+      });
     }
 
     // Find or create customer
-    let customer = await Customer.findOne({ phone: tenDigitPhone });
+    let customer = await Customer.findOne({ phone: mobile });
     let isNewUser = false;
     const { referralCode } = req.body;
 
     if (!customer) {
-      // Auto-create new customer with placeholder data
       customer = await Customer.create({
-        phone: tenDigitPhone,
-        name: isSpecialCustomer ? "Admin Customer" : "User",
-        email: `${tenDigitPhone}@justy.com`,
+        phone: mobile,
+        name: "User",
         status: "Active",
         walletAmount: 0,
         totalOrders: 0,
@@ -120,9 +109,7 @@ export const verifySmsOtp = asyncHandler(
 
     return res.status(200).json({
       success: true,
-      message: isNewUser
-        ? "Account created and login successful (Bypass Active)"
-        : "Login successful (Bypass Active)",
+      message: isNewUser ? "Account created and login successful" : "Login successful",
       data: {
         token,
         user: {

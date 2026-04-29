@@ -14,10 +14,9 @@ export const getBalance = async (req: Request, res: Response) => {
         const sellerId = req.user!.userId;
         const seller = await Seller.findById(sellerId).select('balance securityDeposit depositAmount');
         
-        // Use securityDeposit, or depositAmount, or fallback to 1000
-        const currentDeposit = (typeof seller?.securityDeposit === 'number') 
-            ? seller.securityDeposit 
-            : (typeof seller?.depositAmount === 'number' ? seller.depositAmount : 1000);
+        const currentDeposit = (typeof seller?.securityDeposit === 'number')
+            ? seller.securityDeposit
+            : (typeof seller?.depositAmount === 'number' ? seller.depositAmount : 0);
 
         return res.status(200).json({
             success: true,

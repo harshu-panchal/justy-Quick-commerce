@@ -8,6 +8,7 @@ const router = Router();
 // Send OTP routes
 router.post("/send-otp", otpRateLimiter, sellerAuthController.sendOTP);
 router.post("/send-email-otp", otpRateLimiter, sellerAuthController.sendEmailOTP);
+router.post("/send-mobile-otp-register", otpRateLimiter, sellerAuthController.sendRegistrationMobileOTP);
 
 // Verify OTP routes
 router.post("/verify-otp", loginRateLimiter, sellerAuthController.verifyOTP);

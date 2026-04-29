@@ -30,6 +30,7 @@ export interface RegisterData {
   referralCode?: string;
   executiveName?: string;
   mobile: string;
+  mobileOtp?: string;
   alternateMobile?: string;
   email: string;
   storeName: string;
@@ -90,10 +91,18 @@ export interface RegisterResponse {
 }
 
 /**
- * Send OTP to seller mobile number
+ * Send OTP to seller mobile number (login — seller must exist)
  */
 export const sendOTP = async (mobile: string): Promise<SendOTPResponse> => {
   const response = await api.post<SendOTPResponse>('/auth/seller/send-otp', { mobile });
+  return response.data;
+};
+
+/**
+ * Send OTP to mobile for registration (seller does not need to exist yet)
+ */
+export const sendRegistrationMobileOTP = async (mobile: string): Promise<SendOTPResponse> => {
+  const response = await api.post<SendOTPResponse>('/auth/seller/send-mobile-otp-register', { mobile });
   return response.data;
 };
 

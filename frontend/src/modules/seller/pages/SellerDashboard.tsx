@@ -9,6 +9,8 @@ import { useAuth } from '../../../context/AuthContext';
 import { seedSellerProducts } from '../../../utils/seedSellerProducts';
 import { getSellerSpinWheelCampaign } from '../../../services/api/sellerSpinWheelService';
 
+const REQUIRED_DEPOSIT_AMOUNT = 1000;
+
 export default function SellerDashboard() {
   const navigate = useNavigate();
   const { user, updateUser } = useAuth();
@@ -41,7 +43,6 @@ export default function SellerDashboard() {
         if (profileResponse.success) {
           // Use nullish coalescing to default to true if isShopOpen is undefined
           const shopStatus = profileResponse.data.isShopOpen ?? true;
-          console.log('Initial shop status from profile:', shopStatus, 'Raw value:', profileResponse.data.isShopOpen);
           setIsShopOpen(shopStatus);
 
           // Sync deposit fields from profile into auth context so SellerAccessGuard stays accurate
@@ -314,7 +315,7 @@ export default function SellerDashboard() {
               </div>
               <div className="text-white">
                 <h3 className="text-sm sm:text-base font-bold">Action Required: Security Deposit Pending</h3>
-                <p className="text-xs text-orange-50 opacity-90">Please pay the ₹1000 security deposit to start adding products and receiving orders.</p>
+                <p className="text-xs text-orange-50 opacity-90">Please pay the ₹{REQUIRED_DEPOSIT_AMOUNT} security deposit to start adding products and receiving orders.</p>
               </div>
             </div>
             <button
@@ -370,11 +371,11 @@ export default function SellerDashboard() {
           <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
             <div>
               <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Required Amount</p>
-              <p className="text-lg font-bold text-gray-900">₹1000</p>
+              <p className="text-lg font-bold text-gray-900">₹{REQUIRED_DEPOSIT_AMOUNT}</p>
             </div>
             <div>
               <p className="text-xs text-orange-600 uppercase font-bold mb-1">Current Balance</p>
-              <p className="text-lg font-bold text-orange-600">₹{user?.securityDeposit ?? 1000}</p>
+              <p className="text-lg font-bold text-orange-600">₹{user?.securityDeposit ?? 0}</p>
             </div>
             <div>
               <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Amount Paid</p>
@@ -409,7 +410,7 @@ export default function SellerDashboard() {
         <DashboardCard 
           icon={walletIcon} 
           title="Security Deposit Balance" 
-          value={`₹${user?.securityDeposit ?? 1000}`} 
+          value={`₹${user?.securityDeposit ?? 0}`}
           accentColor="#0d9488" 
         />
         <DashboardCard icon={ordersIcon} title="Total Orders" value={stats.totalOrders} accentColor="#3b82f6" />

@@ -129,11 +129,12 @@ export const getSellerById = async (
  */
 export const updateSellerStatus = async (
   id: string,
-  status: "Approved" | "Pending" | "Rejected"
+  status: "Approved" | "Pending" | "Rejected",
+  rejectionReason?: string
 ): Promise<ApiResponse<Seller>> => {
   const response = await api.patch<ApiResponse<Seller>>(
     `/sellers/${id}/status`,
-    { status }
+    { status, ...(rejectionReason ? { rejectionReason } : {}) }
   );
   return response.data;
 };

@@ -3,6 +3,7 @@ import Seller from '../../../models/Seller';
 import WalletTransaction from '../../../models/WalletTransaction';
 import WithdrawRequest from '../../../models/WithdrawRequest';
 import OrderItem from '../../../models/OrderItem';
+import Commission from '../../../models/Commission';
 import { asyncHandler } from '../../../utils/asyncHandler';
 import mongoose from 'mongoose';
 
@@ -207,15 +208,19 @@ export const getOrderEarnings = asyncHandler(async (req: Request, res: Response)
 
     const total = await OrderItem.countDocuments(query);
 
-    const formattedEarnings = earnings.map(item => ({
-        id: item._id,
-        orderId: item.orderId,
-        source: item.productName,
-        amount: item.subtotal,
-        commission: (item.subtotal * 0.15), // Mock 15% commission if not stored
-        netEarning: item.subtotal * 0.85,
-        date: item.createdAt,
-        status: item.status === 'Delivered' ? 'Settled' : 'Pending'
+    const formattedEarnings = await Promise.all(earnings.map(async (item) => {
+        const commission = await Commission.findOne({ orderItem: item._id, seller: sellerId });
+        const commissionAmount = commission ? commission.commissionAmount : 0;
+        return {
+            id: item._id,
+            orderId: item.orderId,
+            source: item.productName,
+            amount: item.subtotal,
+            commission: commissionAmount,
+            netEarning: item.subtotal - commissionAmount,
+            date: item.createdAt,
+            status: item.status === 'Delivered' ? 'Settled' : 'Pending'
+        };
     }));
 
     return res.status(200).json({

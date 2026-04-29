@@ -92,6 +92,7 @@ const DeliveryQrScanner = lazy(() => import("./modules/delivery/pages/DeliveryQr
 const SellerLayout = lazy(() => import("./modules/seller/components/SellerLayout"));
 const SellerDashboard = lazy(() => import("./modules/seller/pages/SellerDashboard"));
 const SellerVerificationPending = lazy(() => import("./modules/seller/pages/SellerVerificationPending"));
+const SellerRejected = lazy(() => import("./modules/seller/pages/SellerRejected"));
 const SellerDepositPayment = lazy(() => import("./modules/seller/pages/SellerDepositPayment"));
 const SellerAccessGuard = lazy(() => import("./modules/seller/components/SellerAccessGuard"));
 const SellerOrders = lazy(() => import("./modules/seller/pages/SellerOrders"));
@@ -377,6 +378,7 @@ function App() {
                                       <Suspense fallback={<IconLoader forceShow />}>
                                         <Routes>
                                           <Route path="verification-pending" element={<SellerVerificationPending />} />
+                                          <Route path="rejected" element={<SellerRejected />} />
                                           <Route path="deposit-payment" element={<SellerDepositPayment />} />
                                           <Route
                                             path="*"

@@ -62,9 +62,9 @@ const OtpSchema = new Schema<IOtp>(
   }
 );
 
-// Compound indexes for quick lookup
-OtpSchema.index({ mobile: 1, userType: 1 });
-OtpSchema.index({ email: 1, userType: 1 });
+// Compound indexes for quick lookup — include createdAt desc for latest-first queries
+OtpSchema.index({ mobile: 1, userType: 1, createdAt: -1 });
+OtpSchema.index({ email: 1, userType: 1, createdAt: -1 });
 
 const Otp = (mongoose.models.Otp as mongoose.Model<IOtp>) || mongoose.model<IOtp>('Otp', OtpSchema);
 

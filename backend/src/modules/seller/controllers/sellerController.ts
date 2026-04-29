@@ -81,12 +81,19 @@ export const getSellerById = asyncHandler(
 export const updateSellerStatus = asyncHandler(
   async (req: Request, res: Response) => {
     const { id } = req.params;
-    const { status } = req.body;
+    const { status, rejectionReason } = req.body;
 
     if (!status || !["Approved", "Pending", "Rejected"].includes(status)) {
       return res.status(400).json({
         success: false,
         message: "Valid status is required (Approved, Pending, or Rejected)",
+      });
+    }
+
+    if (status === "Rejected" && (!rejectionReason || !String(rejectionReason).trim())) {
+      return res.status(400).json({
+        success: false,
+        message: "A rejection reason is required when rejecting a seller",
       });
     }
 
@@ -99,6 +106,11 @@ export const updateSellerStatus = asyncHandler(
     }
 
     seller.status = status;
+    if (status === "Rejected") {
+      seller.rejectionReason = String(rejectionReason).trim();
+    } else {
+      seller.rejectionReason = undefined;
+    }
     await seller.save();
 
     // Commission Check
@@ -117,6 +129,7 @@ export const updateSellerStatus = asyncHandler(
       io.to(`seller-${id}`).emit("seller-notification", {
         type: "STATUS_UPDATE",
         status: status,
+        rejectionReason: status === "Rejected" ? seller.rejectionReason : undefined,
         user: seller,
         timestamp: new Date()
       });

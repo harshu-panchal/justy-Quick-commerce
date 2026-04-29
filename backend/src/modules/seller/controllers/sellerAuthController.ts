@@ -68,7 +68,7 @@ export const verifyEmailOTP = asyncHandler(async (req: Request, res: Response) =
 });
 
 /**
- * Send OTP to seller mobile number
+ * Send OTP to seller mobile for login (seller must already exist)
  */
 export const sendOTP = asyncHandler(async (req: Request, res: Response) => {
   const { mobile } = req.body;
@@ -89,8 +89,45 @@ export const sendOTP = asyncHandler(async (req: Request, res: Response) => {
     });
   }
 
-  // Send OTP - for login, always use default OTP
   const result = await sendOTPService(mobile, "Seller", true);
+
+  if (!result.success) {
+    return res.status(500).json({ success: false, message: result.message });
+  }
+
+  return res.status(200).json({
+    success: true,
+    message: result.message,
+  });
+});
+
+/**
+ * Send OTP to any mobile for registration (seller does not need to exist yet)
+ */
+export const sendRegistrationMobileOTP = asyncHandler(async (req: Request, res: Response) => {
+  const { mobile } = req.body;
+
+  if (!mobile || !/^[0-9]{10}$/.test(mobile)) {
+    return res.status(400).json({
+      success: false,
+      message: "Valid 10-digit mobile number is required",
+    });
+  }
+
+  // Reject if mobile is already registered
+  const existing = await Seller.findOne({ mobile });
+  if (existing) {
+    return res.status(409).json({
+      success: false,
+      message: "A seller account already exists with this mobile number",
+    });
+  }
+
+  const result = await sendOTPService(mobile, "Seller", false);
+
+  if (!result.success) {
+    return res.status(500).json({ success: false, message: result.message });
+  }
 
   return res.status(200).json({
     success: true,
@@ -136,6 +173,17 @@ export const verifyOTP = asyncHandler(async (req: Request, res: Response) => {
     });
   }
 
+  // Block rejected sellers — they must contact support
+  if (seller.status === "Rejected") {
+    return res.status(403).json({
+      success: false,
+      message: seller.rejectionReason
+        ? `Your account has been rejected. Reason: ${seller.rejectionReason}. Please contact support.`
+        : "Your account has been rejected. Please contact support.",
+      status: "Rejected",
+    });
+  }
+
   // Generate JWT token
   const token = generateToken(seller._id.toString(), "Seller", undefined, seller._id.toString());
 
@@ -176,6 +224,7 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
     sellerName,
     executiveName,
     mobile,
+    mobileOtp,
     email,
     storeName,
     category,
@@ -188,7 +237,7 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
     isDeliveryByPlatform,
   } = req.body;
 
-  // Validation (password removed - sellers don't need password during signup)
+  // Validation
   if (!sellerName || !mobile || !email || !storeName || !category || !pincode || !req.body.nearestLandmark) {
     return res.status(400).json({
       success: false,
@@ -244,6 +293,21 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
     return res.status(400).json({
       success: false,
       message: "Invalid location coordinates",
+    });
+  }
+
+  // Verify mobile OTP before creating the account
+  if (!mobileOtp || !/^[0-9]{4}$/.test(mobileOtp)) {
+    return res.status(400).json({
+      success: false,
+      message: "Valid 4-digit mobile OTP is required",
+    });
+  }
+  const isMobileOtpValid = await verifyOTPService(mobile, mobileOtp, "Seller");
+  if (!isMobileOtpValid) {
+    return res.status(401).json({
+      success: false,
+      message: "Invalid or expired mobile OTP",
     });
   }
 

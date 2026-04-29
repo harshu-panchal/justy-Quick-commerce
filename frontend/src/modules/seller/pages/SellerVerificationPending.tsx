@@ -13,15 +13,30 @@ const SellerVerificationPending = () => {
     const { showToast } = useToast();
     const [checking, setChecking] = useState(false);
 
-    // 1. WebSocket Listener for instant approval
+    // 1. WebSocket Listener for instant approval or rejection
     useSellerSocket((notification) => {
-        if (notification.type === 'STATUS_UPDATE' && (notification as any).status === 'Approved') {
-            console.log('🚀 Seller approved via socket!');
-            showToast('Your store has been approved! Redirecting to dashboard...', 'success');
+        if (notification.type !== 'STATUS_UPDATE') return;
+        const status = (notification as any).status;
+
+        if (status === 'Approved') {
+            showToast('Your store has been approved! Redirecting...', 'success');
             if ((notification as any).user) {
                 updateUser({ ...user, ...(notification as any).user, userType: 'Seller' });
             }
             navigate('/seller', { replace: true });
+        } else if (status === 'Rejected') {
+            showToast('Your application has been rejected.', 'error');
+            const updatedUser = {
+                ...user,
+                status: 'Rejected',
+                rejectionReason: (notification as any).rejectionReason,
+                userType: 'Seller',
+            };
+            if ((notification as any).user) {
+                Object.assign(updatedUser, (notification as any).user);
+            }
+            updateUser(updatedUser);
+            navigate('/seller/rejected', { replace: true });
         }
     });
 
@@ -32,11 +47,18 @@ const SellerVerificationPending = () => {
             try {
                 setChecking(true);
                 const response = await getSellerProfile();
-                if (response.success && response.data.status === 'Approved') {
-                    console.log('✅ Seller approved via polling!');
-                    showToast('Your store has been approved! Redirecting to dashboard...', 'success');
+                if (!response.success) return;
+
+                const { status, rejectionReason } = response.data;
+
+                if (status === 'Approved') {
+                    showToast('Your store has been approved! Redirecting...', 'success');
                     updateUser({ ...user, ...response.data, userType: 'Seller' });
                     navigate('/seller', { replace: true });
+                } else if (status === 'Rejected') {
+                    showToast('Your application has been rejected.', 'error');
+                    updateUser({ ...user, ...response.data, status: 'Rejected', rejectionReason, userType: 'Seller' });
+                    navigate('/seller/rejected', { replace: true });
                 }
             } catch (error) {
                 console.error('Error polling seller status:', error);

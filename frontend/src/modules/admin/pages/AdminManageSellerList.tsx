@@ -142,6 +142,8 @@ export default function AdminManageSellerList() {
     const [isSavingCommissions, setIsSavingCommissions] = useState(false);
     const [isFetchingCommissions, setIsFetchingCommissions] = useState(false);
     const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+    const [rejectModal, setRejectModal] = useState<{ open: boolean; sellerId: string | null }>({ open: false, sellerId: null });
+    const [rejectReason, setRejectReason] = useState('');
 
 
     // Fetch sellers from backend
@@ -330,22 +332,33 @@ export default function AdminManageSellerList() {
         }
     };
 
-    const handleReject = async (id: number | string) => {
+    const handleReject = (id: number | string) => {
         const sellerId = typeof id === 'number' ? sellers.find(s => s.id === id)?._id : id;
         if (!sellerId) return;
+        setRejectReason('');
+        setRejectModal({ open: true, sellerId });
+    };
+
+    const handleConfirmReject = async () => {
+        if (!rejectModal.sellerId) return;
+        if (!rejectReason.trim()) {
+            setError('Please provide a reason for rejection.');
+            return;
+        }
 
         try {
-            const response = await updateSellerStatus(sellerId, 'Rejected');
+            const response = await updateSellerStatus(rejectModal.sellerId, 'Rejected', rejectReason.trim());
             if (response.success) {
-                // Update local state
                 setSellers(prevSellers =>
                     prevSellers.map(seller =>
-                        seller._id === sellerId
+                        seller._id === rejectModal.sellerId
                             ? { ...seller, status: 'Rejected', needApproval: false }
                             : seller
                     )
                 );
                 setSuccessMessage('Seller has been rejected.');
+                setRejectModal({ open: false, sellerId: null });
+                setRejectReason('');
                 setIsEditModalOpen(false);
                 setEditingSeller(null);
                 setTimeout(() => setSuccessMessage(''), 3000);
@@ -1313,6 +1326,51 @@ export default function AdminManageSellerList() {
                                 className="px-4 py-2 bg-neutral-200 hover:bg-neutral-300 text-neutral-700 rounded text-sm font-medium transition-colors"
                             >
                                 Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Rejection Reason Modal */}
+            {rejectModal.open && (
+                <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black bg-opacity-50" onClick={() => setRejectModal({ open: false, sellerId: null })}>
+                    <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
+                        <div className="bg-red-600 text-white px-6 py-4 rounded-t-lg flex items-center justify-between">
+                            <h3 className="text-base font-semibold">Reject Seller</h3>
+                            <button onClick={() => setRejectModal({ open: false, sellerId: null })} className="text-white hover:text-red-200 transition-colors">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+                        <div className="p-6">
+                            <p className="text-sm text-neutral-600 mb-4">Please provide a reason for rejecting this seller. The seller will be shown this reason.</p>
+                            <textarea
+                                value={rejectReason}
+                                onChange={(e) => setRejectReason(e.target.value)}
+                                placeholder="Enter rejection reason (required)"
+                                rows={4}
+                                className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-1 focus:ring-red-500 focus:outline-none resize-none"
+                                autoFocus
+                            />
+                            {!rejectReason.trim() && (
+                                <p className="text-xs text-red-500 mt-1">Reason is required</p>
+                            )}
+                        </div>
+                        <div className="px-6 py-4 border-t border-neutral-200 flex justify-end gap-3">
+                            <button
+                                onClick={() => setRejectModal({ open: false, sellerId: null })}
+                                className="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 rounded text-sm font-medium transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleConfirmReject}
+                                disabled={!rejectReason.trim()}
+                                className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded text-sm font-medium transition-colors"
+                            >
+                                Confirm Rejection
                             </button>
                         </div>
                     </div>

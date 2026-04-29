@@ -1,4 +1,5 @@
 import mongoose, { Document, Schema } from 'mongoose';
+import crypto from 'crypto';
 
 export interface ICustomer extends Document {
   name: string;
@@ -207,7 +208,9 @@ CustomerSchema.pre('save', async function (next) {
     const randomPart = Math.random().toString(36).substring(2, 6).toUpperCase();
     this.refCode = `${namePart}${randomPart}`;
   }
-    this.deliveryOtp = '1234';
+  if (!this.deliveryOtp) {
+    this.deliveryOtp = String(crypto.randomInt(1000, 9999));
+  }
   next();
 });
 

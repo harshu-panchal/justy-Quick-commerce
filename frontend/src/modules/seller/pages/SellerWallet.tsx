@@ -176,7 +176,7 @@ export default function SellerWallet() {
                     .map((c: any) => ({
                       _id: c.id || c._id,
                       description: `Order #${c.orderId?.substring(0, 8) || 'Unknown'} (Pending)`,
-                      amount: c.orderAmount - c.amount, // Calculate Net Earning: Order Amount - Commission Fee
+                      amount: c.netEarning ?? (c.orderAmount - (c.platformFee || 0)),
                       type: 'Credit',
                       createdAt: c.createdAt,
                       status: 'Pending',

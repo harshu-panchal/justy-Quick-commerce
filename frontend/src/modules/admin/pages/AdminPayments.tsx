@@ -18,14 +18,13 @@ export default function AdminPayments() {
             setLoading(true);
             const response = await getCommissionReport();
             if (response.success) {
-                // Mock payment data from commissions
-                setPayments(response.data.commissions || []);
-                setSummary({
-                    total: response.data.summary?.totalCommissions || 0,
-                    successful: response.data.summary?.totalCommissions || 0,
-                    failed: 0,
-                    pending: response.data.summary?.pendingCommissions || 0,
-                });
+                const list: any[] = response.data || [];
+                setPayments(list);
+                const total = list.reduce((sum: number, p: any) => sum + (p.amount || 0), 0);
+                const successful = list.filter((p: any) => p.status === 'Paid').reduce((sum: number, p: any) => sum + (p.amount || 0), 0);
+                const pending = list.filter((p: any) => p.status === 'Pending').reduce((sum: number, p: any) => sum + (p.amount || 0), 0);
+                const failed = list.filter((p: any) => p.status === 'Cancelled').reduce((sum: number, p: any) => sum + (p.amount || 0), 0);
+                setSummary({ total, successful, failed, pending });
             }
         } catch (error: any) {
             showToast(error.response?.data?.message || 'Failed to load payments', 'error');
@@ -72,23 +71,27 @@ export default function AdminPayments() {
                 <div className="space-y-3">
                     {payments.slice(0, 20).map((payment: any) => (
                         <motion.div
-                            key={payment._id}
+                            key={payment.id || payment._id}
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             className="flex justify-between items-center p-4 bg-gray-50 rounded-lg"
                         >
                             <div>
-                                <p className="font-medium">Commission Payment</p>
+                                <p className="font-medium">{payment.source || 'Commission Payment'}</p>
                                 <p className="text-sm text-gray-600">
-                                    {payment.type === 'SELLER' ? 'Seller' : 'Delivery Boy'} - Order #{payment.order?.orderNumber || 'N/A'}
+                                    {payment.sourceType === 'SELLER' ? 'Seller' : 'Delivery Boy'} — {payment.description || 'N/A'}
                                 </p>
                                 <p className="text-xs text-gray-500">
-                                    {new Date(payment.createdAt).toLocaleString('en-IN')}
+                                    {new Date(payment.date).toLocaleString('en-IN')}
                                 </p>
                             </div>
                             <div className="text-right">
-                                <p className="font-bold text-green-600">₹{payment.commissionAmount.toFixed(2)}</p>
-                                <span className="inline-block px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full mt-1">
+                                <p className="font-bold text-green-600">₹{(payment.amount || 0).toFixed(2)}</p>
+                                <span className={`inline-block px-2 py-1 text-xs rounded-full mt-1 ${
+                                    payment.status === 'Paid' ? 'bg-green-100 text-green-700' :
+                                    payment.status === 'Pending' ? 'bg-orange-100 text-orange-700' :
+                                    'bg-red-100 text-red-700'
+                                }`}>
                                     {payment.status || 'Paid'}
                                 </span>
                             </div>

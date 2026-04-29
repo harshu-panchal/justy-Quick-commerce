@@ -35,16 +35,6 @@ export const createOrder = async (req: Request, res: Response) => {
         const { items, address, paymentMethod, fees, useWallet } = req.body;
         const userId = req.user!.userId;
 
-        // Log incoming request for debugging
-        console.log("DEBUG: Order creation request:", {
-            userId,
-            itemsCount: items?.length,
-            hasAddress: !!address,
-            addressLat: address?.latitude,
-            addressLng: address?.longitude,
-            paymentMethod,
-        });
-
         if (!items || items.length === 0) {
             if (session) await session.abortTransaction();
             return res.status(400).json({

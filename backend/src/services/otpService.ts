@@ -1,4 +1,5 @@
 import axios from 'axios';
+import crypto from 'crypto';
 import Otp from '../models/Otp';
 import { sendEmail } from './mailService';
 
@@ -37,15 +38,12 @@ interface SmsIndiaHubResponse {
 type UserType = 'Customer' | 'Delivery' | 'Seller' | 'Admin' | 'Executive';
 
 /**
- * Generate numeric OTP
+ * Generate cryptographically secure numeric OTP
  */
 function generateOTP(length: number = 4): string {
-  const digits = '0123456789';
-  let otp = '';
-  for (let i = 0; i < length; i++) {
-    otp += digits[Math.floor(Math.random() * 10)];
-  }
-  return otp;
+  const max = Math.pow(10, length);
+  const min = Math.pow(10, length - 1);
+  return String(crypto.randomInt(min, max));
 }
 
 /**
@@ -78,7 +76,7 @@ function buildOtpMessage(otp: string): string {
  */
 async function sendSmsViaApi(mobile: string, message: string): Promise<void> {
   if (!SMS_INDIA_HUB_API_KEY || !SMS_INDIA_HUB_SENDER_ID || process.env.USE_MOCK_OTP === 'true') {
-    console.log(`[TEST-MODE] SMS to ${mobile} skipped. Content: ${message}`);
+    console.log(`[TEST-MODE] SMS to ${mobile.slice(0, 6)}XXXX skipped.`);
     return;
   }
 
@@ -117,10 +115,10 @@ async function sendSmsViaApi(mobile: string, message: string): Promise<void> {
  * Save OTP to database
  */
 async function saveOtpToDb(identifier: { mobile?: string; email?: string }, otp: string, userType: UserType): Promise<void> {
-  const query = identifier.mobile 
-    ? { mobile: identifier.mobile.replace(/\D/g, ''), userType } 
+  const query = identifier.mobile
+    ? { mobile: identifier.mobile.replace(/\D/g, ''), userType }
     : { email: identifier.email?.toLowerCase(), userType };
-  
+
   await Otp.deleteMany(query);
   await Otp.create({
     ...query,
@@ -134,9 +132,8 @@ async function saveOtpToDb(identifier: { mobile?: string; email?: string }, otp:
  * Verify OTP from database
  */
 async function verifyOtpFromDb(identifier: { mobile?: string; email?: string }, otp: string, userType: UserType): Promise<boolean> {
-  // Allow Developer/Static Bypass
-  const query = identifier.mobile 
-    ? { mobile: identifier.mobile.replace(/\D/g, ''), userType } 
+  const query = identifier.mobile
+    ? { mobile: identifier.mobile.replace(/\D/g, ''), userType }
     : { email: identifier.email?.toLowerCase(), userType };
 
   const record = await Otp.findOne({
@@ -165,10 +162,9 @@ export async function sendEmailOtp(
 ): Promise<OtpResponse> {
   try {
     const otp = generateOTP(6);
-    
-    // For local testing, we might not have mail setup either
+
     if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-      console.warn('Email credentials missing. Static OTP is: 123456');
+      console.warn('[OTP] Email credentials missing — OTP not sent via email.');
     } else {
       await sendEmail(email, 'Your Verification Code', otp);
     }
@@ -177,9 +173,7 @@ export async function sendEmailOtp(
     return { success: true, message: 'OTP sent successfully' };
   } catch (error: any) {
     console.error('Email OTP Error:', error);
-    // Still return success for testing
-    await saveOtpToDb({ email }, '123456', userType);
-    return { success: true, message: 'OTP sent successfully (Mock)' };
+    return { success: false, message: 'Failed to send OTP' };
   }
 }
 
@@ -200,43 +194,26 @@ export async function sendOTP(
   userType: UserType,
   _isLogin: boolean = true
 ): Promise<OtpResponse> {
-  console.log(`[OTP] Sending OTP request for mobile: ${mobile}, userType: ${userType}`);
-  
+  console.log(`[OTP] Sending OTP for userType: ${userType}`);
+
   try {
-    let otp: string;
-    
-    // For Admin, use static OTP 1234
-    // Also for special test number 9111966732
-    const cleanMobile = mobile.replace(/\D/g, '').slice(-10);
-    if (String(userType).toLowerCase() === 'admin' || cleanMobile === '9111966732') {
-      otp = '1234';
-      console.log(`[OTP] Using static OTP for ${mobile} (${userType})`);
-    } else {
-      otp = generateOTP(4);
-      console.log(`[OTP] Generated dynamic OTP: ${otp} for ${mobile} (${userType})`);
-    }
+    const otp = generateOTP(4);
 
     await saveOtpToDb({ mobile }, otp, userType);
 
-    // Only send SMS for non-Admin users or if it's dynamic
-    if (String(userType).toLowerCase() !== 'admin') {
-      const message = buildOtpMessage(otp);
-      console.log(`[OTP] Sending SMS to ${mobile} via API...`);
-      await sendSmsViaApi(mobile, message);
-    }
+    const message = buildOtpMessage(otp);
+    await sendSmsViaApi(mobile, message);
 
-    return { 
-      success: true, 
+    return {
+      success: true,
       message: 'OTP sent successfully',
-      sessionId: `SESSION_${mobile}_${Date.now()}` 
+      sessionId: `SESSION_${Date.now()}`
     };
   } catch (error: any) {
     console.error('SMS OTP Error:', error);
-    // Return success for testing/failing gracefully
-    return { 
-      success: true, 
-      message: 'OTP sent successfully (Mock)',
-      sessionId: `MOCK_${mobile}_${Date.now()}`
+    return {
+      success: false,
+      message: 'Failed to send OTP',
     };
   }
 }
@@ -246,15 +223,6 @@ export async function verifyOTP(
   otp: string,
   userType: UserType
 ): Promise<boolean> {
-  console.log(`[OTP] Verifying OTP: ${otp} for mobile: ${mobile}, userType: ${userType}`);
-  
-  // Global bypass for special test number
-  const cleanMobile = mobile.replace(/\D/g, '').slice(-10);
-  if (cleanMobile === '9111966732' && String(otp) === '1234') {
-    console.log(`[OTP] Global bypass triggered for ${mobile} (V3)`);
-    return true;
-  }
-
   return verifyOtpFromDb({ mobile }, otp, userType);
 }
 

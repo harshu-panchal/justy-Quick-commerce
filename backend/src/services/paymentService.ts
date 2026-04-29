@@ -71,7 +71,6 @@ export const createRazorpayOrder = async (
             success: true,
             data: {
                 razorpayOrderId: razorpayOrder.id,
-                razorpayKey: process.env.RAZORPAY_KEY_ID, // Send key to frontend
                 amount: razorpayOrder.amount,
                 currency: razorpayOrder.currency,
                 receipt: razorpayOrder.receipt,
@@ -102,13 +101,6 @@ export const verifyPaymentSignature = async (
             .createHmac('sha256', keySecret)
             .update(body)
             .digest('hex');
-
-        console.log('--- Signature Verification ---');
-        console.log('Order ID:', razorpayOrderId);
-        console.log('Payment ID:', razorpayPaymentId);
-        console.log('Expected:', expectedSignature);
-        console.log('Received:', razorpaySignature);
-        console.log('Matches:', expectedSignature === razorpaySignature);
 
         return expectedSignature === razorpaySignature;
     } catch (error) {

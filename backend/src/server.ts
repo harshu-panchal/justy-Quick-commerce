@@ -57,16 +57,26 @@ const allowedOrigins = [
   ...(process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(",").map(url => url.trim()) : [])
 ];
 
+const DEV_ALLOWED_ORIGINS = [
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:5173',
+];
+
 const corsOptions = {
   origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-    // Allow requests with no origin (mobile apps, Postman, etc.)
+    // No origin = non-browser client (mobile app, server-to-server).
+    // CORS is a browser mechanism; non-browser clients are unrestricted by design.
     if (!origin) {
       return callback(null, true);
     }
 
-    // In development, allow localhost
+    // In development, allow known local dev ports only
     if (process.env.NODE_ENV !== "production") {
-      if (origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:") || origin.startsWith("http://192.168.1.99:")) {
+      if (DEV_ALLOWED_ORIGINS.includes(origin)) {
         return callback(null, true);
       }
     }
@@ -84,7 +94,6 @@ const corsOptions = {
       return callback(null, true);
     }
 
-    // Reject if not allowed - return false instead of error for better handling
     return callback(null, false);
   },
   credentials: true,
@@ -136,12 +145,6 @@ app.get("/", (_req: Request, res: Response) => {
     version: "1.0.0",
     socketIO: "Listening for WebSocket connections",
   });
-});
-
-// Debug middleware - log all incoming requests
-app.use((req: Request, _res: Response, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
-  next();
 });
 
 // API Routes

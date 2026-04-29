@@ -524,13 +524,13 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
               />
             )}
 
-            {tabs.map((tab) => {
+            {tabs.map((tab, index) => {
               const isActive = activeTab === tab.id;
               const tabColor = isActive ? 'text-neutral-900' : 'text-neutral-500';
 
               return (
                 <button
-                  key={tab.id}
+                  key={`${tab.id}-${index}`}
                   ref={(el) => {
                     if (el) {
                       tabRefs.current.set(tab.id, el);

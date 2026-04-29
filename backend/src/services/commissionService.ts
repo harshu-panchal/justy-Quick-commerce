@@ -199,9 +199,6 @@ export const calculateOrderCommissions = async (orderId: string) => {
           commissionRate = settings.deliveryConfig.deliveryBoyKmRate;
           commissionAmount = order.deliveryDistanceKm * commissionRate;
           usedDistanceBased = true;
-          console.log(
-            `DEBUG: Distance Commission: Dist=${order.deliveryDistanceKm}km, Rate=${commissionRate}/km, Amt=${commissionAmount}`,
-          );
         }
       } catch (err) {
         console.error("Error checking settings for commission:", err);
@@ -247,10 +244,9 @@ export const createPendingCommissions = async (orderId: string) => {
     const order = await Order.findById(orderId).populate("items");
     if (!order) throw new Error("Order not found");
 
-    // Check if commissions already exist
+    // Check if commissions already exist (idempotency guard)
     const existingCommissions = await Commission.find({ order: orderId });
     if (existingCommissions.length > 0) {
-      console.log(`Commissions already exist for order ${orderId}`);
       return;
     }
 
@@ -271,10 +267,6 @@ export const createPendingCommissions = async (orderId: string) => {
       );
       const commissionAmount = (item.total * commissionRate) / 100;
       const netEarning = item.total - commissionAmount;
-
-      console.log(
-        `[Commission] Item: ${item.product}, Rate: ${commissionRate}%, Amount: ${commissionAmount}, Net: ${netEarning}`,
-      );
 
       // Create commission record as PAID immediately
       const commission = await Commission.create({
@@ -302,7 +294,6 @@ export const createPendingCommissions = async (orderId: string) => {
       }
     }
 
-    console.log(`Commissions processed and credited for order ${orderId}`);
   } catch (error) {
     console.error("Error creating commissions:", error);
     throw error;
@@ -647,9 +638,6 @@ export const processPendingCODPayouts = async (
       await platformWallet.save({ session });
     }
 
-    console.log(
-      `[COD Payout] Processed ${processedOrders.size} orders for delivery boy ${deliveryBoyId}. Remaining payment: ${remainingAmount}`,
-    );
 
     return {
       success: true,
@@ -928,17 +916,6 @@ export const calculateCODOrderBreakdown = async (
     breakdown.amountDeliveryBoyOwesAdmin =
       breakdown.totalOrderAmount - breakdown.deliveryBoyCommission;
 
-    console.log(`[COD Breakdown] Order ${order.orderNumber}:`, {
-      productCost: breakdown.productCost,
-      adminProductCommission: breakdown.adminProductCommission,
-      platformFee: breakdown.platformFee,
-      deliveryCharge: breakdown.totalDeliveryCharge,
-      deliveryBoyCommission: breakdown.deliveryBoyCommission,
-      adminDeliveryCommission: breakdown.adminDeliveryCommission,
-      totalAdminEarning: breakdown.totalAdminEarning,
-      amountDeliveryBoyOwes: breakdown.amountDeliveryBoyOwesAdmin,
-    });
-
     return breakdown;
   } catch (error: any) {
     console.error("Error calculating COD order breakdown:", error);
@@ -1208,7 +1185,6 @@ export const settleSpecificCODOrder = async (
       await session.commitTransaction();
     }
 
-    console.log(`[Settlement] COD order ${order.orderNumber} settled. Delivery boy owed amount reduced by ${orderAdminPayoutPart}`);
   } catch (error: any) {
     if (!useExternalSession) {
       await session.abortTransaction();
@@ -1257,30 +1233,20 @@ export const processEquipmentDeliveryCommission = async (equipmentOrderId: strin
     let commissionAmount = 0;
     const { payMode, amount, kmRate: configKmRate } = config;
 
-    console.log(`[Equipment Commission] Calculating for order ${order.orderNumber}. Mode: ${payMode}, Amount: ${amount}`);
-
     if (payMode === 'FIXED_SALARY') {
-      // Flat salary per delivery trip
       commissionAmount = amount;
-      console.log(`[Equipment Commission] Fixed salary: ₹${amount} (Duration: ${config.salaryDays || 30} days)`);
     } else if (payMode === 'DISTANCE_BASED') {
-      // Use equipment-specific kmRate if set, otherwise global rate
       const kmRate = (configKmRate && configKmRate > 0) ? configKmRate : (settings.deliveryConfig?.deliveryBoyKmRate || 0);
       const distanceKm = (order as any).deliveryDistanceKm || 0;
-      
       if (distanceKm > 0 && kmRate > 0) {
         commissionAmount = distanceKm * kmRate;
-        console.log(`[Equipment Commission] Distance based: ${distanceKm}km x ₹${kmRate}/km = ₹${commissionAmount}`);
       } else {
-        // Fallback to fixed amount if distance is not available
         commissionAmount = amount;
-        console.warn(`[Equipment Commission] Distance/rate not set, falling back to ₹${amount}`);
       }
     }
 
 
     commissionAmount = Math.round(commissionAmount * 100) / 100;
-    console.log(`[Equipment Commission] Final Amount: ₹${commissionAmount}`);
 
     // COD Alignment: update delivery boy's cash tracking (same as processCODOrderDelivery for regular orders)
     if (order.paymentMethod === 'COD') {
@@ -1290,7 +1256,6 @@ export const processEquipmentDeliveryCommission = async (equipmentOrderId: strin
       // We don't subtract commissionAmount from debt here because the user wants total cash in hand to be tracked.
       const amountOwed = orderTotal; 
       
-      console.log(`[Equipment COD Tracking] Order: ${order.orderNumber}, Total: ₹${orderTotal}, Commission: ₹${commissionAmount}, Owed to Admin: ₹${amountOwed}`);
 
       // 1. Update Delivery Boy's Cash Counters (use $inc for safety)
       await Delivery.findByIdAndUpdate(order.deliveryBoy, {
@@ -1322,7 +1287,6 @@ export const processEquipmentDeliveryCommission = async (equipmentOrderId: strin
         });
       }
       
-      console.log(`[Equipment COD Tracking] SUCCESS: cashCollected +₹${orderTotal}, pendingAdminPayout +₹${amountOwed}`);
     }
 
     // Create Commission Record
@@ -1348,7 +1312,6 @@ export const processEquipmentDeliveryCommission = async (equipmentOrderId: strin
       commission._id.toString()
     );
 
-    console.log(`[Equipment Commission] ₹${commissionAmount} credited to DB ${order.deliveryBoy} for order ${order.orderNumber}`);
 
     return commission;
   } catch (error) {

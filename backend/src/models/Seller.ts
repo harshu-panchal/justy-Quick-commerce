@@ -80,6 +80,7 @@ export interface ISeller extends Document {
 
   // Status
   status: 'Approved' | 'Pending' | 'Rejected';
+  rejectionReason?: string;
   balance: number;
   coinBalance: number;
   categories: string[];
@@ -385,6 +386,10 @@ const SellerSchema = new Schema<ISeller>(
       type: String,
       enum: ['Approved', 'Pending', 'Rejected'],
       default: 'Pending',
+    },
+    rejectionReason: {
+      type: String,
+      trim: true,
     },
     balance: {
       type: Number,

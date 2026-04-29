@@ -13,8 +13,8 @@ export const errorHandler = (
   res: Response,
   _next: NextFunction
 ): void => {
-  // Log error for debugging
-  console.error('Error:', err);
+  // Log full error server-side only (never expose to client)
+  console.error('[ErrorHandler]', err.name, err.message, err.stack);
 
   let statusCode = err.statusCode || 500;
   let message = err.message || 'Internal Server Error';
@@ -44,10 +44,7 @@ export const errorHandler = (
   res.status(statusCode).json({
     success: false,
     message,
-    error: {
-      statusCode,
-      ... (process.env.NODE_ENV === 'development' && { stack: err.stack })
-    }
+    error: { statusCode },
   });
 };
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { register, sendEmailOTP, verifyEmailOTP } from '../../../services/api/auth/sellerAuthService';
+import { register, sendEmailOTP, verifyEmailOTP, sendRegistrationMobileOTP } from '../../../services/api/auth/sellerAuthService';
 import GoogleMapsAutocomplete from '../../../components/GoogleMapsAutocomplete';
 import { useAuth } from '../../../context/AuthContext';
 import LocationPickerMap from '../../../components/LocationPickerMap';
@@ -120,6 +120,11 @@ export default function SellerSignUp() {
   const [emailOtp, setEmailOtp] = useState('');
   const [emailSending, setEmailSending] = useState(false);
   const [emailVerifying, setEmailVerifying] = useState(false);
+  const [isMobileVerified, setIsMobileVerified] = useState(false);
+  const [mobileOtpSent, setMobileOtpSent] = useState(false);
+  const [mobileOtp, setMobileOtp] = useState('');
+  const [mobileSending, setMobileSending] = useState(false);
+  const [mobileVerifyingOtp, setMobileVerifyingOtp] = useState(false);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [fullHeaderCategories, setFullHeaderCategories] = useState<HeaderCategory[]>([]);
   const [executives, setExecutives] = useState<{ _id: string; name: string }[]>([]);
@@ -391,6 +396,46 @@ export default function SellerSignUp() {
     }
   };
 
+  const handleSendMobileOTP = async () => {
+    if (!formData.mobile || formData.mobile.length !== 10) {
+      setError('Please enter a valid 10-digit mobile number');
+      return;
+    }
+    setMobileSending(true);
+    setError('');
+    try {
+      const res = await sendRegistrationMobileOTP(formData.mobile);
+      if (res.success) {
+        setMobileOtpSent(true);
+      } else {
+        setError(res.message);
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to send mobile OTP');
+    } finally {
+      setMobileSending(false);
+    }
+  };
+
+  const handleVerifyMobileOTP = async () => {
+    if (!mobileOtp || mobileOtp.length !== 4) {
+      setError('Please enter the 4-digit OTP sent to your mobile');
+      return;
+    }
+    setMobileVerifyingOtp(true);
+    setError('');
+    try {
+      // Optimistically mark verified — the backend will re-verify on register
+      // We store the OTP so it can be passed with the register request
+      setIsMobileVerified(true);
+      setMobileOtpSent(false);
+    } catch (err: any) {
+      setError('Mobile OTP verification failed');
+    } finally {
+      setMobileVerifyingOtp(false);
+    }
+  };
+
   const handleNextStep = () => {
     if (!formData.sellerName || !formData.email || !formData.storeName || !formData.mobile) {
       setError('Please fill in all required fields (Name, Email, Store Name, and Mobile)');
@@ -398,6 +443,10 @@ export default function SellerSignUp() {
     }
     if (formData.mobile.length !== 10) {
       setError('Please enter a valid 10-digit mobile number');
+      return;
+    }
+    if (!isMobileVerified) {
+      setError('Please verify your mobile number first');
       return;
     }
     if (!isEmailVerified) {
@@ -559,6 +608,7 @@ export default function SellerSignUp() {
         sellerName: formData.sellerName,
         referralCode: formData.referralCode,
         mobile: formData.mobile,
+        mobileOtp,
         email: formData.email,
         storeName: formData.storeName,
         category: formData.category,
@@ -723,22 +773,73 @@ export default function SellerSignUp() {
       <label className="block text-sm font-medium text-neutral-700">
         Mobile Number <span className="text-red-500">*</span>
       </label>
-      <div className="flex items-center bg-white border border-neutral-300 rounded-xl overflow-hidden focus-within:border-teal-500 transition-all">
-        <div className="px-3 py-3 text-sm font-medium text-neutral-600 border-r border-neutral-300 bg-neutral-50">
-          +91
+      <div className="flex gap-2">
+        <div className={`flex flex-1 items-center border rounded-xl overflow-hidden focus-within:border-teal-500 transition-all ${isMobileVerified ? 'bg-green-50 border-green-200' : 'bg-white border-neutral-300'}`}>
+          <div className="px-3 py-3 text-sm font-medium text-neutral-600 border-r border-neutral-300 bg-neutral-50">
+            +91
+          </div>
+          <input
+            type="tel"
+            name="mobile"
+            value={formData.mobile}
+            onChange={(e) => {
+              handleInputChange(e);
+              setIsMobileVerified(false);
+              setMobileOtpSent(false);
+              setMobileOtp('');
+            }}
+            placeholder="Mobile number"
+            required
+            maxLength={10}
+            readOnly={isMobileVerified}
+            className="flex-1 px-3 py-3 text-sm placeholder:text-neutral-400 focus:outline-none bg-transparent"
+            disabled={loading || mobileSending}
+          />
+          {isMobileVerified && (
+            <div className="pr-3 text-green-600">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                <path d="M20 6L9 17L4 12" />
+              </svg>
+            </div>
+          )}
         </div>
-        <input
-          type="tel"
-          name="mobile"
-          value={formData.mobile}
-          onChange={handleInputChange}
-          placeholder="Mobile number"
-          required
-          maxLength={10}
-          className="flex-1 px-3 py-3 text-sm placeholder:text-neutral-400 focus:outline-none"
-          disabled={loading}
-        />
+        {!isMobileVerified && (
+          <button
+            type="button"
+            onClick={handleSendMobileOTP}
+            disabled={mobileSending || formData.mobile.length !== 10}
+            className="px-4 py-2 bg-teal-50 text-teal-700 border border-teal-200 rounded-xl text-xs font-bold hover:bg-teal-100 disabled:opacity-50 transition-colors whitespace-nowrap min-w-[90px]"
+          >
+            {mobileSending ? '...' : mobileOtpSent ? 'Resend' : 'Send OTP'}
+          </button>
+        )}
       </div>
+
+      {mobileOtpSent && !isMobileVerified && (
+        <div className="p-4 bg-teal-50 border border-teal-100 rounded-xl animate-scaleIn">
+          <label className="block text-xs font-bold text-teal-800 uppercase mb-2">
+            Enter Mobile OTP
+          </label>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <input
+              type="text"
+              value={mobileOtp}
+              onChange={(e) => setMobileOtp(e.target.value.replace(/\D/g, '').slice(0, 4))}
+              placeholder="4-digit OTP"
+              maxLength={4}
+              className="w-full sm:flex-1 px-4 py-3 text-center text-lg font-bold tracking-[0.5em] border border-teal-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
+            />
+            <button
+              type="button"
+              onClick={handleVerifyMobileOTP}
+              disabled={mobileVerifyingOtp || mobileOtp.length !== 4}
+              className="w-full sm:w-auto px-6 py-3 bg-teal-700 text-white rounded-xl text-sm font-bold hover:bg-teal-800 disabled:bg-teal-300 transition-all active:scale-95 shadow-md shadow-teal-100"
+            >
+              {mobileVerifyingOtp ? 'Verifying...' : 'Verify OTP'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
 
     {/* Email */}

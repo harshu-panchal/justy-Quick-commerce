@@ -77,7 +77,6 @@ export default function AdminDashboard() {
         ]);
 
         if (statsResponse.success) {
-          console.log("Dashboard stats received:", statsResponse.data);
           setStats(statsResponse.data);
         } else {
           console.error("Failed to fetch dashboard stats:", statsResponse);
@@ -609,7 +608,7 @@ export default function AdminDashboard() {
             </h3>
             <GaugeChart
               value={stats.avgCompletedOrderValue}
-              maxValue={521}
+              maxValue={Math.max(stats.avgCompletedOrderValue * 2, 1000)}
               label="Average Order Value"
             />
           </div>

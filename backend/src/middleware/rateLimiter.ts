@@ -1,4 +1,4 @@
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 
 /**
  * Rate limiter for OTP requests
@@ -14,7 +14,7 @@ export const otpRateLimiter = rateLimit({
     if (req.body?.mobile) {
       return String(req.body.mobile);
     }
-    return req.ip || 'unknown';
+    return ipKeyGenerator(req.ip ?? '');
   },
   skip: (req) => req.method === 'OPTIONS',
 });

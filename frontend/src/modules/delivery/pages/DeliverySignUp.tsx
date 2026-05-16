@@ -5,7 +5,7 @@ import {
   sendOTP,
   verifyOTP,
 } from "../../../services/api/auth/deliveryAuthService";
-import { uploadDocument } from "../../../services/api/uploadService";
+import { uploadPublicDocument } from "../../../services/api/uploadService";
 import { validateDocumentFile } from "../../../utils/imageUpload";
 import OTPInput from "../../../components/OTPInput";
 
@@ -168,7 +168,7 @@ export default function DeliverySignUp() {
         setUploadingDocs(true);
 
         if (drivingLicenseFile) {
-          const drivingLicenseResult = await uploadDocument(
+          const drivingLicenseResult = await uploadPublicDocument(
             drivingLicenseFile,
             "dhakadsnazzy/delivery/documents"
           );
@@ -176,7 +176,7 @@ export default function DeliverySignUp() {
         }
 
         if (nationalIdentityCardFile) {
-          const nationalIdResult = await uploadDocument(
+          const nationalIdResult = await uploadPublicDocument(
             nationalIdentityCardFile,
             "dhakadsnazzy/delivery/documents"
           );

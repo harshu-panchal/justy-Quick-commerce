@@ -351,6 +351,21 @@ export const createSellerDepositOrder = async (
 
         console.log(`[Razorpay] Creating order for seller ${sellerId}, amount: ${depositAmount}`);
 
+        // Mock Payment logic
+        if (process.env.USE_MOCK_PAYMENT === 'true') {
+            console.log('🧪 [Mock Payment] Creating mock order for seller deposit');
+            return {
+                success: true,
+                data: {
+                    razorpayOrderId: `mock_order_${Date.now()}`,
+                    amount: Math.round(depositAmount * 100),
+                    currency: 'INR',
+                    razorpayKey: 'mock_key',
+                    receipt: `mock_receipt_${Date.now()}`,
+                },
+            };
+        }
+
         const { instance: razorpay, keyId } = await getRazorpayInstance();
 
         const options = {
@@ -383,6 +398,9 @@ export const createSellerDepositOrder = async (
             },
         };
     } catch (error: any) {
+        if (error.statusCode === 401) {
+            console.error('❌ Razorpay Authentication Failed: Your RAZORPAY_KEY_ID or RAZORPAY_KEY_SECRET in .env are likely invalid.');
+        }
         console.error('Error creating seller deposit order:', {
             message: error.message,
             statusCode: error.statusCode,
@@ -408,16 +426,20 @@ export const captureSellerDepositPayment = async (
 
     try {
         // 1. Verify Razorpay Signature (HMAC SHA256)
-        const { keySecret } = await getRazorpayInstance();
+        if (razorpayOrderId.startsWith('mock_')) {
+            console.log('🧪 [Mock Payment] Skipping signature verification for mock order');
+        } else {
+            const { keySecret } = await getRazorpayInstance();
 
-        const body = razorpayOrderId + '|' + razorpayPaymentId;
-        const expectedSignature = crypto
-            .createHmac('sha256', keySecret)
-            .update(body)
-            .digest('hex');
+            const body = razorpayOrderId + '|' + razorpayPaymentId;
+            const expectedSignature = crypto
+                .createHmac('sha256', keySecret)
+                .update(body)
+                .digest('hex');
 
-        if (expectedSignature !== razorpaySignature) {
-            throw new Error('Invalid payment signature');
+            if (expectedSignature !== razorpaySignature) {
+                throw new Error('Invalid payment signature');
+            }
         }
 
         // 2. Find seller

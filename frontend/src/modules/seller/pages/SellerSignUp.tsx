@@ -10,6 +10,8 @@ import { getCategories, Category } from '../../../services/api/categoryService';
 import { getHeaderCategoriesPublic, HeaderCategory } from '../../../services/api/headerCategoryService';
 import { getPublicExecutives } from '../../../services/api/admin/executiveService';
 
+const STORAGE_KEY = 'sellerSignupDraft';
+
 const StepIndicator = ({ currentStep }: { currentStep: number }) => {
   const steps = [
     { id: 1, label: 'Basic Details' },
@@ -129,15 +131,43 @@ export default function SellerSignUp() {
   const [fullHeaderCategories, setFullHeaderCategories] = useState<HeaderCategory[]>([]);
   const [executives, setExecutives] = useState<{ _id: string; name: string }[]>([]);
 
+  // Persist draft to localStorage whenever relevant state changes
   useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        formData,
+        formStep,
+        isEmailVerified,
+        isMobileVerified,
+        businessLicenseType,
+      }));
+    } catch { /* ignore storage quota errors */ }
+  }, [formData, formStep, isEmailVerified, isMobileVerified, businessLicenseType]);
+
+  useEffect(() => {
+    // Restore saved draft first so refresh doesn't lose progress
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const draft = JSON.parse(saved);
+        if (draft.formData) setFormData(draft.formData);
+        if (typeof draft.formStep === 'number') setFormStep(draft.formStep);
+        if (typeof draft.isEmailVerified === 'boolean') setIsEmailVerified(draft.isEmailVerified);
+        if (typeof draft.isMobileVerified === 'boolean') setIsMobileVerified(draft.isMobileVerified);
+        if (draft.businessLicenseType) setBusinessLicenseType(draft.businessLicenseType);
+      }
+    } catch { /* ignore */ }
+
     const syncCategories = async () => {
       setCategoriesLoading(true);
       try {
         const headerCategories = await getHeaderCategoriesPublic(true);
+        console.log('Fetched header categories for signup:', headerCategories);
+        
         if (headerCategories && headerCategories.length > 0) {
           // Filter out categories that shouldn't be show for seller registration
           const excludedCategories = ['99 to199 offers'];
-          
+
           const mappedCategories = headerCategories
             .filter((cat: HeaderCategory) => !excludedCategories.includes(cat.name))
             .map((cat: HeaderCategory) => ({
@@ -146,9 +176,11 @@ export default function SellerSignUp() {
               isBestseller: false,
               hasWarning: false
             })) as Category[];
+          console.log('Mapped categories:', mappedCategories);
           setCategories(mappedCategories);
           setFullHeaderCategories(headerCategories);
         } else {
+          console.warn('No header categories returned from API');
           setCategories([]);
           setFullHeaderCategories([]);
         }
@@ -175,16 +207,16 @@ export default function SellerSignUp() {
     fetchExecs();
 
     // Check for referral code in localStorage (set by App.tsx from URL)
+    // Only apply if no code already saved in draft
     const pendingCode = localStorage.getItem('pendingReferralCode');
     if (pendingCode) {
-      setFormData(prev => ({ ...prev, referralCode: pendingCode.toUpperCase() }));
-      // Optionally clear it after picking it up, or keep it until success
+      setFormData(prev => ({ ...prev, referralCode: prev.referralCode || pendingCode.toUpperCase() }));
     } else {
       // Fallback: check URL directly if not caught by App.tsx
       const urlParams = new URLSearchParams(window.location.search);
       const refFromUrl = urlParams.get('ref');
       if (refFromUrl) {
-        setFormData(prev => ({ ...prev, referralCode: refFromUrl.toUpperCase() }));
+        setFormData(prev => ({ ...prev, referralCode: prev.referralCode || refFromUrl.toUpperCase() }));
       }
     }
   }, []);
@@ -650,6 +682,7 @@ export default function SellerSignUp() {
       });
 
       if (response.success) {
+        localStorage.removeItem(STORAGE_KEY);
         setIsSuccess(true);
         // Auto-login the seller
         if (response.data.token && response.data.user) {
@@ -981,10 +1014,25 @@ export default function SellerSignUp() {
               {/* Step 2: Document Verification */}
               {formStep === 2 && (
                 <div className="space-y-6 animate-fadeIn">
-                  <h3 className="text-sm font-bold text-teal-800 uppercase tracking-wider flex items-center">
-                    <span className="w-6 h-6 bg-teal-100 text-teal-700 rounded-full flex items-center justify-center mr-2 text-[10px]">2</span>
-                    Verification & Location
-                  </h3>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormStep(1);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      className="flex items-center gap-1.5 text-sm font-medium text-teal-700 hover:text-teal-900 transition-colors"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M19 12H5M12 5l-7 7 7 7" />
+                      </svg>
+                      Back
+                    </button>
+                    <h3 className="text-sm font-bold text-teal-800 uppercase tracking-wider flex items-center">
+                      <span className="w-6 h-6 bg-teal-100 text-teal-700 rounded-full flex items-center justify-center mr-2 text-[10px]">2</span>
+                      Verification & Location
+                    </h3>
+                  </div>
 
                   <div className="space-y-4">
                     <label className="block text-sm font-medium text-neutral-700 mb-1">

@@ -1,41 +1,42 @@
 import { Request, Response } from "express";
+import { asyncHandler } from "../../../utils/asyncHandler";
 import HeaderCategory from "../../../models/HeaderCategory";
 
 // @desc    Get all header categories (Admin)
 // @route   GET /api/v1/header-categories/admin
 // @access  Private/Admin
-export const getAdminHeaderCategories = async (
+export const getAdminHeaderCategories = asyncHandler(async (
   _req: Request,
   res: Response
 ) => {
-  try {
-    const categories = await HeaderCategory.find().sort({
-      order: 1,
-      createdAt: -1,
-    });
-    return res.json(categories);
-  } catch (error) {
-    return res.status(500).json({ message: "Server Error", error });
-  }
-};
+  const categories = await HeaderCategory.find().sort({
+    order: 1,
+    createdAt: -1,
+  });
+  return res.status(200).json({
+    success: true,
+    message: "Admin header categories fetched successfully",
+    data: categories
+  });
+});
 
 // @desc    Get published header categories (Public)
 // @route   GET /api/v1/header-categories
 // @access  Public
-export const getHeaderCategories = async (req: Request, res: Response) => {
-  try {
-    const { all } = req.query;
-    const filter = all === "true" ? {} : { status: "Published" };
+export const getHeaderCategories = asyncHandler(async (req: Request, res: Response) => {
+  const { all } = req.query;
+  const filter = all === "true" ? {} : { status: "Published" };
 
-    const categories = await HeaderCategory.find(filter).sort({
-      order: 1,
-      createdAt: -1,
-    });
-    return res.json(categories);
-  } catch (error) {
-    return res.status(500).json({ message: "Server Error", error });
-  }
-};
+  const categories = await HeaderCategory.find(filter).sort({
+    order: 1,
+    createdAt: -1,
+  });
+  return res.status(200).json({
+    success: true,
+    message: "Header categories fetched successfully",
+    data: categories
+  });
+});
 
 // @desc    Create a header category
 // @route   POST /api/v1/header-categories

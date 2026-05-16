@@ -162,6 +162,7 @@ const AdminExecutives = lazy(() => import("./modules/admin/pages/executive/Admin
 const AdminExecutiveCommissions = lazy(() => import("./modules/admin/pages/executive/AdminExecutiveCommissions"));
 const AdminExecutiveWithdrawals = lazy(() => import("./modules/admin/pages/executive/AdminExecutiveWithdrawals"));
 const AdminReturnRequest = lazy(() => import("./modules/admin/pages/AdminReturnRequest"));
+const AdminComplaints = lazy(() => import("./modules/admin/pages/AdminComplaints"));
 const AdminPaymentList = lazy(() => import("./modules/admin/pages/AdminPaymentList"));
 const AdminSmsGateway = lazy(() => import("./modules/admin/pages/AdminSmsGateway"));
 const AdminSystemUser = lazy(() => import("./modules/admin/pages/AdminSystemUser"));
@@ -462,6 +463,7 @@ function App() {
 
                                           <Route path="coupon" element={<AdminCoupon />} />
                                           <Route path="return" element={<AdminReturnRequest />} />
+                                          <Route path="complaints" element={<AdminComplaints />} />
                                           <Route path="notification" element={<AdminNotification />} />
                                           <Route path="orders" element={<AdminOrders />} />
                                           <Route path="customers" element={<AdminManageCustomer />} />

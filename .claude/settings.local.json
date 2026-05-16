@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem *)",
+      "Bash(dir C:\\\\Users\\\\AnkitAhirwar\\\\OneDrive\\\\Desktop\\\\Jasti\\\\frontend\\\\src *)",
+      "Bash(xargs grep -l \"complaint\\\\|support\")",
+      "Bash(xargs grep -l \"complaint\")",
+      "Bash(dir C:\\\\Users\\\\AnkitAhirwar\\\\OneDrive\\\\Desktop\\\\Jasti\\\\frontend\\\\src\\\\modules *)",
+      "Bash(dir C:\\\\Users\\\\AnkitAhirwar\\\\OneDrive\\\\Desktop\\\\Jasti\\\\frontend\\\\src\\\\modules\\\\user *)",
+      "Bash(npx tsc *)"
+    ]
+  }
+}

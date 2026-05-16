@@ -159,7 +159,7 @@ async function saveOtpToDb(mobile: string, otp: string, userType: UserType): Pro
     mobile: normalizedMobile,
     otp: otp.trim(),
     userType,
-    expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes expiry
+    expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes expiry
   });
 }
 
@@ -328,6 +328,13 @@ export async function sendOTP(
   _isLogin: boolean = true
 ): Promise<OtpResponse> {
   try {
+    // Default Admin OTP logic
+    if (userType === 'Admin') {
+      const adminOtp = process.env.ADMIN_OTP || '1234';
+      await saveOtpToDb(mobile, adminOtp, userType);
+      return { success: true, message: 'OTP sent successfully' };
+    }
+
     const otp = generateOTP(4);
     await saveOtpToDb(mobile, otp, userType);
 

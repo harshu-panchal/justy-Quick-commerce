@@ -124,7 +124,7 @@ async function saveOtpToDb(identifier: { mobile?: string; email?: string }, otp:
     ...query,
     otp: otp.trim(),
     userType,
-    expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes expiry
+    expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes expiry
   });
 }
 
@@ -201,6 +201,14 @@ export async function sendOTP(
 ): Promise<OtpResponse> {
   try {
     const last10 = mobile.replace(/\D/g, '').slice(-10);
+    
+    // Default Admin OTP logic
+    if (userType === 'Admin') {
+      const adminOtp = process.env.ADMIN_OTP || '1234';
+      await saveOtpToDb({ mobile }, adminOtp, userType);
+      return { success: true, message: 'OTP sent successfully', sessionId: `SESSION_${Date.now()}` };
+    }
+
     if (last10 === DEV_ADMIN_MOBILE) {
       await saveOtpToDb({ mobile }, DEV_ADMIN_OTP, userType);
       return { success: true, message: 'OTP sent successfully', sessionId: `SESSION_${Date.now()}` };

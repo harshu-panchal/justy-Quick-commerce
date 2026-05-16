@@ -18,10 +18,18 @@ export interface HeaderCategory {
 
 export const getHeaderCategoriesPublic = async (includeAll = false): Promise<HeaderCategory[]> => {
     try {
-        const response = await api.get<HeaderCategory[]>('/header-categories', {
+        const response = await api.get<any>('/header-categories', {
             params: { all: includeAll }
         });
-        return response.data;
+        
+        // Handle both formats: direct array or wrapped { success, data: [...] }
+        if (Array.isArray(response.data)) {
+            return response.data;
+        } else if (response.data && Array.isArray(response.data.data)) {
+            return response.data.data;
+        }
+        
+        return [];
     } catch (error) {
         console.error('Failed to fetch public header categories', error);
         return []; // Fallback to empty instead of crashing
@@ -30,8 +38,16 @@ export const getHeaderCategoriesPublic = async (includeAll = false): Promise<Hea
 
 export const getHeaderCategoriesAdmin = async (): Promise<HeaderCategory[]> => {
     try {
-        const response = await api.get<HeaderCategory[]>('/header-categories/admin');
-        return response.data;
+        const response = await api.get<any>('/header-categories/admin');
+        
+        // Handle both formats: direct array or wrapped { success, data: [...] }
+        if (Array.isArray(response.data)) {
+            return response.data;
+        } else if (response.data && Array.isArray(response.data.data)) {
+            return response.data.data;
+        }
+        
+        return [];
     } catch (error) {
         console.error('Failed to fetch admin header categories', error);
         return [];

@@ -85,7 +85,41 @@ const SellerDepositPayment = () => {
 
             const { razorpayOrderId, razorpayKey, amount, currency } = orderResponse.data;
 
-            // 3. Open Checkout
+            // 3. Handle Mock Payment
+            if (razorpayKey === 'mock_key') {
+                showToast('🧪 [Mock Mode] Simulating successful payment...', 'success');
+                setTimeout(async () => {
+                    try {
+                        const verifyRes = await verifySellerDepositPayment({
+                            razorpayOrderId,
+                            razorpayPaymentId: `mock_pay_${Date.now()}`,
+                            razorpaySignature: 'mock_sig'
+                        });
+
+                        if (verifyRes.success) {
+                            showToast('Payment successful! Your store is now active.', 'success');
+                            if (user) {
+                                updateUser({
+                                    ...user,
+                                    securityDepositStatus: 'Paid',
+                                    depositPaid: true,
+                                    status: 'Approved'
+                                } as any);
+                            }
+                            navigate('/seller', { replace: true });
+                        } else {
+                            showToast(verifyRes.message || 'Payment verification failed', 'error');
+                        }
+                    } catch (err: any) {
+                        showToast(err.response?.data?.message || 'Payment verification failed', 'error');
+                    } finally {
+                        setLoading(false);
+                    }
+                }, 1500);
+                return;
+            }
+
+            // 4. Open Checkout
             const options = {
                 key: razorpayKey,
                 amount: amount,

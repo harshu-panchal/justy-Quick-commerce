@@ -96,6 +96,9 @@ import * as subscriptionPlanController from "../modules/admin/controllers/adminS
 // Equipment Marketplace Controllers
 import * as adminEquipmentController from "../modules/admin/controllers/adminEquipmentController";
 import * as adminRefundController from "../modules/admin/controllers/adminRefundController";
+
+// Complaint Controllers
+import * as adminComplaintController from "../modules/admin/controllers/adminComplaintController";
 import * as qrController from "../modules/delivery/controllers/qrController";
 import * as productFieldController from "../modules/admin/controllers/adminProductFieldController";
 import * as executiveController from "../modules/admin/controllers/adminExecutiveController";
@@ -489,5 +492,11 @@ router.post("/equipment/orders/:id/regenerate-qr", qrController.regenerateQr);
 router.get("/equipment/refunds", adminRefundController.getAllRefundRequests);
 router.put("/equipment/refunds/:id", adminRefundController.updateRefundStatus);
 router.post("/equipment/refunds/:id/test-razorpay", adminRefundController.processRazorpayRefund);
+
+// ==================== Complaint / Support Routes ====================
+router.get("/complaints/stats", adminComplaintController.getComplaintStats);
+router.get("/complaints", adminComplaintController.getAllComplaints);
+router.get("/complaints/:id", adminComplaintController.getComplaintById);
+router.patch("/complaints/:id/respond", adminComplaintController.respondToComplaint);
 
 export default router;
